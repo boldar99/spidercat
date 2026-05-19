@@ -1,0 +1,54 @@
+\begin{tikzpicture}
+	\begin{pgfonlayer}{nodelayer}
+		\node [style=X dot] (1) at (-2.75, 0) {};
+		\node [style=none] (2) at (-2.25, 1.25) {};
+		\node [style=none] (3) at (-1.5, 0.5) {};
+		\node [style=none] (4) at (-1.5, -0.5) {};
+		\node [style=none] (5) at (-2.25, -1.25) {};
+		\node [style=none, rotate=-40] (6) at (-2, 0.75) {$\ldots$};
+		\node [style=none, rotate=40] (8) at (-2, -0.75) {$\ldots$};
+		\node [style=Z dot] (9) at (-4.75, 0) {};
+		\node [style=none] (10) at (-5.25, 1.25) {};
+		\node [style=none] (11) at (-6, 0.5) {};
+		\node [style=none] (12) at (-6, -0.5) {};
+		\node [style=none] (13) at (-5.25, -1.25) {};
+		\node [style=none, rotate=-40] (14) at (-5.5, -0.75) {$\ldots$};
+		\node [style=none, rotate=40] (15) at (-5.5, 0.75) {$\ldots$};
+		\node [style=none] (16) at (0, 0) {$\FaultEq$};
+		\node [style=X dot] (17) at (4.75, 0) {};
+		\node [style=none] (18) at (5.25, 1.25) {};
+		\node [style=none] (19) at (6, 0.5) {};
+		\node [style=none] (20) at (6, -0.5) {};
+		\node [style=none] (21) at (5.25, -1.25) {};
+		\node [style=none, rotate=-40] (22) at (5.5, 0.75) {$\ldots$};
+		\node [style=none, rotate=40] (23) at (5.5, -0.75) {$\ldots$};
+		\node [style=Z dot] (24) at (2.75, 0) {};
+		\node [style=none] (25) at (2.25, 1.25) {};
+		\node [style=none] (26) at (1.5, 0.5) {};
+		\node [style=none] (27) at (1.5, -0.5) {};
+		\node [style=none] (28) at (2.25, -1.25) {};
+		\node [style=none, rotate=-40] (29) at (2, -0.75) {$\ldots$};
+		\node [style=none, rotate=40] (30) at (2, 0.75) {$\ldots$};
+		\node [style=sLabel] (31) at (0, -0.5) {CSS};
+	\end{pgfonlayer}
+	\begin{pgfonlayer}{edgelayer}
+		\draw (2.center) to (1);
+		\draw (1) to (3.center);
+		\draw [style=fault-free] (4.center) to (1);
+		\draw [style=fault-free] (1) to (5.center);
+		\draw (10.center) to (9);
+		\draw (9) to (11.center);
+		\draw [style=fault-free] (12.center) to (9);
+		\draw [style=fault-free] (9) to (13.center);
+		\draw [style=fault-free] (9) to (1);
+		\draw (18.center) to (17);
+		\draw (17) to (19.center);
+		\draw [style=fault-free] (20.center) to (17);
+		\draw [style=fault-free] (17) to (21.center);
+		\draw (25.center) to (24);
+		\draw (24) to (26.center);
+		\draw [style=fault-free] (27.center) to (24);
+		\draw [style=fault-free] (24) to (28.center);
+		\draw (24) to (17);
+	\end{pgfonlayer}
+\end{tikzpicture}

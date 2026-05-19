@@ -1,11 +1,12 @@
 from pprint import pprint
 
 import numpy as np
-import itertools
 import random
 from functools import lru_cache
 import warnings
 import math
+
+from spiderstate.utils import load_qecc
 
 
 # --- USER'S ORIGINAL COST FUNCTIONS ---
@@ -205,7 +206,7 @@ def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, max_
                         best_step_M = test_M
                         best_step_op = (i, j)
 
-        if best_step_drop > 1:  # Net gain! Cost drops by > 1, pay 1 for the operation.
+        if best_step_drop > 1:
             current_M = best_step_M
             current_base_cost -= best_step_drop
             col_ops_performed.append(best_step_op[::-1])
@@ -252,28 +253,22 @@ def row_optimize_matrix(M: np.ndarray, t: int, max_basis_tries: int = 1_000) -> 
 
 # Example Execution
 if __name__ == "__main__":
-    H_x, d = np.array([
-        [0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-        [0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-        [1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-        [1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-        [1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-        [0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-        [0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-        [0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [1, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    ]), 7
+    is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc("20_2_6", "MQT")
+    t = d // 2
 
-    t = (d - 1) // 2
     row_M, final_M, col_ops = optimize_fault_tolerant_matrix(H_x, t=t, max_col_ops=10, max_basis_tries=10_000)
     # row_M = pivot_optimize_parity_matrix(H_x, t=t, max_basis_tries=100_000)
 
 
     print(f"Original matrix:")
-    pprint(H_x, width=200)
     print(f"Original CNOT cost (t={t}): {cnot_cost(H_x, t)}")
+    print("np.array([")
+    for row in H_x:
+        print("  [", end="")
+        for r in row[:-1]:
+            print(f"{r}, ", end="")
+        print(f"{row[-1]}],")
+    print("])")
     print()
 
     print(f"After Row Operations:")
@@ -281,9 +276,9 @@ if __name__ == "__main__":
     print("np.array([")
     for row in row_M:
         print("  [", end="")
-        for r in row:
+        for r in row[:-1]:
             print(f"{r}, ", end="")
-        print("],")
+        print(f"{row[-1]}],")
     print("])")
 
     print(f"After Row & Column Operations:")
@@ -292,9 +287,7 @@ if __name__ == "__main__":
     print("np.array([")
     for row in final_M:
         print("  [", end="")
-        for r in row:
+        for r in row[:-1]:
             print(f"{r}, ", end="")
-        print("],")
+        print(f"{row[-1]}],")
     print("])")
-
-

@@ -657,7 +657,7 @@ def make_stim_circ_noisy(circ: stim.Circuit, p_1=0., p_2=0., p_mem=0., p_meas=0.
                 noisy_circ.append("DEPOLARIZE1", targets, p_init)
 
         else:
-            noisy_circ.append(gate_name, targets)
+            noisy_circ.append(gate_name, targets, instruction.gate_args_copy())
 
     return noisy_circ
 

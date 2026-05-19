@@ -16,7 +16,7 @@ X_INITIALIZATIONS = {"RX"}
 SPECIAL_GATES = {"DETECTOR", "OBSERVABLE_INCLUDE", "SHIFT_COORDS", "QUBIT_COORDS", "TICK"}
 
 
-def layered_ops_to_noisy_stim_circuit(layered_ops: list[list[tuple[str, list[int]]]], num_qubits: int, p_1: float, p_2: float, p_init: float, p_meas: float, p_mem: float) -> stim.Circuit:
+def layered_ops_to_noisy_stim_circuit(layered_ops: list[list[tuple[str, list[int]]]], num_qubits: int, p_1: float, p_2: float, p_init: float, p_meas: float, p_mem: float, mem_error_after_every_cnot=False) -> stim.Circuit:
     circuit = stim.Circuit()
     for i, ops in enumerate(layered_ops):
         unused_qubits = set(range(num_qubits))
@@ -36,12 +36,15 @@ def layered_ops_to_noisy_stim_circuit(layered_ops: list[list[tuple[str, list[int
                 circuit.append("X_ERROR", targets, p_init)
             elif op_name in TWO_QUBIT_GATES:
                 circuit.append("DEPOLARIZE2", targets, p_2)
+                if mem_error_after_every_cnot:
+                    circuit.append("DEPOLARIZE1", set(range(num_qubits)) - set(targets), p_mem)
+
             elif op_name in SPECIAL_GATES:
                 pass
             else:
                 circuit.append("DEPOLARIZE1", targets, p_1)
 
-        if i != len(layered_ops) - 1:
+        if not mem_error_after_every_cnot and i != len(layered_ops) - 1:
             circuit.append("DEPOLARIZE1", unused_qubits, p_mem)
     return circuit
 
@@ -123,6 +126,18 @@ def _layer_circuit_ops(operations: list[tuple[str, list[int]]], num_qubits: int)
     # Shifting resets out of early layers might leave some layers completely empty.
     # We strip them out to prevent unnecessary DEPOLARIZE1 idle cycles in your noise model.
     return [layer for layer in layers if layer]
+
+
+def make_stim_circ_noisy(circ: stim.Circuit, p: float) -> stim.Circuit:
+    operations = [(op, targets) for (op, targets, params) in circ.flattened_operations() if op != "DETECTOR"]
+    detectors = [(op, [stim.target_rec(targets[0][1])]) for (op, targets, params) in circ.flattened_operations() if
+                 op == "DETECTOR"]
+    operations = _expand_stim_operation_list(operations)
+    layered_ops = _layer_circuit_ops(operations, circ.num_qubits)
+    # final_ops, num_sim_qubits = apply_qubit_reuse(layered_ops)
+    noisy_circ = layered_ops_to_noisy_stim_circuit(layered_ops + [detectors], circ.num_qubits, 0, p, 2 / 3 * p,
+                                                   2 / 3 * p, p / 100, mem_error_after_every_cnot=True)
+    return noisy_circ
 
 
 def apply_qubit_reuse(layers: list[list[tuple[str, list[int]]]]) -> tuple[list[list[tuple[str, list[int]]]], int]:
@@ -225,10 +240,12 @@ def get_project_root() -> Path:
 
 def load_qecc(code: str, method="FAO"):
     root = get_project_root()
-    if method == "FAO":
-        file = root.joinpath("qeccs", "fao_qeccs", f"{code}.json")
-    else:
-        file = root.joinpath("qeccs", "MQT_qeccs", f"{code}.json")
+    method = {
+        "fao": "FAO",
+        "mqt": "MQT",
+    }.get(method, method)
+
+    file = root.joinpath("qeccs", method, f"{code}.json")
 
     with open(file, "r") as f:
         data = json.load(f)
@@ -239,13 +256,13 @@ def load_qecc(code: str, method="FAO"):
     if is_self_dual:
         return (
             True,
-            np.array(data.get("H_x", H_z)), np.array(data.get("H_z", H_x)),
-            np.array(data.get("L_x", L_z)), np.array(data.get("L_z", L_x)),
+            np.array(data.get("H_x", H_z), dtype=np.int8), np.array(data.get("H_z", H_x), dtype=np.int8),
+            np.array(data.get("L_x", L_z), dtype=np.int8), np.array(data.get("L_z", L_x), dtype=np.int8),
             data["d"]
         )
 
     assert H_x is not None and H_z is not None
-    return False, np.array(H_x), np.array(H_z), np.array(L_x), np.array(L_z), data["d"]
+    return False, np.array(H_x, dtype=np.int8), np.array(H_z, dtype=np.int8), np.array(L_x, dtype=np.int8), np.array(L_z, dtype=np.int8), data["d"]
 
 
 def code_sort_key(code: str):
@@ -255,14 +272,14 @@ def code_sort_key(code: str):
 
 def FAO_QECCS():
     root = get_project_root()
-    fao = root.joinpath("qeccs", "fao_qeccs")
+    fao = root.joinpath("qeccs", "FAO")
     for file_name in sorted(os.listdir(fao), key=code_sort_key):
         yield file_name[:-5]
 
 
 def MQT_QECCS():
     root = get_project_root()
-    fao = root.joinpath("qeccs", "MQT_qeccs")
+    fao = root.joinpath("qeccs", "MQT")
     for file_name in sorted(os.listdir(fao), key=code_sort_key):
         yield file_name[:-5]
 

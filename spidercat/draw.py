@@ -159,7 +159,7 @@ def draw_spanning_forest_solution(
         edgelist=marked_edge_list,
         edge_color='black',
         style='dashed',
-        width=1.5,
+        width=0.1,
         alpha=0.6
     )
 
@@ -201,6 +201,8 @@ def draw_spanning_forest_solution(
 
     for i, component in enumerate(nx.connected_components(forest)):
         color = colors[i % len(colors)]
+        color = "#30A08E"
+        color = "#69D3BE"
         tree = forest.subgraph(component)
 
         # Draw Tree Edges
@@ -385,7 +387,7 @@ def draw_forest_on_graph(
     plt.show()
 
 
-def display_digraph(di_graph: nx.DiGraph, figsize=(10, 10)):
+def display_digraph(di_graph: nx.DiGraph, figsize=(12, 12)):
     """
     Displays the directed graph, distinguishing between tree edges and cycle closures.
     """

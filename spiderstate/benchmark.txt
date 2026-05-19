@@ -1,0 +1,34 @@
+FAO 7_1_3
+State: |0>
+Discarded 0 uncorrectable shots.
+Logical Error Rate = 2.2635e-05;	 Acceptance Rate = 0.9843;	 CXs = 17;	 Sim. Qubits = 11;	 Flags = 4;	 Depth = 5;	 Expected Circuit Volume = 55
+
+FAO 9_1_3
+State: |0>
+Discarded 0 uncorrectable shots.
+Logical Error Rate = 1.5234e-05;	 Acceptance Rate = 0.9918;	 CXs = 12;	 Sim. Qubits = 11;	 Flags = 2;	 Depth = 5;	 Expected Circuit Volume = 55
+
+FAO 17_1_5
+State: |0>
+Discarded 0 uncorrectable shots.
+Logical Error Rate = 7.5473e-07;	 Acceptance Rate = 0.9142;	 CXs = 74;	 Sim. Qubits = 38;	 Flags = 21;	 Depth = 13;	 Expected Circuit Volume = 540
+
+FAO 25_1_5
+State: |0>
+Discarded 0 uncorrectable shots.
+Logical Error Rate = 7.8987e-07;	 Acceptance Rate = 0.9115;	 CXs = 78;	 Sim. Qubits = 46;	 Flags = 21;	 Depth = 12;	 Expected Circuit Volume = 605
+
+FAO 20_2_6
+State: |0>
+Discarded 643 uncorrectable shots.
+Logical Error Rate = 3.6000e-08;	 Acceptance Rate = 0.8333;	 CXs = 133;	 Sim. Qubits = 61;	 Flags = 41;	 Depth = 23;	 Expected Circuit Volume = 1683
+
+FAO 23_1_7
+State: |0>
+Discarded 0 uncorrectable shots.
+Logical Error Rate = 4.7420e-07;	 Acceptance Rate = 0.6748;	 CXs = 241;	 Sim. Qubits = 105;	 Flags = 82;	 Depth = 22;	 Expected Circuit Volume = 3423
+
+FAO 31_1_7
+State: |0>
+Discarded 0 uncorrectable shots.
+Logical Error Rate = 1.5281e-07;	 Acceptance Rate = 0.7198;	 CXs = 211;	 Sim. Qubits = 100;	 Flags = 69;	 Depth = 22;	 Expected Circuit Volume = 3056

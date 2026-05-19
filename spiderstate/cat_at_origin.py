@@ -3,6 +3,7 @@ import numpy as np
 import stim
 
 from spidercat.circuit_extraction import CatStateExtractor, StimBuilder
+from spidercat.draw import draw_forest_on_graph, display_digraph
 from spiderstate.spider_leg_matcher import match_edges
 from spiderstate.utils import find_pivots_in_matrix
 from spiderstate.well_ordered_cat_state import well_ordered_ft_cat_state_data
@@ -25,7 +26,7 @@ def row_optimized_cat_at_origin(H: np.ndarray, d: int, max_basis_tries: int = 10
     return cat_at_origin(matrix_after_row_ops, d)
 
 
-def cat_at_origin(H: np.ndarray, d: int) -> stim.Circuit:
+def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False) -> stim.Circuit:
     if not has_unique_ones_property(H):
         raise ValueError(f"H is not representing a bipartite graph state.")
 
@@ -148,8 +149,9 @@ def cat_at_origin(H: np.ndarray, d: int) -> stim.Circuit:
 
     # Extract circuit using the global graphs
     extractor = CatStateExtractor(StimBuilder(), verbose=False)
-    # draw_forest_on_graph(global_G, global_F, figsize=(10, 10))
-    # display_digraph(global_D, figsize=(10, 10))
+    if draw_solutions:
+        draw_forest_on_graph(global_G, global_F, figsize=(8, 8))
+        display_digraph(global_D, figsize=(8, 8))
     circ = extractor.extract(global_G, global_F, global_roots, global_D, global_primary_paths)
     return circ
 

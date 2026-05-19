@@ -2,6 +2,7 @@ import networkx as nx
 
 from spidercat.circuit_extraction import expand_graph_and_forest, build_traversal_digraph, \
     resolve_dag_by_removing_missing_link
+from spidercat.draw import draw_forest_on_graph, display_digraph
 from spidercat.mdsf import constrained_mdsf_generation
 from spidercat.spanning_tree import find_min_height_degree_3_roots
 from spidercat.utils import load_solution_triplet
@@ -64,7 +65,14 @@ def well_ordered_ft_cat_state_data(n, t) -> tuple[nx.Graph, nx.Graph, dict[int, 
         F_alt = F_alt.copy()
         roots = find_min_height_degree_3_roots(F_alt)
     D = build_traversal_digraph(G_alt, F_alt, roots[0])
+
+    # display_digraph(D, figsize=(6,6))
     _, edge, dependency_graph = resolve_dag_by_removing_missing_link(D)
     assert nx.is_directed_acyclic_graph(dependency_graph)
 
     return G_alt, F_alt, roots, dependency_graph, edge[0][0] if len(edge) else e
+
+if __name__ == "__main__":
+    G_alt, F_alt, roots, dependency_graph, edge = well_ordered_ft_cat_state_data(10, 4)
+    draw_forest_on_graph(G_alt, F_alt, figsize=(7,7))
+    display_digraph(dependency_graph, figsize=(9,5))

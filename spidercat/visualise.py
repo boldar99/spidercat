@@ -423,10 +423,10 @@ def visualise_method_comparison(methods_data_dict, t):
         for n, group in scope_df.groupby('n'):
             # Metric 1: Probability of success (k < t)
             # Sum probability of all k where k < t
-            success_prob = group[group['k'] <= t]['probability'].sum()
-            if 1.0 - success_prob < 1e-8:
-                continue
-
+            # success_prob = group[group['k'] <= t]['probability'].sum()
+            success_prob = (group['k'] * group['count']).sum() / group['count'].sum()
+            # if 1.0 - success_prob < 1e-8:
+            #     continue
             # Metric 2: Acceptance Rate (Constant for a specific simulation n,t)
             # We take the mean or just the first value
             acc_rate = group['acceptance_rate'].iloc[0]
@@ -466,7 +466,7 @@ def visualise_method_comparison(methods_data_dict, t):
         color = method_colors[method]
 
         # --- Primary Axis (Left): Probability ---
-        y_val = subset['failure_prob']
+        y_val = subset['success_prob']
 
         ax1.plot(
             subset['n'], y_val,
@@ -484,7 +484,7 @@ def visualise_method_comparison(methods_data_dict, t):
 
     # Left Axis Styling
     ax1.set_ylabel(f"Probability of $> {t}$ Faults (Failure)", fontsize=12)
-    ax1.set_yscale('log')
+    # ax1.set_yscale('log')
     ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
 
     ax1.set_xlabel("Cat State Size (n)", fontsize=12)
@@ -505,7 +505,7 @@ def visualise_method_comparison(methods_data_dict, t):
     # else:
     # ax2.yaxis.set_major_formatter(PercentFormatter(xmax=1, decimals=0))
     ax2.set_yscale('log')
-    ax1.invert_yaxis()
+    # ax1.invert_yaxis()
 
     # Combined Legend Construction
     # Part A: Method Colors
@@ -690,11 +690,11 @@ if __name__ == '__main__':
         # "SpiderCat (10 forest)": df_sc_p10,
         # "SpiderCat (20 forest)": df_sc_p20,
     }
-    # visualise_method_comparison(methods, t=1)
-    # visualise_method_comparison(methods, t=2)
+    visualise_method_comparison(methods, t=1)
     visualise_method_comparison(methods, t=2)
+    visualise_method_comparison(methods, t=3)
     # visualise_method_comparison(methods, t=4)
-    # visualise_method_comparison(methods, t=5)
+    visualise_method_comparison(methods, t=5)
     # visualise_method_comparison(methods, t=6)
     # visualise_method_comparison(methods, t=4, second_y_axis='num_flags')
     # visualise_two_panel_hybrid(methods, t=3)
