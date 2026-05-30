@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DecompUmbrella</title>
+<style>
+  :root {
+    --purple: #C724E0;
+    --black: #111111;
+    --bg: #f7f4ea;          /* the graph-paper cream from the sketch */
+    --panel: #ffffff;
+    --line: #d9d4c4;
+    --accent: #7c3aed;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #1c1c1c;
+    background: var(--bg);
+  }
+  header { padding: 22px 28px 8px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  header p { margin: 0; color: #555; font-size: 14px; }
+  header code { background: #eee6cf; padding: 1px 5px; border-radius: 4px; }
+  .wrap { display: flex; gap: 18px; padding: 16px 28px 28px; flex-wrap: wrap; }
+  .controls {
+    flex: 0 0 280px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+    height: fit-content;
+  }
+  .controls h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .04em;
+                 color: #888; margin: 0 0 10px; }
+  .nrow { display: flex; align-items: center; gap: 8px; }
+  .nrow .tag {
+    width: 34px; height: 34px; border-radius: 50%; background: #d8f6d8;
+    border: 2px solid var(--black);
+    color: var(--black); display: flex; align-items: center; justify-content: center;
+    font-size: 13px; flex: 0 0 auto;
+  }
+  .nrow label { font-size: 14px; color: #444; flex: 0 0 auto; }
+  .nrow input[type=number] {
+    width: 70px; padding: 6px 8px; border: 1px solid var(--line);
+    border-radius: 6px; font-size: 15px;
+  }
+  .nrow .hint { font-size: 12px; color: #777; margin-left: 2px; }
+  .opt { display: flex; align-items: center; gap: 8px; margin-top: 16px;
+         font-size: 13px; color: #444; }
+  .meta { margin-top: 16px; font-size: 12px; color: #777; line-height: 1.6; }
+  .legend-dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%;
+                vertical-align: -1px; margin-right: 3px; border: 1.5px solid var(--black); }
+  .stage {
+    flex: 1 1 480px; min-width: 320px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  svg { width: 100%; height: auto; display: block; }
+  .btn {
+    width: 100%; margin-top: 16px; border: 1px solid var(--accent);
+    background: var(--accent); color: #fff; border-radius: 8px;
+    padding: 9px 12px; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .btn:hover { filter: brightness(1.08); }
+  .btn.off { background: #fff; color: var(--accent); }
+  #bensInline { margin-top: 10px; }
+  #bensInline .cap { font-size: 11px; color: #888; margin-bottom: 5px; line-height: 1.4; }
+  #bensInline svg {
+    width: 100%; height: auto; display: block;
+    background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 6px;
+  }
+  .btn.apply { background: #0a7d4f; border-color: #0a7d4f; }
+  .btn.simplify { background: #ee7f1a; border-color: #ee7f1a; margin-top: 10px; }
+  .btn.small { width: auto; margin: 0; padding: 6px 12px; font-size: 13px; }
+  .views { display: flex; gap: 18px; flex: 1 1 auto; flex-wrap: wrap; align-items: flex-start; }
+  .viewcol { flex: 1 1 330px; min-width: 290px; display: flex; flex-direction: column;
+             align-self: flex-start; }
+  .colhead { font-size: 13px; font-weight: 700; color: #1c1c1c; margin: 0 0 6px;
+             display: flex; align-items: center; gap: 8px; }
+  .colhead .step { width: 20px; height: 20px; border-radius: 50%; background: var(--accent);
+             color: #fff; font-size: 12px; display: inline-flex; align-items: center;
+             justify-content: center; flex: 0 0 auto; }
+  .zoomhint { font-size: 11px; color: #999; margin: 7px 2px 0; }
+  #diagram, #simplified { touch-action: none; cursor: grab; }
+  #diagram.grabbing, #simplified.grabbing { cursor: grabbing; }
+  .edcol .stage { flex: 0 0 auto; width: 100%; align-items: flex-start; }
+  .edbar { font-size: 13px; color: #555; display: flex; align-items: center;
+           gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+  .edbar b { color: #1c1c1c; }
+  #editor { width: 100%; height: auto; display: block; touch-action: none; }
+  #editor .node { cursor: grab; }
+  #editor .node:hover { stroke-width: 3.5; }
+  #editor.grabbing .node { cursor: grabbing; }
+  #editor .fuse-target { stroke: #0a7d4f; stroke-width: 4; }
+  #editor .selected { stroke: #2563eb; stroke-width: 4.5; }
+  .btn.small:disabled { opacity: .45; cursor: default; }
+  .edbar kbd { background: #eee6cf; border: 1px solid #d9d4c4; border-radius: 4px;
+    padding: 0 5px; font-size: 12px; font-family: ui-monospace, SFMono-Regular, monospace; }
+  .edhint { color: #b8860b; font-weight: 600; opacity: 0; transition: opacity .2s; }
+  .edhint.show { opacity: 1; }
+  /* Step 4: detecting regions */
+  .btn.regions { background: #8b0000; border-color: #8b0000; margin-top: 10px; }
+  #regions { width: 100%; height: auto; display: block; touch-action: none; cursor: default; }
+  #regions.addZ { cursor: crosshair; }
+  #regions .node { cursor: pointer; }
+  #regions.grabbing { cursor: grabbing; }
+  #regions .selected { stroke: #2563eb; stroke-width: 4.5; }
+  #regions .node:hover { stroke-width: 3.5; }
+  .btn.small.tool { background: #fff; color: var(--accent); }
+  .btn.small.tool.active { background: var(--accent); color: #fff; }
+  .rowbreak { flex-basis: 100%; width: 100%; height: 0; }   /* force step 4 onto its own row */
+  /* Step 5: spider decomposition in the simplified diagram */
+  .btn.simpdecomp { background: #1e6091; border-color: #1e6091; margin-top: 10px; }
+  #simpdecomp { width: 100%; height: auto; display: block; touch-action: none; cursor: default; }
+  #simpdecomp.addZ { cursor: crosshair; }
+  #simpdecomp .node { cursor: pointer; }
+  #simpdecomp.grabbing { cursor: grabbing; }
+  #simpdecomp .selected { stroke: #2563eb; stroke-width: 4.5; }
+  #simpdecomp .node:hover { stroke-width: 3.5; }
+</style>
+</head>
+<body>
+<header>
+  <h1>DecompUmbrella &nbsp;<span style="color:#999;font-weight:400">FT stabiliser state preparation</span></h1>
+  <p>A <b>Z</b> spider (green) with <code id="kout">k</code> outputs: one plain regular edge,
+     plus one <b>X</b> spider (red) per remaining output, each carrying an idealised bus.</p>
+</header>
+
+<div class="wrap">
+  <div class="controls">
+    <h2>Z spider outputs</h2>
+    <div class="nrow">
+      <span class="tag">Z</span>
+      <label><i>n</i> =</label>
+      <input type="number" min="1" max="60" id="nout" value="4" />
+      <span class="hint">= 1 own edge + <b id="nx">3</b> X spiders</span>
+    </div>
+
+    <label class="opt"><input type="checkbox" id="conn" checked />
+      Idealised <code>Z–X</code> connectors</label>
+
+    <button class="btn off" id="bensBtn">Show Ben's Rule</button>
+
+    <div id="bensInline" style="display:none">
+      <div class="cap">Ben's Rule (white = Z spider, black = X spider).</div>
+      <svg id="bensvg" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+    <button class="btn apply" id="applyBtn">Apply Ben's Rule</button>
+    <button class="btn simplify" id="simplifyBtn">Simplify the Diagram</button>
+    <button class="btn regions" id="regionsBtn">Spider Decomposition</button>
+    <button class="btn simpdecomp" id="simpDecompBtn">Spider Decomposition (Simplified)</button>
+
+    <div class="meta">
+      <span class="legend-dot" style="background:#d8f6d8"></span> Z spider &nbsp;
+      <span class="legend-dot" style="background:#e4a2a2"></span> X spider<br>
+      <span style="color:var(--purple)">&#9608;</span> idealised bus &nbsp;
+      <span style="color:#111">&#9608;</span> regular edge<br>
+      Z spider outputs: <b id="koutb">4</b>
+    </div>
+  </div>
+
+  <div class="views" id="views">
+    <div class="viewcol" id="umbrellaCol">
+      <div class="colhead"><span class="step">1</span> Original umbrella</div>
+      <div class="stage">
+        <svg id="diagram" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <div class="zoomhint">&#8984;/Ctrl + scroll (or pinch) to zoom &middot; drag to pan &middot; double-click to reset.</div>
+    </div>
+
+    <div class="viewcol edcol" id="edWrap" style="display:none">
+      <div class="colhead"><span class="step">2</span> After applying Ben's rule</div>
+      <div class="edbar">
+        <span>Drag a spider to move it &middot; drag a box on empty canvas to select a group,
+          then drag any selected spider to move them together &middot; drop a spider onto a
+          connected same-colour spider, <i>or</i> select two and press <kbd>F</kbd>, to fuse
+          &middot; <kbd>&#8984;/Ctrl+Z</kbd> to undo.</span>
+        <button class="btn small" id="edUndo" disabled>Undo</button>
+        <button class="btn small" id="edReset">Re-apply</button>
+        <button class="btn small" id="edFit">Reset view</button>
+        <button class="btn small" id="edSimplify">Simplify the Diagram</button>
+        <span id="edHint" class="edhint"></span>
+      </div>
+      <div class="stage">
+        <svg id="editor" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <div class="zoomhint">&#8984;/Ctrl + scroll (or pinch) to zoom &middot; double-click or <b>Reset view</b> to recenter &middot; drag spiders to edit.</div>
+    </div>
+
+    <div class="viewcol" id="simpCol" style="display:none">
+      <div class="colhead"><span class="step">3</span> Simplified diagram</div>
+      <div class="stage">
+        <svg id="simplified" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <div class="zoomhint">&#8984;/Ctrl + scroll (or pinch) to zoom &middot; drag to pan &middot; double-click to reset.</div>
+    </div>
+
+    <div class="rowbreak"></div>
+    <div class="viewcol edcol" id="rgWrap" style="display:none">
+      <div class="colhead"><span class="step">4</span> Spider Decomposition</div>
+      <div class="edbar">
+        <span>Seeded with the step&nbsp;2 diagram. Pick a tool, then click the canvas.
+          A <b style="color:#8b0000">cut</b> slashes an edge to separate the regions
+          the hourglasses carve out. In <b>Move</b> mode, drag a box on empty canvas to
+          select several spiders, then drag any one to move them together.</span>
+        <button class="btn small tool active" data-mode="move" id="rgMove">Move</button>
+        <button class="btn small tool" data-mode="addZ" id="rgAddZ">Add Z spider</button>
+        <button class="btn small tool" data-mode="addEdge" id="rgAddEdge">Add edge</button>
+        <button class="btn small tool" data-mode="cut" id="rgCut">Add cut</button>
+        <button class="btn small tool" data-mode="delEdge" id="rgDelEdge">Remove edge</button>
+        <button class="btn small tool" data-mode="delSpider" id="rgDelSpider">Remove spider</button>
+        <button class="btn small" id="rgUndo" disabled>Undo</button>
+        <button class="btn small" id="rgFit">Reset view</button>
+        <button class="btn small" id="rgReset">Re-seed from step 2</button>
+        <span id="rgHint" class="edhint"></span>
+      </div>
+      <div class="stage">
+        <svg id="regions" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <div class="zoomhint">&#8984;/Ctrl + scroll (or pinch) to zoom &middot; double-click or <b>Reset view</b> to recenter &middot; drag spiders in Move mode.</div>
+    </div>
+
+    <div class="rowbreak"></div>
+    <div class="viewcol edcol" id="sdWrap" style="display:none">
+      <div class="colhead"><span class="step">5</span> Spider Decomposition in the Simplified Diagram</div>
+      <div class="edbar">
+        <span>Seeded with the step&nbsp;3 simplified diagram. Pick a tool, then click the canvas.
+          A <b style="color:#8b0000">cut</b> slashes an edge to separate the regions
+          the diagram carves out. In <b>Move</b> mode, drag a box on empty canvas to
+          select several spiders, then drag any one to move them together.</span>
+        <button class="btn small tool active" data-mode="move" id="sdMove">Move</button>
+        <button class="btn small tool" data-mode="addZ" id="sdAddZ">Add Z spider</button>
+        <button class="btn small tool" data-mode="addEdge" id="sdAddEdge">Add edge</button>
+        <button class="btn small tool" data-mode="cut" id="sdCut">Add cut</button>
+        <button class="btn small tool" data-mode="delEdge" id="sdDelEdge">Remove edge</button>
+        <button class="btn small tool" data-mode="delSpider" id="sdDelSpider">Remove spider</button>
+        <button class="btn small" id="sdUndo" disabled>Undo</button>
+        <button class="btn small" id="sdFit">Reset view</button>
+        <button class="btn small" id="sdReset">Re-seed from step 3</button>
+        <span id="sdHint" class="edhint"></span>
+      </div>
+      <div class="stage">
+        <svg id="simpdecomp" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <div class="zoomhint">&#8984;/Ctrl + scroll (or pinch) to zoom &middot; double-click or <b>Reset view</b> to recenter &middot; drag spiders in Move mode.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- model & layout ----------------------------------------------------------
+// Standard ZX convention (arXiv:2506.17181): green Z spider, red X spider,
+// pastel fill with a black outline. The diagram is always shown simplified:
+// each X spider carries a single bolded idealised bus.
+const PURPLE = "#C724E0", BLACK = "#111111", ORANGE = "#ee7f1a";
+const Z_FILL = "#d8f6d8", X_FILL = "#e4a2a2";
+const DOWN_LEN = 1.25, S = 100;
+const FAN_TILT = 16, REG_TILT = 26;   // bus / regular leg offset from the radial direction
+
+let n = 4;                            // Z spider outputs  ->  n - 1 X spiders
+
+// ---- mouse zoom / pan (handy when n is large and the figure shrinks) ---------
+// Each registered SVG keeps a current viewBox (`vb`) and a fitted baseline
+// (`fitVB`). Wheel zooms toward the cursor, optional drag pans, double-click
+// resets. Render code calls z.reset(fitVB) whenever it redraws.
+const zoomers = new WeakMap();
+// Zoom range as viewBox-width multipliers of the fitted width: a larger width
+// means more zoomed out. We cap zoom-out tightly so the diagram can never shrink
+// away into the canvas, and allow a healthy zoom-in.
+const ZOOM_OUT = 1.4, ZOOM_IN = 0.14;
+const clampW = (w, fitW) => Math.max(fitW * ZOOM_IN, Math.min(fitW * ZOOM_OUT, w));
+// Keep the content's centre inside the viewBox so panning can never lose it.
+function clampPan(vb, fit) {
+  const cx = fit[0] + fit[2] / 2, cy = fit[1] + fit[3] / 2;
+  vb[0] = Math.min(Math.max(vb[0], cx - vb[2]), cx);
+  vb[1] = Math.min(Math.max(vb[1], cy - vb[3]), cy);
+  return vb;
+}
+// Only zoom on ⌘/Ctrl + wheel (trackpad pinch is reported this way too); a plain
+// scroll is left alone so the page scrolls normally and isn't mistaken for a zoom.
+const wantsZoom = e => e.ctrlKey || e.metaKey;
+function makeZoomable(svg, opts = {}) {
+  const z = {vb: null, fitVB: null};
+  z.apply = () => { if (z.vb) svg.setAttribute("viewBox", z.vb.join(" ")); };
+  z.reset = fit => { z.fitVB = fit.slice(); z.vb = fit.slice(); z.apply(); };
+  svg.addEventListener("wheel", e => {
+    if (!z.vb || !wantsZoom(e)) return;
+    e.preventDefault();
+    const r = svg.getBoundingClientRect();
+    const px = z.vb[0] + (e.clientX - r.left) / r.width * z.vb[2];
+    const py = z.vb[1] + (e.clientY - r.top) / r.height * z.vb[3];
+    const w = clampW(z.vb[2] * Math.exp(e.deltaY * 0.0015), z.fitVB[2]);
+    const ratio = w / z.vb[2];
+    z.vb = [px - (px - z.vb[0]) * ratio, py - (py - z.vb[1]) * ratio, w, z.vb[3] * ratio];
+    z.apply();
+  }, {passive: false});
+  svg.addEventListener("dblclick", () => { if (z.fitVB) { z.vb = z.fitVB.slice(); z.apply(); } });
+  if (opts.pan) {
+    let pan = null;
+    svg.addEventListener("pointerdown", e => {
+      if (e.button > 0 || !z.vb) return;
+      pan = {cx: e.clientX, cy: e.clientY, vb: z.vb.slice(), pid: e.pointerId};
+      svg.classList.add("grabbing");
+      try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+    });
+    svg.addEventListener("pointermove", e => {
+      if (!pan || e.pointerId !== pan.pid) return;
+      const r = svg.getBoundingClientRect();
+      const dx = (e.clientX - pan.cx) / r.width * pan.vb[2];
+      const dy = (e.clientY - pan.cy) / r.height * pan.vb[3];
+      z.vb = clampPan([pan.vb[0] - dx, pan.vb[1] - dy, pan.vb[2], pan.vb[3]], z.fitVB);
+      z.apply();
+    });
+    const endPan = e => {
+      if (!pan || e.pointerId !== pan.pid) return;
+      pan = null; svg.classList.remove("grabbing");
+      try { svg.releasePointerCapture(e.pointerId); } catch (_) {}
+    };
+    svg.addEventListener("pointerup", endPan);
+    svg.addEventListener("pointercancel", endPan);
+  }
+  zoomers.set(svg, z);
+  return z;
+}
+
+const rad = d => d * Math.PI / 180;
+const unit = d => [Math.cos(rad(d)), Math.sin(rad(d))];
+const add = (p, q) => [p[0] + q[0], p[1] + q[1]];
+const mul = (p, s) => [p[0] * s, p[1] * s];
+
+// X spiders sit on an arc above Z that widens with their count; each bus and leg
+// splays outward along its own radial direction, so it stays legible for large n.
+function layout(nx) {
+  if (nx <= 1) return {angles: [90], R: 2.4, fanLen: 1.25, regLen: 1.15, nodeR: 0.15};
+  const span = Math.min(150, 56 + 22 * (nx - 1));
+  const R = Math.max(2.4, 1.0 + 0.62 * nx);
+  const angles = Array.from({length: nx}, (_, i) => (90 + span / 2) + (-span) * i / (nx - 1));
+  return {
+    angles, R,
+    fanLen: nx > 8 ? 1.05 : 1.25,
+    regLen: nx > 8 ? 0.85 : 1.15,
+    nodeR: nx > 8 ? 0.13 : 0.15,
+  };
+}
+
+// ---- build the diagram's primitives in math coordinates ----------------------
+function build() {
+  const lines = [], circles = [], all = [];
+  const track = p => { all.push(p); return p; };
+  const idealConn = document.getElementById("conn").checked;
+
+  const nx = Math.max(0, n - 1);
+  const lay = layout(Math.max(nx, 1));
+  const {R, fanLen, regLen, nodeR} = lay;
+  const lw = nx > 8 ? 0.7 : 1;
+
+  const z = [0, 0];
+  track(z);
+  // Z spider's own regular output (straight down)
+  const zLeg = track([0, -DOWN_LEN]);
+  lines.push({a: z, b: zLeg, color: BLACK, w: 0.05});
+
+  if (nx >= 1) {
+    lay.angles.forEach(ang => {
+      const xp = track(add(z, mul(unit(ang), R)));
+      const fanU = unit(ang + FAN_TILT);
+
+      // Z -> X connector
+      lines.push({a: z, b: xp, color: idealConn ? PURPLE : BLACK,
+                  w: (idealConn ? 0.055 : 0.05) * lw});
+      // X spider's regular leg
+      const regEnd = track(add(xp, mul(unit(ang - REG_TILT), regLen)));
+      lines.push({a: xp, b: regEnd, color: BLACK, w: 0.05 * lw});
+      // idealised bus (bold, unlabelled)
+      const tip = track(add(xp, mul(fanU, fanLen)));
+      lines.push({a: xp, b: tip, color: PURPLE, w: 0.17 * lw, cap: "round"});
+
+      circles.push({p: xp, fill: X_FILL, r: nodeR});   // X spider (red)
+    });
+  }
+  circles.push({p: z, fill: Z_FILL, r: nodeR});        // Z spider (green)
+
+  return {lines, circles, all};
+}
+
+// ---- render to SVG -----------------------------------------------------------
+function draw() {
+  const g = build();
+  const pad = 0.7;
+  const xs = g.all.map(p => p[0]), ys = g.all.map(p => p[1]);
+  const minX = Math.min(...xs) - pad, maxX = Math.max(...xs) + pad;
+  const minY = Math.min(...ys) - pad, maxY = Math.max(...ys) + pad;
+  const mp = p => [(p[0] - minX) * S, (maxY - p[1]) * S];   // flip y
+  const W = (maxX - minX) * S, H = (maxY - minY) * S;
+
+  let out = "";
+  for (const l of g.lines) {
+    const [x1, y1] = mp(l.a), [x2, y2] = mp(l.b);
+    out += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${l.color}" `
+         + `stroke-width="${l.w * S}" stroke-linecap="${l.cap || "round"}"/>`;
+  }
+  for (const c of g.circles) {
+    const [x, y] = mp(c.p);
+    out += `<circle cx="${x}" cy="${y}" r="${c.r * S}" fill="${c.fill}" `
+         + `stroke="${BLACK}" stroke-width="${0.025 * S}"/>`;
+  }
+
+  const svg = document.getElementById("diagram");
+  svg.innerHTML = out;
+  const z = zoomers.get(svg);
+  if (z) z.reset([0, 0, W, H]); else svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+
+  document.getElementById("kout").textContent = n;
+  document.getElementById("koutb").textContent = n;
+  document.getElementById("nx").textContent = Math.max(0, n - 1);
+  // note: we do NOT write back to #nout here, so the field stays freely editable.
+}
+
+// ---- Ben's Rule (static reference figure) ------------------------------------
+function bensRule() {
+  const lines = [], circles = [], texts = [], all = [];
+  const trk = p => { all.push(p); return p; };
+  const NR = 0.2, BUS = 0.2, EDGE = 0.06;
+  const line = (a, b, color, w, cap) => lines.push({a: trk(a), b: trk(b), color, w, cap});
+  const node = (p, fill) => circles.push({p: trk(p), fill, r: NR});
+  const text = (p, t, o = {}) => texts.push({p: trk(p), t, size: o.size || 0.5,
+      color: o.color || BLACK, weight: o.weight, anchor: "middle", rot: 0});
+
+  // ===== left-hand side: Z --(idealised)-- X =================================
+  const ZL = [1.4, 2.4], XR = [4.0, 2.4];
+  line(ZL, XR, PURPLE, 0.07);                                  // idealised connector
+  line(ZL, add(ZL, mul(unit(120), 0.95)), BLACK, EDGE);       // output leg up-left
+  line(XR, add(XR, mul(unit(55), 0.95)), BLACK, EDGE);        // output leg up-right
+  line(ZL, add(ZL, mul(unit(235), 1.0)), PURPLE, BUS, "round");  // bus down-left
+  line(XR, add(XR, mul(unit(305), 1.0)), PURPLE, BUS, "round");  // bus down-right
+  node(ZL, Z_FILL); node(XR, X_FILL);
+
+  text([5.4, 2.4], "≜", {size: 0.62});                     // defined-as
+
+  // ===== right-hand side: 8-node 3-regular gadget ============================
+  const TLw = [7.6, 3.55], TRb = [11.4, 3.55];   // top output nodes
+  const Lw  = [7.3, 2.0],  Rb  = [11.7, 2.0];    // side nodes with buses
+  const M1  = [8.9, 3.0],  M2  = [10.1, 3.0];    // upper-middle pair (X, Z)
+  const M3  = [8.9, 1.5],  M4  = [10.1, 1.5];    // lower-middle pair (X, Z)
+
+  line(TLw, [TLw[0], TLw[1] + 1.0], BLACK, EDGE);             // output up
+  line(TRb, [TRb[0], TRb[1] + 1.0], BLACK, EDGE);             // output up
+  line(Lw, add(Lw, mul(unit(235), 1.0)), PURPLE, BUS, "round");  // bus down-left
+  line(Rb, add(Rb, mul(unit(305), 1.0)), PURPLE, BUS, "round");  // bus down-right
+
+  line(TLw, Lw, BLACK, EDGE);                                 // left vertical
+  line(TRb, Rb, BLACK, EDGE);                                 // right vertical
+  line(TLw, M1, BLACK, EDGE);
+  line(TRb, M2, BLACK, EDGE);
+  line(Lw, M3, BLACK, EDGE);
+  line(Rb, M4, BLACK, EDGE);
+  line(M1, M2, BLACK, EDGE);                                  // upper horizontal
+  line(M3, M4, BLACK, EDGE);                                  // lower horizontal
+  line(M1, M4, BLACK, EDGE);                                  // crossing edge
+  line(M2, M3, BLACK, EDGE);                                  // crossing edge
+
+  node(TLw, Z_FILL); node(Lw, Z_FILL); node(M2, Z_FILL); node(M4, Z_FILL);  // white = Z
+  node(TRb, X_FILL); node(Rb, X_FILL); node(M1, X_FILL); node(M3, X_FILL);  // black = X
+
+  return {lines, polys: [], circles, texts, all};
+}
+
+function renderBens() {
+  const g = bensRule(), pad = 0.5;
+  const xs = g.all.map(p => p[0]), ys = g.all.map(p => p[1]);
+  const minX = Math.min(...xs) - pad, maxX = Math.max(...xs) + pad;
+  const minY = Math.min(...ys) - pad, maxY = Math.max(...ys) + pad;
+  const mp = p => [(p[0] - minX) * S, (maxY - p[1]) * S];
+  let out = "";
+  for (const l of g.lines) {
+    const [x1, y1] = mp(l.a), [x2, y2] = mp(l.b);
+    out += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${l.color}" `
+         + `stroke-width="${l.w * S}" stroke-linecap="${l.cap || "round"}"/>`;
+  }
+  for (const p of g.polys)
+    out += `<polyline points="${p.pts.map(q => mp(q).join(",")).join(" ")}" `
+         + `fill="none" stroke="${p.color}" stroke-width="${p.w * S}" stroke-linejoin="round"/>`;
+  for (const c of g.circles) {
+    const [x, y] = mp(c.p);
+    out += `<circle cx="${x}" cy="${y}" r="${c.r * S}" fill="${c.fill}" `
+         + `stroke="${BLACK}" stroke-width="${0.025 * S}"/>`;
+  }
+  for (const t of g.texts) {
+    const [x, y] = mp(t.p);
+    const rot = t.rot ? ` transform="rotate(${-t.rot} ${x} ${y})"` : "";
+    out += `<text x="${x}" y="${y}" font-size="${t.size * S}" fill="${t.color}"`
+         + ` text-anchor="${t.anchor}" dominant-baseline="central"`
+         + ` font-style="${t.style || "italic"}" font-weight="${t.weight || "normal"}"`
+         + ` font-family="Georgia, serif"${rot}>${t.t}</text>`;
+  }
+  const svg = document.getElementById("bensvg");
+  svg.setAttribute("viewBox", `0 0 ${(maxX - minX) * S} ${(maxY - minY) * S}`);
+  svg.innerHTML = out;
+}
+
+// ---- interactive editor: apply Ben's Rule, drag spiders, fuse ----------------
+// This is a fully independent diagram from the umbrella above.
+const ED = {nodes: [], edges: [], vb: [0, 0, 1400, 720], drag: null, rubber: null,
+            wired: false, selected: [], history: []};
+const edNode = id => ED.nodes.find(nd => nd.id === id);
+
+// Apply Ben's Rule to every umbrella arm: a central Z hub (with its output leg),
+// and one Ben's-Rule gadget per X spider, each exposing a purple bus + black leg.
+function buildDecomposition(nn) {
+  ED.nodes = []; ED.edges = []; ED.selected = []; ED.history = []; ED.drag = null; ED.rubber = null;
+  const add = nd => ED.nodes.push(nd);
+  const edge = (a, b, kind) => ED.edges.push({a, b, kind: kind || "regular"});
+  const arms = Math.max(0, nn - 1);
+
+  const SC = 95;                                           // world units -> px
+  const W = (wx, wy) => [700 + wx * SC, 560 - wy * SC];    // world (y up) -> svg (y down)
+
+  const [hx, hy] = W(0, 0); add({id: "H", type: "Z", x: hx, y: hy});      // hub = original Z spider
+  const [ox, oy] = W(0, -1.4); add({id: "Hout", type: "B", x: ox, y: oy}); edge("H", "Hout");
+
+  // Petal-local layout (y up): the X-side outputs (regular leg + bold bus) sit at
+  // the top, the Z-side (hub connections) at the bottom, and M1..M4 form a clear
+  // hourglass -- two vertical bars (M1-M2, M3-M4) crossed by two diagonals.
+  const loc = {
+    TRb: [-0.55, 1.65, "X"], Rb: [0.55, 1.65, "X"],    // top: leg-spider, bus-spider
+    M2:  [-0.55, 0.75, "Z"], M4: [0.55, 0.75, "Z"],    // hourglass, upper bar
+    M1:  [-0.55, -0.15, "X"], M3: [0.55, -0.15, "X"],  // hourglass, lower bar
+    TLw: [-0.55, -1.05, "Z"], Lw: [0.55, -1.05, "Z"],  // bottom: connect to hub
+  };
+  const legL = [-1.05, 2.4], busL = [1.05, 2.4];
+  // no TLw-Lw edge: the two lower Z spiders connect to the hub only (no triangle)
+  const internal = [["TRb", "Rb"], ["TLw", "M1"], ["TRb", "M2"],
+    ["Lw", "M3"], ["Rb", "M4"], ["M1", "M2"], ["M3", "M4"], ["M1", "M4"], ["M2", "M3"]];
+
+  // Lay the petals out in a row above the hub: spread horizontally, raised in a
+  // gentle arch (middle highest), each tilted slightly outward -- like the sketch,
+  // so every petal's hourglass stays clearly separated.
+  const DX = 2.7, baseY = 1.9, archAmp = 0.55, tilt = 15, ROW_MAX = 6, rowGap = 4.0;
+  const cols = Math.min(Math.max(arms, 1), ROW_MAX);
+  const rows = Math.ceil(Math.max(arms, 1) / cols);
+  const single = rows <= 1, center = (arms - 1) / 2;     // single row keeps the "flower"
+  let xn = 0;                                            // running X-spider label
+  for (let i = 0; i < arms; i++) {
+    let px, py, rot;
+    if (single) {                                        // arms <= ROW_MAX: arched, tilted row
+      const off = i - center;
+      px = off * DX;
+      py = baseY + archAmp * (center > 0 ? 1 - (off / center) ** 2 : 1);
+      rot = -off * tilt * Math.PI / 180;
+    } else {                                             // larger n: wrap into a grid (rows up)
+      const row = Math.floor(i / cols);
+      const colsThisRow = row < rows - 1 ? cols : arms - (rows - 1) * cols;
+      px = ((i - row * cols) - (colsThisRow - 1) / 2) * DX;
+      py = baseY + row * rowGap;
+      rot = 0;
+    }
+    const place = ([lx, ly]) => W(
+      px + lx * Math.cos(rot) - ly * Math.sin(rot),
+      py + lx * Math.sin(rot) + ly * Math.cos(rot));
+    const P = k => `g${i}_${k}`;
+    for (const k in loc) {
+      const [lx, ly, t] = loc[k]; const [x, y] = place([lx, ly]);
+      const node = {id: P(k), type: t, x, y};
+      // label only the internal (hourglass) X spiders; the boundary-connected
+      // X spiders (TRb -> leg, Rb -> bus) carry an output/bus and stay unlabelled
+      if (t === "X" && k !== "TRb" && k !== "Rb") node.label = String(++xn);
+      add(node);
+    }
+    for (const [u, v] of internal) edge(P(u), P(v));
+    const [lgx, lgy] = place(legL); add({id: P("leg"), type: "B", x: lgx, y: lgy}); edge(P("TRb"), P("leg"));
+    const [bsx, bsy] = place(busL); add({id: P("bus"), type: "B", x: bsx, y: bsy}); edge(P("Rb"), P("bus"), "bus");
+    edge("H", P("TLw")); edge("H", P("Lw"));             // Z-side connects to the hub
+  }
+
+  // Fit a stable viewBox to the built layout (so large n never clips/overlaps;
+  // kept fixed during editing so the canvas doesn't rescale while you drag).
+  const pad = 70;
+  const xs = ED.nodes.map(nd => nd.x), ys = ED.nodes.map(nd => nd.y);
+  const minX = Math.min(...xs) - pad, maxX = Math.max(...xs) + pad;
+  const minY = Math.min(...ys) - pad, maxY = Math.max(...ys) + pad;
+  ED.vb = [minX, minY, maxX - minX, maxY - minY];
+  ED.fitVb = ED.vb.slice();                              // zoom-reset baseline
+}
+
+// Simplified decomposition: for each petal we discard the hourglass (M1..M4) and
+// everything above it (the output-bearing X spiders TRb/Rb with their leg + bus).
+// What survives is the petal's two lower X spiders, joined by a single Hadamard
+// (orange) edge, each still wired down to the hub through its Z spider. This is the
+// second-row picture: the labelled X pairs 1-2, 3-4, 5-6 linked by orange edges.
+// Build the simplified decomposition as a self-contained graph (does NOT touch the
+// interactive editor's ED state) so it can be drawn in its own column next to the
+// "after applying Ben's rule" diagram rather than replacing it.
+function computeSimplifiedGraph(nn) {
+  const nodes = [], edges = [];
+  const add = nd => nodes.push(nd);
+  const edge = (a, b, kind) => edges.push({a, b, kind: kind || "regular"});
+  const arms = Math.max(0, nn - 1);
+
+  const SC = 95;                                           // world units -> px
+  const W = (wx, wy) => [700 + wx * SC, 560 - wy * SC];    // world (y up) -> svg (y down)
+
+  const [hx, hy] = W(0, 0); add({id: "H", type: "Z", x: hx, y: hy});      // hub = original Z spider
+  const [ox, oy] = W(0, -1.4); add({id: "Hout", type: "B", x: ox, y: oy}); edge("H", "Hout");
+
+  // Petal-local layout (y up): the two labelled X spiders sit at the top joined by
+  // the orange edge; the Z spiders sit below them, connecting down to the hub.
+  const loc = {
+    Xl: [-0.55, 1.0, "X"],  Xr: [0.55, 1.0, "X"],     // the two labelled X spiders
+    Zl: [-0.55, -1.05, "Z"], Zr: [0.55, -1.05, "Z"],  // connect to the hub
+  };
+  const internal = [["Zl", "Xl"], ["Zr", "Xr"]];
+
+  // Same row/arch placement as the full decomposition, so the petals line up.
+  const DX = 2.7, baseY = 1.9, archAmp = 0.55, tilt = 15, ROW_MAX = 6, rowGap = 4.0;
+  const cols = Math.min(Math.max(arms, 1), ROW_MAX);
+  const rows = Math.ceil(Math.max(arms, 1) / cols);
+  const single = rows <= 1, center = (arms - 1) / 2;
+  let xn = 0;                                            // running X-spider label
+  for (let i = 0; i < arms; i++) {
+    let px, py, rot;
+    if (single) {
+      const off = i - center;
+      px = off * DX;
+      py = baseY + archAmp * (center > 0 ? 1 - (off / center) ** 2 : 1);
+      rot = -off * tilt * Math.PI / 180;
+    } else {
+      const row = Math.floor(i / cols);
+      const colsThisRow = row < rows - 1 ? cols : arms - (rows - 1) * cols;
+      px = ((i - row * cols) - (colsThisRow - 1) / 2) * DX;
+      py = baseY + row * rowGap;
+      rot = 0;
+    }
+    const place = ([lx, ly]) => W(
+      px + lx * Math.cos(rot) - ly * Math.sin(rot),
+      py + lx * Math.sin(rot) + ly * Math.cos(rot));
+    const P = k => `g${i}_${k}`;
+    for (const k in loc) {
+      const [lx, ly, t] = loc[k]; const [x, y] = place([lx, ly]);
+      const node = {id: P(k), type: t, x, y};
+      if (t === "X") node.label = String(++xn);          // label every X spider
+      add(node);
+    }
+    for (const [u, v] of internal) edge(P(u), P(v));
+    edge(P("Xl"), P("Xr"), "orange");                    // the orange Hadamard edge
+    edge("H", P("Zl")); edge("H", P("Zr"));              // Z-side connects to the hub
+  }
+
+  const pad = 70;
+  const xs = nodes.map(nd => nd.x), ys = nodes.map(nd => nd.y);
+  const minX = Math.min(...xs) - pad, maxX = Math.max(...xs) + pad;
+  const minY = Math.min(...ys) - pad, maxY = Math.max(...ys) + pad;
+  return {nodes, edges, vb: [minX, minY, maxX - minX, maxY - minY]};
+}
+
+// Draw a static (non-interactive) graph into an SVG, then fit/reset its zoom.
+function renderGraphStatic(svg, graph) {
+  const nodeOf = id => graph.nodes.find(nd => nd.id === id);
+  let out = "", labels = "";
+  for (const e of graph.edges) {
+    const a = nodeOf(e.a), b = nodeOf(e.b); if (!a || !b) continue;
+    const s = EDGE_STYLE[e.kind] || EDGE_STYLE.regular;
+    out += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${s.color}" `
+         + `stroke-width="${s.w}" stroke-linecap="round"/>`;
+  }
+  for (const nd of graph.nodes) {
+    if (nd.type === "B")
+      out += `<circle cx="${nd.x}" cy="${nd.y}" r="7" fill="${BLACK}" stroke="${BLACK}" stroke-width="2"/>`;
+    else {
+      out += `<circle cx="${nd.x}" cy="${nd.y}" r="15" `
+           + `fill="${nd.type === "Z" ? Z_FILL : X_FILL}" stroke="${BLACK}" stroke-width="2.5"/>`;
+      if (nd.label)
+        labels += `<text x="${nd.x + 14}" y="${nd.y - 13}" font-size="18" fill="#2563eb" `
+                + `font-weight="bold" pointer-events="none">${nd.label}</text>`;
+    }
+  }
+  svg.innerHTML = out + labels;
+  const z = zoomers.get(svg);
+  if (z) z.reset(graph.vb); else svg.setAttribute("viewBox", graph.vb.join(" "));
+}
+
+function fuseSpider(keepId, dropId) {
+  for (const e of ED.edges) { if (e.a === dropId) e.a = keepId; if (e.b === dropId) e.b = keepId; }
+  const seen = new Set();
+  ED.edges = ED.edges.filter(e => {
+    if (e.a === e.b) return false;                         // drop self-loops
+    const key = [e.a, e.b].sort().join("|") + "|" + e.kind;
+    if (seen.has(key)) return false; seen.add(key); return true;
+  });
+  ED.nodes = ED.nodes.filter(nd => nd.id !== dropId);
+  ED.selected = ED.selected.filter(s => s !== dropId);       // never leave a stale id
+}
+
+// a spider dropped onto a connected same-colour spider fuses into it
+function fuseTarget(id) {
+  const a = edNode(id); if (!a || a.type === "B") return null;
+  for (const e of ED.edges) {
+    const other = e.a === id ? e.b : e.b === id ? e.a : null;
+    if (!other) continue;
+    const o = edNode(other);
+    if (o && o.type === a.type && Math.hypot(o.x - a.x, o.y - a.y) < 36) return other;
+  }
+  return null;
+}
+
+// --- undo history -----------------------------------------------------------
+function edSnapshot() {
+  return {nodes: ED.nodes.map(nd => ({...nd})), edges: ED.edges.map(e => ({...e})),
+          selected: [...ED.selected]};
+}
+function edPushHistory(snap) {
+  ED.history.push(snap || edSnapshot());
+  if (ED.history.length > 100) ED.history.shift();
+}
+function edUndo() {
+  const prev = ED.history.pop(); if (!prev) return;
+  ED.nodes = prev.nodes; ED.edges = prev.edges; ED.selected = prev.selected || [];
+  renderEditor();
+}
+
+// --- selection-based fusion (click two spiders, press F) --------------------
+function edToggleSelect(id) {
+  const nd = edNode(id); if (!nd) return;   // spiders and boundary vertices selectable
+  const i = ED.selected.indexOf(id);
+  if (i >= 0) ED.selected.splice(i, 1); else ED.selected.push(id);
+}
+function edFlash(msg) {
+  const el = document.getElementById("edHint"); if (!el) return;
+  el.textContent = msg; el.classList.add("show");
+  clearTimeout(edFlash._t); edFlash._t = setTimeout(() => el.classList.remove("show"), 1900);
+}
+function edFuseSelected() {
+  if (ED.selected.length !== 2) { edFlash("Click two spiders, then press F to fuse"); return; }
+  const [a, b] = ED.selected, na = edNode(a), nb = edNode(b);
+  if (!na || !nb) { ED.selected = []; edFlash("Selection was cleared"); renderEditor(); return; }
+  if (na.type === "B" || nb.type === "B") { edFlash("Only spiders can be fused"); return; }
+  if (na.type !== nb.type) { edFlash("Spiders must be the same colour to fuse"); return; }
+  const adjacent = ED.edges.some(e => (e.a === a && e.b === b) || (e.a === b && e.b === a));
+  if (!adjacent) { edFlash("Selected spiders are not connected"); return; }
+  edPushHistory();
+  fuseSpider(a, b);                 // keep a (and its position), remove b
+  ED.selected = [];
+  renderEditor();
+}
+
+const EDGE_STYLE = {
+  regular: {color: BLACK, w: 2.6}, idealised: {color: PURPLE, w: 3.2},
+  bus: {color: PURPLE, w: 8}, orange: {color: ORANGE, w: 4.2},
+};
+function renderEditor() {
+  const svg = document.getElementById("editor");
+  svg.setAttribute("viewBox", ED.vb.join(" "));
+  // only highlight a fusion target while a SINGLE spider is being dragged
+  const hi = (ED.drag && ED.drag.set && ED.drag.set.length === 1 && ED.drag.moved)
+             ? fuseTarget(ED.drag.id) : null;
+  let out = "";
+  for (const e of ED.edges) {
+    const a = edNode(e.a), b = edNode(e.b); if (!a || !b) continue;
+    const s = EDGE_STYLE[e.kind] || EDGE_STYLE.regular;
+    out += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${s.color}" `
+         + `stroke-width="${s.w}" stroke-linecap="round" pointer-events="none"/>`;
+  }
+  if (ED.rubber) {
+    const r = ED.rubber;
+    out += `<rect x="${Math.min(r.x0, r.x1)}" y="${Math.min(r.y0, r.y1)}" `
+         + `width="${Math.abs(r.x1 - r.x0)}" height="${Math.abs(r.y1 - r.y0)}" `
+         + `fill="#2563eb22" stroke="#2563eb" stroke-width="2" stroke-dasharray="9 6"/>`;
+  }
+  let labels = "";
+  for (const nd of ED.nodes) {
+    const cls = "node" + (nd.id === hi ? " fuse-target" : "")
+              + (ED.selected.includes(nd.id) ? " selected" : "");
+    if (nd.type === "B")                              // boundary = small black vertex
+      out += `<circle class="node" data-id="${nd.id}" cx="${nd.x}" cy="${nd.y}" r="14" fill="transparent"/>`
+           + `<circle class="${cls}" data-id="${nd.id}" cx="${nd.x}" cy="${nd.y}" r="7" `
+           + `fill="${BLACK}" stroke="${BLACK}" stroke-width="2"/>`;   // wide transparent grab halo + dot
+    else {
+      out += `<circle class="${cls}" data-id="${nd.id}" cx="${nd.x}" cy="${nd.y}" r="15" `
+           + `fill="${nd.type === "Z" ? Z_FILL : X_FILL}" stroke="${BLACK}" stroke-width="2.5"/>`;
+      if (nd.label)                                  // number every X spider (blue)
+        labels += `<text x="${nd.x + 14}" y="${nd.y - 13}" font-size="18" fill="#2563eb" `
+                + `font-weight="bold" pointer-events="none">${nd.label}</text>`;
+    }
+  }
+  svg.innerHTML = out + labels;
+  svg.classList.toggle("grabbing", !!ED.drag);
+  const ub = document.getElementById("edUndo");
+  if (ub) ub.disabled = ED.history.length === 0;
+  wireEditor();
+}
+
+function clientToSvg(svg, cx, cy) {
+  const pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy;
+  const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+  return [p.x, p.y];
+}
+function wireEditor() {
+  const svg = document.getElementById("editor");
+  if (ED.wired) return; ED.wired = true;
+
+  // wheel-zoom the editor by adjusting its viewBox (ED.vb), anchored at the cursor.
+  // Drag still moves spiders / rubber-band selects; double-click resets the zoom.
+  svg.addEventListener("wheel", e => {
+    if (!ED.vb || !wantsZoom(e)) return;
+    e.preventDefault();
+    const r = svg.getBoundingClientRect(), vb = ED.vb;
+    const px = vb[0] + (e.clientX - r.left) / r.width * vb[2];
+    const py = vb[1] + (e.clientY - r.top) / r.height * vb[3];
+    const fitW = (ED.fitVb || vb)[2];
+    const w = clampW(vb[2] * Math.exp(e.deltaY * 0.0015), fitW);
+    const ratio = w / vb[2];
+    ED.vb = [px - (px - vb[0]) * ratio, py - (py - vb[1]) * ratio, w, vb[3] * ratio];
+    svg.setAttribute("viewBox", ED.vb.join(" "));
+  }, {passive: false});
+  svg.addEventListener("dblclick", () => {
+    if (ED.fitVb) { ED.vb = ED.fitVb.slice(); svg.setAttribute("viewBox", ED.vb.join(" ")); }
+  });
+
+  svg.addEventListener("pointerdown", e => {
+    if (ED.drag || ED.rubber) return;           // ignore a second pointer mid-gesture
+    if (e.button > 0) return;                   // primary button / touch only
+    const [sx, sy] = clientToSvg(svg, e.clientX, e.clientY);
+    const el = e.target.closest(".node");
+    if (!el) {                                  // empty canvas -> rubber-band selection
+      ED.rubber = {pid: e.pointerId, x0: sx, y0: sy, x1: sx, y1: sy, moved: false};
+      e.preventDefault();
+      try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+      return;
+    }
+    const nd = edNode(el.getAttribute("data-id"));
+    // grabbing a member of a multi-selection moves the whole group; else just this node
+    const inSel = ED.selected.includes(nd.id);
+    const ids = (inSel && ED.selected.length > 1) ? ED.selected.filter(edNode) : [nd.id];
+    if (!inSel) ED.selected = [];                      // grabbing outside the selection clears it
+    const set = ids.map(id => { const m = edNode(id); return {id, ox: m.x, oy: m.y}; });
+    ED.drag = {pid: e.pointerId, id: nd.id, set, sx0: sx, sy0: sy, moved: false, snap: edSnapshot()};
+    svg.classList.add("grabbing"); e.preventDefault();
+    try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+
+  svg.addEventListener("pointermove", e => {
+    const [sx, sy] = clientToSvg(svg, e.clientX, e.clientY);
+    if (ED.drag && e.pointerId === ED.drag.pid) {
+      const dx = sx - ED.drag.sx0, dy = sy - ED.drag.sy0;
+      for (const it of ED.drag.set) { const m = edNode(it.id); if (m) { m.x = it.ox + dx; m.y = it.oy + dy; } }
+      if (!ED.drag.moved && Math.hypot(dx, dy) > 4) ED.drag.moved = true;
+      renderEditor();
+    } else if (ED.rubber && e.pointerId === ED.rubber.pid) {
+      ED.rubber.x1 = sx; ED.rubber.y1 = sy;
+      if (!ED.rubber.moved && Math.hypot(sx - ED.rubber.x0, sy - ED.rubber.y0) > 4) ED.rubber.moved = true;
+      renderEditor();
+    }
+  });
+
+  const endGesture = (e, cancelled) => {
+    if (ED.drag && e.pointerId === ED.drag.pid) {
+      const {id, set, moved, snap} = ED.drag; ED.drag = null;
+      svg.classList.remove("grabbing");
+      try { svg.releasePointerCapture(e.pointerId); } catch (_) {}
+      if (cancelled || !moved) {                // cancel or click: discard any nudge
+        for (const it of set) { const m = edNode(it.id); if (m) { m.x = it.ox; m.y = it.oy; } }
+        if (!cancelled && !moved) edToggleSelect(id);   // a click toggles selection
+      } else {                                  // real drag: maybe fuse (single only), record if changed
+        const t = set.length === 1 ? fuseTarget(id) : null;
+        const changed = t || set.some(it => { const m = edNode(it.id); return m && Math.hypot(m.x - it.ox, m.y - it.oy) > 0.5; });
+        if (changed) edPushHistory(snap);
+        if (t) fuseSpider(t, id);
+      }
+      renderEditor();
+    } else if (ED.rubber && e.pointerId === ED.rubber.pid) {
+      const r = ED.rubber; ED.rubber = null;
+      try { svg.releasePointerCapture(e.pointerId); } catch (_) {}
+      if (!cancelled) {
+        if (r.moved) {                          // select every spider inside the box
+          const xmin = Math.min(r.x0, r.x1), xmax = Math.max(r.x0, r.x1);
+          const ymin = Math.min(r.y0, r.y1), ymax = Math.max(r.y0, r.y1);
+          ED.selected = ED.nodes.filter(nd =>
+            nd.x >= xmin && nd.x <= xmax && nd.y >= ymin && nd.y <= ymax).map(nd => nd.id);
+        } else {
+          ED.selected = [];                     // a bare click clears selection
+        }
+      }
+      renderEditor();
+    }
+  };
+  svg.addEventListener("pointerup", e => endGesture(e, false));
+  svg.addEventListener("pointercancel", e => endGesture(e, true));
+  // losing capture (e.g. an OS context menu) must not leave a gesture stuck
+  svg.addEventListener("lostpointercapture", e => endGesture(e, true));
+  // suppress the context menu while a drag/rubber-band is in progress
+  svg.addEventListener("contextmenu", e => { if (ED.drag || ED.rubber) e.preventDefault(); });
+}
+
+// abort an in-progress gesture (Escape): restore positions, clear transient state
+function edAbort() {
+  if (ED.drag) for (const it of ED.drag.set) { const m = edNode(it.id); if (m) { m.x = it.ox; m.y = it.oy; } }
+  ED.drag = null; ED.rubber = null;
+  renderEditor();
+}
+
+const simpColVisible = () => document.getElementById("simpCol").style.display !== "none";
+function renderSimplifiedCol(nn) {
+  renderGraphStatic(document.getElementById("simplified"), computeSimplifiedGraph(nn));
+}
+
+function applyBens(reuseBuilt) {
+  const useN = (reuseBuilt && ED.builtN) ? ED.builtN : n;   // Re-apply keeps the built size
+  buildDecomposition(useN);
+  ED.builtN = useN;
+  const w = document.getElementById("edWrap");
+  w.style.display = "flex";
+  renderEditor();
+  if (simpColVisible()) renderSimplifiedCol(useN);          // keep column 3 in step
+  w.scrollIntoView({behavior: "smooth", block: "nearest", inline: "nearest"});
+}
+// Show all three columns side by side: column 1 stays the umbrella, column 2 keeps
+// the (possibly edited) "after Ben's rule" diagram, column 3 adds the simplified form.
+function applySimplify() {
+  if (!ED.builtN) { buildDecomposition(n); ED.builtN = n; renderEditor(); }  // build col 2 if needed
+  document.getElementById("edWrap").style.display = "flex";
+  renderSimplifiedCol(ED.builtN);
+  document.getElementById("simpCol").style.display = "flex";
+  document.getElementById("views").scrollIntoView({behavior: "smooth", block: "nearest", inline: "nearest"});
+}
+document.getElementById("applyBtn").addEventListener("click", () => applyBens(false));
+document.getElementById("edReset").addEventListener("click", () => applyBens(true));
+document.getElementById("edFit").addEventListener("click", () => { if (ED.fitVb) { ED.vb = ED.fitVb.slice(); renderEditor(); } });
+document.getElementById("edUndo").addEventListener("click", edUndo);
+document.getElementById("simplifyBtn").addEventListener("click", applySimplify);
+document.getElementById("edSimplify").addEventListener("click", applySimplify);
+
+// keyboard (editor only): F fuses two selected spiders; Cmd/Ctrl+Z undoes; Esc aborts
+document.addEventListener("keydown", e => {
+  if (document.getElementById("edWrap").style.display === "none") return;
+  const tag = (document.activeElement && document.activeElement.tagName) || "";
+  if (tag === "INPUT" || tag === "TEXTAREA") return;
+  if (e.key === "Escape") {
+    if (ED.drag || ED.rubber) edAbort(); else if (ED.selected.length) { ED.selected = []; renderEditor(); }
+  } else if (!e.metaKey && !e.ctrlKey && !e.altKey && (e.key === "f" || e.key === "F")) {
+    e.preventDefault(); edFuseSelected();          // bare F only -- leave Cmd/Ctrl+F for Find
+  } else if ((e.metaKey || e.ctrlKey) && !e.shiftKey && (e.key === "z" || e.key === "Z")) {
+    e.preventDefault(); edUndo();                  // leave Cmd/Ctrl+Shift+Z (redo) for the browser
+  }
+});
+
+// ---- controls ----------------------------------------------------------------
+const N_MAX = 60;
+const noutEl = document.getElementById("nout");
+noutEl.addEventListener("input", e => {              // live update, but don't fight the typist
+  const v = parseInt(e.target.value, 10);
+  n = Number.isFinite(v) ? Math.min(N_MAX, Math.max(1, v)) : 1;
+  draw();
+});
+noutEl.addEventListener("change", e => {             // on blur/enter, normalise the field
+  e.target.value = n;
+});
+document.getElementById("conn").addEventListener("change", draw);
+
+let bensShown = false;
+const bensBtn = document.getElementById("bensBtn");
+const bensInline = document.getElementById("bensInline");
+
+function setBens(show) {
+  bensShown = show;
+  bensInline.style.display = show ? "block" : "none";
+  bensBtn.textContent = show ? "Hide Ben's Rule" : "Show Ben's Rule";
+  bensBtn.classList.toggle("off", !show);
+  if (show) renderBens();
+}
+bensBtn.addEventListener("click", () => setBens(!bensShown));
+
+// the umbrella (col 1) and simplified (col 3) diagrams pan; the editor (col 2)
+// zooms via its own handler so spider-dragging keeps working.
+makeZoomable(document.getElementById("diagram"), {pan: true});
+makeZoomable(document.getElementById("simplified"), {pan: true});
+
+// ---- Step 4: detecting regions ----------------------------------------------
+// A self-contained editor seeded with the step-2 ("after Ben's rule") diagram.
+// Three tools let you grow/probe the diagram while reasoning about the regions
+// the hourglasses carve out: add a Z spider, join two Z spiders with a regular
+// edge, or drop a cut (bold dark red) across any edge to separate regions.
+const DARKRED = "#8b0000";
+const RG = {nodes: [], edges: [], vb: [0, 0, 1400, 720], fitVb: null,
+            mode: "move", drag: null, rubber: null, selected: [], history: [],
+            wired: false, nextId: 0};
+const rgNode = id => RG.nodes.find(nd => nd.id === id);
+function rgToggleSelect(id) {                          // spiders and boundary vertices selectable
+  const nd = rgNode(id); if (!nd) return;
+  const i = RG.selected.indexOf(id);
+  if (i >= 0) RG.selected.splice(i, 1); else RG.selected.push(id);
+}
+
+// Copy the current step-2 diagram (build it first if the user jumped straight here).
+function seedRegionsFromStep2() {
+  if (!ED.builtN) {
+    buildDecomposition(n); ED.builtN = n;
+    document.getElementById("edWrap").style.display = "flex";
+    renderEditor();
+  }
+  RG.nodes = ED.nodes.map(nd => ({...nd}));
+  RG.edges = ED.edges.map(e => ({...e}));          // each edge may later gain `cut: true`
+  RG.vb = ED.vb.slice(); RG.fitVb = ED.vb.slice();
+  RG.selected = []; RG.drag = null; RG.rubber = null; RG.history = []; RG.nextId = 0;
+}
+
+// --- undo history ---
+function rgSnapshot() {
+  return {nodes: RG.nodes.map(nd => ({...nd})), edges: RG.edges.map(e => ({...e})),
+          selected: [...RG.selected]};
+}
+function rgPush(snap) { RG.history.push(snap || rgSnapshot()); if (RG.history.length > 100) RG.history.shift(); }
+function rgUndo() {
+  const prev = RG.history.pop(); if (!prev) return;
+  RG.nodes = prev.nodes; RG.edges = prev.edges; RG.selected = prev.selected || [];
+  renderRegions();
+}
+
+function rgFlash(msg) {
+  const el = document.getElementById("rgHint"); if (!el) return;
+  el.textContent = msg; el.classList.add("show");
+  clearTimeout(rgFlash._t); rgFlash._t = setTimeout(() => el.classList.remove("show"), 1900);
+}
+
+function rgSetMode(mode) {
+  RG.mode = mode; RG.selected = [];
+  for (const b of document.querySelectorAll("#rgWrap .tool"))
+    b.classList.toggle("active", b.dataset.mode === mode);
+  document.getElementById("regions").classList.toggle("addZ", mode === "addZ");
+  renderRegions();
+}
+
+// distance from point (px,py) to segment a-b, all in svg px
+function distToSeg(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy;
+  let t = L2 ? ((px - ax) * dx + (py - ay) * dy) / L2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+}
+function rgEdgeAt(px, py) {
+  let best = null, bestD = 14;                       // px hit threshold
+  RG.edges.forEach((e, i) => {
+    const a = rgNode(e.a), b = rgNode(e.b); if (!a || !b) return;
+    const d = distToSeg(px, py, a.x, a.y, b.x, b.y);
+    if (d < bestD) { bestD = d; best = i; }
+  });
+  return best;
+}
+
+function renderRegions() {
+  const svg = document.getElementById("regions");
+  svg.setAttribute("viewBox", RG.vb.join(" "));
+  let out = "", labels = "";
+  for (const e of RG.edges) {
+    const a = rgNode(e.a), b = rgNode(e.b); if (!a || !b) continue;
+    const s = EDGE_STYLE[e.kind] || EDGE_STYLE.regular;
+    out += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${s.color}" `
+         + `stroke-width="${s.w}" stroke-linecap="round" pointer-events="none"/>`;
+    if (e.cut) {                                     // bold dark-red slash across the midpoint
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      let ux = b.x - a.x, uy = b.y - a.y; const L = Math.hypot(ux, uy) || 1;
+      ux /= L; uy /= L;                              // perpendicular is (-uy, ux)
+      const h = 13;
+      out += `<line x1="${mx - uy * h}" y1="${my + ux * h}" x2="${mx + uy * h}" y2="${my - ux * h}" `
+           + `stroke="${DARKRED}" stroke-width="6.5" stroke-linecap="round" pointer-events="none"/>`;
+    }
+  }
+  if (RG.rubber) {
+    const r = RG.rubber;
+    out += `<rect x="${Math.min(r.x0, r.x1)}" y="${Math.min(r.y0, r.y1)}" `
+         + `width="${Math.abs(r.x1 - r.x0)}" height="${Math.abs(r.y1 - r.y0)}" `
+         + `fill="#2563eb22" stroke="#2563eb" stroke-width="2" stroke-dasharray="9 6" pointer-events="none"/>`;
+  }
+  for (const nd of RG.nodes) {
+    const cls = "node" + (RG.selected.includes(nd.id) ? " selected" : "");
+    if (nd.type === "B")
+      out += `<circle class="node" data-id="${nd.id}" cx="${nd.x}" cy="${nd.y}" r="14" fill="transparent"/>`
+           + `<circle class="${cls}" data-id="${nd.id}" cx="${nd.x}" cy="${nd.y}" r="7" `
+           + `fill="${BLACK}" stroke="${BLACK}" stroke-width="2"/>`;   // wide transparent grab halo + dot
+    else {
+      out += `<circle class="${cls}" data-id="${nd.id}" cx="${nd.x}" cy="${nd.y}" r="15" `
+           + `fill="${nd.type === "Z" ? Z_FILL : X_FILL}" stroke="${BLACK}" stroke-width="2.5"/>`;
+      if (nd.label)
+        labels += `<text x="${nd.x + 14}" y="${nd.y - 13}" font-size="18" fill="#2563eb" `
+                + `font-weight="bold" pointer-events="none">${nd.label}</text>`;
+    }
+  }
+  svg.innerHTML = out + labels;
+  const ub = document.getElementById("rgUndo"); if (ub) ub.disabled = RG.history.length === 0;
+  wireRegions();
+}
+
+function rgClientToSvg(svg, cx, cy) {
+  const pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy;
+  const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+  return [p.x, p.y];
+}
+function wireRegions() {
+  const svg = document.getElementById("regions");
+  if (RG.wired) return; RG.wired = true;
+
+  svg.addEventListener("wheel", e => {
+    if (!RG.vb || !wantsZoom(e)) return;
+    e.preventDefault();
+    const r = svg.getBoundingClientRect(), vb = RG.vb;
+    const px = vb[0] + (e.clientX - r.left) / r.width * vb[2];
+    const py = vb[1] + (e.clientY - r.top) / r.height * vb[3];
+    const fitW = (RG.fitVb || vb)[2];
+    const w = clampW(vb[2] * Math.exp(e.deltaY * 0.0015), fitW);
+    const ratio = w / vb[2];
+    RG.vb = [px - (px - vb[0]) * ratio, py - (py - vb[1]) * ratio, w, vb[3] * ratio];
+    svg.setAttribute("viewBox", RG.vb.join(" "));
+  }, {passive: false});
+  svg.addEventListener("dblclick", () => {
+    if (RG.fitVb) { RG.vb = RG.fitVb.slice(); svg.setAttribute("viewBox", RG.vb.join(" ")); }
+  });
+
+  svg.addEventListener("pointerdown", e => {
+    if (RG.drag || RG.rubber || e.button > 0) return;
+    const [sx, sy] = rgClientToSvg(svg, e.clientX, e.clientY);
+    const el = e.target.closest(".node");
+    const nd = el ? rgNode(el.getAttribute("data-id")) : null;
+
+    if (RG.mode === "addZ") {                        // drop a Z spider on empty canvas
+      if (nd) { rgFlash("Click an empty spot to add a Z spider"); return; }
+      rgPush();
+      RG.nodes.push({id: `rgz${RG.nextId++}`, type: "Z", x: sx, y: sy});
+      renderRegions(); return;
+    }
+    if (RG.mode === "addEdge") {                      // connect two vertices (spider or boundary)
+      if (!nd) {
+        RG.selected = []; rgFlash("Click a spider or boundary vertex, then another"); renderRegions(); return;
+      }
+      const i = RG.selected.indexOf(nd.id);
+      if (i >= 0) { RG.selected.splice(i, 1); renderRegions(); return; }   // toggle off
+      RG.selected.push(nd.id);
+      if (RG.selected.length === 2) {
+        const [u, v] = RG.selected;
+        const exists = RG.edges.some(ed => (ed.a === u && ed.b === v) || (ed.a === v && ed.b === u));
+        if (exists) rgFlash("Those vertices are already connected");
+        else if (rgNode(u).type === "B" && rgNode(v).type === "B") rgFlash("Connect a spider to a boundary, not two boundaries");
+        else { rgPush(); RG.edges.push({a: u, b: v, kind: "regular"}); }
+        RG.selected = [];
+      }
+      renderRegions(); return;
+    }
+    if (RG.mode === "cut") {                           // toggle a cut on the nearest edge
+      const idx = rgEdgeAt(sx, sy);
+      if (idx === null) { rgFlash("Click closer to an edge to cut it"); return; }
+      rgPush();
+      RG.edges[idx].cut = !RG.edges[idx].cut;
+      renderRegions(); return;
+    }
+    if (RG.mode === "delEdge") {                        // delete the nearest edge
+      const idx = rgEdgeAt(sx, sy);
+      if (idx === null) { rgFlash("Click closer to an edge to remove it"); return; }
+      rgPush();
+      RG.edges.splice(idx, 1);
+      renderRegions(); return;
+    }
+    if (RG.mode === "delSpider") {                      // delete a spider and its edges
+      if (!nd || nd.type === "B") { rgFlash("Click a spider to remove it"); return; }
+      rgPush();
+      RG.nodes = RG.nodes.filter(m => m.id !== nd.id);
+      RG.edges = RG.edges.filter(e => e.a !== nd.id && e.b !== nd.id);
+      RG.selected = RG.selected.filter(s => s !== nd.id);
+      renderRegions(); return;
+    }
+    // move mode: rubber-band select on empty canvas, or drag spider(s)
+    if (!nd) {                                         // empty canvas -> rubber-band selection
+      RG.rubber = {pid: e.pointerId, x0: sx, y0: sy, x1: sx, y1: sy, moved: false};
+      try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+      e.preventDefault(); return;
+    }
+    // grabbing a member of a multi-selection moves the whole group; else just this node
+    const inSel = RG.selected.includes(nd.id);
+    const ids = (inSel && RG.selected.length > 1) ? RG.selected.filter(rgNode) : [nd.id];
+    if (!inSel) RG.selected = [];                      // grabbing outside the selection clears it
+    const set = ids.map(id => { const m = rgNode(id); return {id, ox: m.x, oy: m.y}; });
+    RG.drag = {pid: e.pointerId, id: nd.id, set, sx0: sx, sy0: sy, moved: false, snap: rgSnapshot()};
+    svg.classList.add("grabbing");
+    try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+    e.preventDefault();
+  });
+
+  svg.addEventListener("pointermove", e => {
+    const [sx, sy] = rgClientToSvg(svg, e.clientX, e.clientY);
+    if (RG.drag && e.pointerId === RG.drag.pid) {
+      const dx = sx - RG.drag.sx0, dy = sy - RG.drag.sy0;
+      for (const it of RG.drag.set) { const m = rgNode(it.id); if (m) { m.x = it.ox + dx; m.y = it.oy + dy; } }
+      if (!RG.drag.moved && Math.hypot(dx, dy) > 4) RG.drag.moved = true;
+      renderRegions();
+    } else if (RG.rubber && e.pointerId === RG.rubber.pid) {
+      RG.rubber.x1 = sx; RG.rubber.y1 = sy;
+      if (!RG.rubber.moved && Math.hypot(sx - RG.rubber.x0, sy - RG.rubber.y0) > 4) RG.rubber.moved = true;
+      renderRegions();
+    }
+  });
+  const endRg = (e, cancelled) => {
+    if (RG.drag && e.pointerId === RG.drag.pid) {
+      const {id, set, moved, snap} = RG.drag; RG.drag = null;
+      svg.classList.remove("grabbing");
+      try { svg.releasePointerCapture(e.pointerId); } catch (_) {}
+      if (cancelled || !moved) {                       // cancel or click: discard any nudge
+        for (const it of set) { const m = rgNode(it.id); if (m) { m.x = it.ox; m.y = it.oy; } }
+        if (!cancelled && !moved) rgToggleSelect(id);  // a click toggles selection
+      } else {                                         // real drag: record if anything moved
+        const changed = set.some(it => { const m = rgNode(it.id); return m && Math.hypot(m.x - it.ox, m.y - it.oy) > 0.5; });
+        if (changed) rgPush(snap);
+      }
+      renderRegions();
+    } else if (RG.rubber && e.pointerId === RG.rubber.pid) {
+      const r = RG.rubber; RG.rubber = null;
+      try { svg.releasePointerCapture(e.pointerId); } catch (_) {}
+      if (!cancelled) {
+        if (r.moved) {                                 // select every spider inside the box
+          const xmin = Math.min(r.x0, r.x1), xmax = Math.max(r.x0, r.x1);
+          const ymin = Math.min(r.y0, r.y1), ymax = Math.max(r.y0, r.y1);
+          RG.selected = RG.nodes.filter(nd =>
+            nd.x >= xmin && nd.x <= xmax && nd.y >= ymin && nd.y <= ymax).map(nd => nd.id);
+        } else {
+          RG.selected = [];                            // a bare click clears selection
+        }
+      }
+      renderRegions();
+    }
+  };
+  svg.addEventListener("pointerup", e => endRg(e, false));
+  svg.addEventListener("pointercancel", e => endRg(e, true));
+  svg.addEventListener("lostpointercapture", e => endRg(e, true));
+}
+
+function showRegions() {
+  seedRegionsFromStep2();
+  document.getElementById("rgWrap").style.display = "flex";
+  rgSetMode("move");
+  document.getElementById("rgWrap").scrollIntoView({behavior: "smooth", block: "nearest", inline: "nearest"});
+}
+document.getElementById("regionsBtn").addEventListener("click", showRegions);
+document.getElementById("rgMove").addEventListener("click", () => rgSetMode("move"));
+document.getElementById("rgAddZ").addEventListener("click", () => rgSetMode("addZ"));
+document.getElementById("rgAddEdge").addEventListener("click", () => rgSetMode("addEdge"));
+document.getElementById("rgCut").addEventListener("click", () => rgSetMode("cut"));
+document.getElementById("rgDelEdge").addEventListener("click", () => rgSetMode("delEdge"));
+document.getElementById("rgDelSpider").addEventListener("click", () => rgSetMode("delSpider"));
+document.getElementById("rgUndo").addEventListener("click", rgUndo);
+document.getElementById("rgReset").addEventListener("click", () => { seedRegionsFromStep2(); renderRegions(); });
+document.getElementById("rgFit").addEventListener("click", () => { if (RG.fitVb) { RG.vb = RG.fitVb.slice(); renderRegions(); } });
+
+// keyboard (step 4 only): Esc clears the edge-building selection; Cmd/Ctrl+Z undoes
+document.addEventListener("keydown", e => {
+  if (document.getElementById("rgWrap").style.display === "none") return;
+  const tag = (document.activeElement && document.activeElement.tagName) || "";
+  if (tag === "INPUT" || tag === "TEXTAREA") return;
+  if (e.key === "Escape") {
+    if (RG.drag) { for (const it of RG.drag.set) { const m = rgNode(it.id); if (m) { m.x = it.ox; m.y = it.oy; } } RG.drag = null; RG.rubber = null; renderRegions(); }
+    else if (RG.rubber) { RG.rubber = null; renderRegions(); }
+    else if (RG.selected.length) { RG.selected = []; renderRegions(); }
+  }
+  else if ((e.metaKey || e.ctrlKey) && !e.shiftKey && (e.key === "z" || e.key === "Z")) {
+    e.preventDefault(); rgUndo();
+  }
+});
+
+// ---- Step 5: spider decomposition in the simplified diagram -----------------
+// Same self-contained editor as step 4, but seeded with the step-3 ("simplified")
+// diagram instead of the full "after Ben's rule" one. Every editing tool is kept
+// (move / add Z / add edge / cut / remove edge / remove spider, with undo and
+// rubber-band selection); the detecting-region listing of step 4 is deliberately
+// left out here.
+const SD = {nodes: [], edges: [], vb: [0, 0, 1400, 720], fitVb: null,
+            mode: "move", drag: null, rubber: null, selected: [], history: [],
+            wired: false, nextId: 0};
+const sdNode = id => SD.nodes.find(nd => nd.id === id);
+function sdToggleSelect(id) {                          // spiders and boundary vertices selectable
+  const nd = sdNode(id); if (!nd) return;
+  const i = SD.selected.indexOf(id);
+  if (i >= 0) SD.selected.splice(i, 1); else SD.selected.push(id);
+}
+
+// Copy the current step-3 simplified diagram (build col 2/3 size first if the user
+// jumped straight here), keeping the same n that the simplified column shows.
+function seedSimpDecompFromStep3() {
+  const useN = ED.builtN || n;
+  if (!ED.builtN) {
+    buildDecomposition(n); ED.builtN = n;
+    document.getElementById("edWrap").style.display = "flex";
+    renderEditor();
+  }
+  const g = computeSimplifiedGraph(useN);
+  SD.nodes = g.nodes.map(nd => ({...nd}));
+  SD.edges = g.edges.map(e => ({...e}));            // each edge may later gain `cut: true`
+  SD.vb = g.vb.slice(); SD.fitVb = g.vb.slice();
+  SD.selected = []; SD.drag = null; SD.rubber = null; SD.history = []; SD.nextId = 0;
+}
+
+// --- undo history ---
+function sdSnapshot() {
+  return {nodes: SD.nodes.map(nd => ({...nd})), edges: SD.edges.map(e => ({...e})),
+          selected: [...SD.selected]};
+}
+function sdPush(snap) { SD.history.push(snap || sdSnapshot()); if (SD.history.length > 100) SD.history.shift(); }
+function sdUndo() {
+  const prev = SD.history.pop(); if (!prev) return;
+  SD.nodes = prev.nodes; SD.edges = prev.edges; SD.selected = prev.selected || [];
+  renderSimpDecomp();
+}
+
+function sdFlash(msg) {
+  const el = document.getElementById("sdHint"); if (!el) return;
+  el.textContent = msg; el.classList.add("show");
+  clearTimeout(sdFlash._t); sdFlash._t = setTimeout(() => el.classList.remove("show"), 1900);
+}
+
+function sdSetMode(mode) {
+  SD.mode = mode; SD.selected = [];
+  for (const b of document.querySelectorAll("#sdWrap .tool"))
+    b.classList.toggle("active", b.dataset.mode === mode);
+  document.getElementById("simpdecomp").classList.toggle("addZ", mode === "addZ");
+  renderSimpDecomp();
+}
+
+function sdEdgeAt(px, py) {
+  let best = null, bestD = 14;                       // px hit threshold
+  SD.edges.forEach((e, i) => {
+    const a = sdNode(e.a), b = sdNode(e.b); if (!a || !b) return;
+    const d = distToSeg(px, py, a.x, a.y, b.x, b.y);
+    if (d < bestD) { bestD = d; best = i; }
+  });
+  return best;
+}
+
+function renderSimpDecomp() {
+  const svg = document.getElementById("simpdecomp");
+  svg.setAttribute("viewBox", SD.vb.join(" "));
+  let out = "", labels = "";
+  for (const e of SD.edges) {
+    const a = sdNode(e.a), b = sdNode(e.b); if (!a || !b) continue;
+    const s = EDGE_STYLE[e.kind] || EDGE_STYLE.regular;
+    out += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${s.color}" `
+         + `stroke-width="${s.w}" stroke-linecap="round" pointer-events="none"/>`;
+    if (e.cut) {                                     // bold dark-red slash across the midpoint
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      let ux = b.x - a.x, uy = b.y - a.y; const L = Math.hypot(ux, uy) || 1;
+      ux /= L; uy /= L;                              // perpendicular is (-uy, ux)
+      const h = 13;
+      out += `<line x1="${mx - uy * h}" y1="${my + ux * h}" x2="${mx + uy * h}" y2="${my - ux * h}" `
+           + `stroke="${DARKRED}" stroke-width="6.5" stroke-linecap="round" pointer-events="none"/>`;
+    }
+  }
+  if (SD.rubber) {
+    const r = SD.rubber;
+    out += `<rect x="${Math.min(r.x0, r.x1)}" y="${Math.min(r.y0, r.y1)}" `
+         + `width="${Math.abs(r.x1 - r.x0)}" height="${Math.abs(r.y1 - r.y0)}" `
+         + `fill="#2563eb22" stroke="#2563eb" stroke-width="2" stroke-dasharray="9 6" pointer-events="none"/>`;
+  }
+  for (const nd of SD.nodes) {
+    const cls = "node" + (SD.selected.includes(nd.id) ? " selected" : "");
+    if (nd.type === "B")
+      out += `<circle class="node" data-id="${nd.id}" cx="${nd.x}" cy="${nd.y}" r="14" fill="transparent"/>`
+           + `<circle class="${cls}" data-id="${nd.id}" cx="${nd.x}" cy="${nd.y}" r="7" `
+           + `fill="${BLACK}" stroke="${BLACK}" stroke-width="2"/>`;   // wide transparent grab halo + dot
+    else {
+      out += `<circle class="${cls}" data-id="${nd.id}" cx="${nd.x}" cy="${nd.y}" r="15" `
+           + `fill="${nd.type === "Z" ? Z_FILL : X_FILL}" stroke="${BLACK}" stroke-width="2.5"/>`;
+      if (nd.label)
+        labels += `<text x="${nd.x + 14}" y="${nd.y - 13}" font-size="18" fill="#2563eb" `
+                + `font-weight="bold" pointer-events="none">${nd.label}</text>`;
+    }
+  }
+  svg.innerHTML = out + labels;
+  const ub = document.getElementById("sdUndo"); if (ub) ub.disabled = SD.history.length === 0;
+  wireSimpDecomp();
+}
+
+function sdClientToSvg(svg, cx, cy) {
+  const pt = svg.createSVGPoint(); pt.x = cx; pt.y = cy;
+  const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+  return [p.x, p.y];
+}
+function wireSimpDecomp() {
+  const svg = document.getElementById("simpdecomp");
+  if (SD.wired) return; SD.wired = true;
+
+  svg.addEventListener("wheel", e => {
+    if (!SD.vb || !wantsZoom(e)) return;
+    e.preventDefault();
+    const r = svg.getBoundingClientRect(), vb = SD.vb;
+    const px = vb[0] + (e.clientX - r.left) / r.width * vb[2];
+    const py = vb[1] + (e.clientY - r.top) / r.height * vb[3];
+    const fitW = (SD.fitVb || vb)[2];
+    const w = clampW(vb[2] * Math.exp(e.deltaY * 0.0015), fitW);
+    const ratio = w / vb[2];
+    SD.vb = [px - (px - vb[0]) * ratio, py - (py - vb[1]) * ratio, w, vb[3] * ratio];
+    svg.setAttribute("viewBox", SD.vb.join(" "));
+  }, {passive: false});
+  svg.addEventListener("dblclick", () => {
+    if (SD.fitVb) { SD.vb = SD.fitVb.slice(); svg.setAttribute("viewBox", SD.vb.join(" ")); }
+  });
+
+  svg.addEventListener("pointerdown", e => {
+    if (SD.drag || SD.rubber || e.button > 0) return;
+    const [sx, sy] = sdClientToSvg(svg, e.clientX, e.clientY);
+    const el = e.target.closest(".node");
+    const nd = el ? sdNode(el.getAttribute("data-id")) : null;
+
+    if (SD.mode === "addZ") {                        // drop a Z spider on empty canvas
+      if (nd) { sdFlash("Click an empty spot to add a Z spider"); return; }
+      sdPush();
+      SD.nodes.push({id: `sdz${SD.nextId++}`, type: "Z", x: sx, y: sy});
+      renderSimpDecomp(); return;
+    }
+    if (SD.mode === "addEdge") {                      // connect two vertices (spider or boundary)
+      if (!nd) {
+        SD.selected = []; sdFlash("Click a spider or boundary vertex, then another"); renderSimpDecomp(); return;
+      }
+      const i = SD.selected.indexOf(nd.id);
+      if (i >= 0) { SD.selected.splice(i, 1); renderSimpDecomp(); return; }   // toggle off
+      SD.selected.push(nd.id);
+      if (SD.selected.length === 2) {
+        const [u, v] = SD.selected;
+        const exists = SD.edges.some(ed => (ed.a === u && ed.b === v) || (ed.a === v && ed.b === u));
+        if (exists) sdFlash("Those vertices are already connected");
+        else if (sdNode(u).type === "B" && sdNode(v).type === "B") sdFlash("Connect a spider to a boundary, not two boundaries");
+        else { sdPush(); SD.edges.push({a: u, b: v, kind: "regular"}); }
+        SD.selected = [];
+      }
+      renderSimpDecomp(); return;
+    }
+    if (SD.mode === "cut") {                           // toggle a cut on the nearest edge
+      const idx = sdEdgeAt(sx, sy);
+      if (idx === null) { sdFlash("Click closer to an edge to cut it"); return; }
+      sdPush();
+      SD.edges[idx].cut = !SD.edges[idx].cut;
+      renderSimpDecomp(); return;
+    }
+    if (SD.mode === "delEdge") {                        // delete the nearest edge
+      const idx = sdEdgeAt(sx, sy);
+      if (idx === null) { sdFlash("Click closer to an edge to remove it"); return; }
+      sdPush();
+      SD.edges.splice(idx, 1);
+      renderSimpDecomp(); return;
+    }
+    if (SD.mode === "delSpider") {                      // delete a spider and its edges
+      if (!nd || nd.type === "B") { sdFlash("Click a spider to remove it"); return; }
+      sdPush();
+      SD.nodes = SD.nodes.filter(m => m.id !== nd.id);
+      SD.edges = SD.edges.filter(e => e.a !== nd.id && e.b !== nd.id);
+      SD.selected = SD.selected.filter(s => s !== nd.id);
+      renderSimpDecomp(); return;
+    }
+    // move mode: rubber-band select on empty canvas, or drag spider(s)
+    if (!nd) {                                         // empty canvas -> rubber-band selection
+      SD.rubber = {pid: e.pointerId, x0: sx, y0: sy, x1: sx, y1: sy, moved: false};
+      try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+      e.preventDefault(); return;
+    }
+    // grabbing a member of a multi-selection moves the whole group; else just this node
+    const inSel = SD.selected.includes(nd.id);
+    const ids = (inSel && SD.selected.length > 1) ? SD.selected.filter(sdNode) : [nd.id];
+    if (!inSel) SD.selected = [];                      // grabbing outside the selection clears it
+    const set = ids.map(id => { const m = sdNode(id); return {id, ox: m.x, oy: m.y}; });
+    SD.drag = {pid: e.pointerId, id: nd.id, set, sx0: sx, sy0: sy, moved: false, snap: sdSnapshot()};
+    svg.classList.add("grabbing");
+    try { svg.setPointerCapture(e.pointerId); } catch (_) {}
+    e.preventDefault();
+  });
+
+  svg.addEventListener("pointermove", e => {
+    const [sx, sy] = sdClientToSvg(svg, e.clientX, e.clientY);
+    if (SD.drag && e.pointerId === SD.drag.pid) {
+      const dx = sx - SD.drag.sx0, dy = sy - SD.drag.sy0;
+      for (const it of SD.drag.set) { const m = sdNode(it.id); if (m) { m.x = it.ox + dx; m.y = it.oy + dy; } }
+      if (!SD.drag.moved && Math.hypot(dx, dy) > 4) SD.drag.moved = true;
+      renderSimpDecomp();
+    } else if (SD.rubber && e.pointerId === SD.rubber.pid) {
+      SD.rubber.x1 = sx; SD.rubber.y1 = sy;
+      if (!SD.rubber.moved && Math.hypot(sx - SD.rubber.x0, sy - SD.rubber.y0) > 4) SD.rubber.moved = true;
+      renderSimpDecomp();
+    }
+  });
+  const endSd = (e, cancelled) => {
+    if (SD.drag && e.pointerId === SD.drag.pid) {
+      const {id, set, moved, snap} = SD.drag; SD.drag = null;
+      svg.classList.remove("grabbing");
+      try { svg.releasePointerCapture(e.pointerId); } catch (_) {}
+      if (cancelled || !moved) {                       // cancel or click: discard any nudge
+        for (const it of set) { const m = sdNode(it.id); if (m) { m.x = it.ox; m.y = it.oy; } }
+        if (!cancelled && !moved) sdToggleSelect(id);  // a click toggles selection
+      } else {                                         // real drag: record if anything moved
+        const changed = set.some(it => { const m = sdNode(it.id); return m && Math.hypot(m.x - it.ox, m.y - it.oy) > 0.5; });
+        if (changed) sdPush(snap);
+      }
+      renderSimpDecomp();
+    } else if (SD.rubber && e.pointerId === SD.rubber.pid) {
+      const r = SD.rubber; SD.rubber = null;
+      try { svg.releasePointerCapture(e.pointerId); } catch (_) {}
+      if (!cancelled) {
+        if (r.moved) {                                 // select every spider inside the box
+          const xmin = Math.min(r.x0, r.x1), xmax = Math.max(r.x0, r.x1);
+          const ymin = Math.min(r.y0, r.y1), ymax = Math.max(r.y0, r.y1);
+          SD.selected = SD.nodes.filter(nd =>
+            nd.x >= xmin && nd.x <= xmax && nd.y >= ymin && nd.y <= ymax).map(nd => nd.id);
+        } else {
+          SD.selected = [];                            // a bare click clears selection
+        }
+      }
+      renderSimpDecomp();
+    }
+  };
+  svg.addEventListener("pointerup", e => endSd(e, false));
+  svg.addEventListener("pointercancel", e => endSd(e, true));
+  svg.addEventListener("lostpointercapture", e => endSd(e, true));
+}
+
+function showSimpDecomp() {
+  seedSimpDecompFromStep3();
+  document.getElementById("sdWrap").style.display = "flex";
+  sdSetMode("move");
+  document.getElementById("sdWrap").scrollIntoView({behavior: "smooth", block: "nearest", inline: "nearest"});
+}
+document.getElementById("simpDecompBtn").addEventListener("click", showSimpDecomp);
+document.getElementById("sdMove").addEventListener("click", () => sdSetMode("move"));
+document.getElementById("sdAddZ").addEventListener("click", () => sdSetMode("addZ"));
+document.getElementById("sdAddEdge").addEventListener("click", () => sdSetMode("addEdge"));
+document.getElementById("sdCut").addEventListener("click", () => sdSetMode("cut"));
+document.getElementById("sdDelEdge").addEventListener("click", () => sdSetMode("delEdge"));
+document.getElementById("sdDelSpider").addEventListener("click", () => sdSetMode("delSpider"));
+document.getElementById("sdUndo").addEventListener("click", sdUndo);
+document.getElementById("sdReset").addEventListener("click", () => { seedSimpDecompFromStep3(); renderSimpDecomp(); });
+document.getElementById("sdFit").addEventListener("click", () => { if (SD.fitVb) { SD.vb = SD.fitVb.slice(); renderSimpDecomp(); } });
+
+// keyboard (step 5 only): Esc clears the edge-building selection; Cmd/Ctrl+Z undoes
+document.addEventListener("keydown", e => {
+  if (document.getElementById("sdWrap").style.display === "none") return;
+  const tag = (document.activeElement && document.activeElement.tagName) || "";
+  if (tag === "INPUT" || tag === "TEXTAREA") return;
+  if (e.key === "Escape") {
+    if (SD.drag) { for (const it of SD.drag.set) { const m = sdNode(it.id); if (m) { m.x = it.ox; m.y = it.oy; } } SD.drag = null; SD.rubber = null; renderSimpDecomp(); }
+    else if (SD.rubber) { SD.rubber = null; renderSimpDecomp(); }
+    else if (SD.selected.length) { SD.selected = []; renderSimpDecomp(); }
+  }
+  else if ((e.metaKey || e.ctrlKey) && !e.shiftKey && (e.key === "z" || e.key === "Z")) {
+    e.preventDefault(); sdUndo();
+  }
+});
+
+draw();
+</script>
+
+<!-- =========================================================================
+     "Find all detecting regions" — a self-contained add-on for the step-4
+     (detecting-regions) diagram. Kept in its own trailing script block so it does
+     not interfere with the editors above. It reads the live step-4 graph (RG),
+     computes the independent detecting regions per Definition 5.4 / 5.5 of
+     arXiv:2506.17181, and lists them as small multiples using the Figure 9
+     colouring (green = Z-type, red = X-type). Prints a message when none exist.
+     ========================================================================== -->
+<script>
+(function () {
+  if (document.getElementById("rgFind")) return;        // idempotent (survives re-runs)
+  const HI = {green: "#2bb52f", red: "#ef4444"};         // Z-type / X-type highlight colours
+
+  // --- styles for the button + results panel -------------------------------
+  const st = document.createElement("style");
+  st.textContent =
+    ".btn.small.find{background:#fff;color:#8b0000;border-color:#8b0000;}" +
+    // sits as its own column in the #views flex row, beside Spider Decomposition
+    "#rgResults{flex:1 1 460px;min-width:420px;align-self:flex-start;display:flex;flex-direction:column;}" +
+    "#rgResults:empty{display:none;}" +
+    "#rgResults .rhead{font-size:12px;color:#555;line-height:1.45;margin:0 2px 10px;}" +
+    "#rgResults .rhead b{color:#1c1c1c;}" +
+    // two columns: X-type detecting regions | Z-type detecting regions
+    "#rgResults .rg2col{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;}" +
+    "#rgResults .rgcol{display:flex;flex-direction:column;gap:10px;min-width:0;}" +
+    "#rgResults .rgch{font-size:12px;font-weight:700;padding:4px 6px;border-radius:6px;text-align:center;}" +
+    "#rgResults .rgch.x{background:#fdecec;color:#b91c1c;}" +
+    "#rgResults .rgch.z{background:#e7f6e8;color:#15803d;}" +
+    "#rgResults .rcell{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px 6px 3px;}" +
+    "#rgResults .rcell .rcap{font-size:11px;font-weight:700;margin-bottom:3px;}" +
+    "#rgResults .rcell svg{width:100%;height:auto;display:block;background:var(--bg);border-radius:6px;}" +
+    "#rgResults .rgempty{font-size:12px;color:#999;font-style:italic;padding:8px;text-align:center;}" +
+    "#rgResults .none{background:#fff7e6;border:1px solid #f0c36d;color:#8a6d1a;" +
+      "border-radius:10px;padding:14px 16px;font-size:14px;font-weight:600;}";
+  document.head.appendChild(st);
+
+  // --- the button, added to the step-4 toolbar -----------------------------
+  const btn = document.createElement("button");
+  btn.id = "rgFind"; btn.className = "btn small find";
+  btn.textContent = "Find all detecting regions";
+  const bar = document.querySelector("#rgWrap .edbar");
+  if (bar) {
+    const hint = document.getElementById("rgHint");
+    if (hint) bar.insertBefore(btn, hint); else bar.appendChild(btn);
+  }
+
+  // --- the results panel: its own column, placed next to Spider Decomposition
+  const out = document.createElement("div");
+  out.id = "rgResults";
+  const views = document.getElementById("views");
+  const rgWrap = document.getElementById("rgWrap");          // the step-4 Spider Decomposition column
+  if (rgWrap && rgWrap.parentNode) rgWrap.parentNode.insertBefore(out, rgWrap.nextSibling);
+  else if (views) views.appendChild(out);
+  const clear = () => { out.innerHTML = ""; };
+
+  // --- GF(2) detecting-region solver (Definition 5.4 / 5.5) ----------------
+  // A single-colour Pauli web on phase-free spiders: for the green/Z-type web,
+  // each Z spider has an EVEN number of highlighted legs and each X spider has
+  // ALL-or-NONE highlighted; the red/X-type web swaps the two roles. A detecting
+  // region highlights no boundary edge. The independent regions of a colour form
+  // a basis of the null space of these linear constraints over GF(2).
+  function bitParity(b){let p=0;while(b>0n){let v=Number(b&0x3FFFFFFFn);v^=v>>>16;v^=v>>>8;v^=v>>>4;v^=v>>>2;v^=v>>>1;p^=(v&1);b>>=30n;}return p;}
+  function nullspace(rows, ncols){
+    const piv = [];
+    for (let r of rows){
+      for (const p of piv) if ((r >> BigInt(p.col)) & 1n) r ^= p.mask;
+      if (r === 0n) continue;
+      const col = r.toString(2).length - 1;
+      for (const p of piv) if ((p.mask >> BigInt(col)) & 1n) p.mask ^= r;
+      piv.push({col, mask: r});
+    }
+    const pc = new Set(piv.map(p => p.col)), basis = [];
+    for (let fc = 0; fc < ncols; fc++){
+      if (pc.has(fc)) continue;
+      let x = 1n << BigInt(fc);
+      for (const p of piv) if (bitParity((p.mask ^ (1n << BigInt(p.col))) & x)) x |= 1n << BigInt(p.col);
+      basis.push(x);
+    }
+    return basis;
+  }
+  // detecting regions of one colour on the live RG graph; cut edges are severed.
+  function regionsOf(color){
+    const active = [];                                   // indices of uncut edges
+    RG.edges.forEach((e, i) => { if (!e.cut) active.push(i); });
+    const E = active.length, inc = {};
+    for (const nd of RG.nodes) inc[nd.id] = [];
+    active.forEach((ei, j) => { const e = RG.edges[ei]; if (inc[e.a]) inc[e.a].push(j); if (inc[e.b]) inc[e.b].push(j); });
+    const isB = id => { const nd = rgNode(id); return !nd || nd.type === "B"; };
+    const rows = [];
+    for (let j = 0; j < E; j++){ const e = RG.edges[active[j]]; if (isB(e.a) || isB(e.b)) rows.push(1n << BigInt(j)); }
+    const even = color === "green" ? "Z" : "X";
+    for (const nd of RG.nodes){
+      if (nd.type === "B") continue;
+      const legs = inc[nd.id]; if (!legs.length) continue;
+      if (nd.type === even){ let r = 0n; for (const e of legs) r ^= 1n << BigInt(e); rows.push(r); }
+      else for (let k = 1; k < legs.length; k++) rows.push((1n << BigInt(legs[0])) ^ (1n << BigInt(legs[k])));
+    }
+    return nullspace(rows, E).map(x => { const s = new Set(); for (let j = 0; j < E; j++) if ((x >> BigInt(j)) & 1n) s.add(active[j]); return s; });
+  }
+
+  // --- drawing one small multiple (whole diagram, this region highlighted) --
+  function bounds(pad){
+    pad = pad || 55;
+    if (!RG.nodes.length) return (RG.fitVb || [0, 0, 1400, 720]).slice();
+    const xs = RG.nodes.map(nd => nd.x), ys = RG.nodes.map(nd => nd.y);
+    const a = Math.min(...xs) - pad, b = Math.min(...ys) - pad;
+    return [a, b, Math.max(...xs) + pad - a, Math.max(...ys) + pad - b];
+  }
+  function mini(set, color, vb){
+    let s = ""; const hc = HI[color];
+    for (let i = 0; i < RG.edges.length; i++){           // translucent highlighter, under the wires
+      if (!set.has(i)) continue;
+      const e = RG.edges[i], a = rgNode(e.a), b = rgNode(e.b); if (!a || !b) continue;
+      s += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${hc}" stroke-width="22" stroke-opacity="0.45" stroke-linecap="round"/>`;
+    }
+    for (const e of RG.edges){                           // base edges (cut edges drawn faint)
+      const a = rgNode(e.a), b = rgNode(e.b); if (!a || !b) continue;
+      const es = EDGE_STYLE[e.kind] || EDGE_STYLE.regular;
+      s += `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${es.color}" stroke-width="${es.w}" stroke-opacity="${e.cut ? 0.18 : 1}" stroke-linecap="round"/>`;
+    }
+    for (const nd of RG.nodes){                          // spiders / boundary vertices
+      if (nd.type === "B") s += `<circle cx="${nd.x}" cy="${nd.y}" r="7" fill="${BLACK}"/>`;
+      else s += `<circle cx="${nd.x}" cy="${nd.y}" r="13" fill="${nd.type === "Z" ? Z_FILL : X_FILL}" stroke="${BLACK}" stroke-width="2.5"/>`;
+    }
+    return `<svg viewBox="${vb.join(" ")}" xmlns="http://www.w3.org/2000/svg">${s}</svg>`;
+  }
+
+  // --- the button action ---------------------------------------------------
+  function findAll(){
+    if (!RG.nodes.length){                               // column 4 not opened yet -> seed it
+      seedRegionsFromStep2();
+      document.getElementById("rgWrap").style.display = "flex";
+      renderRegions();
+    }
+    const red = regionsOf("red"), green = regionsOf("green");
+    const total = red.length + green.length;
+
+    if (total === 0){                                    // <-- the "no detecting region" message
+      out.innerHTML = `<div class="none">No detecting regions found for this diagram.</div>`;
+      out.scrollIntoView({behavior: "smooth", block: "nearest"});
+      return;
+    }
+    const vb = bounds();                                 // shared frame so every mini lines up
+    // one column of small multiples per Pauli type (X-type red, Z-type green)
+    const col = (regs, color, label) => {
+      const cap = color === "red" ? "#b91c1c" : "#15803d";
+      const cells = regs.map((s, i) =>
+        `<div class="rcell"><div class="rcap" style="color:${cap}">${label} &middot; region ${i + 1}</div>${mini(s, color, vb)}</div>`);
+      return cells.length ? cells.join("") : `<div class="rgempty">none</div>`;
+    };
+    out.innerHTML =
+      `<div class="rhead"><b>${total}</b> independent detecting region${total === 1 ? "" : "s"} ` +
+      `(<b style="color:#b91c1c">${red.length}</b> X&#8209;type, ` +
+      `<b style="color:#15803d">${green.length}</b> Z&#8209;type) — a basis per ` +
+      `Definition&nbsp;5.4&nbsp;/&nbsp;5.5 of arXiv:2506.17181, in the Figure&nbsp;9 colouring. ` +
+      `Cuts are treated as severed edges.</div>` +
+      `<div class="rg2col">` +
+        `<div class="rgcol"><div class="rgch x">X-type (red)</div>${col(red, "red", "X-type")}</div>` +
+        `<div class="rgcol"><div class="rgch z">Z-type (green)</div>${col(green, "green", "Z-type")}</div>` +
+      `</div>`;
+    out.scrollIntoView({behavior: "smooth", block: "nearest"});
+  }
+  btn.addEventListener("click", findAll);
+
+  // stale-guard: clear the listing whenever the step-4 graph is re-rendered
+  // (any cut / add / move / undo / re-seed), so it never shows an outdated answer.
+  if (typeof window.renderRegions === "function" && !window.__rgRenderWrapped){
+    const orig = window.renderRegions;
+    window.renderRegions = function(){ clear(); return orig.apply(this, arguments); };
+    window.__rgRenderWrapped = true;
+  }
+})();
+</script>
+
+</body>
+</html>
