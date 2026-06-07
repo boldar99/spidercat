@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SpiderCat CAT State Demo</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Fault-Tolerant CAT State Explorer</p>
+          <h1>Different ways to build an n-qubit CAT state</h1>
+          <p class="hero-text">
+            This demo combines the repo's concrete circuits with the construction trade-offs in
+            <a href="https://arxiv.org/abs/2603.05391" target="_blank" rel="noreferrer">SpiderCat: Optimal Fault-Tolerant Cat State Preparation</a>.
+            Use the controls to compare CNOT count, depth, ancilla overhead, and the structural shape of each construction.
+          </p>
+        </div>
+        <div class="hero-panel">
+          <div class="hero-stat">
+            <span class="hero-stat-label">Paper-backed families</span>
+            <strong>3</strong>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-label">Repo circuit baselines</span>
+            <strong>3</strong>
+          </div>
+          <div class="hero-stat">
+            <span class="hero-stat-label">SpiderCat graph instances</span>
+            <strong id="heroGraphCount">0</strong>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <section class="controls-panel">
+          <div class="control-block">
+            <label for="nRange">Target size</label>
+            <div class="control-row">
+              <input id="nRange" type="range" min="8" max="50" step="1" value="20">
+              <strong id="nValue">n = 20</strong>
+            </div>
+          </div>
+          <div class="control-block">
+            <label for="tRange">Fault weight</label>
+            <div class="control-row">
+              <input id="tRange" type="range" min="2" max="7" step="1" value="4">
+              <strong id="tValue">t = 4</strong>
+            </div>
+          </div>
+          <div class="control-note">
+            <p id="stateSummary"></p>
+          </div>
+        </section>
+
+        <section class="cards-section">
+          <div class="section-heading">
+            <h2>Method comparison</h2>
+            <p>Click a card to inspect the construction in more detail.</p>
+          </div>
+          <div id="methodCards" class="method-grid"></div>
+        </section>
+
+        <section class="detail-section">
+          <div class="section-heading">
+            <h2 id="detailTitle">Construction detail</h2>
+            <p id="detailSubtitle"></p>
+          </div>
+          <div class="detail-layout">
+            <div class="visual-panel">
+              <div id="visualLegend" class="visual-legend"></div>
+              <div id="visualHost" class="visual-host"></div>
+              <p id="visualCaption" class="visual-caption"></p>
+            </div>
+            <aside id="detailInfo" class="detail-info"></aside>
+          </div>
+        </section>
+
+        <section class="notes-section">
+          <div class="section-heading">
+            <h2>What the paper changes</h2>
+          </div>
+          <div class="notes-grid">
+            <article class="note-card">
+              <h3>Recursive</h3>
+              <p>
+                Theorem 3.1 gives a scalable recursive construction with
+                <code>n(1 + log2(t + 1)) - 2(t + 1)</code> CNOTs, <code>n/2</code> ancillae,
+                and depth <code>2 log2(t) + 2</code>.
+              </p>
+            </article>
+            <article class="note-card">
+              <h3>Optimal graph-based</h3>
+              <p>
+                Proposition 5.4 and Theorem 5.5 turn the CAT-state problem into finding
+                marked 3-regular graphs with the best vertex ratio <code>r_t</code>.
+              </p>
+            </article>
+            <article class="note-card">
+              <h3>Optimal shallow</h3>
+              <p>
+                Theorem 5.6 trades more ancilla for constant CNOT depth 3 while staying
+                linear in <code>n</code>.
+              </p>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>
+          Sources:
+          <a href="https://arxiv.org/abs/2603.05391" target="_blank" rel="noreferrer">paper abstract</a>,
+          <a href="https://arxiv.org/pdf/2603.05391" target="_blank" rel="noreferrer">paper PDF</a>,
+          repo circuits in <code>spidercat/</code>, and the benchmark summaries in <code>spidercat/simulation_data/</code>.
+        </p>
+      </footer>
+    </div>
+
+    <script src="./data.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
