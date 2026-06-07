@@ -11,19 +11,41 @@ const METHOD_ACCENTS = {
 const KIND_LABELS = {
   repo: "Repo circuit",
   paper: "Paper theorem",
-  baseline: "Repo baseline",
+  baseline: "External baseline",
 };
 
 const state = {
   n: data.controls.defaultN,
   t: data.controls.defaultT,
   selectedMethod: "spidercat",
+  recursiveView: "schematic",
+  shallowView: "schematic",
+  spiderView: "graph",
+  flagView: "circuit",
+  mqtView: "circuit",
+  exportFlags: false,
   graphPositionOverrides: {},
+  circuitDragOverrides: {},
+  // Per-(n,t) horizontal position overrides for ZZ-measurements in the recursive
+  // ZX diagram, so users can drag overlapping measurements apart for readability.
+  recursiveZxLayout: {},
   zoomScales: {},
 };
 
+// Distinct colours for the parallel ZZ-measurement layers. Each layer runs in
+// CNOT depth 1 on a disjoint set of wires, echoing the paper's Figure 4.
+const ZZ_LAYER_COLORS = [
+  "#1f5fd0",
+  "#e2622a",
+  "#2e8b57",
+  "#7c3aed",
+  "#0f9d96",
+  "#db2777",
+  "#d97706",
+  "#2563eb",
+];
+
 const refs = {
-  heroGraphCount: document.getElementById("heroGraphCount"),
   nRange: document.getElementById("nRange"),
   nValue: document.getElementById("nValue"),
   tRange: document.getElementById("tRange"),
@@ -37,8 +59,6 @@ const refs = {
   visualCaption: document.getElementById("visualCaption"),
   detailInfo: document.getElementById("detailInfo"),
 };
-
-refs.heroGraphCount.textContent = Object.keys(data.spiderGraphs).length;
 
 refs.nRange.value = String(state.n);
 refs.tRange.value = String(state.t);
@@ -88,6 +108,155 @@ function recursiveEstimate(n, t) {
   };
 }
 
+// Port of experimental/recursive_construction.py, generalised to a binary fusion
+// tree whose leaves are CAT^4 base-case states (the paper's seed blocks), so any
+// target size n is representable. n is split into ceil(n / 4) contiguous leaf
+// blocks of size <= 4; a balanced tree fuses adjacent blocks, each internal node
+// using (t + 1) ZZ-measurements between the min-depth qubit on each side. This
+// reproduces the .py's min-depth parallelisation and matches it exactly when n is
+// a power-of-two multiple of 4. Returns the ZZ-measurements in the .py's order.
+const RECURSIVE_BASE_SIZE = 4;
+
+function makeLeafBlocks(n) {
+  const numLeaves = Math.max(1, Math.ceil(n / RECURSIVE_BASE_SIZE));
+  const leaves = [];
+  let lo = 0;
+  for (let i = 0; i < numLeaves; i += 1) {
+    const hi = Math.floor((n * (i + 1)) / numLeaves);
+    leaves.push({ lo, hi });
+    lo = hi;
+  }
+  return leaves;
+}
+
+function buildFusionTree(leaves) {
+  if (leaves.length === 1) {
+    return { leaf: true, lo: leaves[0].lo, hi: leaves[0].hi, height: 0 };
+  }
+  const mid = Math.ceil(leaves.length / 2);
+  const left = buildFusionTree(leaves.slice(0, mid));
+  const right = buildFusionTree(leaves.slice(mid));
+  return {
+    leaf: false,
+    lo: left.lo,
+    hi: right.hi,
+    mid: left.hi,
+    left,
+    right,
+    height: 1 + Math.max(left.height, right.height),
+  };
+}
+
+function collectInternalNodes(node, acc) {
+  if (node.leaf) {
+    return;
+  }
+  collectInternalNodes(node.left, acc);
+  collectInternalNodes(node.right, acc);
+  acc.push(node);
+}
+
+function argMinDepth(depths, lo, hi) {
+  let best = lo;
+  for (let q = lo + 1; q < hi; q += 1) {
+    if (depths[q] < depths[best]) {
+      best = q;
+    }
+  }
+  return best;
+}
+
+function buildRecursiveConstruction(nRaw, tRaw) {
+  const n = Math.max(2, Math.round(nRaw));
+  // FUSE-Nw fuses two blocks with w = t + 1 TRANSVERSAL ZZ-measurements, and
+  // transversality requires w <= block size. Since the smallest blocks are the
+  // CAT^4 base cases, t + 1 <= RECURSIVE_BASE_SIZE, i.e. t <= base size - 1.
+  // (This is the original .py's clamp on the seed-block size, n_seed = 4.)
+  const t = Math.max(0, Math.min(Math.round(tRaw), RECURSIVE_BASE_SIZE - 1));
+
+  const leaves = makeLeafBlocks(n);
+  const root = buildFusionTree(leaves);
+  const internal = [];
+  collectInternalNodes(root, internal);
+
+  const byHeight = new Map();
+  for (const node of internal) {
+    if (!byHeight.has(node.height)) {
+      byHeight.set(node.height, []);
+    }
+    byHeight.get(node.height).push(node);
+  }
+
+  const depths = new Array(n).fill(0);
+  const measurements = [];
+  let maxLayer = 0;
+  const heights = [...byHeight.keys()].sort((a, b) => a - b);
+  for (const height of heights) {
+    const group = byHeight.get(height).slice().sort((a, b) => a.lo - b.lo);
+    for (let round = 0; round <= t; round += 1) {
+      for (const node of group) {
+        const qL = argMinDepth(depths, node.lo, node.mid);
+        const qR = argMinDepth(depths, node.mid, node.hi);
+        const layer = Math.max(depths[qL], depths[qR]) + 1;
+        depths[qL] = layer;
+        depths[qR] = layer;
+        maxLayer = Math.max(maxLayer, layer);
+        measurements.push({ qL, qR, level: height, round, layer });
+      }
+    }
+  }
+
+  return {
+    n,
+    t,
+    leaves,
+    measurements,
+    numFusions: internal.length,
+    totalZZ: measurements.length,
+    maxLayer,
+    levels: heights.length,
+  };
+}
+
+function recursiveStimText(construction, useFlags) {
+  const { n, t, measurements, leaves } = construction;
+  const lines = [
+    `# Recursive fault-tolerant CAT^${n} state preparation (t = ${t})`,
+    `# Generated from recursive_construction.py — CAT^4 base-case binary fusion tree`,
+    `# ${leaves.length} base CAT blocks (size <= 4) assumed already prepared`,
+    `# ${measurements.length} ZZ-measurements fuse them up the tree`,
+  ];
+  if (useFlags) {
+    const numFlags = measurements.length;
+    const catOffset = numFlags;
+    lines.push(`# qubits 0..${numFlags - 1} are flags; cat qubits are ${catOffset}..${catOffset + n - 1}`);
+    let flagIdx = 0;
+    for (const m of measurements) {
+      lines.push(`CX ${catOffset + m.qL} ${flagIdx}`);
+      lines.push(`CX ${catOffset + m.qR} ${flagIdx}`);
+      lines.push(`MR ${flagIdx}`);
+      flagIdx += 1;
+    }
+  } else {
+    for (const m of measurements) {
+      lines.push(`CZ ${m.qL} ${m.qR}`);
+    }
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+function downloadTextFile(filename, text) {
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
 function shallowEstimate(n, t) {
   const rt = data.paper.optimal.rtValues[String(t)];
   if (rt == null) {
@@ -107,8 +276,244 @@ function shallowEstimate(n, t) {
   };
 }
 
+// Explicit Theorem 5.6 ("optimal shallow") circuit construction from a bundled
+// marked 3-regular graph (G, M). The paragraph preceding the theorem describes
+// it directly: put every vertex AND every mark on its own qubit triplet as a
+// 3-qubit CAT state (CNOT depth 2), then fuse adjacent spiders along each graph
+// edge with a Bell-basis measurement (raising CNOT depth to 3). The free leg of
+// each mark spider is an output of the n-qubit CAT state.
+//
+// Expansion of (G, M): a 3-regular vertex becomes a 3-ary Z-spider; a mark on an
+// edge becomes a boundary Z-spider whose extra leg is a data output and which
+// splits its edge in two. So an edge (u, v) carrying k marks becomes the chain
+//     u — m_1 — m_2 — ... — m_k — v
+// contributing k + 1 fusions, and a vertex contributes one leg per incident edge.
+//
+// Qubit layout: data/output qubits 0..n-1 (one per mark) first, then ancilla
+// "leg" qubits. Each spider is a GHZ block (H on its root leg, then a CNOT to
+// each of the other two legs); each fusion is a Bell measurement CX p q; H p;
+// M p; M q that consumes the two paired leg qubits. The Pauli corrections from
+// the random measurement outcomes are tracked in the classical frame, so the
+// data wires hold the cat state |0…0> + |1…1>.
+function buildShallowConstruction(entry) {
+  const totalMarks = entry.edges.reduce((sum, edge) => sum + (edge.markCount || 0), 0);
+
+  // Data outputs occupy 0..totalMarks-1; ancilla leg qubits are allocated after.
+  let nextAncilla = totalMarks;
+  const allocAncilla = () => nextAncilla++;
+
+  // Each incident edge-end consumes one fresh leg qubit on its vertex.
+  const vertexLegs = new Map();
+  function vertexLeg(id) {
+    const qubit = allocAncilla();
+    if (!vertexLegs.has(id)) {
+      vertexLegs.set(id, []);
+    }
+    vertexLegs.get(id).push(qubit);
+    return qubit;
+  }
+
+  const spiders = []; // { kind, root, legs: [q0, q1, q2] }
+  const fusions = []; // [legA, legB] Bell-measured pairs
+  let markCounter = 0;
+
+  for (const edge of entry.edges) {
+    const marks = edge.markCount || 0;
+    const uLeg = vertexLeg(edge.u);
+    const vLeg = vertexLeg(edge.v);
+    if (marks === 0) {
+      fusions.push([uLeg, vLeg]);
+      continue;
+    }
+    // Build the mark chain u — m_1 — ... — m_k — v.
+    let dangling = uLeg;
+    for (let i = 0; i < marks; i += 1) {
+      const output = markCounter++;
+      const leftLeg = allocAncilla();
+      const rightLeg = allocAncilla();
+      // root = output so the data wire owns the GHZ |+> origin.
+      spiders.push({ kind: "mark", root: output, legs: [output, leftLeg, rightLeg] });
+      fusions.push([dangling, leftLeg]);
+      dangling = rightLeg;
+    }
+    fusions.push([dangling, vLeg]);
+  }
+
+  for (const node of entry.nodes) {
+    const legs = vertexLegs.get(node.id) || [];
+    spiders.push({ kind: "vertex", root: legs[0], legs });
+  }
+
+  const numQubits = nextAncilla;
+  const dataQubits = totalMarks;
+  const cnotCount = spiders.reduce((sum, s) => sum + (s.legs.length - 1), 0) + fusions.length;
+
+  // CNOT depth: GHZ blocks take depth 2 (root drives two CNOTs); every leg qubit
+  // is then Bell-fused exactly once, so the fusion CNOTs all fit in one further
+  // layer -> depth 3, matching the theorem.
+  const depth = 3;
+
+  return {
+    n: dataQubits,
+    t: entry.t,
+    spiders,
+    fusions,
+    numQubits,
+    dataQubits,
+    cnotCount,
+    depth,
+    ancillaCount: numQubits - dataQubits,
+    numVertices: entry.nodes.length,
+    numMarkSpiders: totalMarks,
+  };
+}
+
+function shallowStimText(construction, entry) {
+  const { n, t, spiders, fusions, numQubits, cnotCount, ancillaCount } = construction;
+  const rt = data.paper.optimal.rtValues[String(t)];
+  const optimalCx = rt != null ? Math.ceil(((29 * rt + 26) / 10) * n) : null;
+
+  const lines = [
+    `# Theorem 5.6 "optimal shallow" CAT^${n} state preparation (t = ${t})`,
+    `# Built from marked 3-regular graph ${entry.sourcePath || `t${t}-n${n}`}`,
+    `#   ${construction.numVertices} vertices + ${construction.numMarkSpiders} marks`,
+    `#   -> ${spiders.length} three-qubit CAT spiders fused by ${fusions.length} Bell measurements`,
+    `# CNOT depth 3, ${cnotCount} CNOTs, ${ancillaCount} ancillae` +
+      (optimalCx != null ? ` (theorem-optimal CNOT count ${optimalCx} after the direct-CNOT pass)` : ""),
+    `# Data qubits 0..${n - 1} carry the output cat state; Pauli frame tracks the random Bell outcomes.`,
+  ];
+
+  // Initialise every qubit, then prepare each 3-qubit CAT spider (depth 2).
+  const allQubits = Array.from({ length: numQubits }, (_, q) => q).join(" ");
+  lines.push(`R ${allQubits}`);
+  lines.push("TICK");
+  for (const spider of spiders) {
+    lines.push(`H ${spider.root}`);
+  }
+  for (const spider of spiders) {
+    for (const leg of spider.legs) {
+      if (leg !== spider.root) {
+        lines.push(`CX ${spider.root} ${leg}`);
+      }
+    }
+  }
+  lines.push("TICK");
+  // Fuse adjacent spiders with Bell-basis measurements (depth 3).
+  for (const [a, b] of fusions) {
+    lines.push(`CX ${a} ${b}`);
+  }
+  for (const [a, b] of fusions) {
+    lines.push(`H ${a}`);
+    lines.push(`M ${a} ${b}`);
+  }
+  return `${lines.join("\n")}\n`;
+}
+
 function getActualMetric(methodId, n, t) {
   return data.actualMetrics[methodId]?.[keyOf(n, t)] || null;
+}
+
+function getSpiderCircuit(n, t) {
+  return data.spiderCircuits?.[keyOf(n, t)] || null;
+}
+
+function getMqtCircuit(n, t) {
+  return data.mqtCircuits?.[keyOf(n, t)] || null;
+}
+
+// Parse the bundled SpiderCat Stim circuit into an ordered op list plus the
+// initial single-qubit state of each wire. A leading H on a fresh qubit folds
+// into a |+> ket (the cat-state origin); everything else starts in |0>.
+function parseStimCircuit(text) {
+  const ops = [];
+  const initialKet = {};
+  const touched = new Set();
+  let maxQubit = -1;
+
+  for (const rawLine of text.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#") || line.startsWith("DETECTOR")) {
+      continue;
+    }
+    const tokens = line.split(/\s+/);
+    const op = tokens[0];
+    const nums = [];
+    for (const token of tokens.slice(1)) {
+      if (token.startsWith("rec[")) {
+        continue;
+      }
+      const value = Number(token);
+      if (Number.isInteger(value)) {
+        nums.push(value);
+        maxQubit = Math.max(maxQubit, value);
+      }
+    }
+
+    if (op === "H") {
+      for (const qubit of nums) {
+        if (!touched.has(qubit)) {
+          initialKet[qubit] = "+";
+        } else {
+          ops.push({ type: "h", qubit });
+        }
+        touched.add(qubit);
+      }
+    } else if (op === "CX" || op === "CNOT") {
+      for (let index = 0; index + 1 < nums.length; index += 2) {
+        const control = nums[index];
+        const target = nums[index + 1];
+        ops.push({ type: "cx", control, target });
+        touched.add(control);
+        touched.add(target);
+      }
+    } else if (op === "M" || op === "MZ" || op === "MX") {
+      const basis = op === "MX" ? "X" : "Z";
+      for (const qubit of nums) {
+        ops.push({ type: "m", qubit, basis });
+        touched.add(qubit);
+      }
+    }
+  }
+
+  const numQubits = maxQubit + 1;
+  for (let qubit = 0; qubit < numQubits; qubit += 1) {
+    if (!(qubit in initialKet)) {
+      initialKet[qubit] = "0";
+    }
+  }
+  return { ops, numQubits, initialKet };
+}
+
+// As-soon-as-possible layout: assign each op the earliest column where all of
+// its qubits are free, preserving per-wire ordering. Mutates ops with a `col`.
+function scheduleStimOps(ops, numQubits) {
+  const freeAt = new Array(numQubits).fill(0);
+  let maxCol = 0;
+  for (const op of ops) {
+    const qubits = op.type === "cx" ? [op.control, op.target] : [op.qubit];
+    let col = 0;
+    for (const qubit of qubits) {
+      col = Math.max(col, freeAt[qubit]);
+    }
+    op.col = col;
+    for (const qubit of qubits) {
+      freeAt[qubit] = col + 1;
+    }
+    maxCol = Math.max(maxCol, col);
+  }
+  return maxCol + 1;
+}
+
+function downloadText(fileName, text, mime = "text/plain") {
+  const blob = new Blob([text], { type: `${mime};charset=utf-8` });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function getNoiseMetric(methodId, n, t) {
@@ -362,7 +767,38 @@ function cardHtml(model) {
 }
 
 function renderCards(models) {
-  refs.methodCards.innerHTML = models.map(cardHtml).join("");
+  const groups = [
+    {
+      title: "SpiderCat constructions",
+      blurb: "The three constructions introduced in the SpiderCat paper.",
+      models: models.filter((model) => data.methods[model.id].kind !== "baseline"),
+    },
+    {
+      title: "External baselines",
+      blurb: "Prior-work circuits bundled for comparison.",
+      models: models.filter((model) => data.methods[model.id].kind === "baseline"),
+    },
+  ];
+
+  const visibleGroups = groups.filter((group) => group.models.length);
+
+  // Keep each header interleaved with its own cards in the DOM so narrow
+  // screens stack naturally as grouped sections. On wide screens the CSS pins
+  // headers to the top row (each spanning only its own columns) and the cards
+  // to the row beneath, so all method cards land on a single row.
+  let columnCursor = 1;
+  refs.methodCards.innerHTML = visibleGroups
+    .map((group) => {
+      const span = group.models.length;
+      const head = `<div class="method-group-head" style="grid-column: ${columnCursor} / span ${span};">
+          <h3>${group.title}</h3>
+          <p>${group.blurb}</p>
+        </div>`;
+      columnCursor += span;
+      return head + group.models.map(cardHtml).join("");
+    })
+    .join("");
+
   refs.methodCards.querySelectorAll(".method-card").forEach((card) => {
     card.addEventListener("click", () => {
       state.selectedMethod = card.dataset.method;
@@ -768,6 +1204,335 @@ function renderSpiderGraph(model) {
     : `No exact SpiderCat graph is bundled at n = ${state.n}, so this panel shows the nearest available instance at n = ${entry.n}, t = ${entry.t}. Drag any vertex to explore the layout.`;
 }
 
+function renderSpiderCircuit(model) {
+  clearVisual();
+  const circuit = getSpiderCircuit(state.n, state.t);
+  if (!circuit) {
+    refs.visualHost.innerHTML = `<div class="empty-state">No bundled SpiderCat circuit at n = ${state.n}, t = ${state.t}, so there is nothing to draw.</div>`;
+    refs.visualCaption.textContent =
+      "The circuit view renders the exact repo circuit, available only at bundled (n, t) points. Try a nearby (n, t).";
+    return;
+  }
+
+  legendPills([
+    { color: "var(--data-wire)", label: "data qubit (output)" },
+    { color: "var(--flag-wire)", label: "flag / ancilla" },
+    { color: "var(--ink)", label: "CNOT (• control / ⊕ target)" },
+    { color: "var(--spider-stroke)", label: "Z measurement" },
+  ]);
+
+  const { ops, numQubits, initialKet } = parseStimCircuit(circuit.stim);
+  // Schedule only the gates; every measurement is terminal for its wire (verified
+  // across all bundled circuits), so they all sit in one final column.
+  const gateOps = ops.filter((op) => op.type !== "m");
+  const measureOps = ops.filter((op) => op.type === "m");
+  const numCols = scheduleStimOps(gateOps, numQubits);
+  const dataQubits = state.n;
+
+  const rowGap = numQubits <= 24 ? 26 : numQubits <= 48 ? 17 : 12;
+  const colGap = 32;
+  const leftPad = 92;
+  const rightPad = 36;
+  const topPad = 30;
+  const bottomPad = 30;
+
+  const colX = (col) => leftPad + col * colGap + colGap / 2;
+  const rowY = (qubit) => topPad + qubit * rowGap;
+
+  const dotR = Math.min(4.2, rowGap * 0.26);
+  const targetR = Math.min(6, rowGap * 0.34);
+  const meterW = Math.min(20, colGap * 0.62);
+  const meterH = Math.min(15, rowGap * 0.78);
+
+  // All measurements live in one column past the last gate.
+  const meterX = colX(numCols);
+  const wireEndX = meterX + meterW / 2 + 8;
+  const width = wireEndX + rightPad;
+  const height = topPad + numQubits * rowGap + bottomPad;
+
+  // Drag bounds: keep CNOT endpoints inside the gate area, left of the meters.
+  const dragMin = leftPad + 8;
+  const dragMax = meterX - meterW / 2 - 10;
+
+  const circuitId = `spidercircuit-${state.t}-${state.n}`;
+  if (!state.circuitDragOverrides[circuitId]) {
+    state.circuitDragOverrides[circuitId] = {};
+  }
+  const overrides = state.circuitDragOverrides[circuitId];
+
+  const svg = svgNode("svg", {
+    viewBox: `0 0 ${width} ${height}`,
+    role: "img",
+    "aria-label": `SpiderCat optimal circuit for n = ${state.n}, t = ${state.t}`,
+  });
+
+  const wireLayer = svgNode("g");
+  const gateLayer = svgNode("g");
+  const handleLayer = svgNode("g");
+
+  // Wires + ket / index labels.
+  for (let qubit = 0; qubit < numQubits; qubit += 1) {
+    const y = rowY(qubit);
+    const isData = qubit < dataQubits;
+    wireLayer.appendChild(
+      svgNode("line", {
+        x1: leftPad,
+        y1: y,
+        x2: wireEndX,
+        y2: y,
+        stroke: isData ? "var(--data-wire)" : "var(--flag-wire)",
+        "stroke-width": isData ? 1.8 : 1.3,
+        "stroke-opacity": isData ? 0.6 : 0.45,
+      }),
+    );
+
+    if (numQubits <= 64 || isData || qubit % 4 === 0) {
+      const index = svgNode("text", {
+        x: 14,
+        y: y + 4,
+        "font-size": Math.max(9, Math.min(11, rowGap * 0.5)),
+        fill: "var(--muted)",
+      });
+      index.textContent = isData ? `q${qubit}` : `a${qubit - dataQubits}`;
+      wireLayer.appendChild(index);
+    }
+
+    const ket = svgNode("text", {
+      x: leftPad - 10,
+      y: y + 4,
+      "font-size": Math.max(10, Math.min(13, rowGap * 0.56)),
+      "font-weight": 600,
+      "text-anchor": "end",
+      fill: "var(--ink)",
+    });
+    ket.textContent = initialKet[qubit] === "+" ? "|+⟩" : "|0⟩";
+    wireLayer.appendChild(ket);
+  }
+
+  // Hadamard boxes (fixed position).
+  for (const op of gateOps) {
+    if (op.type !== "h") {
+      continue;
+    }
+    const x = colX(op.col);
+    const y = rowY(op.qubit);
+    const boxW = Math.min(18, colGap * 0.56);
+    const boxH = Math.min(16, rowGap * 0.8);
+    gateLayer.appendChild(
+      svgNode("rect", {
+        x: x - boxW / 2,
+        y: y - boxH / 2,
+        width: boxW,
+        height: boxH,
+        rx: 3,
+        fill: "#ffffff",
+        stroke: "var(--ink)",
+        "stroke-width": 1.5,
+      }),
+    );
+    const label = svgNode("text", {
+      x,
+      y: y + boxH * 0.3,
+      "font-size": Math.min(12, boxH * 0.8),
+      "font-weight": 700,
+      "text-anchor": "middle",
+      fill: "var(--ink)",
+    });
+    label.textContent = "H";
+    gateLayer.appendChild(label);
+  }
+
+  // Measurement meters, all aligned in the final column.
+  for (const op of measureOps) {
+    const y = rowY(op.qubit);
+    gateLayer.appendChild(
+      svgNode("rect", {
+        x: meterX - meterW / 2,
+        y: y - meterH / 2,
+        width: meterW,
+        height: meterH,
+        rx: 3,
+        fill: "#ffffff",
+        stroke: "var(--spider-stroke)",
+        "stroke-width": 1.5,
+      }),
+    );
+    const arcR = meterW * 0.3;
+    const arcY = y + meterH * 0.16;
+    gateLayer.appendChild(
+      svgNode("path", {
+        d: `M ${meterX - arcR} ${arcY} A ${arcR} ${arcR} 0 0 1 ${meterX + arcR} ${arcY}`,
+        fill: "none",
+        stroke: "var(--spider-stroke)",
+        "stroke-width": 1.3,
+      }),
+    );
+    gateLayer.appendChild(
+      svgNode("line", {
+        x1: meterX,
+        y1: arcY,
+        x2: meterX + arcR * 0.78,
+        y2: arcY - arcR * 0.82,
+        stroke: "var(--spider-stroke)",
+        "stroke-width": 1.3,
+      }),
+    );
+    if (op.basis === "X") {
+      const basisLabel = svgNode("text", {
+        x: meterX + meterW * 0.34,
+        y: y - meterH * 0.18,
+        "font-size": Math.min(8, meterH * 0.5),
+        "font-weight": 700,
+        "text-anchor": "middle",
+        fill: "var(--spider-stroke)",
+      });
+      basisLabel.textContent = "X";
+      gateLayer.appendChild(basisLabel);
+    }
+  }
+
+  // CNOTs: control dot + target ⊕ joined by a connector. Each endpoint can be
+  // dragged horizontally along its own wire so overlapping gates can be spread.
+  function eventPointInSvg(event) {
+    const ctm = svg.getScreenCTM();
+    if (!ctm) {
+      return null;
+    }
+    const point = svg.createSVGPoint();
+    point.x = event.clientX;
+    point.y = event.clientY;
+    return point.matrixTransform(ctm.inverse());
+  }
+
+  let gateIndex = 0;
+  const gateVisuals = [];
+  let activeDrag = null;
+  const hitR = Math.max(9, targetR + 4);
+
+  for (const op of gateOps) {
+    if (op.type !== "cx") {
+      continue;
+    }
+    const index = gateIndex;
+    gateIndex += 1;
+    const gate = { index, defaultX: colX(op.col) };
+    const yc = rowY(op.control);
+    const yt = rowY(op.target);
+
+    const connector = svgNode("line", {
+      stroke: "var(--ink)",
+      "stroke-width": 1.7,
+      "stroke-linecap": "round",
+    });
+    gateLayer.appendChild(connector);
+
+    const controlHandle = svgNode("g", {
+      class: "circuit-gate-handle",
+      tabindex: "0",
+      role: "button",
+      "aria-label": `CNOT ${index} control on q${op.control}`,
+    });
+    controlHandle.appendChild(svgNode("circle", { cx: 0, cy: 0, r: dotR, fill: "var(--ink)" }));
+    controlHandle.appendChild(svgNode("circle", { cx: 0, cy: 0, r: hitR, fill: "transparent" }));
+
+    const targetHandle = svgNode("g", {
+      class: "circuit-gate-handle",
+      tabindex: "0",
+      role: "button",
+      "aria-label": `CNOT ${index} target on q${op.target}`,
+    });
+    targetHandle.appendChild(
+      svgNode("circle", { cx: 0, cy: 0, r: targetR, fill: "#ffffff", stroke: "var(--ink)", "stroke-width": 1.7 }),
+    );
+    targetHandle.appendChild(
+      svgNode("line", { x1: -targetR, y1: 0, x2: targetR, y2: 0, stroke: "var(--ink)", "stroke-width": 1.7 }),
+    );
+    targetHandle.appendChild(
+      svgNode("line", { x1: 0, y1: -targetR, x2: 0, y2: targetR, stroke: "var(--ink)", "stroke-width": 1.7 }),
+    );
+    targetHandle.appendChild(svgNode("circle", { cx: 0, cy: 0, r: hitR, fill: "transparent" }));
+
+    handleLayer.appendChild(controlHandle);
+    handleLayer.appendChild(targetHandle);
+
+    function update() {
+      const override = overrides[index] || {};
+      const cx = override.cx ?? gate.defaultX;
+      const tx = override.tx ?? gate.defaultX;
+      connector.setAttribute("x1", cx);
+      connector.setAttribute("y1", yc);
+      connector.setAttribute("x2", tx);
+      connector.setAttribute("y2", yt);
+      controlHandle.setAttribute("transform", `translate(${cx} ${yc})`);
+      targetHandle.setAttribute("transform", `translate(${tx} ${yt})`);
+    }
+
+    function startDrag(endpoint, handle, event) {
+      event.preventDefault();
+      activeDrag = { index, endpoint, pointerId: event.pointerId, update };
+      handle.classList.add("dragging");
+      svg.classList.add("dragging-graph");
+      handle.setPointerCapture(event.pointerId);
+    }
+
+    controlHandle.addEventListener("pointerdown", (event) => startDrag("cx", controlHandle, event));
+    targetHandle.addEventListener("pointerdown", (event) => startDrag("tx", targetHandle, event));
+    // Double-click an endpoint to snap this CNOT back to its scheduled column.
+    controlHandle.addEventListener("dblclick", () => {
+      delete overrides[index];
+      update();
+    });
+    targetHandle.addEventListener("dblclick", () => {
+      delete overrides[index];
+      update();
+    });
+
+    gateVisuals.push({ controlHandle, targetHandle, update });
+    update();
+  }
+
+  function moveActiveDrag(event) {
+    if (!activeDrag || activeDrag.pointerId !== event.pointerId) {
+      return;
+    }
+    const point = eventPointInSvg(event);
+    if (!point) {
+      return;
+    }
+    const x = clampNumber(point.x, dragMin, dragMax);
+    overrides[activeDrag.index] = { ...(overrides[activeDrag.index] || {}), [activeDrag.endpoint]: x };
+    activeDrag.update();
+  }
+
+  function endDrag(event) {
+    if (!activeDrag || activeDrag.pointerId !== event.pointerId) {
+      return;
+    }
+    for (const visual of gateVisuals) {
+      visual.controlHandle.classList.remove("dragging");
+      visual.targetHandle.classList.remove("dragging");
+    }
+    svg.classList.remove("dragging-graph");
+    activeDrag = null;
+  }
+
+  svg.addEventListener("pointermove", moveActiveDrag);
+  svg.addEventListener("pointerup", endDrag);
+  svg.addEventListener("pointercancel", endDrag);
+
+  svg.appendChild(wireLayer);
+  svg.appendChild(gateLayer);
+  svg.appendChild(handleLayer);
+
+  renderZoomableSvg(svg, circuitId, {
+    maxScale: 6,
+    hint: "Drag a CNOT's control (•) or target (⊕) sideways to spread out overlapping gates; double-click an endpoint to reset it. Ctrl-scroll to zoom.",
+  });
+
+  refs.visualCaption.textContent =
+    `Exact SpiderCat optimal circuit for n = ${state.n}, t = ${state.t} (${gateOps.filter((op) => op.type === "cx").length} CNOTs, ${measureOps.length} measurements), rendered from the bundled ${circuit.fileName}. The origin spider starts in |+⟩; all flag/ancilla wires (a0, a1, …) are measured in the Z basis at the end, and the data wires (q0 … q${state.n - 1}) carry the output cat state. Drag a CNOT's control or target sideways to declutter time slices where gates overlap; double-click an endpoint to reset. Use Export above to download the Stim source.`;
+}
+
 function renderSchedule(metric, dataQubits, accentColor, caption, zoomKey = "schedule") {
   clearVisual();
   legendPills([
@@ -911,6 +1676,414 @@ function renderSchedule(metric, dataQubits, accentColor, caption, zoomKey = "sch
     hint: "Zoom in to inspect individual layers and qubit labels. Ctrl-scroll also works.",
   });
   refs.visualCaption.textContent = caption;
+}
+
+function prependViewToggle(options, current, onSelect) {
+  const toggle = document.createElement("div");
+  toggle.className = "view-toggle";
+  options.forEach((option) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `view-toggle-button${option.id === current ? " active" : ""}`;
+    button.textContent = option.label;
+    button.setAttribute("aria-pressed", String(option.id === current));
+    button.addEventListener("click", () => {
+      if (option.id !== current) {
+        onSelect(option.id);
+      }
+    });
+    toggle.appendChild(button);
+  });
+  refs.visualHost.insertBefore(toggle, refs.visualHost.firstChild);
+}
+
+function appendRecursiveExport() {
+  const construction = buildRecursiveConstruction(state.n, state.t);
+
+  const panel = document.createElement("div");
+  panel.className = "export-panel";
+
+  const summary = document.createElement("p");
+  summary.className = "export-summary";
+  summary.textContent =
+    `Stim circuit: CAT^${construction.n}, t = ${construction.t} — ` +
+    `${construction.totalZZ} ZZ-measurements across ${construction.levels} fusion levels.`;
+  panel.appendChild(summary);
+
+  const controls = document.createElement("div");
+  controls.className = "export-controls";
+
+  const flagsLabel = document.createElement("label");
+  flagsLabel.className = "export-flags";
+  const flagsInput = document.createElement("input");
+  flagsInput.type = "checkbox";
+  flagsInput.checked = state.exportFlags;
+  flagsInput.addEventListener("change", () => {
+    state.exportFlags = flagsInput.checked;
+    summary.textContent =
+      `Stim circuit: CAT^${construction.n}, t = ${construction.t} — ` +
+      `${construction.totalZZ} ZZ-measurements across ${construction.levels} fusion levels` +
+      `${flagsInput.checked ? `, ${construction.totalZZ} flag qubits` : ""}.`;
+  });
+  const flagsText = document.createElement("span");
+  flagsText.textContent = "Flag qubits (CNOT + MR)";
+  flagsLabel.append(flagsInput, flagsText);
+  controls.appendChild(flagsLabel);
+
+  const fileName = () =>
+    `recursive_cat_n${construction.n}_t${construction.t}${state.exportFlags ? "_flagged" : ""}.stim`;
+
+  const downloadButton = document.createElement("button");
+  downloadButton.type = "button";
+  downloadButton.className = "export-button";
+  downloadButton.textContent = "Download .stim";
+  downloadButton.addEventListener("click", () => {
+    downloadTextFile(fileName(), recursiveStimText(construction, state.exportFlags));
+  });
+  controls.appendChild(downloadButton);
+
+  const copyButton = document.createElement("button");
+  copyButton.type = "button";
+  copyButton.className = "export-button ghost";
+  copyButton.textContent = "Copy";
+  copyButton.addEventListener("click", () => {
+    const text = recursiveStimText(construction, state.exportFlags);
+    const done = () => {
+      copyButton.textContent = "Copied!";
+      copyButton.classList.add("copied");
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(() => {
+        copyButton.textContent = "Copy failed";
+      });
+    } else {
+      done();
+    }
+  });
+  controls.appendChild(copyButton);
+
+  panel.appendChild(controls);
+  refs.visualHost.appendChild(panel);
+}
+
+function buildRecursiveZXSvg(construction) {
+  const { n, t, measurements, maxLayer } = construction;
+
+  const rowGap = clampNumber(Math.round(620 / Math.max(n, 1)), 12, 30);
+  const topPad = 46;
+  const bottomPad = 30;
+  const height = topPad + (n - 1) * rowGap + bottomPad;
+
+  const abstractWidth = 150;
+  const seedX = abstractWidth + 52;
+  const wiresStart = seedX + 30;
+  const layerGap = clampNumber(Math.round(760 / Math.max(maxLayer, 1)), 26, 60);
+  const firstLayerX = wiresStart + 30;
+  const rightPad = 40;
+  const width = firstLayerX + Math.max(maxLayer, 1) * layerGap + rightPad;
+
+  const rowY = (qubit) => topPad + qubit * rowGap;
+  const layerX = (layer) => firstLayerX + (layer - 1) * layerGap;
+  const nodeR = clampNumber(rowGap * 0.22, 3, 5.5);
+
+  const svg = svgNode("svg", {
+    viewBox: `0 0 ${width} ${height}`,
+    role: "img",
+    "aria-label": `ZX diagram of the recursive CAT^${n} preparation at t = ${t}`,
+  });
+
+  // Abstract |CAT^n> block: a triangle that is "defined as" the explicit network.
+  const cy = height / 2;
+  const triTop = clampNumber(cy - 46, topPad, height - 60);
+  const triBot = clampNumber(cy + 46, topPad + 60, height - bottomPad);
+  const triLeft = 28;
+  const triRight = abstractWidth - 36;
+  const triangle = svgNode("polygon", {
+    points: `${triRight},${triTop} ${triRight},${triBot} ${triLeft},${cy}`,
+    fill: "rgba(217, 93, 57, 0.08)",
+    stroke: "var(--recursive)",
+    "stroke-width": 1.6,
+    "stroke-linejoin": "round",
+  });
+  svg.appendChild(triangle);
+
+  const ket = svgNode("text", {
+    x: (triLeft + triRight) / 2 + 6,
+    y: cy + 4,
+    "font-size": 13,
+    "font-weight": 700,
+    "text-anchor": "middle",
+    fill: "var(--ink)",
+  });
+  ket.textContent = `|CAT^${n}⟩`;
+  svg.appendChild(ket);
+
+  const leafSpiderY = (leaf) => rowY((leaf.lo + leaf.hi - 1) / 2);
+
+  // The triangle is the LHS of an equation |CAT^n> ≜ [network]; it is NOT wired
+  // into the network. A few short stubs + vertical dots denote its n abstract
+  // output wires, and the "defined-as" symbol separates it from the construction.
+  const stubX = triRight + 18;
+  for (const dy of [-9, 0, 9]) {
+    svg.appendChild(
+      svgNode("line", {
+        x1: triRight,
+        y1: cy + dy,
+        x2: stubX,
+        y2: cy + dy,
+        stroke: "rgba(20, 33, 61, 0.35)",
+        "stroke-width": 1.2,
+      }),
+    );
+  }
+  const wiresDots = svgNode("text", {
+    x: stubX + 9,
+    y: cy + 5,
+    "font-size": 15,
+    "font-weight": 700,
+    "text-anchor": "middle",
+    fill: "var(--muted)",
+  });
+  wiresDots.textContent = "⋮";
+  svg.appendChild(wiresDots);
+
+  const defEq = svgNode("text", {
+    x: (stubX + 18 + seedX) / 2,
+    y: cy + 5,
+    "font-size": 18,
+    "font-weight": 700,
+    "text-anchor": "middle",
+    fill: "var(--muted)",
+  });
+  defEq.textContent = "≜";
+  svg.appendChild(defEq);
+
+  // explicit qubit wires
+  for (let q = 0; q < n; q += 1) {
+    const y = rowY(q);
+    svg.appendChild(
+      svgNode("line", {
+        x1: wiresStart,
+        y1: y,
+        x2: width - rightPad / 2,
+        y2: y,
+        stroke: "rgba(20, 33, 61, 0.45)",
+        "stroke-width": 1.3,
+      }),
+    );
+  }
+
+  // CAT^4 base-case seed spiders: one Z-spider per leaf, fanning out (a claw)
+  // to each qubit of its block — the paper's prepared seed CAT state.
+  for (const leaf of construction.leaves) {
+    const spiderY = leafSpiderY(leaf);
+    for (let q = leaf.lo; q < leaf.hi; q += 1) {
+      svg.appendChild(
+        svgNode("line", {
+          x1: seedX,
+          y1: spiderY,
+          x2: wiresStart,
+          y2: rowY(q),
+          stroke: "var(--spider-stroke)",
+          "stroke-width": 1.2,
+        }),
+      );
+    }
+    svg.appendChild(
+      svgNode("circle", {
+        cx: seedX,
+        cy: spiderY,
+        r: nodeR + 1.5,
+        fill: "var(--spider-fill)",
+        stroke: "var(--spider-stroke)",
+        "stroke-width": 1.4,
+      }),
+    );
+  }
+
+  // ZZ-measurements: a coloured vertical connector with a Z-spider at each end,
+  // placed at the layer (= scheduling depth) it executes in. Each measurement is
+  // draggable horizontally along the wires so users can pull apart measurements
+  // that share a time slice. Overrides persist per (n, t) in state.
+  const layoutKey = `${n}-${t}`;
+  if (!state.recursiveZxLayout[layoutKey]) {
+    state.recursiveZxLayout[layoutKey] = {};
+  }
+  const overrides = state.recursiveZxLayout[layoutKey];
+  const dragMinX = wiresStart + 6;
+  const dragMaxX = width - rightPad / 2 - 4;
+  const measVisuals = [];
+  let activeDrag = null;
+
+  function measX(idx) {
+    return overrides[idx] != null
+      ? clampNumber(overrides[idx], dragMinX, dragMaxX)
+      : layerX(measurements[idx].layer);
+  }
+
+  function eventXInSvg(event) {
+    const ctm = svg.getScreenCTM();
+    if (!ctm) {
+      return null;
+    }
+    const point = svg.createSVGPoint();
+    point.x = event.clientX;
+    point.y = event.clientY;
+    return point.matrixTransform(ctm.inverse()).x;
+  }
+
+  function applyMeasX(idx) {
+    const x = measX(idx);
+    const visual = measVisuals[idx];
+    visual.line.setAttribute("x1", x);
+    visual.line.setAttribute("x2", x);
+    visual.hit.setAttribute("x1", x);
+    visual.hit.setAttribute("x2", x);
+    visual.circles.forEach((circle) => circle.setAttribute("cx", x));
+  }
+
+  measurements.forEach((m, idx) => {
+    const yTop = rowY(Math.min(m.qL, m.qR));
+    const yBot = rowY(Math.max(m.qL, m.qR));
+    // Colour by scheduling layer: every measurement in a layer is on disjoint
+    // wires, so one colour = one CNOT-depth-1 time slice.
+    const color = ZZ_LAYER_COLORS[(m.layer - 1) % ZZ_LAYER_COLORS.length];
+
+    const group = svgNode("g", {
+      class: "zx-meas-handle",
+      "data-meas": idx,
+      role: "button",
+      tabindex: "0",
+      "aria-label": `Move layer-${m.layer} ZZ-measurement between qubits ${m.qL} and ${m.qR}`,
+    });
+
+    // wide transparent hit target makes the thin connector easy to grab
+    const hit = svgNode("line", {
+      x1: 0,
+      y1: yTop,
+      x2: 0,
+      y2: yBot,
+      stroke: "transparent",
+      "stroke-width": 16,
+      "stroke-linecap": "round",
+    });
+    group.appendChild(hit);
+
+    const line = svgNode("line", {
+      x1: 0,
+      y1: yTop,
+      x2: 0,
+      y2: yBot,
+      stroke: color,
+      "stroke-width": 2.4,
+      "stroke-linecap": "round",
+    });
+    group.appendChild(line);
+
+    const circles = [m.qL, m.qR].map((q) => {
+      const circle = svgNode("circle", {
+        cx: 0,
+        cy: rowY(q),
+        r: nodeR,
+        fill: "var(--spider-fill)",
+        stroke: color,
+        "stroke-width": 1.4,
+      });
+      group.appendChild(circle);
+      return circle;
+    });
+
+    group.addEventListener("pointerdown", (event) => {
+      event.preventDefault();
+      activeDrag = { idx, pointerId: event.pointerId };
+      group.classList.add("dragging");
+      svg.classList.add("dragging-zx");
+      group.setPointerCapture(event.pointerId);
+    });
+
+    svg.appendChild(group);
+    measVisuals.push({ line, hit, circles, group });
+    applyMeasX(idx);
+  });
+
+  function moveActiveDrag(event) {
+    if (!activeDrag || activeDrag.pointerId !== event.pointerId) {
+      return;
+    }
+    const x = eventXInSvg(event);
+    if (x == null) {
+      return;
+    }
+    overrides[activeDrag.idx] = clampNumber(x, dragMinX, dragMaxX);
+    applyMeasX(activeDrag.idx);
+  }
+
+  function endActiveDrag(event) {
+    if (!activeDrag || activeDrag.pointerId !== event.pointerId) {
+      return;
+    }
+    const visual = measVisuals[activeDrag.idx];
+    visual.group.classList.remove("dragging");
+    if (visual.group.hasPointerCapture(event.pointerId)) {
+      visual.group.releasePointerCapture(event.pointerId);
+    }
+    svg.classList.remove("dragging-zx");
+    activeDrag = null;
+  }
+
+  svg.addEventListener("pointermove", moveActiveDrag);
+  svg.addEventListener("pointerup", endActiveDrag);
+  svg.addEventListener("pointercancel", endActiveDrag);
+
+  return svg;
+}
+
+function renderRecursiveZX(model) {
+  clearVisual();
+
+  const construction = buildRecursiveConstruction(state.n, state.t);
+  legendPills([
+    { color: "var(--spider-fill)", label: "Z-spider" },
+    ...Array.from({ length: construction.maxLayer }, (_, layer) => ({
+      color: ZZ_LAYER_COLORS[layer % ZZ_LAYER_COLORS.length],
+      label: `Layer ${layer + 1} (CNOT depth 1)`,
+    })),
+  ]);
+
+  const svg = buildRecursiveZXSvg(construction);
+  renderZoomableSvg(svg, "recursive-zx", {
+    minScale: 1,
+    maxScale: 5,
+    hint: "Drag any ZZ-measurement sideways to pull it off a crowded time slice. Columns are scheduling layers.",
+  });
+
+  // Reset-layout control: clears the drag overrides for this (n, t) instance.
+  const layoutKey = `${construction.n}-${construction.t}`;
+  const hasOverrides = Object.keys(state.recursiveZxLayout[layoutKey] || {}).length > 0;
+  const resetRow = document.createElement("div");
+  resetRow.className = "zx-reset-row";
+  const resetButton = document.createElement("button");
+  resetButton.type = "button";
+  resetButton.className = "export-button ghost";
+  resetButton.textContent = "Reset spider layout";
+  resetButton.disabled = !hasOverrides;
+  resetButton.addEventListener("click", () => {
+    state.recursiveZxLayout[layoutKey] = {};
+    render();
+  });
+  resetRow.appendChild(resetButton);
+  refs.visualHost.appendChild(resetRow);
+
+  const clampedNote =
+    construction.t !== Math.round(state.t)
+      ? ` (t capped at ${construction.t}: transversal ZZ needs t + 1 <= the CAT^4 base size)`
+      : "";
+  refs.visualCaption.textContent =
+    `Dynamic ZX diagram for the recursive CAT^${construction.n} preparation at t = ${construction.t}${clampedNote}. ` +
+    `${construction.leaves.length} CAT^4 base-case seed spiders (left) are fused up a binary tree with ` +
+    `${construction.numFusions} fusions and ${construction.totalZZ} transversal ZZ-measurements. ` +
+    `Each colour is one CNOT-depth-1 layer (${construction.maxLayer} total), acting on a disjoint set of wires; ` +
+    `drag any measurement sideways to declutter a shared time slice.`;
 }
 
 function renderRecursiveSchematic(model) {
@@ -1325,6 +2498,1092 @@ function renderShallowSchematic(model) {
     `Illustrative 12-qubit slice of the paper's shallow construction. The same qubit ordering is reused in every row, and each row is one disjoint matching executed in a single CNOT depth layer. The theorem's full construction adds ancilla overhead and chooses these matchings so fault tolerance is preserved.`;
 }
 
+// The exact Theorem 5.6 circuit, derived from the bundled marked 3-regular graph
+// for the current (n, t): every vertex/mark becomes a 3-qubit CAT spider and
+// adjacent spiders are fused with Bell measurements, giving a genuine depth-3
+// preparation. Reuses getNearestSpiderGraph so it lights up wherever a graph is
+// bundled, snapping to the closest available n when there is no exact instance.
+function getShallowBundle() {
+  const bundle = getNearestSpiderGraph(state.t, state.n);
+  if (!bundle) {
+    return null;
+  }
+  const construction = buildShallowConstruction(bundle.entry);
+  return { ...bundle, construction, stim: shallowStimText(construction, bundle.entry) };
+}
+
+function shallowFileName(construction) {
+  return `shallow_cat_n${construction.n}_t${construction.t}.stim`;
+}
+
+function renderShallowCircuit(model) {
+  clearVisual();
+  const bundle = getShallowBundle();
+  if (!bundle) {
+    refs.visualHost.innerHTML = `<div class="empty-state">No marked 3-regular graph is bundled for t = ${state.t}, so the shallow circuit cannot be constructed.</div>`;
+    refs.visualCaption.textContent =
+      "The shallow circuit is extracted from the bundled SpiderCat graphs. Try t = 2 through t = 7.";
+    return;
+  }
+
+  legendPills([
+    { color: "var(--data-wire)", label: "data qubit (output)" },
+    { color: "var(--flag-wire)", label: "ancilla leg (measured out)" },
+    { color: "var(--ink)", label: "CNOT (• control / ⊕ target)" },
+    { color: "var(--spider-stroke)", label: "Bell measurement" },
+  ]);
+
+  const { construction, exact } = bundle;
+  const { ops, numQubits, initialKet } = parseStimCircuit(bundle.stim);
+  // Schedule only the gates; every measurement is terminal for its wire, so they
+  // all sit in one final column.
+  const gateOps = ops.filter((op) => op.type !== "m");
+  const measureOps = ops.filter((op) => op.type === "m");
+  const numCols = scheduleStimOps(gateOps, numQubits);
+  const dataQubits = construction.dataQubits;
+
+  const rowGap = numQubits <= 24 ? 22 : numQubits <= 60 ? 14 : numQubits <= 140 ? 9 : 6;
+  const colGap = 30;
+  const leftPad = 96;
+  const rightPad = 36;
+  const topPad = 28;
+  const bottomPad = 28;
+
+  const colX = (col) => leftPad + col * colGap + colGap / 2;
+  const rowY = (qubit) => topPad + qubit * rowGap;
+
+  const dotR = Math.min(3.6, rowGap * 0.26);
+  const targetR = Math.min(5.2, rowGap * 0.34);
+  const meterW = Math.min(18, colGap * 0.62);
+  const meterH = Math.min(13, rowGap * 0.8);
+
+  // All measurements live in one column past the last gate.
+  const meterX = colX(numCols);
+  const wireEndX = meterX + meterW / 2 + 8;
+  const width = wireEndX + rightPad;
+  const height = topPad + numQubits * rowGap + bottomPad;
+
+  // Drag bounds: keep CNOT endpoints inside the gate area, left of the meters.
+  const dragMin = leftPad + 8;
+  const dragMax = meterX - meterW / 2 - 10;
+
+  const circuitId = `shallowcircuit-${state.t}-${state.n}`;
+  if (!state.circuitDragOverrides[circuitId]) {
+    state.circuitDragOverrides[circuitId] = {};
+  }
+  const overrides = state.circuitDragOverrides[circuitId];
+
+  const svg = svgNode("svg", {
+    viewBox: `0 0 ${width} ${height}`,
+    role: "img",
+    "aria-label": `Optimal shallow CAT circuit for n = ${construction.n}, t = ${construction.t}`,
+  });
+
+  const wireLayer = svgNode("g");
+  const gateLayer = svgNode("g");
+  const handleLayer = svgNode("g");
+
+  // Wires + a single "q12 |0>"-style label tucked against the left of each wire.
+  for (let qubit = 0; qubit < numQubits; qubit += 1) {
+    const y = rowY(qubit);
+    const isData = qubit < dataQubits;
+    wireLayer.appendChild(
+      svgNode("line", {
+        x1: leftPad,
+        y1: y,
+        x2: wireEndX,
+        y2: y,
+        stroke: isData ? "var(--data-wire)" : "var(--flag-wire)",
+        "stroke-width": isData ? 1.8 : 1.2,
+        "stroke-opacity": isData ? 0.6 : 0.4,
+      }),
+    );
+
+    if (numQubits <= 96 || isData) {
+      const labelSize = Math.max(9, Math.min(12, rowGap * 0.56));
+      const label = svgNode("text", {
+        x: leftPad - 8,
+        y: y + labelSize * 0.34,
+        "font-size": labelSize,
+        "text-anchor": "end",
+      });
+      const idSpan = svgNode("tspan", { fill: "var(--muted)", "font-weight": 400 });
+      idSpan.textContent = `${isData ? `q${qubit}` : `a${qubit - dataQubits}`} `;
+      const ketSpan = svgNode("tspan", { fill: "var(--ink)", "font-weight": 600 });
+      ketSpan.textContent = initialKet[qubit] === "+" ? "|+⟩" : "|0⟩";
+      label.append(idSpan, ketSpan);
+      wireLayer.appendChild(label);
+    }
+  }
+
+  // Hadamard boxes (fixed position).
+  for (const op of gateOps) {
+    if (op.type !== "h") {
+      continue;
+    }
+    const x = colX(op.col);
+    const y = rowY(op.qubit);
+    const boxW = Math.min(16, colGap * 0.52);
+    const boxH = Math.min(14, rowGap * 0.8);
+    gateLayer.appendChild(
+      svgNode("rect", {
+        x: x - boxW / 2,
+        y: y - boxH / 2,
+        width: boxW,
+        height: boxH,
+        rx: 3,
+        fill: "#ffffff",
+        stroke: "var(--ink)",
+        "stroke-width": 1.4,
+      }),
+    );
+    const label = svgNode("text", {
+      x,
+      y: y + boxH * 0.32,
+      "font-size": Math.min(11, boxH * 0.82),
+      "font-weight": 700,
+      "text-anchor": "middle",
+      fill: "var(--ink)",
+    });
+    label.textContent = "H";
+    gateLayer.appendChild(label);
+  }
+
+  // Bell-measurement meters, aligned in the final column.
+  for (const op of measureOps) {
+    const y = rowY(op.qubit);
+    gateLayer.appendChild(
+      svgNode("rect", {
+        x: meterX - meterW / 2,
+        y: y - meterH / 2,
+        width: meterW,
+        height: meterH,
+        rx: 3,
+        fill: "#ffffff",
+        stroke: "var(--spider-stroke)",
+        "stroke-width": 1.4,
+      }),
+    );
+    const arcR = meterW * 0.3;
+    const arcY = y + meterH * 0.16;
+    gateLayer.appendChild(
+      svgNode("path", {
+        d: `M ${meterX - arcR} ${arcY} A ${arcR} ${arcR} 0 0 1 ${meterX + arcR} ${arcY}`,
+        fill: "none",
+        stroke: "var(--spider-stroke)",
+        "stroke-width": 1.2,
+      }),
+    );
+    gateLayer.appendChild(
+      svgNode("line", {
+        x1: meterX,
+        y1: arcY,
+        x2: meterX + arcR * 0.78,
+        y2: arcY - arcR * 0.82,
+        stroke: "var(--spider-stroke)",
+        "stroke-width": 1.2,
+      }),
+    );
+  }
+
+  // CNOTs: control dot + target ⊕ joined by a connector. Each endpoint can be
+  // dragged horizontally along its own wire so overlapping depth-3 gates can be
+  // spread out for readability.
+  function eventPointInSvg(event) {
+    const ctm = svg.getScreenCTM();
+    if (!ctm) {
+      return null;
+    }
+    const point = svg.createSVGPoint();
+    point.x = event.clientX;
+    point.y = event.clientY;
+    return point.matrixTransform(ctm.inverse());
+  }
+
+  let gateIndex = 0;
+  const gateVisuals = [];
+  let activeDrag = null;
+  const hitR = Math.max(8, targetR + 4);
+
+  for (const op of gateOps) {
+    if (op.type !== "cx") {
+      continue;
+    }
+    const index = gateIndex;
+    gateIndex += 1;
+    const gate = { index, defaultX: colX(op.col) };
+    const yc = rowY(op.control);
+    const yt = rowY(op.target);
+
+    const connector = svgNode("line", {
+      stroke: "var(--ink)",
+      "stroke-width": 1.5,
+      "stroke-linecap": "round",
+    });
+    gateLayer.appendChild(connector);
+
+    const controlHandle = svgNode("g", {
+      class: "circuit-gate-handle",
+      tabindex: "0",
+      role: "button",
+      "aria-label": `CNOT ${index} control on wire ${op.control}`,
+    });
+    controlHandle.appendChild(svgNode("circle", { cx: 0, cy: 0, r: dotR, fill: "var(--ink)" }));
+    controlHandle.appendChild(svgNode("circle", { cx: 0, cy: 0, r: hitR, fill: "transparent" }));
+
+    const targetHandle = svgNode("g", {
+      class: "circuit-gate-handle",
+      tabindex: "0",
+      role: "button",
+      "aria-label": `CNOT ${index} target on wire ${op.target}`,
+    });
+    targetHandle.appendChild(
+      svgNode("circle", { cx: 0, cy: 0, r: targetR, fill: "#ffffff", stroke: "var(--ink)", "stroke-width": 1.5 }),
+    );
+    targetHandle.appendChild(
+      svgNode("line", { x1: -targetR, y1: 0, x2: targetR, y2: 0, stroke: "var(--ink)", "stroke-width": 1.5 }),
+    );
+    targetHandle.appendChild(
+      svgNode("line", { x1: 0, y1: -targetR, x2: 0, y2: targetR, stroke: "var(--ink)", "stroke-width": 1.5 }),
+    );
+    targetHandle.appendChild(svgNode("circle", { cx: 0, cy: 0, r: hitR, fill: "transparent" }));
+
+    handleLayer.appendChild(controlHandle);
+    handleLayer.appendChild(targetHandle);
+
+    function update() {
+      const override = overrides[index] || {};
+      const cx = override.cx ?? gate.defaultX;
+      const tx = override.tx ?? gate.defaultX;
+      connector.setAttribute("x1", cx);
+      connector.setAttribute("y1", yc);
+      connector.setAttribute("x2", tx);
+      connector.setAttribute("y2", yt);
+      controlHandle.setAttribute("transform", `translate(${cx} ${yc})`);
+      targetHandle.setAttribute("transform", `translate(${tx} ${yt})`);
+    }
+
+    function startDrag(endpoint, handle, event) {
+      event.preventDefault();
+      activeDrag = { index, endpoint, pointerId: event.pointerId, update };
+      handle.classList.add("dragging");
+      svg.classList.add("dragging-graph");
+      handle.setPointerCapture(event.pointerId);
+    }
+
+    controlHandle.addEventListener("pointerdown", (event) => startDrag("cx", controlHandle, event));
+    targetHandle.addEventListener("pointerdown", (event) => startDrag("tx", targetHandle, event));
+    // Double-click an endpoint to snap this CNOT back to its scheduled column.
+    controlHandle.addEventListener("dblclick", () => {
+      delete overrides[index];
+      update();
+    });
+    targetHandle.addEventListener("dblclick", () => {
+      delete overrides[index];
+      update();
+    });
+
+    gateVisuals.push({ controlHandle, targetHandle, update });
+    update();
+  }
+
+  function moveActiveDrag(event) {
+    if (!activeDrag || activeDrag.pointerId !== event.pointerId) {
+      return;
+    }
+    const point = eventPointInSvg(event);
+    if (!point) {
+      return;
+    }
+    const x = clampNumber(point.x, dragMin, dragMax);
+    overrides[activeDrag.index] = { ...(overrides[activeDrag.index] || {}), [activeDrag.endpoint]: x };
+    activeDrag.update();
+  }
+
+  function endDrag(event) {
+    if (!activeDrag || activeDrag.pointerId !== event.pointerId) {
+      return;
+    }
+    for (const visual of gateVisuals) {
+      visual.controlHandle.classList.remove("dragging");
+      visual.targetHandle.classList.remove("dragging");
+    }
+    svg.classList.remove("dragging-graph");
+    activeDrag = null;
+  }
+
+  svg.addEventListener("pointermove", moveActiveDrag);
+  svg.addEventListener("pointerup", endDrag);
+  svg.addEventListener("pointercancel", endDrag);
+
+  svg.appendChild(wireLayer);
+  svg.appendChild(gateLayer);
+  svg.appendChild(handleLayer);
+
+  renderZoomableSvg(svg, circuitId, {
+    maxScale: 8,
+    hint: "Drag a CNOT's control (•) or target (⊕) sideways to spread out overlapping depth-3 gates; double-click an endpoint to reset it. Ctrl-scroll to zoom.",
+  });
+
+  const rt = data.paper.optimal.rtValues[String(construction.t)];
+  const optimalCx = rt != null ? Math.ceil(((29 * rt + 26) / 10) * construction.n) : null;
+  const snap = exact
+    ? ""
+    : ` No exact graph is bundled at n = ${state.n}, so this uses the nearest available instance at n = ${construction.n}.`;
+  refs.visualCaption.textContent =
+    `Explicit Theorem 5.6 depth-3 circuit for n = ${construction.n}, t = ${construction.t}, built from the marked 3-regular graph ` +
+    `(${construction.numVertices} vertices + ${construction.numMarkSpiders} marks → ${construction.spiders.length} three-qubit CAT spiders fused by ${construction.fusions.length} Bell measurements). ` +
+    `${construction.cnotCount} CNOTs in CNOT depth 3 on ${construction.numQubits} qubits (${construction.ancillaCount} ancillae)` +
+    (optimalCx != null ? `; the theorem's direct-CNOT pass lowers this to ${optimalCx} CNOTs.` : ".") +
+    ` Data wires q0…q${construction.n - 1} carry the output cat state; a0, a1, … are ancilla legs consumed by the Bell measurements.${snap} ` +
+    `Because depth 3 packs many CNOTs into the same time slices, drag any control or target sideways to declutter; double-click to reset. Use Export above to download the Stim source.`;
+}
+
+function appendShallowExport() {
+  const bundle = getShallowBundle();
+  if (!bundle) {
+    return;
+  }
+  const { construction, stim } = bundle;
+
+  const panel = document.createElement("div");
+  panel.className = "export-panel";
+
+  const summary = document.createElement("p");
+  summary.className = "export-summary";
+  summary.textContent =
+    `Stim circuit: optimal-shallow CAT^${construction.n}, t = ${construction.t} — ` +
+    `${construction.spiders.length} three-qubit CAT spiders, ${construction.fusions.length} Bell measurements, ` +
+    `${construction.cnotCount} CNOTs in depth 3.`;
+  panel.appendChild(summary);
+
+  const controls = document.createElement("div");
+  controls.className = "export-controls";
+
+  const downloadButton = document.createElement("button");
+  downloadButton.type = "button";
+  downloadButton.className = "export-button";
+  downloadButton.textContent = "Download .stim";
+  downloadButton.addEventListener("click", () => {
+    downloadTextFile(shallowFileName(construction), stim);
+  });
+  controls.appendChild(downloadButton);
+
+  const copyButton = document.createElement("button");
+  copyButton.type = "button";
+  copyButton.className = "export-button ghost";
+  copyButton.textContent = "Copy";
+  copyButton.addEventListener("click", () => {
+    const done = () => {
+      copyButton.textContent = "Copied!";
+      copyButton.classList.add("copied");
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(stim).then(done).catch(() => {
+        copyButton.textContent = "Copy failed";
+      });
+    } else {
+      done();
+    }
+  });
+  controls.appendChild(copyButton);
+
+  panel.appendChild(controls);
+  refs.visualHost.appendChild(panel);
+}
+
+function flagFileName(metric) {
+  return `flag_at_origin_cat_n${metric.n}_t${metric.t}.stim`;
+}
+
+// Reconstruct a Stim source from the bundled flag-at-origin CNOT layers. The
+// repo QASM is just `h q[0]` + a CNOT fan-out from the origin data qubit; here
+// we add the Z-basis flag readout that completes the flagged preparation.
+function flagStimText(metric) {
+  const { n, t, numQubits, numFlags, layers, sourcePath } = metric;
+  const origin = numFlags; // global index of q[0], the origin spider in |+>
+  const numCx = layers.reduce((sum, layer) => sum + layer.length, 0);
+
+  const lines = [
+    `# Flag-at-origin GHZ / CAT^${n} state preparation (t = ${t})`,
+    `# Source: ${sourcePath || `flag d${2 * t + 1}-q${n}`}`,
+    `# Qubits 0..${numFlags - 1} are flags f0..f${numFlags - 1} (Z-measured at the end);`,
+    `#   qubits ${numFlags}..${numQubits - 1} are data q0..q${n - 1} (output cat state), origin = q0 in |+>.`,
+    `# ${numCx} CNOTs across ${layers.length} entangling layers.`,
+  ];
+
+  const allQubits = Array.from({ length: numQubits }, (_, q) => q).join(" ");
+  lines.push(`R ${allQubits}`);
+  lines.push(`H ${origin}`);
+  lines.push("TICK");
+  for (const layer of layers) {
+    if (!layer.length) {
+      continue;
+    }
+    const pairs = layer.map(([control, target]) => `${control} ${target}`).join(" ");
+    lines.push(`CX ${pairs}`);
+    lines.push("TICK");
+  }
+  if (numFlags > 0) {
+    const flagIdx = Array.from({ length: numFlags }, (_, i) => i).join(" ");
+    lines.push(`M ${flagIdx}`); // flag readout in the Z basis
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+function renderFlagCircuit(model) {
+  clearVisual();
+  const metric = model.actual;
+  if (!metric || !metric.layers) {
+    renderEmptyVisual(
+      `No bundled flag-at-origin circuit is available for n = ${state.n}, t = ${state.t}.`,
+      "The circuit view renders the exact repo QASM, available only at bundled (n, t) points. Try a nearby (n, t).",
+    );
+    return;
+  }
+
+  legendPills([
+    { color: "var(--data-wire)", label: "data qubit (output)" },
+    { color: "var(--flag-wire)", label: "flag (measured out)" },
+    { color: "var(--ink)", label: "CNOT (• control / ⊕ target)" },
+    { color: "var(--spider-stroke)", label: "Z measurement" },
+  ]);
+
+  const { numQubits, numFlags, layers } = metric;
+  const origin = numFlags; // q[0], the origin spider in |+>
+
+  // Flatten the layers into a draggable CNOT list. Column 0 holds the origin
+  // Hadamard; entangling layer i sits in column i + 1.
+  const cxGates = [];
+  layers.forEach((pairs, layerIndex) => {
+    pairs.forEach(([control, target]) => {
+      cxGates.push({ control, target, col: layerIndex + 1 });
+    });
+  });
+  const numCols = layers.length + 1;
+
+  const rowGap = numQubits <= 24 ? 24 : numQubits <= 60 ? 15 : numQubits <= 140 ? 10 : 7;
+  const colGap = 30;
+  const leftPad = 96;
+  const rightPad = 36;
+  const topPad = 28;
+  const bottomPad = 28;
+
+  const colX = (col) => leftPad + col * colGap + colGap / 2;
+  const rowY = (qubit) => topPad + qubit * rowGap;
+
+  const dotR = Math.min(4, rowGap * 0.26);
+  const targetR = Math.min(5.6, rowGap * 0.34);
+  const meterW = Math.min(18, colGap * 0.62);
+  const meterH = Math.min(13, rowGap * 0.8);
+
+  // Flag readout lives in one column past the last gate.
+  const meterX = colX(numCols);
+  const wireEndX = meterX + meterW / 2 + 8;
+  const width = wireEndX + rightPad;
+  const height = topPad + numQubits * rowGap + bottomPad;
+
+  // Drag bounds: keep CNOT endpoints inside the gate area, left of the meters.
+  const dragMin = leftPad + 8;
+  const dragMax = meterX - meterW / 2 - 10;
+
+  const circuitId = `flagcircuit-${state.t}-${state.n}`;
+  if (!state.circuitDragOverrides[circuitId]) {
+    state.circuitDragOverrides[circuitId] = {};
+  }
+  const overrides = state.circuitDragOverrides[circuitId];
+
+  const svg = svgNode("svg", {
+    viewBox: `0 0 ${width} ${height}`,
+    role: "img",
+    "aria-label": `Flag-at-origin CAT circuit for n = ${state.n}, t = ${state.t}`,
+  });
+
+  const wireLayer = svgNode("g");
+  const gateLayer = svgNode("g");
+  const handleLayer = svgNode("g");
+
+  // Wires + labels. Flags are global indices 0..numFlags-1; data are the rest.
+  for (let qubit = 0; qubit < numQubits; qubit += 1) {
+    const y = rowY(qubit);
+    const isData = qubit >= numFlags;
+    wireLayer.appendChild(
+      svgNode("line", {
+        x1: leftPad,
+        y1: y,
+        x2: wireEndX,
+        y2: y,
+        stroke: isData ? "var(--data-wire)" : "var(--flag-wire)",
+        "stroke-width": isData ? 1.8 : 1.2,
+        "stroke-opacity": isData ? 0.6 : 0.4,
+      }),
+    );
+
+    if (numQubits <= 96 || isData) {
+      const labelSize = Math.max(9, Math.min(12, rowGap * 0.56));
+      const label = svgNode("text", {
+        x: leftPad - 8,
+        y: y + labelSize * 0.34,
+        "font-size": labelSize,
+        "text-anchor": "end",
+      });
+      const idSpan = svgNode("tspan", { fill: "var(--muted)", "font-weight": 400 });
+      idSpan.textContent = `${isData ? `q${qubit - numFlags}` : `f${qubit}`} `;
+      const ketSpan = svgNode("tspan", { fill: "var(--ink)", "font-weight": 600 });
+      ketSpan.textContent = qubit === origin ? "|+⟩" : "|0⟩";
+      label.append(idSpan, ketSpan);
+      wireLayer.appendChild(label);
+    }
+  }
+
+  // Origin Hadamard box (fixed position, column 0).
+  {
+    const x = colX(0);
+    const y = rowY(origin);
+    const boxW = Math.min(16, colGap * 0.52);
+    const boxH = Math.min(14, rowGap * 0.8);
+    gateLayer.appendChild(
+      svgNode("rect", {
+        x: x - boxW / 2,
+        y: y - boxH / 2,
+        width: boxW,
+        height: boxH,
+        rx: 3,
+        fill: "#ffffff",
+        stroke: "var(--ink)",
+        "stroke-width": 1.4,
+      }),
+    );
+    const label = svgNode("text", {
+      x,
+      y: y + boxH * 0.32,
+      "font-size": Math.min(11, boxH * 0.82),
+      "font-weight": 700,
+      "text-anchor": "middle",
+      fill: "var(--ink)",
+    });
+    label.textContent = "H";
+    gateLayer.appendChild(label);
+  }
+
+  // Flag Z-measurement meters, aligned in the final column.
+  for (let qubit = 0; qubit < numFlags; qubit += 1) {
+    const y = rowY(qubit);
+    gateLayer.appendChild(
+      svgNode("rect", {
+        x: meterX - meterW / 2,
+        y: y - meterH / 2,
+        width: meterW,
+        height: meterH,
+        rx: 3,
+        fill: "#ffffff",
+        stroke: "var(--spider-stroke)",
+        "stroke-width": 1.4,
+      }),
+    );
+    const arcR = meterW * 0.3;
+    const arcY = y + meterH * 0.16;
+    gateLayer.appendChild(
+      svgNode("path", {
+        d: `M ${meterX - arcR} ${arcY} A ${arcR} ${arcR} 0 0 1 ${meterX + arcR} ${arcY}`,
+        fill: "none",
+        stroke: "var(--spider-stroke)",
+        "stroke-width": 1.2,
+      }),
+    );
+    gateLayer.appendChild(
+      svgNode("line", {
+        x1: meterX,
+        y1: arcY,
+        x2: meterX + arcR * 0.78,
+        y2: arcY - arcR * 0.82,
+        stroke: "var(--spider-stroke)",
+        "stroke-width": 1.2,
+      }),
+    );
+  }
+
+  // CNOTs: control dot + target ⊕ joined by a connector. Each endpoint can be
+  // dragged horizontally along its own wire so overlapping gates can be spread.
+  function eventPointInSvg(event) {
+    const ctm = svg.getScreenCTM();
+    if (!ctm) {
+      return null;
+    }
+    const point = svg.createSVGPoint();
+    point.x = event.clientX;
+    point.y = event.clientY;
+    return point.matrixTransform(ctm.inverse());
+  }
+
+  const gateVisuals = [];
+  let activeDrag = null;
+  const hitR = Math.max(9, targetR + 4);
+
+  cxGates.forEach((op, index) => {
+    const gate = { index, defaultX: colX(op.col) };
+    const yc = rowY(op.control);
+    const yt = rowY(op.target);
+
+    const connector = svgNode("line", {
+      stroke: "var(--ink)",
+      "stroke-width": 1.7,
+      "stroke-linecap": "round",
+    });
+    gateLayer.appendChild(connector);
+
+    const controlHandle = svgNode("g", {
+      class: "circuit-gate-handle",
+      tabindex: "0",
+      role: "button",
+      "aria-label": `CNOT ${index} control`,
+    });
+    controlHandle.appendChild(svgNode("circle", { cx: 0, cy: 0, r: dotR, fill: "var(--ink)" }));
+    controlHandle.appendChild(svgNode("circle", { cx: 0, cy: 0, r: hitR, fill: "transparent" }));
+
+    const targetHandle = svgNode("g", {
+      class: "circuit-gate-handle",
+      tabindex: "0",
+      role: "button",
+      "aria-label": `CNOT ${index} target`,
+    });
+    targetHandle.appendChild(
+      svgNode("circle", { cx: 0, cy: 0, r: targetR, fill: "#ffffff", stroke: "var(--ink)", "stroke-width": 1.7 }),
+    );
+    targetHandle.appendChild(
+      svgNode("line", { x1: -targetR, y1: 0, x2: targetR, y2: 0, stroke: "var(--ink)", "stroke-width": 1.7 }),
+    );
+    targetHandle.appendChild(
+      svgNode("line", { x1: 0, y1: -targetR, x2: 0, y2: targetR, stroke: "var(--ink)", "stroke-width": 1.7 }),
+    );
+    targetHandle.appendChild(svgNode("circle", { cx: 0, cy: 0, r: hitR, fill: "transparent" }));
+
+    handleLayer.appendChild(controlHandle);
+    handleLayer.appendChild(targetHandle);
+
+    function update() {
+      const override = overrides[index] || {};
+      const cx = override.cx ?? gate.defaultX;
+      const tx = override.tx ?? gate.defaultX;
+      connector.setAttribute("x1", cx);
+      connector.setAttribute("y1", yc);
+      connector.setAttribute("x2", tx);
+      connector.setAttribute("y2", yt);
+      controlHandle.setAttribute("transform", `translate(${cx} ${yc})`);
+      targetHandle.setAttribute("transform", `translate(${tx} ${yt})`);
+    }
+
+    function startDrag(endpoint, handle, event) {
+      event.preventDefault();
+      activeDrag = { index, endpoint, pointerId: event.pointerId, update };
+      handle.classList.add("dragging");
+      svg.classList.add("dragging-graph");
+      handle.setPointerCapture(event.pointerId);
+    }
+
+    controlHandle.addEventListener("pointerdown", (event) => startDrag("cx", controlHandle, event));
+    targetHandle.addEventListener("pointerdown", (event) => startDrag("tx", targetHandle, event));
+    // Double-click an endpoint to snap this CNOT back to its scheduled column.
+    controlHandle.addEventListener("dblclick", () => {
+      delete overrides[index];
+      update();
+    });
+    targetHandle.addEventListener("dblclick", () => {
+      delete overrides[index];
+      update();
+    });
+
+    gateVisuals.push({ controlHandle, targetHandle, update });
+    update();
+  });
+
+  function moveActiveDrag(event) {
+    if (!activeDrag || activeDrag.pointerId !== event.pointerId) {
+      return;
+    }
+    const point = eventPointInSvg(event);
+    if (!point) {
+      return;
+    }
+    const x = clampNumber(point.x, dragMin, dragMax);
+    overrides[activeDrag.index] = { ...(overrides[activeDrag.index] || {}), [activeDrag.endpoint]: x };
+    activeDrag.update();
+  }
+
+  function endDrag(event) {
+    if (!activeDrag || activeDrag.pointerId !== event.pointerId) {
+      return;
+    }
+    for (const visual of gateVisuals) {
+      visual.controlHandle.classList.remove("dragging");
+      visual.targetHandle.classList.remove("dragging");
+    }
+    svg.classList.remove("dragging-graph");
+    activeDrag = null;
+  }
+
+  svg.addEventListener("pointermove", moveActiveDrag);
+  svg.addEventListener("pointerup", endDrag);
+  svg.addEventListener("pointercancel", endDrag);
+
+  svg.appendChild(wireLayer);
+  svg.appendChild(gateLayer);
+  svg.appendChild(handleLayer);
+
+  renderZoomableSvg(svg, circuitId, {
+    maxScale: 6,
+    hint: "Drag a CNOT's control (•) or target (⊕) sideways to spread out overlapping gates; double-click an endpoint to reset it. Ctrl-scroll to zoom.",
+  });
+
+  const sourceName = metric.sourcePath ? metric.sourcePath.split("/").pop() : "QASM";
+  refs.visualCaption.textContent =
+    `Exact flag-at-origin CAT^${metric.n} circuit for n = ${state.n}, t = ${state.t} (${metric.numCx} CNOTs across ${layers.length} entangling layers), rendered from the bundled ${sourceName}. The origin data qubit q0 starts in |+⟩ and fans out across the flag (f0, f1, …) and data (q0 … q${metric.n - 1}) wires; the flags are measured in the Z basis at the end. Because several CNOTs share each time slice, drag any control or target sideways to declutter; double-click an endpoint to reset. Use Export above to download the Stim source.`;
+}
+
+function appendFlagExport(metric) {
+  if (!metric || !metric.layers) {
+    return;
+  }
+  const stim = flagStimText(metric);
+
+  const panel = document.createElement("div");
+  panel.className = "export-panel";
+
+  const summary = document.createElement("p");
+  summary.className = "export-summary";
+  summary.textContent =
+    `Stim circuit: flag-at-origin CAT^${metric.n}, t = ${metric.t} — ` +
+    `${metric.numCx} CNOTs across ${metric.layers.length} entangling layers, ${metric.numFlags} flag qubits.`;
+  panel.appendChild(summary);
+
+  const controls = document.createElement("div");
+  controls.className = "export-controls";
+
+  const downloadButton = document.createElement("button");
+  downloadButton.type = "button";
+  downloadButton.className = "export-button";
+  downloadButton.textContent = "Download .stim";
+  downloadButton.addEventListener("click", () => {
+    downloadTextFile(flagFileName(metric), stim);
+  });
+  controls.appendChild(downloadButton);
+
+  const copyButton = document.createElement("button");
+  copyButton.type = "button";
+  copyButton.className = "export-button ghost";
+  copyButton.textContent = "Copy";
+  copyButton.addEventListener("click", () => {
+    const done = () => {
+      copyButton.textContent = "Copied!";
+      copyButton.classList.add("copied");
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(stim).then(done).catch(() => {
+        copyButton.textContent = "Copy failed";
+      });
+    } else {
+      done();
+    }
+  });
+  controls.appendChild(copyButton);
+
+  panel.appendChild(controls);
+  refs.visualHost.appendChild(panel);
+}
+
+// Draggable circuit view for the MQT baseline. MQT qubits are laid out data-first
+// (q0..q_{n-1}) with ancilla/flag qubits afterwards, mirroring the bundled Stim.
+// Only the entangling CNOT layers are drawn; the full circuit (origin Hadamard and
+// flag measurements) lives in the bundled Stim source offered by appendMqtExport.
+function renderMqtCircuit(model) {
+  clearVisual();
+  const metric = model.actual;
+  if (!metric || !metric.layers) {
+    renderEmptyVisual(
+      `No bundled MQT circuit is available for n = ${state.n}, t = ${state.t}.`,
+      "The circuit view renders the exact repo Stim circuit, available only at bundled (n, t) points. Try a nearby (n, t).",
+    );
+    return;
+  }
+
+  legendPills([
+    { color: "var(--data-wire)", label: "data qubit (output)" },
+    { color: "var(--flag-wire)", label: "ancilla / flag" },
+    { color: "var(--ink)", label: "CNOT (• control / ⊕ target)" },
+  ]);
+
+  const { numQubits, layers } = metric;
+  const dataQubits = state.n;
+
+  // Flatten the layers into a draggable CNOT list; entangling layer i sits in
+  // column i. Each endpoint can later be dragged off its default column.
+  const cxGates = [];
+  layers.forEach((pairs, layerIndex) => {
+    pairs.forEach(([control, target]) => {
+      cxGates.push({ control, target, col: layerIndex });
+    });
+  });
+  const numCols = Math.max(layers.length, 1);
+
+  const rowGap = numQubits <= 24 ? 24 : numQubits <= 60 ? 15 : numQubits <= 140 ? 10 : 7;
+  const colGap = 30;
+  const leftPad = 96;
+  const rightPad = 36;
+  const topPad = 28;
+  const bottomPad = 28;
+
+  const colX = (col) => leftPad + col * colGap + colGap / 2;
+  const rowY = (qubit) => topPad + qubit * rowGap;
+
+  const dotR = Math.min(4, rowGap * 0.26);
+  const targetR = Math.min(5.6, rowGap * 0.34);
+
+  const wireEndX = colX(numCols - 1) + colGap / 2 + 8;
+  const width = wireEndX + rightPad;
+  const height = topPad + numQubits * rowGap + bottomPad;
+
+  // Drag bounds: keep CNOT endpoints inside the gate area.
+  const dragMin = leftPad + 8;
+  const dragMax = wireEndX - 10;
+
+  const circuitId = `mqtcircuit-${state.t}-${state.n}`;
+  if (!state.circuitDragOverrides[circuitId]) {
+    state.circuitDragOverrides[circuitId] = {};
+  }
+  const overrides = state.circuitDragOverrides[circuitId];
+
+  const svg = svgNode("svg", {
+    viewBox: `0 0 ${width} ${height}`,
+    role: "img",
+    "aria-label": `MQT CAT circuit for n = ${state.n}, t = ${state.t}`,
+  });
+
+  const wireLayer = svgNode("g");
+  const gateLayer = svgNode("g");
+  const handleLayer = svgNode("g");
+
+  // Wires + labels. Data qubits are global indices 0..n-1; ancillae are the rest.
+  for (let qubit = 0; qubit < numQubits; qubit += 1) {
+    const y = rowY(qubit);
+    const isData = qubit < dataQubits;
+    wireLayer.appendChild(
+      svgNode("line", {
+        x1: leftPad,
+        y1: y,
+        x2: wireEndX,
+        y2: y,
+        stroke: isData ? "var(--data-wire)" : "var(--flag-wire)",
+        "stroke-width": isData ? 1.8 : 1.2,
+        "stroke-opacity": isData ? 0.6 : 0.4,
+      }),
+    );
+
+    if (numQubits <= 96 || isData) {
+      const labelSize = Math.max(9, Math.min(12, rowGap * 0.56));
+      const label = svgNode("text", {
+        x: leftPad - 8,
+        y: y + labelSize * 0.34,
+        "font-size": labelSize,
+        "text-anchor": "end",
+        fill: "var(--muted)",
+      });
+      label.textContent = isData ? `q${qubit}` : `a${qubit - dataQubits}`;
+      wireLayer.appendChild(label);
+    }
+  }
+
+  // CNOTs: control dot + target ⊕ joined by a connector. Each endpoint can be
+  // dragged horizontally along its own wire so overlapping gates can be spread.
+  function eventPointInSvg(event) {
+    const ctm = svg.getScreenCTM();
+    if (!ctm) {
+      return null;
+    }
+    const point = svg.createSVGPoint();
+    point.x = event.clientX;
+    point.y = event.clientY;
+    return point.matrixTransform(ctm.inverse());
+  }
+
+  const gateVisuals = [];
+  let activeDrag = null;
+  const hitR = Math.max(9, targetR + 4);
+
+  cxGates.forEach((op, index) => {
+    const gate = { index, defaultX: colX(op.col) };
+    const yc = rowY(op.control);
+    const yt = rowY(op.target);
+
+    const connector = svgNode("line", {
+      stroke: "var(--ink)",
+      "stroke-width": 1.7,
+      "stroke-linecap": "round",
+    });
+    gateLayer.appendChild(connector);
+
+    const controlHandle = svgNode("g", {
+      class: "circuit-gate-handle",
+      tabindex: "0",
+      role: "button",
+      "aria-label": `CNOT ${index} control`,
+    });
+    controlHandle.appendChild(svgNode("circle", { cx: 0, cy: 0, r: dotR, fill: "var(--ink)" }));
+    controlHandle.appendChild(svgNode("circle", { cx: 0, cy: 0, r: hitR, fill: "transparent" }));
+
+    const targetHandle = svgNode("g", {
+      class: "circuit-gate-handle",
+      tabindex: "0",
+      role: "button",
+      "aria-label": `CNOT ${index} target`,
+    });
+    targetHandle.appendChild(
+      svgNode("circle", { cx: 0, cy: 0, r: targetR, fill: "#ffffff", stroke: "var(--ink)", "stroke-width": 1.7 }),
+    );
+    targetHandle.appendChild(
+      svgNode("line", { x1: -targetR, y1: 0, x2: targetR, y2: 0, stroke: "var(--ink)", "stroke-width": 1.7 }),
+    );
+    targetHandle.appendChild(
+      svgNode("line", { x1: 0, y1: -targetR, x2: 0, y2: targetR, stroke: "var(--ink)", "stroke-width": 1.7 }),
+    );
+    targetHandle.appendChild(svgNode("circle", { cx: 0, cy: 0, r: hitR, fill: "transparent" }));
+
+    handleLayer.appendChild(controlHandle);
+    handleLayer.appendChild(targetHandle);
+
+    function update() {
+      const override = overrides[index] || {};
+      const cx = override.cx ?? gate.defaultX;
+      const tx = override.tx ?? gate.defaultX;
+      connector.setAttribute("x1", cx);
+      connector.setAttribute("y1", yc);
+      connector.setAttribute("x2", tx);
+      connector.setAttribute("y2", yt);
+      controlHandle.setAttribute("transform", `translate(${cx} ${yc})`);
+      targetHandle.setAttribute("transform", `translate(${tx} ${yt})`);
+    }
+
+    function startDrag(endpoint, handle, event) {
+      event.preventDefault();
+      activeDrag = { index, endpoint, pointerId: event.pointerId, update };
+      handle.classList.add("dragging");
+      svg.classList.add("dragging-graph");
+      handle.setPointerCapture(event.pointerId);
+    }
+
+    controlHandle.addEventListener("pointerdown", (event) => startDrag("cx", controlHandle, event));
+    targetHandle.addEventListener("pointerdown", (event) => startDrag("tx", targetHandle, event));
+    // Double-click an endpoint to snap this CNOT back to its scheduled column.
+    controlHandle.addEventListener("dblclick", () => {
+      delete overrides[index];
+      update();
+    });
+    targetHandle.addEventListener("dblclick", () => {
+      delete overrides[index];
+      update();
+    });
+
+    gateVisuals.push({ controlHandle, targetHandle, update });
+    update();
+  });
+
+  function moveActiveDrag(event) {
+    if (!activeDrag || activeDrag.pointerId !== event.pointerId) {
+      return;
+    }
+    const point = eventPointInSvg(event);
+    if (!point) {
+      return;
+    }
+    const x = clampNumber(point.x, dragMin, dragMax);
+    overrides[activeDrag.index] = { ...(overrides[activeDrag.index] || {}), [activeDrag.endpoint]: x };
+    activeDrag.update();
+  }
+
+  function endDrag(event) {
+    if (!activeDrag || activeDrag.pointerId !== event.pointerId) {
+      return;
+    }
+    for (const visual of gateVisuals) {
+      visual.controlHandle.classList.remove("dragging");
+      visual.targetHandle.classList.remove("dragging");
+    }
+    svg.classList.remove("dragging-graph");
+    activeDrag = null;
+  }
+
+  svg.addEventListener("pointermove", moveActiveDrag);
+  svg.addEventListener("pointerup", endDrag);
+  svg.addEventListener("pointercancel", endDrag);
+
+  svg.appendChild(wireLayer);
+  svg.appendChild(gateLayer);
+  svg.appendChild(handleLayer);
+
+  renderZoomableSvg(svg, circuitId, {
+    maxScale: 6,
+    hint: "Drag a CNOT's control (•) or target (⊕) sideways to spread out overlapping gates; double-click an endpoint to reset it. Ctrl-scroll to zoom.",
+  });
+
+  const circuit = getMqtCircuit(state.n, state.t);
+  const sourceName = circuit?.fileName || (metric.sourcePath ? metric.sourcePath.split("/").pop() : "Stim");
+  refs.visualCaption.textContent =
+    `MQT benchmark CAT^${metric.n} circuit for n = ${state.n}, t = ${state.t} (${metric.numCx} CNOTs across ${layers.length} entangling layers), from the bundled ${sourceName}. Data wires q0 … q${state.n - 1} carry the output cat state; ancilla wires a0, a1, … are the flag/verification qubits. Only the entangling CNOT layers are drawn — the exported Stim source also includes the origin Hadamard and the flag measurements. Because several CNOTs share each time slice, drag any control or target sideways to declutter; double-click an endpoint to reset. Use Export above to download the Stim source.`;
+}
+
+function appendMqtExport(model) {
+  const circuit = getMqtCircuit(state.n, state.t);
+  if (!circuit) {
+    return;
+  }
+  const metric = model.actual;
+  const stim = circuit.stim;
+
+  const panel = document.createElement("div");
+  panel.className = "export-panel";
+
+  const summary = document.createElement("p");
+  summary.className = "export-summary";
+  summary.textContent =
+    `Stim circuit: MQT CAT^${circuit.n}, t = ${circuit.t} — ` +
+    `${metric ? `${metric.numCx} CNOTs across ${metric.layers.length} entangling layers, ` : ""}` +
+    `exact bundled ${circuit.fileName}.`;
+  panel.appendChild(summary);
+
+  const controls = document.createElement("div");
+  controls.className = "export-controls";
+
+  const downloadButton = document.createElement("button");
+  downloadButton.type = "button";
+  downloadButton.className = "export-button";
+  downloadButton.textContent = "Download .stim";
+  downloadButton.addEventListener("click", () => {
+    downloadTextFile(circuit.fileName, stim);
+  });
+  controls.appendChild(downloadButton);
+
+  const copyButton = document.createElement("button");
+  copyButton.type = "button";
+  copyButton.className = "export-button ghost";
+  copyButton.textContent = "Copy";
+  copyButton.addEventListener("click", () => {
+    const done = () => {
+      copyButton.textContent = "Copied!";
+      copyButton.classList.add("copied");
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(stim).then(done).catch(() => {
+        copyButton.textContent = "Copy failed";
+      });
+    } else {
+      done();
+    }
+  });
+  controls.appendChild(copyButton);
+
+  panel.appendChild(controls);
+  refs.visualHost.appendChild(panel);
+}
+
 function renderEmptyVisual(message, caption) {
   clearVisual();
   refs.visualHost.innerHTML = `<div class="empty-state">${message}</div>`;
@@ -1360,6 +3619,26 @@ function renderDetailInfo(model) {
     rangeNote = `Graph view is snapped to the nearest available SpiderCat instance at n = ${model.spiderGraph.targetN}.`;
   }
 
+  // SpiderCat optimal ships concrete circuits in the repo, so offer a one-click
+  // export of the exact bundled circuit for the current (n, t).
+  const spiderCircuit = model.id === "spidercat" ? getSpiderCircuit(state.n, state.t) : null;
+  const exportHtml = spiderCircuit
+    ? `
+      <div class="export-block">
+        <span class="export-label">Export circuit</span>
+        <button type="button" id="exportStimBtn" class="export-button">Download .stim</button>
+        <span class="export-hint">Exact bundled SpiderCat circuit (Stim format) for n = ${state.n}, t = ${state.t}.</span>
+      </div>
+    `
+    : model.id === "spidercat"
+      ? `
+      <div class="export-block">
+        <span class="export-label">Export circuit</span>
+        <span class="export-hint">No exact bundled circuit at n = ${state.n}, t = ${state.t} to export.</span>
+      </div>
+    `
+      : "";
+
   refs.detailInfo.innerHTML = `
     <h3>${model.label}</h3>
     <p>${model.description}</p>
@@ -1385,7 +3664,15 @@ function renderDetailInfo(model) {
           ? `<p class="mono">${model.actual.sourcePath}</p>`
           : ""
     }
+    ${exportHtml}
   `;
+
+  if (spiderCircuit) {
+    const exportButton = refs.detailInfo.querySelector("#exportStimBtn");
+    exportButton?.addEventListener("click", () => {
+      downloadText(spiderCircuit.fileName, spiderCircuit.stim, "text/plain");
+    });
+  }
 }
 
 function renderDetail(model) {
@@ -1394,24 +3681,145 @@ function renderDetail(model) {
   renderDetailInfo(model);
 
   if (model.id === "spidercat") {
-    renderSpiderGraph(model);
+    if (state.spiderView === "circuit") {
+      renderSpiderCircuit(model);
+    } else {
+      renderSpiderGraph(model);
+    }
+    prependViewToggle(
+      [
+        { id: "graph", label: "Graph" },
+        { id: "circuit", label: "Circuit" },
+      ],
+      state.spiderView,
+      (view) => {
+        state.spiderView = view;
+        render();
+      },
+    );
     return;
   }
 
   if (model.id === "recursive") {
-    renderRecursiveSchematic(model);
+    if (state.recursiveView === "zx") {
+      renderRecursiveZX(model);
+    } else {
+      renderRecursiveSchematic(model);
+    }
+    appendRecursiveExport();
+    prependViewToggle(
+      [
+        { id: "schematic", label: "Schematic" },
+        { id: "zx", label: "ZX diagram" },
+      ],
+      state.recursiveView,
+      (view) => {
+        state.recursiveView = view;
+        render();
+      },
+    );
     return;
   }
 
   if (model.id === "shallow") {
-    if (!model.available) {
+    const hasGraph = Boolean(getNearestSpiderGraph(state.t, state.n));
+    if (state.shallowView === "circuit") {
+      if (hasGraph) {
+        renderShallowCircuit(model);
+        appendShallowExport();
+      } else {
+        renderEmptyVisual(
+          `No marked 3-regular graph is bundled for t = ${state.t}, so the Theorem 5.6 circuit cannot be built.`,
+          "The explicit shallow circuit is extracted from the bundled SpiderCat graphs (t = 2 through t = 7).",
+        );
+      }
+    } else if (!model.available) {
       renderEmptyVisual(
         "The paper's shallow estimator is only wired up where the demo has a known r_t value.",
-        "Try t = 2 through t = 5 to activate the shallow estimator.",
+        "Try t = 2 through t = 5 for the estimator, or switch to the Circuit view to build the explicit Theorem 5.6 circuit.",
       );
-      return;
+    } else {
+      renderShallowSchematic(model);
     }
-    renderShallowSchematic(model);
+    prependViewToggle(
+      [
+        { id: "schematic", label: "Schematic" },
+        { id: "circuit", label: "Circuit" },
+      ],
+      state.shallowView,
+      (view) => {
+        state.shallowView = view;
+        render();
+      },
+    );
+    return;
+  }
+
+  if (model.id === "flagAtOrigin") {
+    const metric = model.actual;
+    const hasCircuit = Boolean(metric && metric.layers);
+    if (!hasCircuit) {
+      renderEmptyVisual(
+        `No bundled flag-at-origin circuit is available for n = ${state.n}, t = ${state.t}.`,
+        "These baseline panels use the exact repo circuits when they exist.",
+      );
+    } else if (state.flagView === "schedule") {
+      renderSchedule(
+        metric,
+        state.n,
+        model.accent,
+        `Flag-at-origin CNOT layers for n = ${state.n}, t = ${state.t}: ${metric.numCx} CNOTs across ${metric.layers.length} entangling layers from the bundled QASM. Switch to the Circuit view to drag overlapping gates apart and export the Stim source.`,
+        model.id,
+      );
+    } else {
+      renderFlagCircuit(model);
+      appendFlagExport(metric);
+    }
+    prependViewToggle(
+      [
+        { id: "circuit", label: "Circuit" },
+        { id: "schedule", label: "Schedule" },
+      ],
+      state.flagView,
+      (view) => {
+        state.flagView = view;
+        render();
+      },
+    );
+    return;
+  }
+
+  if (model.id === "mqt") {
+    const metric = model.actual;
+    const hasCircuit = Boolean(metric && metric.layers);
+    if (!hasCircuit) {
+      renderEmptyVisual(
+        `No bundled MQT circuit is available for n = ${state.n}, t = ${state.t}.`,
+        "These baseline panels use the exact repo circuits when they exist.",
+      );
+    } else if (state.mqtView === "schedule") {
+      renderSchedule(
+        metric,
+        state.n,
+        model.accent,
+        `MQT CNOT layers for n = ${state.n}, t = ${state.t}: ${metric.numCx} CNOTs across ${metric.layers.length} entangling layers from the bundled Stim circuit. Switch to the Circuit view to drag overlapping gates apart and export the Stim source.`,
+        model.id,
+      );
+    } else {
+      renderMqtCircuit(model);
+      appendMqtExport(model);
+    }
+    prependViewToggle(
+      [
+        { id: "circuit", label: "Circuit" },
+        { id: "schedule", label: "Schedule" },
+      ],
+      state.mqtView,
+      (view) => {
+        state.mqtView = view;
+        render();
+      },
+    );
     return;
   }
 

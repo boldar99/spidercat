@@ -80,8 +80,14 @@ window.SPIDERCAT_DEMO_DATA = {
       "paperHook": "Repo benchmark",
       "description": "A bundled flagged baseline circuit family used in the repo's benchmark scripts.",
       "links": [
-        { "label": "Paper", "url": "https://arxiv.org/pdf/2508.14200" },
-        { "label": "GitHub", "url": "https://github.com/Quantinuum/flag_at_origin_paper" }
+        {
+          "label": "Paper",
+          "url": "https://arxiv.org/pdf/2508.14200"
+        },
+        {
+          "label": "GitHub",
+          "url": "https://github.com/Quantinuum/flag_at_origin_paper"
+        }
       ]
     },
     "mqt": {
@@ -91,8 +97,14 @@ window.SPIDERCAT_DEMO_DATA = {
       "paperHook": "Repo benchmark",
       "description": "Another bundled benchmark family with relatively shallow clean circuits but more ancilla overhead.",
       "links": [
-        { "label": "Paper", "url": "https://arxiv.org/pdf/2601.03343" },
-        { "label": "GitHub", "url": "https://github.com/munich-quantum-toolkit/qecc/tree/main/src/mqt/qecc/circuit_synthesis" }
+        {
+          "label": "Paper",
+          "url": "https://arxiv.org/pdf/2601.03343"
+        },
+        {
+          "label": "GitHub",
+          "url": "https://github.com/munich-quantum-toolkit/qecc/tree/main/src/mqt/qecc/circuit_synthesis"
+        }
       ]
     }
   },
@@ -122658,7 +122670,7 @@ window.SPIDERCAT_DEMO_DATA = {
         {
           "id": 5,
           "x": 0.2983,
-          "y": 0.3672,
+          "y": 0.3671,
           "degree": 3
         },
         {
@@ -122711,14 +122723,14 @@ window.SPIDERCAT_DEMO_DATA = {
         },
         {
           "id": 14,
-          "x": 0.2588,
+          "x": 0.2589,
           "y": -0.1996,
           "degree": 3
         },
         {
           "id": 15,
           "x": 0.4261,
-          "y": -0.2824,
+          "y": -0.2825,
           "degree": 3
         },
         {
@@ -128114,7 +128126,7 @@ window.SPIDERCAT_DEMO_DATA = {
         },
         {
           "id": 8,
-          "x": 0.0796,
+          "x": 0.0795,
           "y": -0.4373,
           "degree": 3
         },
@@ -145126,7 +145138,7 @@ window.SPIDERCAT_DEMO_DATA = {
         {
           "id": 5,
           "x": 0.3259,
-          "y": 0.4631,
+          "y": 0.463,
           "degree": 3
         },
         {
@@ -145143,8 +145155,8 @@ window.SPIDERCAT_DEMO_DATA = {
         },
         {
           "id": 8,
-          "x": 0.2895,
-          "y": 0.0707,
+          "x": 0.2896,
+          "y": 0.0706,
           "degree": 3
         },
         {
@@ -145162,7 +145174,7 @@ window.SPIDERCAT_DEMO_DATA = {
         {
           "id": 11,
           "x": -0.4091,
-          "y": -0.1726,
+          "y": -0.1725,
           "degree": 3
         },
         {
@@ -145174,13 +145186,13 @@ window.SPIDERCAT_DEMO_DATA = {
         {
           "id": 13,
           "x": -0.4256,
-          "y": 0.192,
+          "y": 0.1921,
           "degree": 3
         },
         {
           "id": 14,
           "x": -0.2284,
-          "y": 0.1378,
+          "y": 0.1379,
           "degree": 3
         },
         {
@@ -145216,7 +145228,7 @@ window.SPIDERCAT_DEMO_DATA = {
         {
           "id": 20,
           "x": -0.302,
-          "y": -0.0688,
+          "y": -0.0687,
           "degree": 3
         },
         {
@@ -145228,12 +145240,12 @@ window.SPIDERCAT_DEMO_DATA = {
         {
           "id": 22,
           "x": -0.0215,
-          "y": -0.3932,
+          "y": -0.3931,
           "degree": 3
         },
         {
           "id": 23,
-          "x": 0.2915,
+          "x": 0.2914,
           "y": -0.2634,
           "degree": 3
         },
@@ -145245,8 +145257,8 @@ window.SPIDERCAT_DEMO_DATA = {
         },
         {
           "id": 25,
-          "x": 0.1066,
-          "y": -0.3403,
+          "x": 0.1065,
+          "y": -0.3402,
           "degree": 3
         },
         {
@@ -145294,13 +145306,13 @@ window.SPIDERCAT_DEMO_DATA = {
         {
           "id": 33,
           "x": -0.0938,
-          "y": -0.478,
+          "y": -0.4779,
           "degree": 3
         },
         {
           "id": 34,
           "x": -0.2041,
-          "y": -0.207,
+          "y": -0.2069,
           "degree": 3
         },
         {
@@ -203019,6 +203031,3104 @@ window.SPIDERCAT_DEMO_DATA = {
         ]
       },
       "sourcePath": "spidercat/circuits_data/cat_state_t7_n9_p1.json"
+    }
+  },
+  "spiderCircuits": {
+    "t2-n10": {
+      "n": 10,
+      "t": 2,
+      "fileName": "cat_state_t2_n10_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n10_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 10 0 3 3 4 3 11 3 12 0 5 0 6 6 7 6 11\nM 11\nDETECTOR rec[-1]\nCX 0 8 0 9 0 10\nM 10\nDETECTOR rec[-1]\nCX 0 12\nM 12\nDETECTOR rec[-1]\n"
+    },
+    "t2-n11": {
+      "n": 11,
+      "t": 2,
+      "fileName": "cat_state_t2_n11_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n11_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 11 0 3 3 4 3 12 3 13 0 5 0 6 0 7 7 8 7 12\nM 12\nDETECTOR rec[-1]\nCX 0 9 0 10 0 11\nM 11\nDETECTOR rec[-1]\nCX 0 13\nM 13\nDETECTOR rec[-1]\n"
+    },
+    "t2-n12": {
+      "n": 12,
+      "t": 2,
+      "fileName": "cat_state_t2_n12_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n12_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 12 0 3 3 4 3 5 3 13 3 14 0 6 0 7 0 8 8 9 8 13\nM 13\nDETECTOR rec[-1]\nCX 0 10 0 11 0 12\nM 12\nDETECTOR rec[-1]\nCX 0 14\nM 14\nDETECTOR rec[-1]\n"
+    },
+    "t2-n13": {
+      "n": 13,
+      "t": 2,
+      "fileName": "cat_state_t2_n13_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n13_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 13 1 14 0 3 3 4 3 5 5 15 3 6 3 7 3 8 8 9 8 16 3 14\nM 14\nDETECTOR rec[-1]\nCX 0 10 0 11 11 13\nM 13\nDETECTOR rec[-1]\nCX 0 12 0 16\nM 16\nDETECTOR rec[-1]\nCX 0 15\nM 15\nDETECTOR rec[-1]\n"
+    },
+    "t2-n14": {
+      "n": 14,
+      "t": 2,
+      "fileName": "cat_state_t2_n14_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n14_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 14 1 15 0 3 3 4 3 5 3 6 6 16 3 7 3 8 3 9 9 10 9 17 3 15\nM 15\nDETECTOR rec[-1]\nCX 0 11 0 12 12 14\nM 14\nDETECTOR rec[-1]\nCX 0 13 0 17\nM 17\nDETECTOR rec[-1]\nCX 0 16\nM 16\nDETECTOR rec[-1]\n"
+    },
+    "t2-n15": {
+      "n": 15,
+      "t": 2,
+      "fileName": "cat_state_t2_n15_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n15_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 15 1 4 1 5 1 6 6 16 1 17 0 7 7 8 7 18 7 16\nM 16\nDETECTOR rec[-1]\nCX 0 9 0 10 10 11 10 18\nM 18\nDETECTOR rec[-1]\nCX 0 12 0 13 0 14 14 17\nM 17\nDETECTOR rec[-1]\nCX 0 15\nM 15\nDETECTOR rec[-1]\n"
+    },
+    "t2-n16": {
+      "n": 16,
+      "t": 2,
+      "fileName": "cat_state_t2_n16_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n16_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 1 4 4 16 1 5 1 6 1 17 1 18 0 7 7 8 7 19 7 16\nM 16\nDETECTOR rec[-1]\nCX 0 9 0 10 10 11 10 17\nM 17\nDETECTOR rec[-1]\nCX 0 12 0 13 0 14 14 15 14 19\nM 19\nDETECTOR rec[-1]\nCX 0 18\nM 18\nDETECTOR rec[-1]\n"
+    },
+    "t2-n17": {
+      "n": 17,
+      "t": 2,
+      "fileName": "cat_state_t2_n17_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n17_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 1 17 1 18 0 4 4 5 4 6 4 7 7 19 4 8 4 9 4 10 10 11 10 20 4 18\nM 18\nDETECTOR rec[-1]\nCX 0 12 0 13 0 14 14 15 14 17\nM 17\nDETECTOR rec[-1]\nCX 0 16 0 20\nM 20\nDETECTOR rec[-1]\nCX 0 19\nM 19\nDETECTOR rec[-1]\n"
+    },
+    "t2-n18": {
+      "n": 18,
+      "t": 2,
+      "fileName": "cat_state_t2_n18_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n18_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 1 4 4 18 1 5 1 6 1 7 7 19 1 20 0 8 8 9 8 10 8 21 8 19\nM 19\nDETECTOR rec[-1]\nCX 0 11 0 12 0 13 13 14 13 21\nM 21\nDETECTOR rec[-1]\nCX 0 15 0 16 0 17 17 20\nM 20\nDETECTOR rec[-1]\nCX 0 18\nM 18\nDETECTOR rec[-1]\n"
+    },
+    "t2-n19": {
+      "n": 19,
+      "t": 2,
+      "fileName": "cat_state_t2_n19_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n19_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 3 19 3 6 3 20 1 7 1 8 1 21 1 9 1 10 1 22 1 23 0 11 11 12 11 20\nM 20\nDETECTOR rec[-1]\nCX 11 23\nM 23\nDETECTOR rec[-1]\nCX 0 13 0 14 14 21\nM 21\nDETECTOR rec[-1]\nCX 0 15 0 16 16 17 16 19\nM 19\nDETECTOR rec[-1]\nCX 0 18 0 22\nM 22\nDETECTOR rec[-1]\n"
+    },
+    "t2-n20": {
+      "n": 20,
+      "t": 2,
+      "fileName": "cat_state_t2_n20_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n20_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 20 0 3 3 4 3 5 3 6 6 21 3 7 3 8 3 9 9 10 9 22 3 11 3 12 3 20\nM 20\nDETECTOR rec[-1]\nCX 3 23 0 13 0 14 14 15 14 24 14 21\nM 21\nDETECTOR rec[-1]\nCX 0 16 0 17 17 18 17 24\nM 24\nDETECTOR rec[-1]\nCX 0 19 0 22\nM 22\nDETECTOR rec[-1]\nCX 0 23\nM 23\nDETECTOR rec[-1]\n"
+    },
+    "t2-n21": {
+      "n": 21,
+      "t": 2,
+      "fileName": "cat_state_t2_n21_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n21_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 21 0 3 3 4 3 5 3 6 6 22 3 7 3 8 3 9 9 10 9 23 3 11 3 12 3 21\nM 21\nDETECTOR rec[-1]\nCX 3 24 0 13 0 14 0 15 15 16 15 17 15 25 15 22\nM 22\nDETECTOR rec[-1]\nCX 0 18 0 19 19 25\nM 25\nDETECTOR rec[-1]\nCX 0 20 0 23\nM 23\nDETECTOR rec[-1]\nCX 0 24\nM 24\nDETECTOR rec[-1]\n"
+    },
+    "t2-n22": {
+      "n": 22,
+      "t": 2,
+      "fileName": "cat_state_t2_n22_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n22_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 1 4 4 5 4 22 1 23 0 6 6 7 6 8 6 9 9 10 9 11 9 12 12 13 12 24 9 25 6 14 6 15 6 16 16 23\nM 23\nDETECTOR rec[-1]\nCX 6 17 6 18 6 22\nM 22\nDETECTOR rec[-1]\nCX 6 26 0 19 0 20 20 25\nM 25\nDETECTOR rec[-1]\nCX 0 21 0 24\nM 24\nDETECTOR rec[-1]\nCX 0 26\nM 26\nDETECTOR rec[-1]\n"
+    },
+    "t2-n23": {
+      "n": 23,
+      "t": 2,
+      "fileName": "cat_state_t2_n23_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n23_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 23 0 3 3 4 3 5 3 6 6 7 6 24 3 8 3 9 3 23\nM 23\nDETECTOR rec[-1]\nCX 3 10 3 11 3 25 3 12 3 26 0 13 0 14 0 15 15 16 15 26\nM 26\nDETECTOR rec[-1]\nCX 15 27 0 17 0 18 0 19 19 20 19 25\nM 25\nDETECTOR rec[-1]\nCX 0 21 0 22 0 24\nM 24\nDETECTOR rec[-1]\nCX 0 27\nM 27\nDETECTOR rec[-1]\n"
+    },
+    "t2-n24": {
+      "n": 24,
+      "t": 2,
+      "fileName": "cat_state_t2_n24_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n24_p1.stim",
+      "stim": "H 0\nCX 0 1 1 24 0 2 2 3 2 4 2 5 5 25 2 6 2 7 2 8 8 26 2 9 2 10 2 27 2 24\nM 24\nDETECTOR rec[-1]\nCX 0 11 0 12 0 13 13 14 13 15 13 28 13 26\nM 26\nDETECTOR rec[-1]\nCX 0 16 0 17 0 18 18 19 18 28\nM 28\nDETECTOR rec[-1]\nCX 0 20 0 21 0 22 22 23 22 27\nM 27\nDETECTOR rec[-1]\nCX 0 25\nM 25\nDETECTOR rec[-1]\n"
+    },
+    "t2-n25": {
+      "n": 25,
+      "t": 2,
+      "fileName": "cat_state_t2_n25_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n25_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 1 25 1 26 0 4 4 5 4 6 4 7 7 8 7 9 7 10 10 27 7 26\nM 26\nDETECTOR rec[-1]\nCX 4 11 4 12 4 13 13 14 13 28 4 15 4 16 4 17 17 18 17 25\nM 25\nDETECTOR rec[-1]\nCX 4 29 0 19 0 20 20 21 20 30 20 27\nM 27\nDETECTOR rec[-1]\nCX 0 22 0 23 23 30\nM 30\nDETECTOR rec[-1]\nCX 0 24 0 28\nM 28\nDETECTOR rec[-1]\nCX 0 29\nM 29\nDETECTOR rec[-1]\n"
+    },
+    "t2-n26": {
+      "n": 26,
+      "t": 2,
+      "fileName": "cat_state_t2_n26_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n26_p1.stim",
+      "stim": "H 0\nCX 0 26 0 1 1 2 1 3 1 4 4 5 4 6 4 7 7 8 7 27 4 9 4 10 4 28 4 29 1 11 1 12 1 27\nM 27\nDETECTOR rec[-1]\nCX 1 30 0 13 0 14 14 15 14 16 14 17 17 18 17 28\nM 28\nDETECTOR rec[-1]\nCX 14 19 14 20 14 21 21 22 21 31 14 29\nM 29\nDETECTOR rec[-1]\nCX 0 23 0 24 24 26\nM 26\nDETECTOR rec[-1]\nCX 0 25 0 31\nM 31\nDETECTOR rec[-1]\nCX 0 30\nM 30\nDETECTOR rec[-1]\n"
+    },
+    "t2-n27": {
+      "n": 27,
+      "t": 2,
+      "fileName": "cat_state_t2_n27_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n27_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 1 4 4 27 1 28 0 5 5 6 5 7 5 8 8 28\nM 28\nDETECTOR rec[-1]\nCX 5 9 5 10 5 11 11 29 5 12 5 13 5 14 14 30 5 15 5 16 5 31 5 29\nM 29\nDETECTOR rec[-1]\nCX 0 17 0 18 18 19 18 32 18 27\nM 27\nDETECTOR rec[-1]\nCX 0 20 0 21 21 22 21 31\nM 31\nDETECTOR rec[-1]\nCX 0 23 0 24 0 25 25 26 25 32\nM 32\nDETECTOR rec[-1]\nCX 0 30\nM 30\nDETECTOR rec[-1]\n"
+    },
+    "t2-n28": {
+      "n": 28,
+      "t": 2,
+      "fileName": "cat_state_t2_n28_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n28_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 1 4 4 5 4 6 4 7 7 28 4 8 4 9 4 29 4 30 1 10 1 11 1 12 12 31 1 32 0 13 13 14 13 15 13 16 16 17 16 29\nM 29\nDETECTOR rec[-1]\nCX 13 18 13 19 13 20 20 21 20 33 13 31\nM 31\nDETECTOR rec[-1]\nCX 0 22 0 23 0 24 24 32\nM 32\nDETECTOR rec[-1]\nCX 0 25 0 26 26 30\nM 30\nDETECTOR rec[-1]\nCX 0 27 0 33\nM 33\nDETECTOR rec[-1]\nCX 0 28\nM 28\nDETECTOR rec[-1]\n"
+    },
+    "t2-n29": {
+      "n": 29,
+      "t": 2,
+      "fileName": "cat_state_t2_n29_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n29_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 29 0 3 3 4 3 5 3 6 6 7 6 8 6 9 9 10 9 30 6 11 6 12 6 29\nM 29\nDETECTOR rec[-1]\nCX 6 13 6 31 3 14 3 15 3 30\nM 30\nDETECTOR rec[-1]\nCX 3 32 0 16 0 17 0 18 18 19 18 20 18 21 21 22 21 33 18 23 18 24 18 31\nM 31\nDETECTOR rec[-1]\nCX 18 34 0 25 0 26 0 27 27 32\nM 32\nDETECTOR rec[-1]\nCX 0 28 0 33\nM 33\nDETECTOR rec[-1]\nCX 0 34\nM 34\nDETECTOR rec[-1]\n"
+    },
+    "t2-n30": {
+      "n": 30,
+      "t": 2,
+      "fileName": "cat_state_t2_n30_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n30_p1.stim",
+      "stim": "H 0\nCX 0 1 1 30 0 2 2 3 2 4 2 5 5 6 5 7 5 8 8 31 5 32 2 9 2 10 2 11 11 12 11 33 2 13 2 14 2 15 15 16 15 34 2 30\nM 30\nDETECTOR rec[-1]\nCX 0 17 0 18 0 19 19 20 19 21 19 22 22 35 19 23 19 24 19 33\nM 33\nDETECTOR rec[-1]\nCX 19 31\nM 31\nDETECTOR rec[-1]\nCX 0 25 0 26 0 27 27 32\nM 32\nDETECTOR rec[-1]\nCX 0 28 0 29 0 34\nM 34\nDETECTOR rec[-1]\nCX 0 35\nM 35\nDETECTOR rec[-1]\n"
+    },
+    "t2-n31": {
+      "n": 31,
+      "t": 2,
+      "fileName": "cat_state_t2_n31_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n31_p1.stim",
+      "stim": "H 0\nCX 0 31 0 1 1 2 1 3 1 4 4 5 4 6 4 7 7 8 7 9 7 10 10 32 7 33 4 11 4 12 4 13 13 14 13 31\nM 31\nDETECTOR rec[-1]\nCX 4 15 4 16 4 34 4 35 1 17 1 18 1 19 19 36 1 20 1 21 1 22 22 23 22 34\nM 34\nDETECTOR rec[-1]\nCX 1 33\nM 33\nDETECTOR rec[-1]\nCX 0 24 0 25 25 26 25 37 25 32\nM 32\nDETECTOR rec[-1]\nCX 0 27 0 35\nM 35\nDETECTOR rec[-1]\nCX 0 28 0 29 29 30 29 37\nM 37\nDETECTOR rec[-1]\nCX 0 36\nM 36\nDETECTOR rec[-1]\n"
+    },
+    "t2-n32": {
+      "n": 32,
+      "t": 2,
+      "fileName": "cat_state_t2_n32_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n32_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 1 4 4 5 4 32 1 6 1 7 1 8 8 33 1 9 1 10 1 34 1 35 0 11 11 12 11 13 11 14 14 15 14 36 11 16 11 17 11 18 18 37 11 19 11 20 11 21 21 22 21 34\nM 34\nDETECTOR rec[-1]\nCX 11 23 11 24 11 32\nM 32\nDETECTOR rec[-1]\nCX 11 35\nM 35\nDETECTOR rec[-1]\nCX 0 25 0 26 0 27 27 28 27 38 27 33\nM 33\nDETECTOR rec[-1]\nCX 0 29 0 30 30 38\nM 38\nDETECTOR rec[-1]\nCX 0 31 0 36\nM 36\nDETECTOR rec[-1]\nCX 0 37\nM 37\nDETECTOR rec[-1]\n"
+    },
+    "t2-n33": {
+      "n": 33,
+      "t": 2,
+      "fileName": "cat_state_t2_n33_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n33_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 1 4 4 5 4 33 1 6 1 7 1 8 8 9 8 10 8 11 11 34 8 12 8 13 8 14 14 35 8 36 1 15 1 16 1 17 17 18 17 37 1 36\nM 36\nDETECTOR rec[-1]\nCX 0 19 19 20 19 21 19 22 22 23 22 24 22 33\nM 33\nDETECTOR rec[-1]\nCX 22 25 22 26 22 38 22 34\nM 34\nDETECTOR rec[-1]\nCX 19 27 19 28 19 37\nM 37\nDETECTOR rec[-1]\nCX 19 29 19 39 0 30 0 31 31 38\nM 38\nDETECTOR rec[-1]\nCX 0 32 0 39\nM 39\nDETECTOR rec[-1]\nCX 0 35\nM 35\nDETECTOR rec[-1]\n"
+    },
+    "t2-n34": {
+      "n": 34,
+      "t": 2,
+      "fileName": "cat_state_t2_n34_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n34_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 1 34 1 35 0 4 4 5 4 6 4 7 7 8 7 9 7 10 10 11 10 12 10 13 13 14 13 36 10 15 10 16 10 37 10 38 7 17 7 18 7 19 19 20 19 39 7 40 4 21 4 22 4 36\nM 36\nDETECTOR rec[-1]\nCX 4 40\nM 40\nDETECTOR rec[-1]\nCX 0 23 0 24 0 25 25 26 25 39\nM 39\nDETECTOR rec[-1]\nCX 25 38\nM 38\nDETECTOR rec[-1]\nCX 0 27 0 28 28 35\nM 35\nDETECTOR rec[-1]\nCX 0 29 0 30 0 31 31 32 31 34\nM 34\nDETECTOR rec[-1]\nCX 0 33 0 37\nM 37\nDETECTOR rec[-1]\n"
+    },
+    "t2-n35": {
+      "n": 35,
+      "t": 2,
+      "fileName": "cat_state_t2_n35_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n35_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 1 4 4 5 4 35 1 6 1 7 1 36 1 37 0 8 8 9 8 10 8 11 11 38 8 12 8 13 8 14 14 15 14 35\nM 35\nDETECTOR rec[-1]\nCX 14 38\nM 38\nDETECTOR rec[-1]\nCX 8 16 8 17 8 18 18 19 18 39 8 20 8 21 8 22 22 23 22 40 8 41 0 24 0 25 0 26 26 27 26 28 26 29 29 37\nM 37\nDETECTOR rec[-1]\nCX 26 30 26 31 26 40\nM 40\nDETECTOR rec[-1]\nCX 26 32 26 36\nM 36\nDETECTOR rec[-1]\nCX 0 33 0 34 0 39\nM 39\nDETECTOR rec[-1]\nCX 0 41\nM 41\nDETECTOR rec[-1]\n"
+    },
+    "t2-n36": {
+      "n": 36,
+      "t": 2,
+      "fileName": "cat_state_t2_n36_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n36_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 36 0 3 3 4 3 5 3 6 6 7 6 8 6 9 9 10 9 11 9 12 12 13 12 37 9 14 9 15 9 38 9 39 6 16 6 17 6 40 6 41 3 18 3 19 3 20 20 21 20 38\nM 38\nDETECTOR rec[-1]\nCX 3 22 3 23 3 37\nM 37\nDETECTOR rec[-1]\nCX 3 24 3 40\nM 40\nDETECTOR rec[-1]\nCX 0 25 0 26 0 27 27 28 27 29 27 42 27 39\nM 39\nDETECTOR rec[-1]\nCX 0 30 0 31 0 32 32 33 32 42\nM 42\nDETECTOR rec[-1]\nCX 0 34 0 35 0 36\nM 36\nDETECTOR rec[-1]\nCX 0 41\nM 41\nDETECTOR rec[-1]\n"
+    },
+    "t2-n37": {
+      "n": 37,
+      "t": 2,
+      "fileName": "cat_state_t2_n37_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n37_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 1 4 4 5 4 37 1 6 1 7 7 8 7 38 7 39 1 9 1 10 10 40 1 11 1 12 12 13 12 41 1 42 0 14 14 15 14 16 14 37\nM 37\nDETECTOR rec[-1]\nCX 14 17 14 18 14 43 14 44 0 19 0 20 0 21 21 22 21 43\nM 43\nDETECTOR rec[-1]\nCX 0 23 0 24 0 25 25 26 25 27 25 28 28 29 28 38\nM 38\nDETECTOR rec[-1]\nCX 25 30 25 31 25 41\nM 41\nDETECTOR rec[-1]\nCX 25 44\nM 44\nDETECTOR rec[-1]\nCX 0 32 0 33 0 34 34 39\nM 39\nDETECTOR rec[-1]\nCX 0 35 0 36 0 40\nM 40\nDETECTOR rec[-1]\nCX 0 42\nM 42\nDETECTOR rec[-1]\n"
+    },
+    "t2-n38": {
+      "n": 38,
+      "t": 2,
+      "fileName": "cat_state_t2_n38_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n38_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 38 1 5 1 6 1 7 7 8 7 9 7 39 7 10 7 11 7 40 7 41 1 12 1 13 1 14 14 15 14 42 1 43 0 16 16 17 16 18 16 19 19 20 19 39\nM 39\nDETECTOR rec[-1]\nCX 16 21 16 22 16 44 16 45 0 23 0 24 24 25 24 38\nM 38\nDETECTOR rec[-1]\nCX 24 41\nM 41\nDETECTOR rec[-1]\nCX 0 26 0 27 27 28 27 29 27 30 30 45\nM 45\nDETECTOR rec[-1]\nCX 27 31 27 32 27 42\nM 42\nDETECTOR rec[-1]\nCX 27 33 27 44\nM 44\nDETECTOR rec[-1]\nCX 0 34 0 35 0 36 36 37 36 40\nM 40\nDETECTOR rec[-1]\nCX 0 43\nM 43\nDETECTOR rec[-1]\n"
+    },
+    "t2-n39": {
+      "n": 39,
+      "t": 2,
+      "fileName": "cat_state_t2_n39_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n39_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 1 4 4 5 4 39 1 6 1 7 1 40 1 41 0 8 8 9 8 10 8 11 11 42 8 12 8 13 8 14 14 15 14 16 14 17 17 18 17 43 14 41\nM 41\nDETECTOR rec[-1]\nCX 8 19 8 44 8 20 8 45 8 46 0 21 0 22 0 23 23 24 23 25 23 26 26 27 26 28 26 29 29 46\nM 46\nDETECTOR rec[-1]\nCX 26 30 26 31 26 39\nM 39\nDETECTOR rec[-1]\nCX 26 42\nM 42\nDETECTOR rec[-1]\nCX 23 32 23 33 23 34 34 35 34 45\nM 45\nDETECTOR rec[-1]\nCX 23 36 23 40\nM 40\nDETECTOR rec[-1]\nCX 0 37 0 38 0 43\nM 43\nDETECTOR rec[-1]\nCX 0 44\nM 44\nDETECTOR rec[-1]\n"
+    },
+    "t2-n40": {
+      "n": 40,
+      "t": 2,
+      "fileName": "cat_state_t2_n40_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n40_p1.stim",
+      "stim": "H 0\nCX 0 40 0 1 1 2 1 3 1 4 4 41 1 5 1 6 1 7 7 8 7 9 7 10 10 42 7 11 7 12 7 43 7 13 7 44 1 14 1 15 1 45 1 46 0 16 0 17 0 18 18 19 18 20 18 21 21 22 21 40\nM 40\nDETECTOR rec[-1]\nCX 18 23 18 24 18 25 25 26 25 47 18 27 18 28 18 44\nM 44\nDETECTOR rec[-1]\nCX 18 42\nM 42\nDETECTOR rec[-1]\nCX 0 29 0 30 0 31 31 32 31 47\nM 47\nDETECTOR rec[-1]\nCX 31 41\nM 41\nDETECTOR rec[-1]\nCX 0 33 0 34 34 35 34 45\nM 45\nDETECTOR rec[-1]\nCX 0 36 0 37 0 38 38 39 38 43\nM 43\nDETECTOR rec[-1]\nCX 0 46\nM 46\nDETECTOR rec[-1]\n"
+    },
+    "t2-n41": {
+      "n": 41,
+      "t": 2,
+      "fileName": "cat_state_t2_n41_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n41_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 1 41 1 4 1 5 1 6 6 7 6 8 6 9 9 10 9 42 6 11 6 12 6 43 6 44 1 13 1 14 1 42\nM 42\nDETECTOR rec[-1]\nCX 1 45 0 15 15 16 15 17 15 18 18 46 15 19 15 20 15 21 21 22 21 23 21 24 24 25 24 47 21 26 21 27 21 48 21 45\nM 45\nDETECTOR rec[-1]\nCX 15 28 15 29 15 30 30 31 30 43\nM 43\nDETECTOR rec[-1]\nCX 15 32 15 33 15 34 34 35 34 48\nM 48\nDETECTOR rec[-1]\nCX 15 44\nM 44\nDETECTOR rec[-1]\nCX 0 36 0 37 0 38 38 39 38 41\nM 41\nDETECTOR rec[-1]\nCX 0 40 0 47\nM 47\nDETECTOR rec[-1]\nCX 0 46\nM 46\nDETECTOR rec[-1]\n"
+    },
+    "t2-n42": {
+      "n": 42,
+      "t": 2,
+      "fileName": "cat_state_t2_n42_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n42_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 1 42 1 4 1 5 1 6 6 43 1 7 1 8 1 9 9 10 9 11 9 12 12 44 9 13 9 14 9 15 15 45 9 43\nM 43\nDETECTOR rec[-1]\nCX 1 16 1 17 1 46 1 18 1 47 0 19 19 20 19 21 19 22 22 23 22 46\nM 46\nDETECTOR rec[-1]\nCX 19 24 19 25 19 48 19 44\nM 44\nDETECTOR rec[-1]\nCX 0 26 0 27 0 28 28 29 28 49 0 30 0 31 0 32 32 33 32 34 32 47\nM 47\nDETECTOR rec[-1]\nCX 32 45\nM 45\nDETECTOR rec[-1]\nCX 0 35 0 36 0 37 37 38 37 42\nM 42\nDETECTOR rec[-1]\nCX 0 39 0 40 0 49\nM 49\nDETECTOR rec[-1]\nCX 0 41 0 48\nM 48\nDETECTOR rec[-1]\n"
+    },
+    "t2-n43": {
+      "n": 43,
+      "t": 2,
+      "fileName": "cat_state_t2_n43_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n43_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 1 4 4 43 1 5 1 6 6 7 6 44 6 45 1 8 1 9 9 44\nM 44\nDETECTOR rec[-1]\nCX 1 10 1 46 1 47 0 11 11 12 11 13 11 14 14 15 14 46\nM 46\nDETECTOR rec[-1]\nCX 11 16 11 17 11 48 11 43\nM 43\nDETECTOR rec[-1]\nCX 0 18 0 19 0 20 20 21 20 22 20 23 23 49 20 24 20 25 20 26 26 45\nM 45\nDETECTOR rec[-1]\nCX 20 27 20 28 20 29 29 30 29 50 20 31 20 51 0 32 0 33 0 34 34 35 34 36 34 37 37 38 37 48\nM 48\nDETECTOR rec[-1]\nCX 34 39 34 40 34 50\nM 50\nDETECTOR rec[-1]\nCX 34 49\nM 49\nDETECTOR rec[-1]\nCX 0 41 0 42 0 51\nM 51\nDETECTOR rec[-1]\nCX 0 47\nM 47\nDETECTOR rec[-1]\n"
+    },
+    "t2-n44": {
+      "n": 44,
+      "t": 2,
+      "fileName": "cat_state_t2_n44_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n44_p1.stim",
+      "stim": "H 0\nCX 0 1 1 44 0 2 2 3 2 4 2 5 5 6 5 7 5 8 8 45 5 9 5 10 5 11 11 46 5 12 5 13 5 14 14 15 14 47 5 48 2 16 2 17 2 18 18 19 18 20 18 21 21 22 21 49 18 23 18 24 18 50 18 25 18 51 2 26 2 27 2 47\nM 47\nDETECTOR rec[-1]\nCX 2 44\nM 44\nDETECTOR rec[-1]\nCX 0 28 0 29 29 30 29 31 31 32 31 33 31 34 34 35 34 50\nM 50\nDETECTOR rec[-1]\nCX 31 36 31 37 31 49\nM 49\nDETECTOR rec[-1]\nCX 31 45\nM 45\nDETECTOR rec[-1]\nCX 29 38 29 39 29 51\nM 51\nDETECTOR rec[-1]\nCX 29 52 0 40 0 41 41 48\nM 48\nDETECTOR rec[-1]\nCX 0 42 0 43 43 52\nM 52\nDETECTOR rec[-1]\nCX 0 46\nM 46\nDETECTOR rec[-1]\n"
+    },
+    "t2-n45": {
+      "n": 45,
+      "t": 2,
+      "fileName": "cat_state_t2_n45_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n45_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 1 4 4 5 4 6 4 45 4 46 1 7 1 8 8 9 8 47 8 48 1 10 1 11 11 12 11 49 1 13 1 14 1 50 1 51 0 15 15 16 15 17 15 18 18 46\nM 46\nDETECTOR rec[-1]\nCX 15 19 15 20 15 21 21 22 21 23 21 24 24 52 21 25 21 26 21 27 27 48\nM 48\nDETECTOR rec[-1]\nCX 21 28 21 29 21 30 30 31 30 47\nM 47\nDETECTOR rec[-1]\nCX 21 51\nM 51\nDETECTOR rec[-1]\nCX 15 32 15 33 15 34 34 35 34 50\nM 50\nDETECTOR rec[-1]\nCX 15 36 15 37 15 53 15 52\nM 52\nDETECTOR rec[-1]\nCX 0 38 0 39 0 40 40 41 40 53\nM 53\nDETECTOR rec[-1]\nCX 0 42 0 43 0 49\nM 49\nDETECTOR rec[-1]\nCX 0 44 0 45\nM 45\nDETECTOR rec[-1]\n"
+    },
+    "t2-n46": {
+      "n": 46,
+      "t": 2,
+      "fileName": "cat_state_t2_n46_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n46_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 1 4 4 5 4 46 1 6 1 7 1 8 8 9 8 10 8 47 8 48 1 11 1 12 12 49 1 13 1 50 1 51 0 14 14 15 14 16 14 17 17 48\nM 48\nDETECTOR rec[-1]\nCX 14 18 14 19 14 20 20 21 20 22 20 23 23 24 23 25 23 26 26 27 26 52 23 28 23 29 23 30 30 31 30 50\nM 50\nDETECTOR rec[-1]\nCX 23 49\nM 49\nDETECTOR rec[-1]\nCX 20 32 20 33 20 34 34 51\nM 51\nDETECTOR rec[-1]\nCX 20 53 14 35 14 36 14 37 37 54 14 38 14 39 14 52\nM 52\nDETECTOR rec[-1]\nCX 14 53\nM 53\nDETECTOR rec[-1]\nCX 0 40 0 41 0 42 42 43 42 47\nM 47\nDETECTOR rec[-1]\nCX 0 44 0 45 0 46\nM 46\nDETECTOR rec[-1]\nCX 0 54\nM 54\nDETECTOR rec[-1]\n"
+    },
+    "t2-n47": {
+      "n": 47,
+      "t": 2,
+      "fileName": "cat_state_t2_n47_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n47_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 1 4 4 5 4 6 4 47 4 48 1 7 1 8 1 9 9 10 9 49 9 50 1 11 1 12 1 13 13 14 13 51 1 15 1 16 1 17 17 18 17 47\nM 47\nDETECTOR rec[-1]\nCX 1 52 0 19 19 20 19 21 19 22 22 23 22 53 19 24 19 25 19 26 26 27 26 28 26 29 29 50\nM 50\nDETECTOR rec[-1]\nCX 26 30 26 31 26 53\nM 53\nDETECTOR rec[-1]\nCX 26 54 19 32 19 33 19 34 34 35 34 36 34 55 34 54\nM 54\nDETECTOR rec[-1]\nCX 19 37 19 38 19 39 39 48\nM 48\nDETECTOR rec[-1]\nCX 19 40 19 41 19 42 42 43 42 49\nM 49\nDETECTOR rec[-1]\nCX 19 44 19 55\nM 55\nDETECTOR rec[-1]\nCX 0 45 0 46 0 51\nM 51\nDETECTOR rec[-1]\nCX 0 52\nM 52\nDETECTOR rec[-1]\n"
+    },
+    "t2-n48": {
+      "n": 48,
+      "t": 2,
+      "fileName": "cat_state_t2_n48_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n48_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 1 4 4 48 1 5 1 6 1 7 7 49 1 8 1 9 1 10 10 11 10 50 1 12 1 13 1 14 14 15 14 51 1 52 0 16 16 17 16 18 16 53 16 49\nM 49\nDETECTOR rec[-1]\nCX 0 19 0 20 0 21 21 22 21 23 21 24 24 25 24 26 24 27 27 28 27 29 27 30 30 31 30 53\nM 53\nDETECTOR rec[-1]\nCX 27 32 27 33 27 51\nM 51\nDETECTOR rec[-1]\nCX 27 54 24 34 24 35 24 50\nM 50\nDETECTOR rec[-1]\nCX 24 55 21 36 21 37 21 38 38 52\nM 52\nDETECTOR rec[-1]\nCX 21 39 21 40 21 41 41 55\nM 55\nDETECTOR rec[-1]\nCX 21 42 21 43 21 56 21 54\nM 54\nDETECTOR rec[-1]\nCX 0 44 0 45 0 46 46 47 46 56\nM 56\nDETECTOR rec[-1]\nCX 0 48\nM 48\nDETECTOR rec[-1]\n"
+    },
+    "t2-n49": {
+      "n": 49,
+      "t": 2,
+      "fileName": "cat_state_t2_n49_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n49_p1.stim",
+      "stim": "H 0\nCX 0 1 1 49 0 2 2 3 2 4 2 5 5 6 5 50 2 7 2 8 2 9 9 10 9 11 9 51 9 12 9 13 9 14 14 15 14 52 9 49\nM 49\nDETECTOR rec[-1]\nCX 2 16 2 17 17 18 17 50\nM 50\nDETECTOR rec[-1]\nCX 17 53 2 19 2 20 20 51\nM 51\nDETECTOR rec[-1]\nCX 2 21 2 54 2 55 0 22 0 23 0 24 24 25 24 26 24 27 27 28 27 29 27 30 30 53\nM 53\nDETECTOR rec[-1]\nCX 27 31 27 32 27 52\nM 52\nDETECTOR rec[-1]\nCX 27 56 24 33 24 34 24 57 24 55\nM 55\nDETECTOR rec[-1]\nCX 0 35 0 36 0 37 37 38 37 58 0 39 0 40 0 41 41 42 41 54\nM 54\nDETECTOR rec[-1]\nCX 0 43 0 44 0 58\nM 58\nDETECTOR rec[-1]\nCX 0 45 0 46 0 47 47 48 47 57\nM 57\nDETECTOR rec[-1]\nCX 0 56\nM 56\nDETECTOR rec[-1]\n"
+    },
+    "t2-n50": {
+      "n": 50,
+      "t": 2,
+      "fileName": "cat_state_t2_n50_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n50_p1.stim",
+      "stim": "H 0\nCX 0 1 1 50 0 2 2 3 2 4 4 5 4 51 2 6 2 7 2 8 8 9 8 10 8 11 11 12 11 13 11 52 11 14 11 15 11 16 16 17 16 53 11 54 8 18 8 19 8 20 20 54\nM 54\nDETECTOR rec[-1]\nCX 8 21 8 22 8 23 23 24 23 55 8 56 2 25 2 26 2 27 27 57 2 28 2 29 2 51\nM 51\nDETECTOR rec[-1]\nCX 2 30 2 31 2 32 32 33 32 58 2 34 2 35 2 55\nM 55\nDETECTOR rec[-1]\nCX 2 59 0 36 0 37 37 38 37 53\nM 53\nDETECTOR rec[-1]\nCX 37 50\nM 50\nDETECTOR rec[-1]\nCX 0 39 0 40 40 56\nM 56\nDETECTOR rec[-1]\nCX 0 41 0 42 0 43 43 59\nM 59\nDETECTOR rec[-1]\nCX 0 44 0 45 0 46 46 47 46 52\nM 52\nDETECTOR rec[-1]\nCX 0 48 0 49 0 58\nM 58\nDETECTOR rec[-1]\nCX 0 57\nM 57\nDETECTOR rec[-1]\n"
+    },
+    "t2-n8": {
+      "n": 8,
+      "t": 2,
+      "fileName": "cat_state_t2_n8_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n8_p1.stim",
+      "stim": "H 0\nCX 0 1 1 8 0 2 2 3 2 9 2 10 0 4 0 5 5 6 5 9\nM 9\nDETECTOR rec[-1]\nCX 0 7 0 8\nM 8\nDETECTOR rec[-1]\nCX 0 10\nM 10\nDETECTOR rec[-1]\n"
+    },
+    "t2-n9": {
+      "n": 9,
+      "t": 2,
+      "fileName": "cat_state_t2_n9_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t2_n9_p1.stim",
+      "stim": "H 0\nCX 0 1 1 9 0 2 2 3 2 10 2 11 0 4 0 5 5 6 5 10\nM 10\nDETECTOR rec[-1]\nCX 0 7 0 8 0 9\nM 9\nDETECTOR rec[-1]\nCX 0 11\nM 11\nDETECTOR rec[-1]\n"
+    },
+    "t3-n10": {
+      "n": 10,
+      "t": 3,
+      "fileName": "cat_state_t3_n10_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n10_p1.stim",
+      "stim": "H 0\nCX 0 10 0 1 1 2 1 3 3 4 3 5 5 11 3 12 1 6 1 13 1 14 0 7 0 14\nM 14\nDETECTOR rec[-1]\nCX 0 8 0 9 9 11\nM 11\nDETECTOR rec[-1]\nCX 9 13\nM 13\nDETECTOR rec[-1]\nCX 0 12\nM 12\nDETECTOR rec[-1]\nCX 0 10\nM 10\nDETECTOR rec[-1]\n"
+    },
+    "t3-n11": {
+      "n": 11,
+      "t": 3,
+      "fileName": "cat_state_t3_n11_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n11_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 11 1 12 0 3 3 4 3 5 5 6 5 7 7 13 5 11\nM 11\nDETECTOR rec[-1]\nCX 3 8 3 14 3 9 3 12\nM 12\nDETECTOR rec[-1]\nCX 3 15 0 10 0 15\nM 15\nDETECTOR rec[-1]\nCX 0 13\nM 13\nDETECTOR rec[-1]\nCX 0 14\nM 14\nDETECTOR rec[-1]\n"
+    },
+    "t3-n12": {
+      "n": 12,
+      "t": 3,
+      "fileName": "cat_state_t3_n12_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n12_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 5 12 3 6 3 13 3 14 1 7 1 15 1 16 0 8 8 9 8 16\nM 16\nDETECTOR rec[-1]\nCX 8 13\nM 13\nDETECTOR rec[-1]\nCX 0 10 0 14\nM 14\nDETECTOR rec[-1]\nCX 0 11 0 12\nM 12\nDETECTOR rec[-1]\nCX 0 15\nM 15\nDETECTOR rec[-1]\n"
+    },
+    "t3-n13": {
+      "n": 13,
+      "t": 3,
+      "fileName": "cat_state_t3_n13_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n13_p1.stim",
+      "stim": "H 0\nCX 0 13 0 1 1 2 1 3 3 14 1 4 1 5 5 15 5 16 1 17 1 18 0 6 0 7 7 8 7 9 9 10 9 16\nM 16\nDETECTOR rec[-1]\nCX 9 13\nM 13\nDETECTOR rec[-1]\nCX 7 11 7 14\nM 14\nDETECTOR rec[-1]\nCX 7 17\nM 17\nDETECTOR rec[-1]\nCX 0 12 0 18\nM 18\nDETECTOR rec[-1]\nCX 0 15\nM 15\nDETECTOR rec[-1]\n"
+    },
+    "t3-n14": {
+      "n": 14,
+      "t": 3,
+      "fileName": "cat_state_t3_n14_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n14_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 14 1 15 0 3 3 4 3 5 5 16 3 6 3 15\nM 15\nDETECTOR rec[-1]\nCX 3 7 3 17 3 8 3 9 9 18 3 14\nM 14\nDETECTOR rec[-1]\nCX 0 10 0 11 11 18\nM 18\nDETECTOR rec[-1]\nCX 11 19 0 12 0 16\nM 16\nDETECTOR rec[-1]\nCX 0 13 0 19\nM 19\nDETECTOR rec[-1]\nCX 0 17\nM 17\nDETECTOR rec[-1]\n"
+    },
+    "t3-n15": {
+      "n": 15,
+      "t": 3,
+      "fileName": "cat_state_t3_n15_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n15_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 15 3 16 1 5 1 17 1 6 1 18 1 15\nM 15\nDETECTOR rec[-1]\nCX 0 7 7 8 7 9 9 19 7 18\nM 18\nDETECTOR rec[-1]\nCX 0 10 0 11 11 12 11 19\nM 19\nDETECTOR rec[-1]\nCX 11 20 0 13 0 16\nM 16\nDETECTOR rec[-1]\nCX 0 14 0 20\nM 20\nDETECTOR rec[-1]\nCX 0 17\nM 17\nDETECTOR rec[-1]\n"
+    },
+    "t3-n16": {
+      "n": 16,
+      "t": 3,
+      "fileName": "cat_state_t3_n16_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n16_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 16 1 3 1 4 4 5 4 17 4 6 4 18 4 19 1 7 1 19\nM 19\nDETECTOR rec[-1]\nCX 1 20 0 8 8 9 8 21 8 17\nM 17\nDETECTOR rec[-1]\nCX 0 10 0 11 11 12 11 13 13 18\nM 18\nDETECTOR rec[-1]\nCX 11 14 11 20\nM 20\nDETECTOR rec[-1]\nCX 11 22 0 15 15 16\nM 16\nDETECTOR rec[-1]\nCX 0 22\nM 22\nDETECTOR rec[-1]\nCX 0 21\nM 21\nDETECTOR rec[-1]\n"
+    },
+    "t3-n17": {
+      "n": 17,
+      "t": 3,
+      "fileName": "cat_state_t3_n17_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n17_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 17 1 3 1 18 1 4 1 19 1 20 0 5 5 6 5 7 7 8 7 9 9 19\nM 19\nDETECTOR rec[-1]\nCX 7 10 7 11 11 21 7 22 5 12 5 22\nM 22\nDETECTOR rec[-1]\nCX 5 18\nM 18\nDETECTOR rec[-1]\nCX 0 13 0 14 14 21\nM 21\nDETECTOR rec[-1]\nCX 14 23 0 15 0 20\nM 20\nDETECTOR rec[-1]\nCX 0 16 0 23\nM 23\nDETECTOR rec[-1]\nCX 0 17\nM 17\nDETECTOR rec[-1]\n"
+    },
+    "t3-n18": {
+      "n": 18,
+      "t": 3,
+      "fileName": "cat_state_t3_n18_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n18_p1.stim",
+      "stim": "H 0\nCX 0 18 0 1 1 2 1 3 3 4 3 5 5 6 5 7 7 19 5 8 5 20 5 21 3 9 3 10 10 20\nM 20\nDETECTOR rec[-1]\nCX 3 22 1 11 1 23 1 12 1 22\nM 22\nDETECTOR rec[-1]\nCX 1 18\nM 18\nDETECTOR rec[-1]\nCX 0 13 0 14 14 15 14 19\nM 19\nDETECTOR rec[-1]\nCX 14 24 0 16 0 21\nM 21\nDETECTOR rec[-1]\nCX 0 17 0 24\nM 24\nDETECTOR rec[-1]\nCX 0 23\nM 23\nDETECTOR rec[-1]\n"
+    },
+    "t3-n19": {
+      "n": 19,
+      "t": 3,
+      "fileName": "cat_state_t3_n19_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n19_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 5 6 5 7 7 19 5 8 5 20 5 21 3 9 3 22 3 20\nM 20\nDETECTOR rec[-1]\nCX 1 10 1 23 1 11 1 24 1 12 1 19\nM 19\nDETECTOR rec[-1]\nCX 1 25 0 13 13 26 13 22\nM 22\nDETECTOR rec[-1]\nCX 0 25\nM 25\nDETECTOR rec[-1]\nCX 0 14 0 15 15 16 15 17 17 26\nM 26\nDETECTOR rec[-1]\nCX 15 24\nM 24\nDETECTOR rec[-1]\nCX 0 18 0 21\nM 21\nDETECTOR rec[-1]\nCX 0 23\nM 23\nDETECTOR rec[-1]\n"
+    },
+    "t3-n20": {
+      "n": 20,
+      "t": 3,
+      "fileName": "cat_state_t3_n20_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n20_p1.stim",
+      "stim": "H 0\nCX 0 1 1 20 0 2 2 3 2 4 4 5 4 6 6 7 6 8 8 21 6 22 4 9 4 20\nM 20\nDETECTOR rec[-1]\nCX 4 10 4 23 4 24 2 11 2 24\nM 24\nDETECTOR rec[-1]\nCX 2 25 0 12 0 13 13 14 13 15 15 16 15 26 15 17 15 22\nM 22\nDETECTOR rec[-1]\nCX 15 23\nM 23\nDETECTOR rec[-1]\nCX 13 18 13 25\nM 25\nDETECTOR rec[-1]\nCX 13 27 0 19 0 27\nM 27\nDETECTOR rec[-1]\nCX 0 21\nM 21\nDETECTOR rec[-1]\nCX 0 26\nM 26\nDETECTOR rec[-1]\n"
+    },
+    "t3-n21": {
+      "n": 21,
+      "t": 3,
+      "fileName": "cat_state_t3_n21_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n21_p1.stim",
+      "stim": "H 0\nCX 0 21 0 1 1 2 1 3 3 4 3 22 3 5 3 23 3 24 1 6 1 7 7 23\nM 23\nDETECTOR rec[-1]\nCX 1 8 1 9 9 10 9 25 9 11 9 26 9 21\nM 21\nDETECTOR rec[-1]\nCX 1 12 1 27 1 22\nM 22\nDETECTOR rec[-1]\nCX 0 13 0 24\nM 24\nDETECTOR rec[-1]\nCX 0 14 0 15 15 16 15 28 15 27\nM 27\nDETECTOR rec[-1]\nCX 0 17 0 18 18 26\nM 26\nDETECTOR rec[-1]\nCX 0 19 0 20 20 28\nM 28\nDETECTOR rec[-1]\nCX 0 25\nM 25\nDETECTOR rec[-1]\n"
+    },
+    "t3-n22": {
+      "n": 22,
+      "t": 3,
+      "fileName": "cat_state_t3_n22_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n22_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 22 1 3 1 4 4 5 4 6 6 7 6 8 8 23 6 9 6 24 6 22\nM 22\nDETECTOR rec[-1]\nCX 4 10 4 25 4 26 1 11 1 12 12 25\nM 25\nDETECTOR rec[-1]\nCX 1 13 1 27 1 28 0 14 14 15 14 28\nM 28\nDETECTOR rec[-1]\nCX 14 16 14 17 17 24\nM 24\nDETECTOR rec[-1]\nCX 14 18 14 19 19 29 19 27\nM 27\nDETECTOR rec[-1]\nCX 14 23\nM 23\nDETECTOR rec[-1]\nCX 14 30 0 20 0 26\nM 26\nDETECTOR rec[-1]\nCX 0 21 0 30\nM 30\nDETECTOR rec[-1]\nCX 0 29\nM 29\nDETECTOR rec[-1]\n"
+    },
+    "t3-n23": {
+      "n": 23,
+      "t": 3,
+      "fileName": "cat_state_t3_n23_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n23_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 23 1 3 1 4 4 5 4 6 6 24 4 7 4 8 8 25 4 26 1 9 1 10 10 11 10 24\nM 24\nDETECTOR rec[-1]\nCX 10 27 1 12 1 28 1 13 1 29 1 30 0 14 14 25\nM 25\nDETECTOR rec[-1]\nCX 14 29\nM 29\nDETECTOR rec[-1]\nCX 0 15 0 16 16 17 16 31 16 18 16 30\nM 30\nDETECTOR rec[-1]\nCX 16 19 16 20 20 23\nM 23\nDETECTOR rec[-1]\nCX 16 21 16 26\nM 26\nDETECTOR rec[-1]\nCX 16 31\nM 31\nDETECTOR rec[-1]\nCX 0 22 0 27\nM 27\nDETECTOR rec[-1]\nCX 0 28\nM 28\nDETECTOR rec[-1]\n"
+    },
+    "t3-n24": {
+      "n": 24,
+      "t": 3,
+      "fileName": "cat_state_t3_n24_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n24_p1.stim",
+      "stim": "H 0\nCX 0 1 1 24 0 2 2 3 2 4 4 5 4 25 4 6 4 26 4 27 2 7 2 8 8 9 8 10 10 28 8 11 8 24\nM 24\nDETECTOR rec[-1]\nCX 8 29 2 12 2 30 2 31 0 13 0 14 14 15 14 16 16 25\nM 25\nDETECTOR rec[-1]\nCX 14 17 14 27\nM 27\nDETECTOR rec[-1]\nCX 14 18 14 29\nM 29\nDETECTOR rec[-1]\nCX 14 32 0 19 0 20 20 21 20 31\nM 31\nDETECTOR rec[-1]\nCX 20 26\nM 26\nDETECTOR rec[-1]\nCX 0 22 0 32\nM 32\nDETECTOR rec[-1]\nCX 0 23 0 28\nM 28\nDETECTOR rec[-1]\nCX 0 30\nM 30\nDETECTOR rec[-1]\n"
+    },
+    "t3-n25": {
+      "n": 25,
+      "t": 3,
+      "fileName": "cat_state_t3_n25_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n25_p1.stim",
+      "stim": "H 0\nCX 0 1 1 25 0 2 2 3 2 26 2 4 2 5 5 6 5 7 7 8 7 27 7 28 5 9 5 25\nM 25\nDETECTOR rec[-1]\nCX 5 10 5 29 5 30 2 11 2 31 2 12 2 13 13 32 2 14 2 15 15 33 2 27\nM 27\nDETECTOR rec[-1]\nCX 0 16 0 17 17 18 17 32\nM 32\nDETECTOR rec[-1]\nCX 17 19 17 28\nM 28\nDETECTOR rec[-1]\nCX 17 26\nM 26\nDETECTOR rec[-1]\nCX 0 20 0 21 21 22 21 23 23 29\nM 29\nDETECTOR rec[-1]\nCX 21 24 21 34 21 31\nM 31\nDETECTOR rec[-1]\nCX 0 30\nM 30\nDETECTOR rec[-1]\nCX 0 33\nM 33\nDETECTOR rec[-1]\nCX 0 34\nM 34\nDETECTOR rec[-1]\n"
+    },
+    "t3-n26": {
+      "n": 26,
+      "t": 3,
+      "fileName": "cat_state_t3_n26_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n26_p1.stim",
+      "stim": "H 0\nCX 0 26 0 1 1 2 1 3 3 4 3 5 5 6 5 7 7 8 7 27 7 9 7 10 10 28 7 26\nM 26\nDETECTOR rec[-1]\nCX 5 11 5 29 5 30 3 12 3 31 3 32 1 13 1 33 1 31\nM 31\nDETECTOR rec[-1]\nCX 0 14 0 15 15 16 15 30\nM 30\nDETECTOR rec[-1]\nCX 15 17 15 34 15 27\nM 27\nDETECTOR rec[-1]\nCX 0 18 0 19 19 35 19 34\nM 34\nDETECTOR rec[-1]\nCX 0 20 0 21 21 22 21 32\nM 32\nDETECTOR rec[-1]\nCX 21 35\nM 35\nDETECTOR rec[-1]\nCX 0 23 0 24 24 29\nM 29\nDETECTOR rec[-1]\nCX 0 25 0 28\nM 28\nDETECTOR rec[-1]\nCX 0 33\nM 33\nDETECTOR rec[-1]\n"
+    },
+    "t3-n27": {
+      "n": 27,
+      "t": 3,
+      "fileName": "cat_state_t3_n27_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n27_p1.stim",
+      "stim": "H 0\nCX 0 27 0 1 1 2 1 3 3 4 3 5 5 28 3 6 3 29 3 30 1 7 1 8 8 9 8 10 10 11 10 12 12 31 10 13 10 32 10 27\nM 27\nDETECTOR rec[-1]\nCX 8 14 8 28\nM 28\nDETECTOR rec[-1]\nCX 8 33 1 15 1 16 16 17 16 18 18 34 16 19 16 31\nM 31\nDETECTOR rec[-1]\nCX 16 29\nM 29\nDETECTOR rec[-1]\nCX 1 20 1 33\nM 33\nDETECTOR rec[-1]\nCX 1 35 0 21 0 36 0 22 0 23 23 24 23 30\nM 30\nDETECTOR rec[-1]\nCX 23 32\nM 32\nDETECTOR rec[-1]\nCX 0 25 0 35\nM 35\nDETECTOR rec[-1]\nCX 0 26 0 34\nM 34\nDETECTOR rec[-1]\nCX 0 36\nM 36\nDETECTOR rec[-1]\n"
+    },
+    "t3-n28": {
+      "n": 28,
+      "t": 3,
+      "fileName": "cat_state_t3_n28_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n28_p1.stim",
+      "stim": "H 0\nCX 0 1 1 28 0 2 2 3 2 4 4 5 4 6 6 29 4 7 4 8 8 30 4 9 4 28\nM 28\nDETECTOR rec[-1]\nCX 4 31 2 10 2 11 11 12 11 32 11 13 11 30\nM 30\nDETECTOR rec[-1]\nCX 11 33 2 14 2 34 2 15 2 16 16 17 16 18 18 35 16 36 2 19 2 33\nM 33\nDETECTOR rec[-1]\nCX 2 37 0 20 0 21 21 22 21 38 21 23 21 31\nM 31\nDETECTOR rec[-1]\nCX 21 32\nM 32\nDETECTOR rec[-1]\nCX 0 24 0 37\nM 37\nDETECTOR rec[-1]\nCX 0 25 25 35\nM 35\nDETECTOR rec[-1]\nCX 25 34\nM 34\nDETECTOR rec[-1]\nCX 0 26 0 36\nM 36\nDETECTOR rec[-1]\nCX 0 27 0 29\nM 29\nDETECTOR rec[-1]\nCX 0 38\nM 38\nDETECTOR rec[-1]\n"
+    },
+    "t3-n29": {
+      "n": 29,
+      "t": 3,
+      "fileName": "cat_state_t3_n29_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n29_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 5 6 5 29 5 7 5 30 5 31 3 8 3 32 3 9 3 31\nM 31\nDETECTOR rec[-1]\nCX 3 33 1 10 1 11 11 32\nM 32\nDETECTOR rec[-1]\nCX 1 12 1 34 1 13 1 14 14 15 14 16 16 35 14 17 14 18 18 36 14 37 1 19 1 38 1 30\nM 30\nDETECTOR rec[-1]\nCX 0 20 20 36\nM 36\nDETECTOR rec[-1]\nCX 20 38\nM 38\nDETECTOR rec[-1]\nCX 0 21 0 22 22 23 22 39 22 24 22 25 25 29\nM 29\nDETECTOR rec[-1]\nCX 22 26 22 33\nM 33\nDETECTOR rec[-1]\nCX 22 27 22 35\nM 35\nDETECTOR rec[-1]\nCX 22 39\nM 39\nDETECTOR rec[-1]\nCX 0 28 0 37\nM 37\nDETECTOR rec[-1]\nCX 0 34\nM 34\nDETECTOR rec[-1]\n"
+    },
+    "t3-n30": {
+      "n": 30,
+      "t": 3,
+      "fileName": "cat_state_t3_n30_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n30_p1.stim",
+      "stim": "H 0\nCX 0 30 0 1 1 2 1 3 3 4 3 5 5 6 5 7 7 31 5 8 5 9 9 32 5 33 3 10 3 34 3 35 1 11 1 36 1 12 1 13 13 14 13 15 15 37 13 16 13 32\nM 32\nDETECTOR rec[-1]\nCX 13 34\nM 34\nDETECTOR rec[-1]\nCX 1 17 1 38 1 39 0 18 0 19 19 38\nM 38\nDETECTOR rec[-1]\nCX 0 20 0 21 21 22 21 33\nM 33\nDETECTOR rec[-1]\nCX 21 30\nM 30\nDETECTOR rec[-1]\nCX 0 23 0 40 0 24 0 25 25 26 25 35\nM 35\nDETECTOR rec[-1]\nCX 25 27 25 31\nM 31\nDETECTOR rec[-1]\nCX 25 40\nM 40\nDETECTOR rec[-1]\nCX 0 28 0 39\nM 39\nDETECTOR rec[-1]\nCX 0 29 0 37\nM 37\nDETECTOR rec[-1]\nCX 0 36\nM 36\nDETECTOR rec[-1]\n"
+    },
+    "t3-n31": {
+      "n": 31,
+      "t": 3,
+      "fileName": "cat_state_t3_n31_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n31_p1.stim",
+      "stim": "H 0\nCX 0 1 1 31 0 2 2 3 2 32 2 4 2 5 5 6 5 7 7 8 7 33 7 9 7 34 7 35 5 10 5 36 5 37 2 11 11 38 11 39 2 12 2 13 13 32\nM 32\nDETECTOR rec[-1]\nCX 2 14 2 39\nM 39\nDETECTOR rec[-1]\nCX 2 33\nM 33\nDETECTOR rec[-1]\nCX 0 15 0 16 16 17 16 35\nM 35\nDETECTOR rec[-1]\nCX 16 18 16 19 19 20 19 40 19 21 19 41 19 36\nM 36\nDETECTOR rec[-1]\nCX 16 22 16 31\nM 31\nDETECTOR rec[-1]\nCX 16 34\nM 34\nDETECTOR rec[-1]\nCX 0 23 0 24 24 25 24 26 26 38\nM 38\nDETECTOR rec[-1]\nCX 24 42 0 27 0 37\nM 37\nDETECTOR rec[-1]\nCX 0 28 0 29 29 41\nM 41\nDETECTOR rec[-1]\nCX 0 30 0 42\nM 42\nDETECTOR rec[-1]\nCX 0 40\nM 40\nDETECTOR rec[-1]\n"
+    },
+    "t3-n32": {
+      "n": 32,
+      "t": 3,
+      "fileName": "cat_state_t3_n32_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n32_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 32 1 33 0 3 3 4 3 34 3 5 3 6 6 35 3 7 3 8 8 36 3 37 3 9 3 38 3 10 3 39 3 40 0 11 0 12 12 13 12 14 14 15 14 41 14 34\nM 34\nDETECTOR rec[-1]\nCX 12 16 12 17 17 18 17 42 17 39\nM 39\nDETECTOR rec[-1]\nCX 12 19 12 20 20 43 12 21 12 22 22 42\nM 42\nDETECTOR rec[-1]\nCX 12 32\nM 32\nDETECTOR rec[-1]\nCX 0 23 0 40\nM 40\nDETECTOR rec[-1]\nCX 0 24 0 25 25 26 25 36\nM 36\nDETECTOR rec[-1]\nCX 25 41\nM 41\nDETECTOR rec[-1]\nCX 0 27 0 28 28 29 28 35\nM 35\nDETECTOR rec[-1]\nCX 28 38\nM 38\nDETECTOR rec[-1]\nCX 0 30 0 33\nM 33\nDETECTOR rec[-1]\nCX 0 31 0 43\nM 43\nDETECTOR rec[-1]\nCX 0 37\nM 37\nDETECTOR rec[-1]\n"
+    },
+    "t3-n33": {
+      "n": 33,
+      "t": 3,
+      "fileName": "cat_state_t3_n33_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n33_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 33 1 34 0 3 3 4 3 5 5 35 3 6 3 7 7 36 3 8 3 9 9 10 9 11 11 37 9 12 9 38 9 13 9 36\nM 36\nDETECTOR rec[-1]\nCX 9 39 3 14 3 15 15 16 15 40 15 38\nM 38\nDETECTOR rec[-1]\nCX 3 17 3 41 3 18 3 37\nM 37\nDETECTOR rec[-1]\nCX 3 42 0 19 0 20 20 21 20 22 22 23 22 24 24 25 24 35\nM 35\nDETECTOR rec[-1]\nCX 24 26 24 43 24 40\nM 40\nDETECTOR rec[-1]\nCX 22 27 22 39\nM 39\nDETECTOR rec[-1]\nCX 22 41\nM 41\nDETECTOR rec[-1]\nCX 20 28 20 44 20 33\nM 33\nDETECTOR rec[-1]\nCX 0 29 0 42\nM 42\nDETECTOR rec[-1]\nCX 0 30 0 31 31 44\nM 44\nDETECTOR rec[-1]\nCX 0 32 0 34\nM 34\nDETECTOR rec[-1]\nCX 0 43\nM 43\nDETECTOR rec[-1]\n"
+    },
+    "t3-n34": {
+      "n": 34,
+      "t": 3,
+      "fileName": "cat_state_t3_n34_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n34_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 34 1 35 0 3 3 4 3 5 5 36 3 6 3 37 3 7 3 8 8 9 8 10 10 38 8 11 8 39 8 37\nM 37\nDETECTOR rec[-1]\nCX 3 12 3 35\nM 35\nDETECTOR rec[-1]\nCX 3 40 0 13 0 14 14 15 14 16 16 17 16 18 18 39\nM 39\nDETECTOR rec[-1]\nCX 16 19 16 36\nM 36\nDETECTOR rec[-1]\nCX 16 41 14 20 14 41\nM 41\nDETECTOR rec[-1]\nCX 14 21 14 42 14 22 14 23 23 43 14 44 0 24 0 25 25 26 25 27 27 28 27 44\nM 44\nDETECTOR rec[-1]\nCX 27 29 27 38\nM 38\nDETECTOR rec[-1]\nCX 27 34\nM 34\nDETECTOR rec[-1]\nCX 25 30 25 40\nM 40\nDETECTOR rec[-1]\nCX 25 45 0 31 31 43\nM 43\nDETECTOR rec[-1]\nCX 31 46 0 32 0 45\nM 45\nDETECTOR rec[-1]\nCX 0 33 0 46\nM 46\nDETECTOR rec[-1]\nCX 0 42\nM 42\nDETECTOR rec[-1]\n"
+    },
+    "t3-n35": {
+      "n": 35,
+      "t": 3,
+      "fileName": "cat_state_t3_n35_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n35_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 35 1 36 0 3 3 4 3 5 5 6 5 37 5 7 5 8 8 9 8 10 10 11 10 38 10 12 10 13 13 39 10 40 8 14 8 41 8 42 5 15 5 16 16 43 5 44 3 17 3 18 18 19 18 20 20 21 20 22 22 45 20 23 20 39\nM 39\nDETECTOR rec[-1]\nCX 20 35\nM 35\nDETECTOR rec[-1]\nCX 18 24 18 44\nM 44\nDETECTOR rec[-1]\nCX 18 46 3 25 3 47 3 26 3 27 27 41\nM 41\nDETECTOR rec[-1]\nCX 3 28 3 43\nM 43\nDETECTOR rec[-1]\nCX 3 37\nM 37\nDETECTOR rec[-1]\nCX 0 29 0 46\nM 46\nDETECTOR rec[-1]\nCX 0 30 0 36\nM 36\nDETECTOR rec[-1]\nCX 0 31 0 32 32 33 32 40\nM 40\nDETECTOR rec[-1]\nCX 32 47\nM 47\nDETECTOR rec[-1]\nCX 0 34 0 42\nM 42\nDETECTOR rec[-1]\nCX 0 45\nM 45\nDETECTOR rec[-1]\nCX 0 38\nM 38\nDETECTOR rec[-1]\n"
+    },
+    "t3-n36": {
+      "n": 36,
+      "t": 3,
+      "fileName": "cat_state_t3_n36_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n36_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 36 1 3 1 4 4 5 4 6 6 7 6 37 6 38 4 8 4 39 4 9 4 40 4 41 1 10 1 42 1 11 1 41\nM 41\nDETECTOR rec[-1]\nCX 1 43 0 12 12 13 12 14 14 44 12 15 12 16 16 45 12 17 12 18 18 19 18 20 20 21 20 46 20 42\nM 42\nDETECTOR rec[-1]\nCX 18 22 18 23 23 37\nM 37\nDETECTOR rec[-1]\nCX 18 24 18 45\nM 45\nDETECTOR rec[-1]\nCX 18 46\nM 46\nDETECTOR rec[-1]\nCX 12 25 12 43\nM 43\nDETECTOR rec[-1]\nCX 12 26 12 38\nM 38\nDETECTOR rec[-1]\nCX 12 47 0 27 0 28 28 29 28 30 30 31 30 44\nM 44\nDETECTOR rec[-1]\nCX 30 40\nM 40\nDETECTOR rec[-1]\nCX 28 32 28 33 33 39\nM 39\nDETECTOR rec[-1]\nCX 28 34 28 47\nM 47\nDETECTOR rec[-1]\nCX 28 48 0 35 0 48\nM 48\nDETECTOR rec[-1]\nCX 0 36\nM 36\nDETECTOR rec[-1]\n"
+    },
+    "t3-n37": {
+      "n": 37,
+      "t": 3,
+      "fileName": "cat_state_t3_n37_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n37_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 5 37 3 6 3 38 3 39 1 7 1 40 1 8 1 9 9 10 9 11 11 41 9 12 9 37\nM 37\nDETECTOR rec[-1]\nCX 9 42 1 13 1 43 1 44 0 14 14 15 14 16 16 17 16 45 16 46 14 18 14 19 19 20 19 21 21 45\nM 45\nDETECTOR rec[-1]\nCX 19 22 19 23 23 24 23 47 23 25 23 48 23 38\nM 38\nDETECTOR rec[-1]\nCX 19 44\nM 44\nDETECTOR rec[-1]\nCX 19 42\nM 42\nDETECTOR rec[-1]\nCX 19 49 14 26 14 50 14 40\nM 40\nDETECTOR rec[-1]\nCX 0 27 0 49\nM 49\nDETECTOR rec[-1]\nCX 0 28 0 29 29 30 29 31 31 32 31 46\nM 46\nDETECTOR rec[-1]\nCX 31 50\nM 50\nDETECTOR rec[-1]\nCX 29 33 29 34 34 43\nM 43\nDETECTOR rec[-1]\nCX 29 35 29 39\nM 39\nDETECTOR rec[-1]\nCX 29 47\nM 47\nDETECTOR rec[-1]\nCX 0 36 0 41\nM 41\nDETECTOR rec[-1]\nCX 0 48\nM 48\nDETECTOR rec[-1]\n"
+    },
+    "t3-n38": {
+      "n": 38,
+      "t": 3,
+      "fileName": "cat_state_t3_n38_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n38_p1.stim",
+      "stim": "H 0\nCX 0 38 0 1 1 2 1 3 3 4 3 5 5 6 5 39 5 40 3 7 3 8 8 9 8 10 10 39\nM 39\nDETECTOR rec[-1]\nCX 8 11 8 41 8 42 3 12 3 43 3 38\nM 38\nDETECTOR rec[-1]\nCX 1 13 1 44 1 14 1 15 15 16 15 17 17 18 17 19 19 20 19 21 21 45 19 46 17 22 17 47 17 23 17 24 24 48 17 49 15 25 15 50 15 44\nM 44\nDETECTOR rec[-1]\nCX 1 26 1 40\nM 40\nDETECTOR rec[-1]\nCX 1 43\nM 43\nDETECTOR rec[-1]\nCX 0 27 0 49\nM 49\nDETECTOR rec[-1]\nCX 0 28 0 29 29 45\nM 45\nDETECTOR rec[-1]\nCX 29 51 0 30 0 42\nM 42\nDETECTOR rec[-1]\nCX 0 31 0 46\nM 46\nDETECTOR rec[-1]\nCX 0 32 0 33 33 34 33 35 35 50\nM 50\nDETECTOR rec[-1]\nCX 33 36 33 48\nM 48\nDETECTOR rec[-1]\nCX 33 41\nM 41\nDETECTOR rec[-1]\nCX 0 37 0 51\nM 51\nDETECTOR rec[-1]\nCX 0 47\nM 47\nDETECTOR rec[-1]\n"
+    },
+    "t3-n39": {
+      "n": 39,
+      "t": 3,
+      "fileName": "cat_state_t3_n39_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n39_p1.stim",
+      "stim": "H 0\nCX 0 39 0 1 1 2 1 3 3 4 3 5 5 6 5 40 5 7 5 41 5 42 3 8 3 43 3 44 1 9 1 45 1 10 1 11 11 46 1 12 1 13 13 47 1 14 1 15 15 16 15 48 15 49 1 17 1 50 1 18 1 46\nM 46\nDETECTOR rec[-1]\nCX 1 43\nM 43\nDETECTOR rec[-1]\nCX 0 19 0 20 20 45\nM 45\nDETECTOR rec[-1]\nCX 0 21 0 22 22 23 22 24 24 41\nM 41\nDETECTOR rec[-1]\nCX 22 25 22 26 26 27 26 28 28 40\nM 40\nDETECTOR rec[-1]\nCX 26 29 26 49\nM 49\nDETECTOR rec[-1]\nCX 26 51 22 30 22 51\nM 51\nDETECTOR rec[-1]\nCX 22 31 22 47\nM 47\nDETECTOR rec[-1]\nCX 22 39\nM 39\nDETECTOR rec[-1]\nCX 0 32 0 33 33 34 33 35 35 52 33 36 33 42\nM 42\nDETECTOR rec[-1]\nCX 33 48\nM 48\nDETECTOR rec[-1]\nCX 0 37 0 44\nM 44\nDETECTOR rec[-1]\nCX 0 38 0 52\nM 52\nDETECTOR rec[-1]\nCX 0 50\nM 50\nDETECTOR rec[-1]\n"
+    },
+    "t3-n40": {
+      "n": 40,
+      "t": 3,
+      "fileName": "cat_state_t3_n40_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n40_p1.stim",
+      "stim": "H 0\nCX 0 40 0 1 1 2 1 3 3 4 3 5 5 41 3 6 3 7 7 42 3 8 3 43 3 44 1 9 1 10 10 45 1 11 1 12 12 13 12 46 12 14 12 15 15 41\nM 41\nDETECTOR rec[-1]\nCX 15 47 12 48 12 49 1 16 1 50 1 17 1 51 1 48\nM 48\nDETECTOR rec[-1]\nCX 0 18 0 19 19 20 19 21 21 22 21 44\nM 44\nDETECTOR rec[-1]\nCX 21 52 19 23 19 24 24 51\nM 51\nDETECTOR rec[-1]\nCX 19 25 19 53 19 43\nM 43\nDETECTOR rec[-1]\nCX 0 26 0 49\nM 49\nDETECTOR rec[-1]\nCX 0 27 0 28 28 54 0 29 0 30 30 31 30 32 32 40\nM 40\nDETECTOR rec[-1]\nCX 30 33 30 54\nM 54\nDETECTOR rec[-1]\nCX 30 34 30 45\nM 45\nDETECTOR rec[-1]\nCX 30 50\nM 50\nDETECTOR rec[-1]\nCX 0 35 0 36 36 37 36 52\nM 52\nDETECTOR rec[-1]\nCX 36 38 36 47\nM 47\nDETECTOR rec[-1]\nCX 36 46\nM 46\nDETECTOR rec[-1]\nCX 0 39 0 42\nM 42\nDETECTOR rec[-1]\nCX 0 53\nM 53\nDETECTOR rec[-1]\n"
+    },
+    "t3-n41": {
+      "n": 41,
+      "t": 3,
+      "fileName": "cat_state_t3_n41_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n41_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 41 1 42 0 3 3 4 3 5 5 6 5 43 5 7 5 8 8 9 8 44 8 10 8 45 8 46 5 11 5 12 12 13 12 47 12 14 12 48 12 49 5 15 5 42\nM 42\nDETECTOR rec[-1]\nCX 5 16 5 17 17 50 5 18 5 51 5 48\nM 48\nDETECTOR rec[-1]\nCX 3 19 3 49\nM 49\nDETECTOR rec[-1]\nCX 3 52 0 20 0 21 21 22 21 23 23 24 23 25 25 53 23 26 23 27 27 54 23 44\nM 44\nDETECTOR rec[-1]\nCX 21 28 21 46\nM 46\nDETECTOR rec[-1]\nCX 21 29 21 30 30 50\nM 50\nDETECTOR rec[-1]\nCX 30 47\nM 47\nDETECTOR rec[-1]\nCX 21 31 21 32 32 43\nM 43\nDETECTOR rec[-1]\nCX 21 33 21 53\nM 53\nDETECTOR rec[-1]\nCX 21 55 0 34 0 55\nM 55\nDETECTOR rec[-1]\nCX 0 35 0 36 36 37 36 38 38 51\nM 51\nDETECTOR rec[-1]\nCX 36 41\nM 41\nDETECTOR rec[-1]\nCX 0 39 0 52\nM 52\nDETECTOR rec[-1]\nCX 0 40 0 54\nM 54\nDETECTOR rec[-1]\nCX 0 45\nM 45\nDETECTOR rec[-1]\n"
+    },
+    "t3-n42": {
+      "n": 42,
+      "t": 3,
+      "fileName": "cat_state_t3_n42_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n42_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 42 1 3 1 4 4 43 1 5 1 6 6 7 6 44 6 45 1 8 1 9 9 10 9 46 9 47 1 11 1 48 1 12 1 49 1 46\nM 46\nDETECTOR rec[-1]\nCX 0 13 13 14 13 15 15 16 15 50 15 51 13 17 13 18 18 19 18 52 18 49\nM 49\nDETECTOR rec[-1]\nCX 13 20 13 21 21 22 21 47\nM 47\nDETECTOR rec[-1]\nCX 21 23 21 24 24 25 24 26 26 50\nM 50\nDETECTOR rec[-1]\nCX 24 27 24 28 28 53 24 54 21 29 21 54\nM 54\nDETECTOR rec[-1]\nCX 21 48\nM 48\nDETECTOR rec[-1]\nCX 13 30 13 31 31 32 31 53\nM 53\nDETECTOR rec[-1]\nCX 31 55 13 33 13 34 34 35 34 56 34 44\nM 44\nDETECTOR rec[-1]\nCX 13 36 13 55\nM 55\nDETECTOR rec[-1]\nCX 13 37 13 45\nM 45\nDETECTOR rec[-1]\nCX 13 42\nM 42\nDETECTOR rec[-1]\nCX 0 38 0 39 39 56\nM 56\nDETECTOR rec[-1]\nCX 0 40 0 43\nM 43\nDETECTOR rec[-1]\nCX 0 41 0 51\nM 51\nDETECTOR rec[-1]\nCX 0 52\nM 52\nDETECTOR rec[-1]\n"
+    },
+    "t3-n43": {
+      "n": 43,
+      "t": 3,
+      "fileName": "cat_state_t3_n43_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n43_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 5 6 5 43 5 7 5 44 5 45 3 8 3 46 3 47 1 9 1 47\nM 47\nDETECTOR rec[-1]\nCX 1 10 1 11 11 12 11 13 13 48 11 14 11 49 11 43\nM 43\nDETECTOR rec[-1]\nCX 1 15 1 50 1 16 1 17 17 18 17 19 19 46\nM 46\nDETECTOR rec[-1]\nCX 17 51 1 20 1 52 1 21 1 53 1 54 0 22 22 23 22 24 24 25 24 55 24 50\nM 50\nDETECTOR rec[-1]\nCX 22 26 22 27 27 28 27 29 29 30 29 31 31 56 29 55\nM 55\nDETECTOR rec[-1]\nCX 27 32 27 57 27 33 27 48\nM 48\nDETECTOR rec[-1]\nCX 27 53\nM 53\nDETECTOR rec[-1]\nCX 22 34 22 35 35 36 35 37 37 38 37 39 39 49\nM 49\nDETECTOR rec[-1]\nCX 37 40 37 45\nM 45\nDETECTOR rec[-1]\nCX 37 57\nM 57\nDETECTOR rec[-1]\nCX 35 41 35 51\nM 51\nDETECTOR rec[-1]\nCX 35 52\nM 52\nDETECTOR rec[-1]\nCX 22 58 22 56\nM 56\nDETECTOR rec[-1]\nCX 22 44\nM 44\nDETECTOR rec[-1]\nCX 0 42 0 54\nM 54\nDETECTOR rec[-1]\nCX 0 58\nM 58\nDETECTOR rec[-1]\n"
+    },
+    "t3-n44": {
+      "n": 44,
+      "t": 3,
+      "fileName": "cat_state_t3_n44_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n44_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 44 1 3 1 4 4 5 4 6 6 45 4 7 4 8 8 46 4 9 4 10 10 11 10 47 10 48 4 12 4 49 4 13 4 50 4 44\nM 44\nDETECTOR rec[-1]\nCX 1 14 1 51 1 15 1 16 16 17 16 18 18 52 16 19 16 45\nM 45\nDETECTOR rec[-1]\nCX 16 51\nM 51\nDETECTOR rec[-1]\nCX 1 20 1 21 21 53 1 22 1 23 23 52\nM 52\nDETECTOR rec[-1]\nCX 23 54 1 24 1 25 25 55 1 26 1 56 1 57 0 27 27 28 27 53\nM 53\nDETECTOR rec[-1]\nCX 27 29 27 46\nM 46\nDETECTOR rec[-1]\nCX 27 50\nM 50\nDETECTOR rec[-1]\nCX 0 30 0 55\nM 55\nDETECTOR rec[-1]\nCX 0 31 0 57\nM 57\nDETECTOR rec[-1]\nCX 0 32 0 33 33 34 33 35 35 56\nM 56\nDETECTOR rec[-1]\nCX 33 36 33 37 37 38 37 58 37 39 37 40 40 47\nM 47\nDETECTOR rec[-1]\nCX 37 59 33 41 33 48\nM 48\nDETECTOR rec[-1]\nCX 33 42 33 54\nM 54\nDETECTOR rec[-1]\nCX 33 58\nM 58\nDETECTOR rec[-1]\nCX 0 43 0 59\nM 59\nDETECTOR rec[-1]\nCX 0 49\nM 49\nDETECTOR rec[-1]\n"
+    },
+    "t3-n45": {
+      "n": 45,
+      "t": 3,
+      "fileName": "cat_state_t3_n45_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n45_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 5 45 3 6 3 7 7 8 7 9 9 46 7 47 3 10 3 48 3 11 3 49 3 50 1 12 1 51 1 13 1 52 1 53 0 14 14 15 14 16 16 17 16 54 16 18 16 19 19 20 19 55 19 21 19 56 19 52\nM 52\nDETECTOR rec[-1]\nCX 16 22 16 23 23 57 16 48\nM 48\nDETECTOR rec[-1]\nCX 14 24 14 25 25 26 25 45\nM 45\nDETECTOR rec[-1]\nCX 25 27 25 28 28 56\nM 56\nDETECTOR rec[-1]\nCX 25 29 25 57\nM 57\nDETECTOR rec[-1]\nCX 25 58 14 30 14 31 31 32 31 50\nM 50\nDETECTOR rec[-1]\nCX 31 55\nM 55\nDETECTOR rec[-1]\nCX 14 33 14 34 34 54\nM 54\nDETECTOR rec[-1]\nCX 14 35 14 59 14 51\nM 51\nDETECTOR rec[-1]\nCX 0 36 0 37 37 38 37 58\nM 58\nDETECTOR rec[-1]\nCX 37 39 37 46\nM 46\nDETECTOR rec[-1]\nCX 37 60 0 40 0 41 41 42 41 60\nM 60\nDETECTOR rec[-1]\nCX 41 49\nM 49\nDETECTOR rec[-1]\nCX 0 43 0 47\nM 47\nDETECTOR rec[-1]\nCX 0 44 0 53\nM 53\nDETECTOR rec[-1]\nCX 0 59\nM 59\nDETECTOR rec[-1]\n"
+    },
+    "t3-n46": {
+      "n": 46,
+      "t": 3,
+      "fileName": "cat_state_t3_n46_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n46_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 46 1 4 1 47 1 5 1 6 6 7 6 8 8 9 8 48 8 47\nM 47\nDETECTOR rec[-1]\nCX 6 10 6 49 6 11 6 12 12 50 6 51 1 13 1 14 14 15 14 52 14 16 14 17 17 53 14 54 1 18 1 19 19 20 19 50\nM 50\nDETECTOR rec[-1]\nCX 19 55 1 21 1 56 1 22 1 51\nM 51\nDETECTOR rec[-1]\nCX 1 57 0 23 23 24 23 25 25 26 25 27 27 28 27 54\nM 54\nDETECTOR rec[-1]\nCX 27 29 27 30 30 58 27 31 27 57\nM 57\nDETECTOR rec[-1]\nCX 27 32 27 46\nM 46\nDETECTOR rec[-1]\nCX 27 59 25 33 25 34 34 35 34 36 36 60 34 37 34 58\nM 58\nDETECTOR rec[-1]\nCX 34 61 25 38 25 39 39 53\nM 53\nDETECTOR rec[-1]\nCX 39 62 25 60\nM 60\nDETECTOR rec[-1]\nCX 25 56\nM 56\nDETECTOR rec[-1]\nCX 23 40 23 61\nM 61\nDETECTOR rec[-1]\nCX 23 48\nM 48\nDETECTOR rec[-1]\nCX 0 41 0 42 42 43 42 62\nM 62\nDETECTOR rec[-1]\nCX 42 52\nM 52\nDETECTOR rec[-1]\nCX 0 44 0 59\nM 59\nDETECTOR rec[-1]\nCX 0 45 0 55\nM 55\nDETECTOR rec[-1]\nCX 0 49\nM 49\nDETECTOR rec[-1]\n"
+    },
+    "t3-n47": {
+      "n": 47,
+      "t": 3,
+      "fileName": "cat_state_t3_n47_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n47_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 47 1 3 1 4 4 5 4 6 6 7 6 8 8 48 6 9 6 49 6 10 6 50 6 11 6 12 12 51 6 52 4 13 4 53 4 54 1 14 1 55 1 15 1 16 16 47\nM 47\nDETECTOR rec[-1]\nCX 1 17 1 56 1 57 0 18 18 19 18 20 20 21 20 22 22 23 22 24 24 58 22 25 22 26 26 27 26 48\nM 48\nDETECTOR rec[-1]\nCX 26 59 22 28 22 29 29 51\nM 51\nDETECTOR rec[-1]\nCX 29 53\nM 53\nDETECTOR rec[-1]\nCX 22 30 22 31 31 50\nM 50\nDETECTOR rec[-1]\nCX 22 32 22 52\nM 52\nDETECTOR rec[-1]\nCX 22 60 20 33 20 34 34 35 34 61 34 62 20 36 20 54\nM 54\nDETECTOR rec[-1]\nCX 20 37 20 58\nM 58\nDETECTOR rec[-1]\nCX 20 61\nM 61\nDETECTOR rec[-1]\nCX 18 38 18 59\nM 59\nDETECTOR rec[-1]\nCX 18 55\nM 55\nDETECTOR rec[-1]\nCX 0 39 0 40 40 41 40 62\nM 62\nDETECTOR rec[-1]\nCX 40 56\nM 56\nDETECTOR rec[-1]\nCX 0 42 0 43 43 44 43 57\nM 57\nDETECTOR rec[-1]\nCX 43 63 0 45 0 60\nM 60\nDETECTOR rec[-1]\nCX 0 46 0 63\nM 63\nDETECTOR rec[-1]\nCX 0 49\nM 49\nDETECTOR rec[-1]\n"
+    },
+    "t3-n48": {
+      "n": 48,
+      "t": 3,
+      "fileName": "cat_state_t3_n48_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n48_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 48 1 4 1 5 5 6 5 7 7 8 7 9 9 10 9 11 11 49 9 12 9 50 9 51 7 13 7 52 7 53 5 14 5 54 5 50\nM 50\nDETECTOR rec[-1]\nCX 1 15 1 55 1 56 0 16 16 17 16 18 18 19 18 20 20 21 20 22 22 52\nM 52\nDETECTOR rec[-1]\nCX 20 23 20 24 24 25 24 57 24 26 24 49\nM 49\nDETECTOR rec[-1]\nCX 24 58 20 27 20 51\nM 51\nDETECTOR rec[-1]\nCX 20 59 18 28 18 29 29 30 29 31 31 32 31 33 33 55\nM 55\nDETECTOR rec[-1]\nCX 31 34 31 60 31 54\nM 54\nDETECTOR rec[-1]\nCX 29 35 29 48\nM 48\nDETECTOR rec[-1]\nCX 29 61 18 36 18 62 18 37 18 63 18 38 18 59\nM 59\nDETECTOR rec[-1]\nCX 18 57\nM 57\nDETECTOR rec[-1]\nCX 16 39 16 53\nM 53\nDETECTOR rec[-1]\nCX 16 60\nM 60\nDETECTOR rec[-1]\nCX 0 40 0 41 41 42 41 64 41 63\nM 63\nDETECTOR rec[-1]\nCX 0 43 0 44 44 45 44 58\nM 58\nDETECTOR rec[-1]\nCX 44 46 44 56\nM 56\nDETECTOR rec[-1]\nCX 44 64\nM 64\nDETECTOR rec[-1]\nCX 0 47 0 61\nM 61\nDETECTOR rec[-1]\nCX 0 62\nM 62\nDETECTOR rec[-1]\n"
+    },
+    "t3-n49": {
+      "n": 49,
+      "t": 3,
+      "fileName": "cat_state_t3_n49_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n49_p1.stim",
+      "stim": "H 0\nCX 0 49 0 1 1 2 1 3 3 4 3 5 5 50 3 6 3 51 3 52 1 7 1 8 8 9 8 10 10 11 10 12 12 13 12 53 12 14 12 54 12 55 10 15 10 56 10 16 10 57 10 51\nM 51\nDETECTOR rec[-1]\nCX 8 17 8 18 18 19 18 58 18 54\nM 54\nDETECTOR rec[-1]\nCX 8 20 8 59 8 21 8 60 8 61 1 22 1 23 23 24 23 25 25 62 23 26 23 61\nM 61\nDETECTOR rec[-1]\nCX 23 63 1 27 1 28 28 59\nM 59\nDETECTOR rec[-1]\nCX 1 29 1 30 30 31 30 32 32 33 32 55\nM 55\nDETECTOR rec[-1]\nCX 32 64 30 34 30 63\nM 63\nDETECTOR rec[-1]\nCX 30 65 1 35 1 62\nM 62\nDETECTOR rec[-1]\nCX 1 60\nM 60\nDETECTOR rec[-1]\nCX 0 36 36 64\nM 64\nDETECTOR rec[-1]\nCX 36 66 0 37 0 38 38 39 38 50\nM 50\nDETECTOR rec[-1]\nCX 38 49\nM 49\nDETECTOR rec[-1]\nCX 0 40 0 41 41 42 41 43 43 57\nM 57\nDETECTOR rec[-1]\nCX 41 44 41 66\nM 66\nDETECTOR rec[-1]\nCX 41 58\nM 58\nDETECTOR rec[-1]\nCX 0 45 0 65\nM 65\nDETECTOR rec[-1]\nCX 0 46 0 47 47 56\nM 56\nDETECTOR rec[-1]\nCX 0 48 0 52\nM 52\nDETECTOR rec[-1]\nCX 0 53\nM 53\nDETECTOR rec[-1]\n"
+    },
+    "t3-n50": {
+      "n": 50,
+      "t": 3,
+      "fileName": "cat_state_t3_n50_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n50_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 5 6 5 50 5 7 5 51 5 52 3 8 3 9 9 53 3 10 3 11 11 54 3 12 3 55 3 13 3 52\nM 52\nDETECTOR rec[-1]\nCX 3 56 1 14 1 15 15 16 15 17 17 18 17 19 19 57 17 20 17 58 17 51\nM 51\nDETECTOR rec[-1]\nCX 15 21 15 59 15 60 1 22 1 61 1 23 1 62 1 63 1 64 0 24 24 25 24 26 26 27 26 28 28 29 28 30 30 63\nM 63\nDETECTOR rec[-1]\nCX 28 58\nM 58\nDETECTOR rec[-1]\nCX 26 31 26 32 32 33 32 34 34 50\nM 50\nDETECTOR rec[-1]\nCX 32 35 32 64\nM 64\nDETECTOR rec[-1]\nCX 32 55\nM 55\nDETECTOR rec[-1]\nCX 26 36 26 53\nM 53\nDETECTOR rec[-1]\nCX 26 59\nM 59\nDETECTOR rec[-1]\nCX 24 37 24 56\nM 56\nDETECTOR rec[-1]\nCX 24 38 24 57\nM 57\nDETECTOR rec[-1]\nCX 24 65 0 39 0 40 40 66 0 41 0 60\nM 60\nDETECTOR rec[-1]\nCX 0 42 0 43 43 44 43 45 45 46 45 54\nM 54\nDETECTOR rec[-1]\nCX 45 62\nM 62\nDETECTOR rec[-1]\nCX 43 47 43 67 43 48 43 66\nM 66\nDETECTOR rec[-1]\nCX 43 61\nM 61\nDETECTOR rec[-1]\nCX 0 49 0 65\nM 65\nDETECTOR rec[-1]\nCX 0 67\nM 67\nDETECTOR rec[-1]\n"
+    },
+    "t3-n8": {
+      "n": 8,
+      "t": 3,
+      "fileName": "cat_state_t3_n8_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n8_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 8 1 3 1 4 4 9 1 10 0 5 5 9\nM 9\nDETECTOR rec[-1]\nCX 5 11 0 6 0 10\nM 10\nDETECTOR rec[-1]\nCX 0 7 0 11\nM 11\nDETECTOR rec[-1]\nCX 0 8\nM 8\nDETECTOR rec[-1]\n"
+    },
+    "t3-n9": {
+      "n": 9,
+      "t": 3,
+      "fileName": "cat_state_t3_n9_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t3_n9_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 9 1 3 1 4 4 10 1 11 0 5 5 6 5 10\nM 10\nDETECTOR rec[-1]\nCX 5 12 0 7 0 11\nM 11\nDETECTOR rec[-1]\nCX 0 8 0 12\nM 12\nDETECTOR rec[-1]\nCX 0 9\nM 9\nDETECTOR rec[-1]\n"
+    },
+    "t4-n10": {
+      "n": 10,
+      "t": 4,
+      "fileName": "cat_state_t4_n10_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n10_p1.stim",
+      "stim": "H 0\nCX 0 1 1 10 1 11 1 12 0 2 2 3 2 4 4 5 4 13 4 11\nM 11\nDETECTOR rec[-1]\nCX 2 6 6 7 6 14 6 10\nM 10\nDETECTOR rec[-1]\nCX 2 8 2 12\nM 12\nDETECTOR rec[-1]\nCX 2 15 0 15\nM 15\nDETECTOR rec[-1]\nCX 0 9 9 14\nM 14\nDETECTOR rec[-1]\nCX 0 13\nM 13\nDETECTOR rec[-1]\n"
+    },
+    "t4-n11": {
+      "n": 11,
+      "t": 4,
+      "fileName": "cat_state_t4_n11_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n11_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 11 3 12 1 13 1 5 1 14 1 15 0 6 6 7 6 8 8 9 8 16 8 13\nM 13\nDETECTOR rec[-1]\nCX 6 10 10 11\nM 11\nDETECTOR rec[-1]\nCX 6 14\nM 14\nDETECTOR rec[-1]\nCX 0 15\nM 15\nDETECTOR rec[-1]\nCX 0 12\nM 12\nDETECTOR rec[-1]\nCX 0 16\nM 16\nDETECTOR rec[-1]\n"
+    },
+    "t4-n12": {
+      "n": 12,
+      "t": 4,
+      "fileName": "cat_state_t4_n12_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n12_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 12 3 13 1 14 1 5 1 15 1 16 0 6 6 7 6 8 8 9 8 17 8 14\nM 14\nDETECTOR rec[-1]\nCX 6 10 10 12\nM 12\nDETECTOR rec[-1]\nCX 6 15\nM 15\nDETECTOR rec[-1]\nCX 0 11 0 16\nM 16\nDETECTOR rec[-1]\nCX 0 13\nM 13\nDETECTOR rec[-1]\nCX 0 17\nM 17\nDETECTOR rec[-1]\n"
+    },
+    "t4-n13": {
+      "n": 13,
+      "t": 4,
+      "fileName": "cat_state_t4_n13_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n13_p1.stim",
+      "stim": "H 0\nCX 0 1 1 13 1 14 0 2 2 3 2 4 4 15 2 5 2 6 6 7 6 16 6 17 2 18 2 13\nM 13\nDETECTOR rec[-1]\nCX 0 8 0 9 9 17\nM 17\nDETECTOR rec[-1]\nCX 9 15\nM 15\nDETECTOR rec[-1]\nCX 9 19 0 10 0 11 11 14\nM 14\nDETECTOR rec[-1]\nCX 11 16\nM 16\nDETECTOR rec[-1]\nCX 0 12 0 19\nM 19\nDETECTOR rec[-1]\nCX 0 18\nM 18\nDETECTOR rec[-1]\n"
+    },
+    "t4-n14": {
+      "n": 14,
+      "t": 4,
+      "fileName": "cat_state_t4_n14_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n14_p1.stim",
+      "stim": "H 0\nCX 0 1 1 14 0 2 2 15 2 3 2 4 4 5 4 6 6 7 6 16 6 17 4 18 4 19 2 8 2 9 9 10 9 20 9 18\nM 18\nDETECTOR rec[-1]\nCX 2 14\nM 14\nDETECTOR rec[-1]\nCX 2 16\nM 16\nDETECTOR rec[-1]\nCX 0 11 0 19\nM 19\nDETECTOR rec[-1]\nCX 0 12 0 17\nM 17\nDETECTOR rec[-1]\nCX 0 13 13 20\nM 20\nDETECTOR rec[-1]\nCX 0 15\nM 15\nDETECTOR rec[-1]\n"
+    },
+    "t4-n15": {
+      "n": 15,
+      "t": 4,
+      "fileName": "cat_state_t4_n15_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n15_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 15 1 3 1 16 1 17 1 18 0 4 4 5 5 6 5 19 5 17\nM 17\nDETECTOR rec[-1]\nCX 4 20 4 21 0 7 0 8 8 9 8 10 10 11 11 22 10 15\nM 15\nDETECTOR rec[-1]\nCX 8 12 8 18\nM 18\nDETECTOR rec[-1]\nCX 8 20\nM 20\nDETECTOR rec[-1]\nCX 0 13 13 22\nM 22\nDETECTOR rec[-1]\nCX 13 19\nM 19\nDETECTOR rec[-1]\nCX 0 14 0 21\nM 21\nDETECTOR rec[-1]\nCX 0 16\nM 16\nDETECTOR rec[-1]\n"
+    },
+    "t4-n16": {
+      "n": 16,
+      "t": 4,
+      "fileName": "cat_state_t4_n16_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n16_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 5 16 5 17 3 6 3 18 3 19 1 7 1 8 8 9 8 17\nM 17\nDETECTOR rec[-1]\nCX 8 20 1 21 1 19\nM 19\nDETECTOR rec[-1]\nCX 1 22 0 10 10 11 11 18\nM 18\nDETECTOR rec[-1]\nCX 10 12 10 13 13 20\nM 20\nDETECTOR rec[-1]\nCX 13 23 10 14 10 22\nM 22\nDETECTOR rec[-1]\nCX 10 16\nM 16\nDETECTOR rec[-1]\nCX 0 15 0 23\nM 23\nDETECTOR rec[-1]\nCX 0 21\nM 21\nDETECTOR rec[-1]\n"
+    },
+    "t4-n17": {
+      "n": 17,
+      "t": 4,
+      "fileName": "cat_state_t4_n17_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n17_p1.stim",
+      "stim": "H 0\nCX 0 17 0 1 1 18 1 2 1 3 3 4 3 19 3 5 5 6 5 20 5 18\nM 18\nDETECTOR rec[-1]\nCX 3 7 3 21 3 22 1 8 1 23 1 22\nM 22\nDETECTOR rec[-1]\nCX 1 17\nM 17\nDETECTOR rec[-1]\nCX 0 9 9 10 10 24 9 11 11 25 9 21\nM 21\nDETECTOR rec[-1]\nCX 0 12 0 13 13 14 14 20\nM 20\nDETECTOR rec[-1]\nCX 13 15 13 24\nM 24\nDETECTOR rec[-1]\nCX 13 19\nM 19\nDETECTOR rec[-1]\nCX 0 16 0 25\nM 25\nDETECTOR rec[-1]\nCX 0 23\nM 23\nDETECTOR rec[-1]\n"
+    },
+    "t4-n18": {
+      "n": 18,
+      "t": 4,
+      "fileName": "cat_state_t4_n18_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n18_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 18 1 19 0 3 3 20 3 4 3 5 5 6 5 7 7 8 8 18\nM 18\nDETECTOR rec[-1]\nCX 7 21 5 9 5 22 5 23 3 10 10 11 10 24 10 25 3 21\nM 21\nDETECTOR rec[-1]\nCX 3 26 0 12 0 13 13 14 13 23\nM 23\nDETECTOR rec[-1]\nCX 13 19\nM 19\nDETECTOR rec[-1]\nCX 13 24\nM 24\nDETECTOR rec[-1]\nCX 0 15 0 16 16 25\nM 25\nDETECTOR rec[-1]\nCX 16 22\nM 22\nDETECTOR rec[-1]\nCX 0 17 0 26\nM 26\nDETECTOR rec[-1]\nCX 0 20\nM 20\nDETECTOR rec[-1]\n"
+    },
+    "t4-n19": {
+      "n": 19,
+      "t": 4,
+      "fileName": "cat_state_t4_n19_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n19_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 5 6 5 19 5 20 3 21 3 22 1 7 1 8 8 9 8 23 8 21\nM 21\nDETECTOR rec[-1]\nCX 1 24 1 25 0 10 10 26 10 19\nM 19\nDETECTOR rec[-1]\nCX 0 11 0 12 12 13 12 14 14 15 14 22\nM 22\nDETECTOR rec[-1]\nCX 14 24\nM 24\nDETECTOR rec[-1]\nCX 12 27 12 26\nM 26\nDETECTOR rec[-1]\nCX 0 16 0 17 17 20\nM 20\nDETECTOR rec[-1]\nCX 17 23\nM 23\nDETECTOR rec[-1]\nCX 0 18 0 25\nM 25\nDETECTOR rec[-1]\nCX 0 27\nM 27\nDETECTOR rec[-1]\n"
+    },
+    "t4-n20": {
+      "n": 20,
+      "t": 4,
+      "fileName": "cat_state_t4_n20_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n20_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 20 1 3 1 4 4 21 4 22 1 5 1 6 6 7 6 23 6 22\nM 22\nDETECTOR rec[-1]\nCX 6 24 1 8 1 9 9 25 9 26 1 24\nM 24\nDETECTOR rec[-1]\nCX 1 27 0 10 10 11 11 28 10 29 0 12 0 27\nM 27\nDETECTOR rec[-1]\nCX 0 13 0 14 14 15 14 16 16 17 17 25\nM 25\nDETECTOR rec[-1]\nCX 16 20\nM 20\nDETECTOR rec[-1]\nCX 14 18 14 29\nM 29\nDETECTOR rec[-1]\nCX 14 21\nM 21\nDETECTOR rec[-1]\nCX 0 26\nM 26\nDETECTOR rec[-1]\nCX 0 19 0 28\nM 28\nDETECTOR rec[-1]\nCX 0 23\nM 23\nDETECTOR rec[-1]\n"
+    },
+    "t4-n21": {
+      "n": 21,
+      "t": 4,
+      "fileName": "cat_state_t4_n21_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n21_p1.stim",
+      "stim": "H 0\nCX 0 1 1 21 0 2 2 3 2 4 4 5 4 22 4 6 4 7 7 8 8 23 7 24 4 9 4 25 4 26 2 27 2 10 2 11 11 12 11 13 13 14 14 25\nM 25\nDETECTOR rec[-1]\nCX 13 28 11 15 11 24\nM 24\nDETECTOR rec[-1]\nCX 11 29 2 16 2 21\nM 21\nDETECTOR rec[-1]\nCX 2 28\nM 28\nDETECTOR rec[-1]\nCX 2 22\nM 22\nDETECTOR rec[-1]\nCX 0 17 0 18 18 23\nM 23\nDETECTOR rec[-1]\nCX 18 30 0 19 0 29\nM 29\nDETECTOR rec[-1]\nCX 0 26\nM 26\nDETECTOR rec[-1]\nCX 0 20 0 30\nM 30\nDETECTOR rec[-1]\nCX 0 27\nM 27\nDETECTOR rec[-1]\n"
+    },
+    "t4-n22": {
+      "n": 22,
+      "t": 4,
+      "fileName": "cat_state_t4_n22_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n22_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 22 1 4 1 5 5 23 5 24 1 6 1 25 1 26 0 7 7 8 7 9 9 10 10 23\nM 23\nDETECTOR rec[-1]\nCX 9 11 9 27 9 28 7 12 7 29 7 22\nM 22\nDETECTOR rec[-1]\nCX 7 13 7 14 14 26\nM 26\nDETECTOR rec[-1]\nCX 14 30 7 15 7 31 7 32 0 24\nM 24\nDETECTOR rec[-1]\nCX 0 16 0 17 17 18 17 28\nM 28\nDETECTOR rec[-1]\nCX 17 32\nM 32\nDETECTOR rec[-1]\nCX 17 25\nM 25\nDETECTOR rec[-1]\nCX 0 19 0 20 20 30\nM 30\nDETECTOR rec[-1]\nCX 20 29\nM 29\nDETECTOR rec[-1]\nCX 0 21 21 31\nM 31\nDETECTOR rec[-1]\nCX 0 27\nM 27\nDETECTOR rec[-1]\n"
+    },
+    "t4-n23": {
+      "n": 23,
+      "t": 4,
+      "fileName": "cat_state_t4_n23_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n23_p1.stim",
+      "stim": "H 0\nCX 0 23 0 1 1 2 1 24 1 3 1 4 4 5 4 25 4 6 4 7 7 26 7 24\nM 24\nDETECTOR rec[-1]\nCX 4 8 4 27 4 28 1 29 1 30 0 9 9 10 9 11 11 12 11 31 11 13 13 32 11 25\nM 25\nDETECTOR rec[-1]\nCX 9 14 9 15 15 32\nM 32\nDETECTOR rec[-1]\nCX 15 26\nM 26\nDETECTOR rec[-1]\nCX 9 28\nM 28\nDETECTOR rec[-1]\nCX 9 33 0 16 0 33\nM 33\nDETECTOR rec[-1]\nCX 0 17 0 18 18 19 19 27\nM 27\nDETECTOR rec[-1]\nCX 18 20 18 21 21 29\nM 29\nDETECTOR rec[-1]\nCX 18 23\nM 23\nDETECTOR rec[-1]\nCX 0 22 0 30\nM 30\nDETECTOR rec[-1]\nCX 0 31\nM 31\nDETECTOR rec[-1]\n"
+    },
+    "t4-n24": {
+      "n": 24,
+      "t": 4,
+      "fileName": "cat_state_t4_n24_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n24_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 24 1 3 1 4 4 5 4 25 4 6 4 7 7 26 4 8 8 27 4 28 1 9 9 29 1 10 1 30 1 31 0 11 11 12 11 13 13 14 13 32 13 31\nM 31\nDETECTOR rec[-1]\nCX 13 25\nM 25\nDETECTOR rec[-1]\nCX 11 15 11 16 16 17 16 27\nM 27\nDETECTOR rec[-1]\nCX 16 33 11 34 11 24\nM 24\nDETECTOR rec[-1]\nCX 0 18 18 19 18 29\nM 29\nDETECTOR rec[-1]\nCX 18 20 18 21 21 22 21 28\nM 28\nDETECTOR rec[-1]\nCX 21 32\nM 32\nDETECTOR rec[-1]\nCX 18 33\nM 33\nDETECTOR rec[-1]\nCX 18 30\nM 30\nDETECTOR rec[-1]\nCX 0 23 0 26\nM 26\nDETECTOR rec[-1]\nCX 0 34\nM 34\nDETECTOR rec[-1]\n"
+    },
+    "t4-n25": {
+      "n": 25,
+      "t": 4,
+      "fileName": "cat_state_t4_n25_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n25_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 25 3 26 1 4 1 5 5 27 1 6 1 7 7 28 7 29 1 30 1 31 0 8 8 9 8 10 10 11 10 12 12 13 12 32 12 31\nM 31\nDETECTOR rec[-1]\nCX 12 14 12 29\nM 29\nDETECTOR rec[-1]\nCX 12 33 10 15 10 27\nM 27\nDETECTOR rec[-1]\nCX 10 34 10 35 8 16 16 17 16 26\nM 26\nDETECTOR rec[-1]\nCX 16 18 16 19 19 30\nM 30\nDETECTOR rec[-1]\nCX 16 36 16 32\nM 32\nDETECTOR rec[-1]\nCX 8 20 8 35\nM 35\nDETECTOR rec[-1]\nCX 8 36\nM 36\nDETECTOR rec[-1]\nCX 0 21 0 22 22 23 22 24 24 28\nM 28\nDETECTOR rec[-1]\nCX 22 25\nM 25\nDETECTOR rec[-1]\nCX 0 33\nM 33\nDETECTOR rec[-1]\nCX 0 34\nM 34\nDETECTOR rec[-1]\n"
+    },
+    "t4-n26": {
+      "n": 26,
+      "t": 4,
+      "fileName": "cat_state_t4_n26_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n26_p1.stim",
+      "stim": "H 0\nCX 0 1 1 26 0 2 2 3 2 4 4 27 4 5 4 6 6 28 4 7 4 8 8 26\nM 26\nDETECTOR rec[-1]\nCX 8 29 4 9 4 30 4 31 2 10 2 11 11 12 11 13 13 14 13 32 13 33 11 34 11 30\nM 30\nDETECTOR rec[-1]\nCX 2 15 2 16 16 17 16 29\nM 29\nDETECTOR rec[-1]\nCX 16 35 2 31\nM 31\nDETECTOR rec[-1]\nCX 2 27\nM 27\nDETECTOR rec[-1]\nCX 0 18 0 19 19 36 19 37 0 20 0 21 21 22 21 33\nM 33\nDETECTOR rec[-1]\nCX 21 35\nM 35\nDETECTOR rec[-1]\nCX 21 36\nM 36\nDETECTOR rec[-1]\nCX 0 23 0 24 24 28\nM 28\nDETECTOR rec[-1]\nCX 24 32\nM 32\nDETECTOR rec[-1]\nCX 0 25 0 37\nM 37\nDETECTOR rec[-1]\nCX 0 34\nM 34\nDETECTOR rec[-1]\n"
+    },
+    "t4-n27": {
+      "n": 27,
+      "t": 4,
+      "fileName": "cat_state_t4_n27_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n27_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 5 6 5 7 7 27 7 28 5 8 5 29 5 30 3 9 9 10 9 31 9 32 3 11 3 12 12 30\nM 30\nDETECTOR rec[-1]\nCX 12 33 3 13 3 34 3 35 1 14 1 35\nM 35\nDETECTOR rec[-1]\nCX 1 15 15 31\nM 31\nDETECTOR rec[-1]\nCX 1 16 1 28\nM 28\nDETECTOR rec[-1]\nCX 1 36 0 17 17 36\nM 36\nDETECTOR rec[-1]\nCX 17 37 0 18 0 19 19 20 19 21 21 29\nM 29\nDETECTOR rec[-1]\nCX 19 22 22 23 22 38 22 27\nM 27\nDETECTOR rec[-1]\nCX 19 24 19 37\nM 37\nDETECTOR rec[-1]\nCX 19 39 0 25 0 33\nM 33\nDETECTOR rec[-1]\nCX 0 26 26 38\nM 38\nDETECTOR rec[-1]\nCX 0 39\nM 39\nDETECTOR rec[-1]\nCX 0 32\nM 32\nDETECTOR rec[-1]\nCX 0 34\nM 34\nDETECTOR rec[-1]\n"
+    },
+    "t4-n28": {
+      "n": 28,
+      "t": 4,
+      "fileName": "cat_state_t4_n28_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n28_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 28 1 29 0 3 3 30 3 4 3 5 5 6 5 7 7 31 5 32 5 33 3 8 3 9 9 10 9 34 9 35 3 36 3 11 3 12 12 13 12 37 12 38 3 31\nM 31\nDETECTOR rec[-1]\nCX 3 28\nM 28\nDETECTOR rec[-1]\nCX 0 14 0 15 15 16 15 17 17 29\nM 29\nDETECTOR rec[-1]\nCX 17 39 15 18 15 19 19 20 19 21 21 22 21 39\nM 39\nDETECTOR rec[-1]\nCX 21 32\nM 32\nDETECTOR rec[-1]\nCX 19 23 23 34\nM 34\nDETECTOR rec[-1]\nCX 19 40 15 24 15 35\nM 35\nDETECTOR rec[-1]\nCX 15 33\nM 33\nDETECTOR rec[-1]\nCX 15 37\nM 37\nDETECTOR rec[-1]\nCX 0 25 0 26 26 38\nM 38\nDETECTOR rec[-1]\nCX 26 30\nM 30\nDETECTOR rec[-1]\nCX 0 27 0 40\nM 40\nDETECTOR rec[-1]\nCX 0 36\nM 36\nDETECTOR rec[-1]\n"
+    },
+    "t4-n29": {
+      "n": 29,
+      "t": 4,
+      "fileName": "cat_state_t4_n29_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n29_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 4 29 3 30 1 5 1 31 1 32 0 6 6 33 6 7 6 8 8 9 8 34 8 10 8 11 11 12 11 35 11 36 11 37 8 38 8 39 6 13 13 14 13 39\nM 39\nDETECTOR rec[-1]\nCX 13 40 6 15 6 16 16 29\nM 29\nDETECTOR rec[-1]\nCX 16 38\nM 38\nDETECTOR rec[-1]\nCX 6 41 6 42 0 17 0 42\nM 42\nDETECTOR rec[-1]\nCX 0 18 0 32\nM 32\nDETECTOR rec[-1]\nCX 0 19 19 20 19 21 21 36\nM 36\nDETECTOR rec[-1]\nCX 19 33\nM 33\nDETECTOR rec[-1]\nCX 0 22 0 23 23 24 23 25 25 26 26 31\nM 31\nDETECTOR rec[-1]\nCX 25 34\nM 34\nDETECTOR rec[-1]\nCX 23 27 23 37\nM 37\nDETECTOR rec[-1]\nCX 23 41\nM 41\nDETECTOR rec[-1]\nCX 0 28 0 40\nM 40\nDETECTOR rec[-1]\nCX 0 30\nM 30\nDETECTOR rec[-1]\nCX 0 35\nM 35\nDETECTOR rec[-1]\n"
+    },
+    "t4-n30": {
+      "n": 30,
+      "t": 4,
+      "fileName": "cat_state_t4_n30_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n30_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 3 2 4 4 5 4 6 6 7 6 30 6 31 4 8 8 32 4 33 2 9 2 10 10 11 10 12 12 34 12 13 12 35 12 36 10 14 10 15 15 36\nM 36\nDETECTOR rec[-1]\nCX 15 37 10 16 10 38 10 39 2 40 2 17 2 41 2 42 2 38\nM 38\nDETECTOR rec[-1]\nCX 1 18 1 19 19 39\nM 39\nDETECTOR rec[-1]\nCX 19 30\nM 30\nDETECTOR rec[-1]\nCX 1 20 1 33\nM 33\nDETECTOR rec[-1]\nCX 1 40\nM 40\nDETECTOR rec[-1]\nCX 0 21 21 22 21 23 23 42\nM 42\nDETECTOR rec[-1]\nCX 21 34\nM 34\nDETECTOR rec[-1]\nCX 0 24 0 43 0 25 25 26 25 27 27 35\nM 35\nDETECTOR rec[-1]\nCX 25 31\nM 31\nDETECTOR rec[-1]\nCX 25 28 25 32\nM 32\nDETECTOR rec[-1]\nCX 25 43\nM 43\nDETECTOR rec[-1]\nCX 0 29 0 37\nM 37\nDETECTOR rec[-1]\nCX 0 41\nM 41\nDETECTOR rec[-1]\n"
+    },
+    "t4-n31": {
+      "n": 31,
+      "t": 4,
+      "fileName": "cat_state_t4_n31_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n31_p1.stim",
+      "stim": "H 0\nCX 0 1 1 31 1 2 1 3 3 4 3 5 5 6 5 32 5 7 5 8 8 9 8 10 10 33 8 34 5 35 5 36 3 37 3 11 3 38 3 39 1 12 1 13 13 40 13 41 1 14 1 42 1 15 1 16 16 17 16 43 16 35\nM 35\nDETECTOR rec[-1]\nCX 1 33\nM 33\nDETECTOR rec[-1]\nCX 1 38\nM 38\nDETECTOR rec[-1]\nCX 0 18 18 19 18 36\nM 36\nDETECTOR rec[-1]\nCX 18 40\nM 40\nDETECTOR rec[-1]\nCX 0 20 0 21 21 22 21 23 23 24 24 44 23 32\nM 32\nDETECTOR rec[-1]\nCX 21 25 21 26 26 43\nM 43\nDETECTOR rec[-1]\nCX 21 34\nM 34\nDETECTOR rec[-1]\nCX 21 27 21 41\nM 41\nDETECTOR rec[-1]\nCX 21 37\nM 37\nDETECTOR rec[-1]\nCX 0 28 0 29 29 30 29 44\nM 44\nDETECTOR rec[-1]\nCX 29 31\nM 31\nDETECTOR rec[-1]\nCX 0 39\nM 39\nDETECTOR rec[-1]\nCX 0 42\nM 42\nDETECTOR rec[-1]\n"
+    },
+    "t4-n32": {
+      "n": 32,
+      "t": 4,
+      "fileName": "cat_state_t4_n32_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n32_p1.stim",
+      "stim": "H 0\nCX 0 1 1 32 0 2 2 3 2 4 4 33 4 34 2 5 2 35 2 6 2 7 7 32\nM 32\nDETECTOR rec[-1]\nCX 7 36 2 8 2 9 9 10 9 37 9 11 11 38 9 39 2 12 2 13 13 14 13 34\nM 34\nDETECTOR rec[-1]\nCX 13 40 2 41 2 42 0 15 0 16 16 17 16 18 18 19 18 20 20 42\nM 42\nDETECTOR rec[-1]\nCX 20 35\nM 35\nDETECTOR rec[-1]\nCX 18 21 18 43 18 44 16 22 16 45 16 44\nM 44\nDETECTOR rec[-1]\nCX 16 41\nM 41\nDETECTOR rec[-1]\nCX 0 23 23 38\nM 38\nDETECTOR rec[-1]\nCX 23 45\nM 45\nDETECTOR rec[-1]\nCX 0 24 0 25 25 26 25 27 27 28 27 36\nM 36\nDETECTOR rec[-1]\nCX 27 46 25 29 29 43\nM 43\nDETECTOR rec[-1]\nCX 25 30 25 39\nM 39\nDETECTOR rec[-1]\nCX 25 33\nM 33\nDETECTOR rec[-1]\nCX 0 31 0 40\nM 40\nDETECTOR rec[-1]\nCX 0 46\nM 46\nDETECTOR rec[-1]\nCX 0 37\nM 37\nDETECTOR rec[-1]\n"
+    },
+    "t4-n33": {
+      "n": 33,
+      "t": 4,
+      "fileName": "cat_state_t4_n33_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n33_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 5 6 5 7 7 33 7 34 5 8 5 35 5 36 3 9 3 10 10 11 10 37 10 38 3 39 3 40 1 12 12 13 12 14 14 41 14 42 12 15 12 16 16 39\nM 39\nDETECTOR rec[-1]\nCX 12 43 1 17 1 44 1 45 0 18 18 19 18 20 20 21 21 35\nM 35\nDETECTOR rec[-1]\nCX 20 37\nM 37\nDETECTOR rec[-1]\nCX 18 22 18 23 23 24 23 38\nM 38\nDETECTOR rec[-1]\nCX 23 46 23 25 23 47 23 33\nM 33\nDETECTOR rec[-1]\nCX 18 26 18 45\nM 45\nDETECTOR rec[-1]\nCX 18 36\nM 36\nDETECTOR rec[-1]\nCX 18 47\nM 47\nDETECTOR rec[-1]\nCX 0 27 0 28 28 29 28 42\nM 42\nDETECTOR rec[-1]\nCX 28 46\nM 46\nDETECTOR rec[-1]\nCX 0 43\nM 43\nDETECTOR rec[-1]\nCX 0 30 0 31 31 32 31 34\nM 34\nDETECTOR rec[-1]\nCX 31 41\nM 41\nDETECTOR rec[-1]\nCX 0 40\nM 40\nDETECTOR rec[-1]\nCX 0 44\nM 44\nDETECTOR rec[-1]\n"
+    },
+    "t4-n34": {
+      "n": 34,
+      "t": 4,
+      "fileName": "cat_state_t4_n34_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n34_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 34 1 3 1 4 4 5 5 35 4 6 4 7 7 8 7 36 7 37 7 38 4 9 4 10 10 11 10 38\nM 38\nDETECTOR rec[-1]\nCX 10 39 4 40 4 41 1 12 1 13 13 14 14 40\nM 40\nDETECTOR rec[-1]\nCX 13 15 13 16 16 42 13 43 1 17 1 18 18 19 18 44 18 43\nM 43\nDETECTOR rec[-1]\nCX 18 45 1 20 1 46 1 47 1 48 0 21 21 22 22 23 22 24 24 44\nM 44\nDETECTOR rec[-1]\nCX 22 48\nM 48\nDETECTOR rec[-1]\nCX 22 25 22 49 22 36\nM 36\nDETECTOR rec[-1]\nCX 21 26 21 27 27 37\nM 37\nDETECTOR rec[-1]\nCX 21 28 21 29 29 42\nM 42\nDETECTOR rec[-1]\nCX 29 34\nM 34\nDETECTOR rec[-1]\nCX 21 45\nM 45\nDETECTOR rec[-1]\nCX 21 30 21 31 31 39\nM 39\nDETECTOR rec[-1]\nCX 31 49\nM 49\nDETECTOR rec[-1]\nCX 21 32 21 41\nM 41\nDETECTOR rec[-1]\nCX 21 46\nM 46\nDETECTOR rec[-1]\nCX 0 33 0 35\nM 35\nDETECTOR rec[-1]\nCX 0 47\nM 47\nDETECTOR rec[-1]\n"
+    },
+    "t4-n35": {
+      "n": 35,
+      "t": 4,
+      "fileName": "cat_state_t4_n35_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n35_p1.stim",
+      "stim": "H 0\nCX 0 35 0 1 1 2 2 36 1 3 1 37 1 4 1 5 5 6 6 38 5 7 5 39 5 40 1 8 1 9 9 10 9 11 11 12 12 41 11 42 9 13 9 36\nM 36\nDETECTOR rec[-1]\nCX 9 43 1 14 1 44 1 40\nM 40\nDETECTOR rec[-1]\nCX 1 45 0 15 0 16 16 46 16 17 16 18 18 43\nM 43\nDETECTOR rec[-1]\nCX 18 39\nM 39\nDETECTOR rec[-1]\nCX 16 19 16 20 20 21 20 22 22 23 23 47 22 37\nM 37\nDETECTOR rec[-1]\nCX 20 24 20 41\nM 41\nDETECTOR rec[-1]\nCX 20 48 16 25 16 26 26 27 26 38\nM 38\nDETECTOR rec[-1]\nCX 26 49 16 48\nM 48\nDETECTOR rec[-1]\nCX 16 44\nM 44\nDETECTOR rec[-1]\nCX 0 28 0 29 29 30 29 45\nM 45\nDETECTOR rec[-1]\nCX 29 49\nM 49\nDETECTOR rec[-1]\nCX 29 31 29 50 29 35\nM 35\nDETECTOR rec[-1]\nCX 0 32 0 33 33 34 33 47\nM 47\nDETECTOR rec[-1]\nCX 33 46\nM 46\nDETECTOR rec[-1]\nCX 0 42\nM 42\nDETECTOR rec[-1]\nCX 0 50\nM 50\nDETECTOR rec[-1]\n"
+    },
+    "t4-n36": {
+      "n": 36,
+      "t": 4,
+      "fileName": "cat_state_t4_n36_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n36_p1.stim",
+      "stim": "H 0\nCX 0 1 1 36 0 2 2 3 2 4 4 5 4 6 6 37 4 7 4 8 8 9 8 10 10 38 8 39 4 40 4 41 2 42 2 11 2 12 12 13 12 14 14 15 14 43 14 40\nM 40\nDETECTOR rec[-1]\nCX 12 37\nM 37\nDETECTOR rec[-1]\nCX 12 16 12 41\nM 41\nDETECTOR rec[-1]\nCX 12 44 2 17 2 18 18 45 18 46 2 19 2 47 2 48 0 20 0 21 21 38\nM 38\nDETECTOR rec[-1]\nCX 21 49 0 22 0 23 23 24 23 25 25 39\nM 39\nDETECTOR rec[-1]\nCX 25 47\nM 47\nDETECTOR rec[-1]\nCX 23 26 23 27 27 28 27 36\nM 36\nDETECTOR rec[-1]\nCX 27 50 27 43\nM 43\nDETECTOR rec[-1]\nCX 23 29 23 30 30 31 30 46\nM 46\nDETECTOR rec[-1]\nCX 30 42\nM 42\nDETECTOR rec[-1]\nCX 23 48\nM 48\nDETECTOR rec[-1]\nCX 23 51 0 32 0 33 33 44\nM 44\nDETECTOR rec[-1]\nCX 33 34 33 49\nM 49\nDETECTOR rec[-1]\nCX 33 45\nM 45\nDETECTOR rec[-1]\nCX 0 35 0 51\nM 51\nDETECTOR rec[-1]\nCX 0 50\nM 50\nDETECTOR rec[-1]\n"
+    },
+    "t4-n37": {
+      "n": 37,
+      "t": 4,
+      "fileName": "cat_state_t4_n37_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n37_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 37 1 38 1 39 0 3 3 4 3 5 5 6 6 7 6 8 8 40 6 9 6 10 10 41 6 42 6 11 6 43 6 38\nM 38\nDETECTOR rec[-1]\nCX 5 12 5 44 5 13 5 14 14 15 14 45 14 46 5 47 5 48 3 16 3 17 17 18 17 49 17 19 19 44\nM 44\nDETECTOR rec[-1]\nCX 17 20 17 21 21 39\nM 39\nDETECTOR rec[-1]\nCX 21 50 17 22 17 51 17 37\nM 37\nDETECTOR rec[-1]\nCX 3 23 3 24 24 25 25 52 24 43\nM 43\nDETECTOR rec[-1]\nCX 3 26 3 41\nM 41\nDETECTOR rec[-1]\nCX 3 53 0 27 0 28 28 52\nM 52\nDETECTOR rec[-1]\nCX 28 47\nM 47\nDETECTOR rec[-1]\nCX 0 53\nM 53\nDETECTOR rec[-1]\nCX 0 29 0 30 30 31 30 32 32 33 32 50\nM 50\nDETECTOR rec[-1]\nCX 32 42\nM 42\nDETECTOR rec[-1]\nCX 30 46\nM 46\nDETECTOR rec[-1]\nCX 30 51\nM 51\nDETECTOR rec[-1]\nCX 0 34 0 35 35 40\nM 40\nDETECTOR rec[-1]\nCX 35 45\nM 45\nDETECTOR rec[-1]\nCX 0 36 0 48\nM 48\nDETECTOR rec[-1]\nCX 0 49\nM 49\nDETECTOR rec[-1]\n"
+    },
+    "t4-n38": {
+      "n": 38,
+      "t": 4,
+      "fileName": "cat_state_t4_n38_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n38_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 5 6 6 38 5 7 5 8 8 9 8 10 10 11 10 39 10 40 8 41 8 42 5 12 5 13 13 14 13 15 15 16 16 43 15 44 13 17 13 42\nM 42\nDETECTOR rec[-1]\nCX 13 45 5 46 5 18 5 44\nM 44\nDETECTOR rec[-1]\nCX 5 47 3 19 3 48 3 49 1 20 1 45\nM 45\nDETECTOR rec[-1]\nCX 1 50 1 51 0 21 21 22 21 51\nM 51\nDETECTOR rec[-1]\nCX 21 23 21 24 24 25 24 52 24 53 21 49\nM 49\nDETECTOR rec[-1]\nCX 21 26 21 27 27 28 27 53\nM 53\nDETECTOR rec[-1]\nCX 27 29 29 54 27 39\nM 39\nDETECTOR rec[-1]\nCX 21 30 21 31 31 40\nM 40\nDETECTOR rec[-1]\nCX 31 52\nM 52\nDETECTOR rec[-1]\nCX 21 32 21 43\nM 43\nDETECTOR rec[-1]\nCX 21 41\nM 41\nDETECTOR rec[-1]\nCX 0 33 33 34 33 54\nM 54\nDETECTOR rec[-1]\nCX 33 46\nM 46\nDETECTOR rec[-1]\nCX 0 35 0 38\nM 38\nDETECTOR rec[-1]\nCX 0 36 0 37 37 50\nM 50\nDETECTOR rec[-1]\nCX 0 47\nM 47\nDETECTOR rec[-1]\nCX 0 48\nM 48\nDETECTOR rec[-1]\n"
+    },
+    "t4-n39": {
+      "n": 39,
+      "t": 4,
+      "fileName": "cat_state_t4_n39_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n39_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 39 3 4 3 40 3 5 3 6 6 41 6 42 3 7 3 8 8 43 3 9 3 44 3 45 3 10 3 46 3 47 1 11 1 48 1 12 1 13 13 49 1 50 1 51 0 14 14 15 14 16 16 17 16 18 18 41\nM 41\nDETECTOR rec[-1]\nCX 16 52 16 53 16 48\nM 48\nDETECTOR rec[-1]\nCX 14 19 19 54 14 20 14 49\nM 49\nDETECTOR rec[-1]\nCX 14 39\nM 39\nDETECTOR rec[-1]\nCX 0 21 0 22 22 23 22 42\nM 42\nDETECTOR rec[-1]\nCX 22 44\nM 44\nDETECTOR rec[-1]\nCX 0 24 24 25 24 26 26 27 26 28 28 29 28 30 30 31 30 54\nM 54\nDETECTOR rec[-1]\nCX 30 45\nM 45\nDETECTOR rec[-1]\nCX 28 43\nM 43\nDETECTOR rec[-1]\nCX 28 55 26 32 26 56 26 51\nM 51\nDETECTOR rec[-1]\nCX 26 46\nM 46\nDETECTOR rec[-1]\nCX 24 33 33 50\nM 50\nDETECTOR rec[-1]\nCX 24 34 24 35 35 56\nM 56\nDETECTOR rec[-1]\nCX 24 36 24 37 37 53\nM 53\nDETECTOR rec[-1]\nCX 24 47\nM 47\nDETECTOR rec[-1]\nCX 24 40\nM 40\nDETECTOR rec[-1]\nCX 0 38 0 55\nM 55\nDETECTOR rec[-1]\nCX 0 52\nM 52\nDETECTOR rec[-1]\n"
+    },
+    "t4-n40": {
+      "n": 40,
+      "t": 4,
+      "fileName": "cat_state_t4_n40_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n40_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 5 6 6 7 6 40 6 41 5 8 5 42 5 9 5 10 10 11 10 43 10 44 5 45 5 46 3 12 3 13 13 14 13 47 13 48 13 49 3 15 3 16 16 41\nM 41\nDETECTOR rec[-1]\nCX 16 43\nM 43\nDETECTOR rec[-1]\nCX 3 17 3 46\nM 46\nDETECTOR rec[-1]\nCX 3 50 1 18 1 19 19 20 19 21 21 22 21 23 23 51 21 44\nM 44\nDETECTOR rec[-1]\nCX 21 52 19 24 19 50\nM 50\nDETECTOR rec[-1]\nCX 19 25 25 53 19 54 1 55 1 26 1 56 1 57 0 27 27 28 27 29 29 30 30 56\nM 56\nDETECTOR rec[-1]\nCX 29 31 29 51\nM 51\nDETECTOR rec[-1]\nCX 29 45\nM 45\nDETECTOR rec[-1]\nCX 27 32 27 49\nM 49\nDETECTOR rec[-1]\nCX 27 33 27 34 34 52\nM 52\nDETECTOR rec[-1]\nCX 34 40\nM 40\nDETECTOR rec[-1]\nCX 27 35 27 36 36 55\nM 55\nDETECTOR rec[-1]\nCX 27 37 27 54\nM 54\nDETECTOR rec[-1]\nCX 27 57\nM 57\nDETECTOR rec[-1]\nCX 27 47\nM 47\nDETECTOR rec[-1]\nCX 0 38 38 42\nM 42\nDETECTOR rec[-1]\nCX 0 39 0 53\nM 53\nDETECTOR rec[-1]\nCX 0 48\nM 48\nDETECTOR rec[-1]\n"
+    },
+    "t4-n41": {
+      "n": 41,
+      "t": 4,
+      "fileName": "cat_state_t4_n41_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n41_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 41 1 3 1 4 4 5 5 42 4 43 1 6 1 7 7 44 7 8 7 45 7 46 1 9 1 10 10 47 10 48 1 11 1 49 1 50 0 12 12 51 12 13 12 14 14 15 14 16 16 17 17 52 16 41\nM 41\nDETECTOR rec[-1]\nCX 14 18 14 42\nM 42\nDETECTOR rec[-1]\nCX 14 53 12 19 12 54 12 20 20 55 12 56 12 57 12 45\nM 45\nDETECTOR rec[-1]\nCX 0 21 0 22 22 47\nM 47\nDETECTOR rec[-1]\nCX 0 23 0 24 24 25 25 26 25 55\nM 55\nDETECTOR rec[-1]\nCX 25 58 24 27 24 28 28 29 28 30 30 31 30 52\nM 52\nDETECTOR rec[-1]\nCX 30 59 28 46\nM 46\nDETECTOR rec[-1]\nCX 28 54\nM 54\nDETECTOR rec[-1]\nCX 24 32 24 33 33 58\nM 58\nDETECTOR rec[-1]\nCX 33 49\nM 49\nDETECTOR rec[-1]\nCX 24 34 24 48\nM 48\nDETECTOR rec[-1]\nCX 24 56\nM 56\nDETECTOR rec[-1]\nCX 0 35 0 36 36 37 36 38 38 39 38 43\nM 43\nDETECTOR rec[-1]\nCX 38 51\nM 51\nDETECTOR rec[-1]\nCX 36 50\nM 50\nDETECTOR rec[-1]\nCX 36 57\nM 57\nDETECTOR rec[-1]\nCX 0 40 0 53\nM 53\nDETECTOR rec[-1]\nCX 0 59\nM 59\nDETECTOR rec[-1]\nCX 0 44\nM 44\nDETECTOR rec[-1]\n"
+    },
+    "t4-n42": {
+      "n": 42,
+      "t": 4,
+      "fileName": "cat_state_t4_n42_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n42_p1.stim",
+      "stim": "H 0\nCX 0 42 0 1 1 2 1 3 3 43 3 44 1 4 1 5 5 6 5 45 5 46 5 47 1 7 1 8 8 9 8 10 10 11 10 12 12 48 12 49 10 13 10 50 10 45\nM 45\nDETECTOR rec[-1]\nCX 8 14 8 51 8 52 8 53 1 15 15 16 15 44\nM 44\nDETECTOR rec[-1]\nCX 15 54 1 17 1 18 18 55 18 50\nM 50\nDETECTOR rec[-1]\nCX 1 19 1 56 1 48\nM 48\nDETECTOR rec[-1]\nCX 0 20 0 21 21 22 21 47\nM 47\nDETECTOR rec[-1]\nCX 21 23 21 24 24 25 24 26 26 57 26 58 24 27 24 28 28 59 28 42\nM 42\nDETECTOR rec[-1]\nCX 24 29 24 53\nM 53\nDETECTOR rec[-1]\nCX 24 43\nM 43\nDETECTOR rec[-1]\nCX 21 30 30 31 30 32 32 59\nM 59\nDETECTOR rec[-1]\nCX 30 46\nM 46\nDETECTOR rec[-1]\nCX 21 33 21 34 34 35 34 58\nM 58\nDETECTOR rec[-1]\nCX 34 52\nM 52\nDETECTOR rec[-1]\nCX 21 60 21 56\nM 56\nDETECTOR rec[-1]\nCX 0 36 36 37 36 38 38 55\nM 55\nDETECTOR rec[-1]\nCX 36 57\nM 57\nDETECTOR rec[-1]\nCX 0 39 0 40 40 54\nM 54\nDETECTOR rec[-1]\nCX 40 60\nM 60\nDETECTOR rec[-1]\nCX 0 41 0 49\nM 49\nDETECTOR rec[-1]\nCX 0 51\nM 51\nDETECTOR rec[-1]\n"
+    },
+    "t4-n43": {
+      "n": 43,
+      "t": 4,
+      "fileName": "cat_state_t4_n43_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n43_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 43 1 44 0 3 3 45 3 4 3 5 5 6 5 7 7 43\nM 43\nDETECTOR rec[-1]\nCX 5 8 8 46 5 9 5 10 10 47 5 11 5 12 12 13 12 48 12 49 5 50 5 51 3 14 3 15 15 48\nM 48\nDETECTOR rec[-1]\nCX 3 44\nM 44\nDETECTOR rec[-1]\nCX 3 16 3 52 3 17 3 18 18 19 18 53 18 45\nM 45\nDETECTOR rec[-1]\nCX 3 54 3 55 0 20 0 21 21 22 22 53\nM 53\nDETECTOR rec[-1]\nCX 21 23 21 24 24 25 24 26 26 56 26 57 24 27 24 58 24 59 21 28 21 29 29 30 29 60 29 54\nM 54\nDETECTOR rec[-1]\nCX 21 61 21 52\nM 52\nDETECTOR rec[-1]\nCX 0 31 0 32 32 56\nM 56\nDETECTOR rec[-1]\nCX 0 33 0 34 34 35 34 51\nM 51\nDETECTOR rec[-1]\nCX 34 36 34 37 37 59\nM 59\nDETECTOR rec[-1]\nCX 37 60\nM 60\nDETECTOR rec[-1]\nCX 34 38 34 46\nM 46\nDETECTOR rec[-1]\nCX 34 61\nM 61\nDETECTOR rec[-1]\nCX 0 47\nM 47\nDETECTOR rec[-1]\nCX 0 39 0 57\nM 57\nDETECTOR rec[-1]\nCX 0 40 0 41 41 49\nM 49\nDETECTOR rec[-1]\nCX 41 58\nM 58\nDETECTOR rec[-1]\nCX 0 42 0 55\nM 55\nDETECTOR rec[-1]\nCX 0 50\nM 50\nDETECTOR rec[-1]\n"
+    },
+    "t4-n44": {
+      "n": 44,
+      "t": 4,
+      "fileName": "cat_state_t4_n44_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n44_p1.stim",
+      "stim": "H 0\nCX 0 44 0 1 1 2 1 3 3 4 4 5 4 45 4 46 3 6 3 7 7 8 7 9 9 10 9 11 11 12 11 13 13 47 13 48 11 14 11 49 11 50 9 15 9 16 16 17 16 51 16 52 9 46\nM 46\nDETECTOR rec[-1]\nCX 9 53 7 54 7 50\nM 50\nDETECTOR rec[-1]\nCX 7 55 3 18 3 19 19 56 19 49\nM 49\nDETECTOR rec[-1]\nCX 3 20 3 21 21 57 3 22 3 23 23 48\nM 48\nDETECTOR rec[-1]\nCX 23 58 3 24 3 55\nM 55\nDETECTOR rec[-1]\nCX 3 59 1 25 1 26 26 27 26 58\nM 58\nDETECTOR rec[-1]\nCX 26 60 1 61 1 62 0 28 28 29 28 62\nM 62\nDETECTOR rec[-1]\nCX 28 63 0 30 0 31 31 32 31 33 33 52\nM 52\nDETECTOR rec[-1]\nCX 33 61\nM 61\nDETECTOR rec[-1]\nCX 31 34 31 35 35 36 35 37 37 38 37 39 39 47\nM 47\nDETECTOR rec[-1]\nCX 37 56\nM 56\nDETECTOR rec[-1]\nCX 35 60\nM 60\nDETECTOR rec[-1]\nCX 35 54\nM 54\nDETECTOR rec[-1]\nCX 31 40 31 63\nM 63\nDETECTOR rec[-1]\nCX 31 59\nM 59\nDETECTOR rec[-1]\nCX 31 45\nM 45\nDETECTOR rec[-1]\nCX 0 41 0 42 42 57\nM 57\nDETECTOR rec[-1]\nCX 42 51\nM 51\nDETECTOR rec[-1]\nCX 0 43 0 53\nM 53\nDETECTOR rec[-1]\nCX 0 44\nM 44\nDETECTOR rec[-1]\n"
+    },
+    "t4-n45": {
+      "n": 45,
+      "t": 4,
+      "fileName": "cat_state_t4_n45_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n45_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 5 6 6 45 5 46 3 7 3 8 8 47 3 9 3 10 10 11 10 48 10 49 3 50 3 51 1 12 1 52 1 53 1 13 1 14 14 15 14 16 16 17 16 46\nM 46\nDETECTOR rec[-1]\nCX 16 54 14 49\nM 49\nDETECTOR rec[-1]\nCX 14 55 1 18 1 19 19 56 19 57 1 20 1 21 21 22 21 23 23 58 21 45\nM 45\nDETECTOR rec[-1]\nCX 21 59 1 24 1 25 25 60 25 53\nM 53\nDETECTOR rec[-1]\nCX 1 26 1 57\nM 57\nDETECTOR rec[-1]\nCX 1 52\nM 52\nDETECTOR rec[-1]\nCX 0 27 27 61 27 62 0 28 0 51\nM 51\nDETECTOR rec[-1]\nCX 0 29 0 30 30 31 30 62\nM 62\nDETECTOR rec[-1]\nCX 30 63 0 32 32 33 32 34 34 35 34 36 36 54\nM 54\nDETECTOR rec[-1]\nCX 36 48\nM 48\nDETECTOR rec[-1]\nCX 34 37 34 58\nM 58\nDETECTOR rec[-1]\nCX 34 56\nM 56\nDETECTOR rec[-1]\nCX 32 38 32 47\nM 47\nDETECTOR rec[-1]\nCX 32 64 32 39 32 59\nM 59\nDETECTOR rec[-1]\nCX 32 61\nM 61\nDETECTOR rec[-1]\nCX 0 40 0 41 41 60\nM 60\nDETECTOR rec[-1]\nCX 0 42 0 63\nM 63\nDETECTOR rec[-1]\nCX 0 43 43 50\nM 50\nDETECTOR rec[-1]\nCX 0 44 0 55\nM 55\nDETECTOR rec[-1]\nCX 0 64\nM 64\nDETECTOR rec[-1]\n"
+    },
+    "t4-n46": {
+      "n": 46,
+      "t": 4,
+      "fileName": "cat_state_t4_n46_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n46_p1.stim",
+      "stim": "H 0\nCX 0 1 1 46 0 2 2 3 2 4 4 5 4 47 4 48 2 6 6 7 6 8 8 9 8 10 10 11 10 49 10 12 10 13 13 46\nM 46\nDETECTOR rec[-1]\nCX 13 14 13 50 13 51 10 15 10 16 16 17 16 52 16 53 10 54 10 55 8 56 8 57 6 18 6 58 6 48\nM 48\nDETECTOR rec[-1]\nCX 6 49\nM 49\nDETECTOR rec[-1]\nCX 2 19 2 20 20 21 21 50\nM 50\nDETECTOR rec[-1]\nCX 20 59 2 22 2 57\nM 57\nDETECTOR rec[-1]\nCX 2 60 0 23 0 24 24 25 24 59\nM 59\nDETECTOR rec[-1]\nCX 24 56\nM 56\nDETECTOR rec[-1]\nCX 0 55\nM 55\nDETECTOR rec[-1]\nCX 0 26 0 27 27 28 27 29 29 30 29 31 31 61 29 32 29 33 33 62 33 47\nM 47\nDETECTOR rec[-1]\nCX 29 34 29 35 35 36 35 63 35 58\nM 58\nDETECTOR rec[-1]\nCX 29 51\nM 51\nDETECTOR rec[-1]\nCX 29 64 27 37 37 38 37 64\nM 64\nDETECTOR rec[-1]\nCX 37 54\nM 54\nDETECTOR rec[-1]\nCX 27 39 27 40 40 53\nM 53\nDETECTOR rec[-1]\nCX 40 63\nM 63\nDETECTOR rec[-1]\nCX 27 41 27 65 27 66 0 66\nM 66\nDETECTOR rec[-1]\nCX 0 42 42 52\nM 52\nDETECTOR rec[-1]\nCX 0 43 0 44 44 62\nM 62\nDETECTOR rec[-1]\nCX 0 45 0 60\nM 60\nDETECTOR rec[-1]\nCX 0 61\nM 61\nDETECTOR rec[-1]\nCX 0 65\nM 65\nDETECTOR rec[-1]\n"
+    },
+    "t4-n47": {
+      "n": 47,
+      "t": 4,
+      "fileName": "cat_state_t4_n47_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n47_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 47 3 48 1 4 1 5 5 6 5 49 5 50 5 7 5 51 5 8 5 9 9 52 9 53 5 10 5 54 5 55 1 11 1 12 12 56 12 57 1 13 1 58 1 47\nM 47\nDETECTOR rec[-1]\nCX 0 14 14 15 14 16 16 17 17 18 17 19 19 20 19 21 21 22 21 23 23 59 21 24 21 25 25 60 25 61 21 26 21 62 21 56\nM 56\nDETECTOR rec[-1]\nCX 19 63 19 50\nM 50\nDETECTOR rec[-1]\nCX 17 27 17 28 28 64 28 65 17 29 17 53\nM 53\nDETECTOR rec[-1]\nCX 17 49\nM 49\nDETECTOR rec[-1]\nCX 16 30 16 48\nM 48\nDETECTOR rec[-1]\nCX 16 31 16 32 32 54\nM 54\nDETECTOR rec[-1]\nCX 16 66 16 51\nM 51\nDETECTOR rec[-1]\nCX 14 33 14 65\nM 65\nDETECTOR rec[-1]\nCX 14 67 0 34 0 35 35 59\nM 59\nDETECTOR rec[-1]\nCX 35 36 35 37 37 38 37 39 39 40 40 52\nM 52\nDETECTOR rec[-1]\nCX 39 62\nM 62\nDETECTOR rec[-1]\nCX 37 41 37 61\nM 61\nDETECTOR rec[-1]\nCX 37 66\nM 66\nDETECTOR rec[-1]\nCX 35 42 35 43 43 58\nM 58\nDETECTOR rec[-1]\nCX 35 67\nM 67\nDETECTOR rec[-1]\nCX 35 60\nM 60\nDETECTOR rec[-1]\nCX 0 44 0 45 45 46 45 57\nM 57\nDETECTOR rec[-1]\nCX 45 63\nM 63\nDETECTOR rec[-1]\nCX 0 55\nM 55\nDETECTOR rec[-1]\nCX 0 64\nM 64\nDETECTOR rec[-1]\n"
+    },
+    "t4-n48": {
+      "n": 48,
+      "t": 4,
+      "fileName": "cat_state_t4_n48_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n48_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 3 2 48 2 4 2 5 5 49 2 50 2 51 1 6 1 7 7 8 7 9 9 52 9 53 7 10 7 11 11 12 11 13 13 54 13 14 13 55 13 50\nM 50\nDETECTOR rec[-1]\nCX 11 15 11 56 11 16 11 17 17 18 17 57 17 58 11 59 11 60 7 19 7 20 20 61 20 62 7 21 7 51\nM 51\nDETECTOR rec[-1]\nCX 7 63 1 22 1 23 23 24 23 60\nM 60\nDETECTOR rec[-1]\nCX 23 64 1 63\nM 63\nDETECTOR rec[-1]\nCX 1 25 1 62\nM 62\nDETECTOR rec[-1]\nCX 1 59\nM 59\nDETECTOR rec[-1]\nCX 0 26 26 27 26 28 28 65 26 29 26 30 30 66 30 31 30 32 32 67 30 68 26 33 26 53\nM 53\nDETECTOR rec[-1]\nCX 26 61\nM 61\nDETECTOR rec[-1]\nCX 0 34 0 35 35 66\nM 66\nDETECTOR rec[-1]\nCX 0 36 0 37 37 64\nM 64\nDETECTOR rec[-1]\nCX 37 57\nM 57\nDETECTOR rec[-1]\nCX 0 38 0 39 39 40 39 58\nM 58\nDETECTOR rec[-1]\nCX 39 67\nM 67\nDETECTOR rec[-1]\nCX 39 56\nM 56\nDETECTOR rec[-1]\nCX 0 41 0 42 42 68\nM 68\nDETECTOR rec[-1]\nCX 42 55\nM 55\nDETECTOR rec[-1]\nCX 0 43 0 44 44 52\nM 52\nDETECTOR rec[-1]\nCX 0 45 0 46 46 65\nM 65\nDETECTOR rec[-1]\nCX 46 48\nM 48\nDETECTOR rec[-1]\nCX 0 47 0 49\nM 49\nDETECTOR rec[-1]\nCX 0 54\nM 54\nDETECTOR rec[-1]\n"
+    },
+    "t4-n49": {
+      "n": 49,
+      "t": 4,
+      "fileName": "cat_state_t4_n49_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n49_p1.stim",
+      "stim": "H 0\nCX 0 49 0 1 1 2 1 3 3 50 1 4 4 5 4 6 6 7 6 8 8 9 8 10 10 11 10 12 12 51 12 52 10 13 10 53 10 54 8 14 8 55 8 56 8 57 6 15 15 16 15 50\nM 50\nDETECTOR rec[-1]\nCX 15 58 6 17 6 59 6 60 4 18 4 19 19 61 4 54\nM 54\nDETECTOR rec[-1]\nCX 4 62 1 20 1 21 21 22 22 59\nM 59\nDETECTOR rec[-1]\nCX 21 63 1 23 1 24 24 56\nM 56\nDETECTOR rec[-1]\nCX 1 25 1 26 26 60\nM 60\nDETECTOR rec[-1]\nCX 26 64 1 27 1 52\nM 52\nDETECTOR rec[-1]\nCX 1 65 0 28 0 29 29 30 29 61\nM 61\nDETECTOR rec[-1]\nCX 29 55\nM 55\nDETECTOR rec[-1]\nCX 0 66 0 31 0 32 32 33 32 34 34 67 34 35 34 36 36 37 36 57\nM 57\nDETECTOR rec[-1]\nCX 36 68 34 62\nM 62\nDETECTOR rec[-1]\nCX 34 49\nM 49\nDETECTOR rec[-1]\nCX 32 38 32 64\nM 64\nDETECTOR rec[-1]\nCX 32 39 32 40 40 69 32 65\nM 65\nDETECTOR rec[-1]\nCX 32 66\nM 66\nDETECTOR rec[-1]\nCX 0 41 0 42 42 69\nM 69\nDETECTOR rec[-1]\nCX 42 53\nM 53\nDETECTOR rec[-1]\nCX 0 43 0 44 44 45 44 58\nM 58\nDETECTOR rec[-1]\nCX 44 46 46 51\nM 51\nDETECTOR rec[-1]\nCX 44 47 44 63\nM 63\nDETECTOR rec[-1]\nCX 44 70 0 48 0 68\nM 68\nDETECTOR rec[-1]\nCX 0 70\nM 70\nDETECTOR rec[-1]\nCX 0 67\nM 67\nDETECTOR rec[-1]\n"
+    },
+    "t4-n50": {
+      "n": 50,
+      "t": 4,
+      "fileName": "cat_state_t4_n50_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n50_p1.stim",
+      "stim": "H 0\nCX 0 50 0 1 1 2 1 3 3 4 3 51 3 52 3 53 1 5 1 6 6 54 6 7 6 8 8 9 8 10 10 11 11 55 10 56 8 12 8 57 8 58 6 13 6 14 14 59 14 15 14 16 16 60 16 61 14 17 14 62 14 54\nM 54\nDETECTOR rec[-1]\nCX 6 18 6 63 6 52\nM 52\nDETECTOR rec[-1]\nCX 1 19 1 56\nM 56\nDETECTOR rec[-1]\nCX 1 20 1 21 21 22 22 23 22 24 24 64 22 59\nM 59\nDETECTOR rec[-1]\nCX 21 25 21 65 21 50\nM 50\nDETECTOR rec[-1]\nCX 1 26 1 27 27 58\nM 58\nDETECTOR rec[-1]\nCX 27 66 1 28 1 67 1 60\nM 60\nDETECTOR rec[-1]\nCX 0 29 29 30 29 31 31 32 31 33 33 64\nM 64\nDETECTOR rec[-1]\nCX 33 68 31 34 31 61\nM 61\nDETECTOR rec[-1]\nCX 31 69 29 35 29 70 29 36 36 63\nM 63\nDETECTOR rec[-1]\nCX 29 37 29 38 38 39 38 40 40 41 41 57\nM 57\nDETECTOR rec[-1]\nCX 40 62\nM 62\nDETECTOR rec[-1]\nCX 38 42 38 53\nM 53\nDETECTOR rec[-1]\nCX 38 71 29 43 29 44 44 71\nM 71\nDETECTOR rec[-1]\nCX 44 67\nM 67\nDETECTOR rec[-1]\nCX 29 45 29 68\nM 68\nDETECTOR rec[-1]\nCX 29 70\nM 70\nDETECTOR rec[-1]\nCX 0 46 0 66\nM 66\nDETECTOR rec[-1]\nCX 0 47 0 48 48 69\nM 69\nDETECTOR rec[-1]\nCX 48 65\nM 65\nDETECTOR rec[-1]\nCX 0 49 0 55\nM 55\nDETECTOR rec[-1]\nCX 0 51\nM 51\nDETECTOR rec[-1]\n"
+    },
+    "t4-n8": {
+      "n": 8,
+      "t": 4,
+      "fileName": "cat_state_t4_n8_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n8_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 8 1 3 1 4 4 9 1 10 0 5 5 9\nM 9\nDETECTOR rec[-1]\nCX 5 11 0 6 0 10\nM 10\nDETECTOR rec[-1]\nCX 0 7 0 11\nM 11\nDETECTOR rec[-1]\nCX 0 8\nM 8\nDETECTOR rec[-1]\n"
+    },
+    "t4-n9": {
+      "n": 9,
+      "t": 4,
+      "fileName": "cat_state_t4_n9_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t4_n9_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 9 1 3 1 4 4 10 1 11 0 5 5 6 5 10\nM 10\nDETECTOR rec[-1]\nCX 5 12 0 7 0 11\nM 11\nDETECTOR rec[-1]\nCX 0 8 0 12\nM 12\nDETECTOR rec[-1]\nCX 0 9\nM 9\nDETECTOR rec[-1]\n"
+    },
+    "t5-n10": {
+      "n": 10,
+      "t": 5,
+      "fileName": "cat_state_t5_n10_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n10_p1.stim",
+      "stim": "H 0\nCX 0 1 1 10 1 11 1 12 0 2 2 3 2 4 4 5 4 13 4 11\nM 11\nDETECTOR rec[-1]\nCX 2 6 6 7 6 14 6 10\nM 10\nDETECTOR rec[-1]\nCX 2 8 2 12\nM 12\nDETECTOR rec[-1]\nCX 2 15 0 15\nM 15\nDETECTOR rec[-1]\nCX 0 9 9 14\nM 14\nDETECTOR rec[-1]\nCX 0 13\nM 13\nDETECTOR rec[-1]\n"
+    },
+    "t5-n11": {
+      "n": 11,
+      "t": 5,
+      "fileName": "cat_state_t5_n11_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n11_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 11 3 12 1 13 1 5 1 14 1 15 0 6 6 7 6 8 8 9 8 16 8 13\nM 13\nDETECTOR rec[-1]\nCX 6 10 10 11\nM 11\nDETECTOR rec[-1]\nCX 6 14\nM 14\nDETECTOR rec[-1]\nCX 0 15\nM 15\nDETECTOR rec[-1]\nCX 0 12\nM 12\nDETECTOR rec[-1]\nCX 0 16\nM 16\nDETECTOR rec[-1]\n"
+    },
+    "t5-n13": {
+      "n": 13,
+      "t": 5,
+      "fileName": "cat_state_t5_n13_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n13_p1.stim",
+      "stim": "H 0\nCX 0 1 1 13 1 2 1 3 3 14 3 15 1 4 1 16 1 17 1 18 0 5 5 6 6 17\nM 17\nDETECTOR rec[-1]\nCX 5 15\nM 15\nDETECTOR rec[-1]\nCX 5 19 0 7 0 8 8 9 8 10 10 14\nM 14\nDETECTOR rec[-1]\nCX 8 18\nM 18\nDETECTOR rec[-1]\nCX 8 20 0 11 11 16\nM 16\nDETECTOR rec[-1]\nCX 0 12 0 19\nM 19\nDETECTOR rec[-1]\nCX 0 20\nM 20\nDETECTOR rec[-1]\nCX 0 13\nM 13\nDETECTOR rec[-1]\n"
+    },
+    "t5-n14": {
+      "n": 14,
+      "t": 5,
+      "fileName": "cat_state_t5_n14_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n14_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 14 3 15 1 4 1 16 1 17 1 18 0 5 5 6 5 7 7 18\nM 18\nDETECTOR rec[-1]\nCX 7 19 5 8 5 9 9 10 9 15\nM 15\nDETECTOR rec[-1]\nCX 9 20 9 17\nM 17\nDETECTOR rec[-1]\nCX 5 21 5 16\nM 16\nDETECTOR rec[-1]\nCX 0 11 11 20\nM 20\nDETECTOR rec[-1]\nCX 0 12 0 13 13 21\nM 21\nDETECTOR rec[-1]\nCX 0 19\nM 19\nDETECTOR rec[-1]\nCX 0 14\nM 14\nDETECTOR rec[-1]\n"
+    },
+    "t5-n15": {
+      "n": 15,
+      "t": 5,
+      "fileName": "cat_state_t5_n15_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n15_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 15 3 16 1 4 1 5 5 6 5 17 5 18 5 19 1 20 1 21 0 7 7 19\nM 19\nDETECTOR rec[-1]\nCX 7 22 0 8 0 9 9 10 9 11 11 16\nM 16\nDETECTOR rec[-1]\nCX 11 18\nM 18\nDETECTOR rec[-1]\nCX 9 12 9 13 13 23 9 22\nM 22\nDETECTOR rec[-1]\nCX 9 20\nM 20\nDETECTOR rec[-1]\nCX 0 21\nM 21\nDETECTOR rec[-1]\nCX 0 14 14 15\nM 15\nDETECTOR rec[-1]\nCX 0 23\nM 23\nDETECTOR rec[-1]\nCX 0 17\nM 17\nDETECTOR rec[-1]\n"
+    },
+    "t5-n16": {
+      "n": 16,
+      "t": 5,
+      "fileName": "cat_state_t5_n16_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n16_p1.stim",
+      "stim": "H 0\nCX 0 16 0 1 1 2 1 3 3 17 3 18 1 4 1 5 5 19 5 20 1 6 1 7 7 21 1 22 1 23 0 23\nM 23\nDETECTOR rec[-1]\nCX 0 8 0 9 9 10 10 17\nM 17\nDETECTOR rec[-1]\nCX 9 11 9 20\nM 20\nDETECTOR rec[-1]\nCX 9 24 9 16\nM 16\nDETECTOR rec[-1]\nCX 0 12 0 13 13 14 13 15 15 19\nM 19\nDETECTOR rec[-1]\nCX 13 18\nM 18\nDETECTOR rec[-1]\nCX 13 22\nM 22\nDETECTOR rec[-1]\nCX 0 21\nM 21\nDETECTOR rec[-1]\nCX 0 24\nM 24\nDETECTOR rec[-1]\n"
+    },
+    "t5-n17": {
+      "n": 17,
+      "t": 5,
+      "fileName": "cat_state_t5_n17_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n17_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 5 17 3 18 3 19 1 20 1 6 1 7 7 8 7 9 9 21 7 22 7 18\nM 18\nDETECTOR rec[-1]\nCX 1 23 1 24 0 10 10 11 10 24\nM 24\nDETECTOR rec[-1]\nCX 10 25 10 12 10 13 13 22\nM 22\nDETECTOR rec[-1]\nCX 10 26 10 20\nM 20\nDETECTOR rec[-1]\nCX 0 14 14 21\nM 21\nDETECTOR rec[-1]\nCX 14 17\nM 17\nDETECTOR rec[-1]\nCX 14 25\nM 25\nDETECTOR rec[-1]\nCX 0 15 0 16 16 26\nM 26\nDETECTOR rec[-1]\nCX 0 19\nM 19\nDETECTOR rec[-1]\nCX 0 23\nM 23\nDETECTOR rec[-1]\n"
+    },
+    "t5-n18": {
+      "n": 18,
+      "t": 5,
+      "fileName": "cat_state_t5_n18_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n18_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 5 6 5 18 5 19 5 20 3 21 3 22 1 23 1 7 1 8 8 24 8 21\nM 21\nDETECTOR rec[-1]\nCX 1 9 1 10 10 19\nM 19\nDETECTOR rec[-1]\nCX 1 25 1 26 0 11 11 12 11 13 13 24\nM 24\nDETECTOR rec[-1]\nCX 11 26\nM 26\nDETECTOR rec[-1]\nCX 11 27 0 20\nM 20\nDETECTOR rec[-1]\nCX 0 14 0 15 15 22\nM 22\nDETECTOR rec[-1]\nCX 15 25\nM 25\nDETECTOR rec[-1]\nCX 0 16 0 17 17 23\nM 23\nDETECTOR rec[-1]\nCX 0 27\nM 27\nDETECTOR rec[-1]\nCX 0 18\nM 18\nDETECTOR rec[-1]\n"
+    },
+    "t5-n19": {
+      "n": 19,
+      "t": 5,
+      "fileName": "cat_state_t5_n19_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n19_p1.stim",
+      "stim": "H 0\nCX 0 19 0 1 1 2 1 3 3 20 3 4 3 5 5 6 5 21 5 22 5 23 3 24 3 25 1 7 1 26 1 8 8 27 1 21\nM 21\nDETECTOR rec[-1]\nCX 0 9 9 10 9 11 11 25\nM 25\nDETECTOR rec[-1]\nCX 11 26\nM 26\nDETECTOR rec[-1]\nCX 9 12 9 13 13 28 13 20\nM 20\nDETECTOR rec[-1]\nCX 9 14 9 29 9 23\nM 23\nDETECTOR rec[-1]\nCX 9 19\nM 19\nDETECTOR rec[-1]\nCX 0 15 0 16 16 17 17 24\nM 24\nDETECTOR rec[-1]\nCX 16 27\nM 27\nDETECTOR rec[-1]\nCX 16 29\nM 29\nDETECTOR rec[-1]\nCX 0 18 18 22\nM 22\nDETECTOR rec[-1]\nCX 0 28\nM 28\nDETECTOR rec[-1]\n"
+    },
+    "t5-n20": {
+      "n": 20,
+      "t": 5,
+      "fileName": "cat_state_t5_n20_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n20_p1.stim",
+      "stim": "H 0\nCX 0 1 1 20 0 2 2 3 3 4 3 21 3 22 3 5 3 23 3 24 3 25 2 6 2 7 7 26 2 27 2 28 0 8 0 9 9 10 9 11 11 29 11 21\nM 21\nDETECTOR rec[-1]\nCX 9 12 9 13 13 30 9 28\nM 28\nDETECTOR rec[-1]\nCX 9 24\nM 24\nDETECTOR rec[-1]\nCX 0 14 14 15 14 26\nM 26\nDETECTOR rec[-1]\nCX 14 25\nM 25\nDETECTOR rec[-1]\nCX 14 29\nM 29\nDETECTOR rec[-1]\nCX 0 16 0 17 17 18 17 30\nM 30\nDETECTOR rec[-1]\nCX 17 20\nM 20\nDETECTOR rec[-1]\nCX 17 23\nM 23\nDETECTOR rec[-1]\nCX 0 19 19 27\nM 27\nDETECTOR rec[-1]\nCX 0 22\nM 22\nDETECTOR rec[-1]\n"
+    },
+    "t5-n21": {
+      "n": 21,
+      "t": 5,
+      "fileName": "cat_state_t5_n21_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n21_p1.stim",
+      "stim": "H 0\nCX 0 1 1 21 1 22 0 2 2 3 2 4 4 5 4 23 4 24 4 6 4 7 7 25 4 26 4 27 2 27\nM 27\nDETECTOR rec[-1]\nCX 2 28 0 8 0 9 9 10 9 11 11 24\nM 24\nDETECTOR rec[-1]\nCX 9 12 12 13 12 29 12 28\nM 28\nDETECTOR rec[-1]\nCX 12 30 9 14 9 15 15 21\nM 21\nDETECTOR rec[-1]\nCX 9 31 9 32 0 16 16 17 16 18 18 29\nM 29\nDETECTOR rec[-1]\nCX 16 25\nM 25\nDETECTOR rec[-1]\nCX 16 31\nM 31\nDETECTOR rec[-1]\nCX 0 19 0 20 20 30\nM 30\nDETECTOR rec[-1]\nCX 20 32\nM 32\nDETECTOR rec[-1]\nCX 20 23\nM 23\nDETECTOR rec[-1]\nCX 0 22\nM 22\nDETECTOR rec[-1]\nCX 0 26\nM 26\nDETECTOR rec[-1]\n"
+    },
+    "t5-n22": {
+      "n": 22,
+      "t": 5,
+      "fileName": "cat_state_t5_n22_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n22_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 22 1 23 1 4 1 5 5 24 1 25 1 26 0 6 6 7 7 27 6 8 6 9 9 10 9 26\nM 26\nDETECTOR rec[-1]\nCX 9 28 9 11 9 29 9 22\nM 22\nDETECTOR rec[-1]\nCX 9 30 6 12 12 31 6 13 6 14 14 32 6 33 6 25\nM 25\nDETECTOR rec[-1]\nCX 0 15 0 16 16 31\nM 31\nDETECTOR rec[-1]\nCX 16 29\nM 29\nDETECTOR rec[-1]\nCX 0 17 0 18 18 24\nM 24\nDETECTOR rec[-1]\nCX 18 19 18 30\nM 30\nDETECTOR rec[-1]\nCX 18 27\nM 27\nDETECTOR rec[-1]\nCX 18 33\nM 33\nDETECTOR rec[-1]\nCX 0 20 0 21 21 28\nM 28\nDETECTOR rec[-1]\nCX 0 32\nM 32\nDETECTOR rec[-1]\nCX 0 23\nM 23\nDETECTOR rec[-1]\n"
+    },
+    "t5-n23": {
+      "n": 23,
+      "t": 5,
+      "fileName": "cat_state_t5_n23_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n23_p1.stim",
+      "stim": "H 0\nCX 0 1 1 23 1 24 0 2 2 3 2 4 4 25 4 26 2 5 5 27 5 28 2 6 2 7 7 8 7 29 7 26\nM 26\nDETECTOR rec[-1]\nCX 7 30 2 31 2 32 0 9 0 10 10 11 10 12 12 33 12 29\nM 29\nDETECTOR rec[-1]\nCX 10 13 10 14 14 34 14 23\nM 23\nDETECTOR rec[-1]\nCX 10 15 10 16 16 31\nM 31\nDETECTOR rec[-1]\nCX 10 28\nM 28\nDETECTOR rec[-1]\nCX 10 35 0 17 17 18 17 19 19 20 19 21 21 25\nM 25\nDETECTOR rec[-1]\nCX 19 35\nM 35\nDETECTOR rec[-1]\nCX 19 33\nM 33\nDETECTOR rec[-1]\nCX 17 24\nM 24\nDETECTOR rec[-1]\nCX 17 27\nM 27\nDETECTOR rec[-1]\nCX 0 22 0 32\nM 32\nDETECTOR rec[-1]\nCX 0 30\nM 30\nDETECTOR rec[-1]\nCX 0 34\nM 34\nDETECTOR rec[-1]\n"
+    },
+    "t5-n24": {
+      "n": 24,
+      "t": 5,
+      "fileName": "cat_state_t5_n24_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n24_p1.stim",
+      "stim": "H 0\nCX 0 24 0 1 1 2 2 3 2 25 2 26 2 27 1 4 1 5 5 28 5 6 5 7 7 29 5 30 5 31 1 8 1 32 1 33 1 34 0 9 0 10 10 11 10 12 12 35 12 28\nM 28\nDETECTOR rec[-1]\nCX 10 13 10 14 14 15 14 16 16 26\nM 26\nDETECTOR rec[-1]\nCX 14 36 14 24\nM 24\nDETECTOR rec[-1]\nCX 10 31\nM 31\nDETECTOR rec[-1]\nCX 10 32\nM 32\nDETECTOR rec[-1]\nCX 0 17 17 18 17 34\nM 34\nDETECTOR rec[-1]\nCX 17 27\nM 27\nDETECTOR rec[-1]\nCX 17 35\nM 35\nDETECTOR rec[-1]\nCX 0 19 0 20 20 21 20 22 22 36\nM 36\nDETECTOR rec[-1]\nCX 20 29\nM 29\nDETECTOR rec[-1]\nCX 20 33\nM 33\nDETECTOR rec[-1]\nCX 0 23 23 30\nM 30\nDETECTOR rec[-1]\nCX 0 25\nM 25\nDETECTOR rec[-1]\n"
+    },
+    "t5-n25": {
+      "n": 25,
+      "t": 5,
+      "fileName": "cat_state_t5_n25_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n25_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 3 2 4 4 5 4 6 6 25 4 26 4 27 2 28 2 29 1 7 1 8 8 30 8 31 1 9 1 10 10 32 10 26\nM 26\nDETECTOR rec[-1]\nCX 1 11 1 12 12 13 12 25\nM 25\nDETECTOR rec[-1]\nCX 12 31\nM 31\nDETECTOR rec[-1]\nCX 12 33 1 34 1 35 0 14 14 15 14 36 14 37 14 28\nM 28\nDETECTOR rec[-1]\nCX 0 16 0 17 17 18 17 19 19 30\nM 30\nDETECTOR rec[-1]\nCX 17 20 20 37\nM 37\nDETECTOR rec[-1]\nCX 17 34\nM 34\nDETECTOR rec[-1]\nCX 0 21 21 22 22 38 21 29\nM 29\nDETECTOR rec[-1]\nCX 21 32\nM 32\nDETECTOR rec[-1]\nCX 0 23 0 27\nM 27\nDETECTOR rec[-1]\nCX 0 33\nM 33\nDETECTOR rec[-1]\nCX 0 24 0 35\nM 35\nDETECTOR rec[-1]\nCX 0 38\nM 38\nDETECTOR rec[-1]\nCX 0 36\nM 36\nDETECTOR rec[-1]\n"
+    },
+    "t5-n26": {
+      "n": 26,
+      "t": 5,
+      "fileName": "cat_state_t5_n26_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n26_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 26 1 3 3 4 3 5 5 27 5 28 3 6 3 7 7 29 3 30 3 31 1 8 1 32 1 33 1 34 0 9 9 31\nM 31\nDETECTOR rec[-1]\nCX 9 35 0 10 0 11 11 12 11 13 13 14 13 15 15 16 16 33\nM 33\nDETECTOR rec[-1]\nCX 15 30\nM 30\nDETECTOR rec[-1]\nCX 13 17 13 18 18 36 13 28\nM 28\nDETECTOR rec[-1]\nCX 13 37 11 19 19 38 11 20 11 37\nM 37\nDETECTOR rec[-1]\nCX 11 35\nM 35\nDETECTOR rec[-1]\nCX 11 39 0 21 21 22 21 23 23 24 23 39\nM 39\nDETECTOR rec[-1]\nCX 23 34\nM 34\nDETECTOR rec[-1]\nCX 23 27\nM 27\nDETECTOR rec[-1]\nCX 21 36\nM 36\nDETECTOR rec[-1]\nCX 21 32\nM 32\nDETECTOR rec[-1]\nCX 0 25 0 29\nM 29\nDETECTOR rec[-1]\nCX 0 38\nM 38\nDETECTOR rec[-1]\nCX 0 26\nM 26\nDETECTOR rec[-1]\n"
+    },
+    "t5-n27": {
+      "n": 27,
+      "t": 5,
+      "fileName": "cat_state_t5_n27_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n27_p1.stim",
+      "stim": "H 0\nCX 0 27 0 1 1 2 1 3 3 4 4 5 4 6 6 7 6 8 8 28 6 29 6 30 4 31 4 32 3 9 3 10 10 33 10 34 3 11 3 12 12 35 12 29\nM 29\nDETECTOR rec[-1]\nCX 3 13 3 14 14 36 3 32\nM 32\nDETECTOR rec[-1]\nCX 3 37 1 15 1 16 16 38 1 30\nM 30\nDETECTOR rec[-1]\nCX 1 33\nM 33\nDETECTOR rec[-1]\nCX 0 17 17 28\nM 28\nDETECTOR rec[-1]\nCX 17 38\nM 38\nDETECTOR rec[-1]\nCX 17 18 17 39 17 40 17 41 0 19 0 20 20 37\nM 37\nDETECTOR rec[-1]\nCX 20 40\nM 40\nDETECTOR rec[-1]\nCX 0 21 0 22 22 34\nM 34\nDETECTOR rec[-1]\nCX 22 31\nM 31\nDETECTOR rec[-1]\nCX 0 23 0 24 24 41\nM 41\nDETECTOR rec[-1]\nCX 24 35\nM 35\nDETECTOR rec[-1]\nCX 0 25 0 26 26 27\nM 27\nDETECTOR rec[-1]\nCX 0 36\nM 36\nDETECTOR rec[-1]\nCX 0 39\nM 39\nDETECTOR rec[-1]\n"
+    },
+    "t5-n28": {
+      "n": 28,
+      "t": 5,
+      "fileName": "cat_state_t5_n28_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n28_p1.stim",
+      "stim": "H 0\nCX 0 28 0 1 1 2 2 29 1 3 1 4 4 5 5 6 5 30 5 31 5 32 4 7 4 8 8 33 4 34 4 35 1 9 1 10 10 11 10 12 12 36 10 37 10 38 1 39 1 40 0 13 0 14 14 32\nM 32\nDETECTOR rec[-1]\nCX 14 15 14 16 16 29\nM 29\nDETECTOR rec[-1]\nCX 16 37\nM 37\nDETECTOR rec[-1]\nCX 14 17 14 18 18 34\nM 34\nDETECTOR rec[-1]\nCX 14 36\nM 36\nDETECTOR rec[-1]\nCX 14 30\nM 30\nDETECTOR rec[-1]\nCX 0 19 0 20 20 21 20 22 22 41 20 38\nM 38\nDETECTOR rec[-1]\nCX 20 42 0 23 23 24 23 25 25 26 25 33\nM 33\nDETECTOR rec[-1]\nCX 25 41\nM 41\nDETECTOR rec[-1]\nCX 25 39\nM 39\nDETECTOR rec[-1]\nCX 23 42\nM 42\nDETECTOR rec[-1]\nCX 23 31\nM 31\nDETECTOR rec[-1]\nCX 0 27 0 40\nM 40\nDETECTOR rec[-1]\nCX 0 35\nM 35\nDETECTOR rec[-1]\nCX 0 28\nM 28\nDETECTOR rec[-1]\n"
+    },
+    "t5-n29": {
+      "n": 29,
+      "t": 5,
+      "fileName": "cat_state_t5_n29_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n29_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 5 29 3 30 3 31 1 6 6 7 6 8 8 9 8 10 10 32 10 33 8 11 11 34 8 35 8 36 6 37 6 30\nM 30\nDETECTOR rec[-1]\nCX 1 12 1 13 13 38 13 32\nM 32\nDETECTOR rec[-1]\nCX 1 14 1 34\nM 34\nDETECTOR rec[-1]\nCX 1 39 1 40 0 15 15 16 15 17 17 41 17 35\nM 35\nDETECTOR rec[-1]\nCX 15 18 15 42 15 40\nM 40\nDETECTOR rec[-1]\nCX 15 43 0 19 19 20 19 31\nM 31\nDETECTOR rec[-1]\nCX 19 33\nM 33\nDETECTOR rec[-1]\nCX 19 42\nM 42\nDETECTOR rec[-1]\nCX 0 21 0 22 22 29\nM 29\nDETECTOR rec[-1]\nCX 22 41\nM 41\nDETECTOR rec[-1]\nCX 0 23 0 24 24 25 24 26 26 38\nM 38\nDETECTOR rec[-1]\nCX 24 44 24 39\nM 39\nDETECTOR rec[-1]\nCX 0 43\nM 43\nDETECTOR rec[-1]\nCX 0 27 0 36\nM 36\nDETECTOR rec[-1]\nCX 0 28 28 37\nM 37\nDETECTOR rec[-1]\nCX 0 44\nM 44\nDETECTOR rec[-1]\n"
+    },
+    "t5-n30": {
+      "n": 30,
+      "t": 5,
+      "fileName": "cat_state_t5_n30_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n30_p1.stim",
+      "stim": "H 0\nCX 0 1 1 30 0 2 2 31 2 3 2 4 4 32 4 5 4 6 6 7 6 33 6 34 6 35 4 36 4 8 4 37 4 38 4 39 2 9 2 10 10 40 2 11 11 38\nM 38\nDETECTOR rec[-1]\nCX 2 12 2 41 2 42 2 32\nM 32\nDETECTOR rec[-1]\nCX 0 13 0 14 14 42\nM 42\nDETECTOR rec[-1]\nCX 0 15 15 16 15 17 17 18 17 19 19 41\nM 41\nDETECTOR rec[-1]\nCX 17 30\nM 30\nDETECTOR rec[-1]\nCX 17 43 15 39\nM 39\nDETECTOR rec[-1]\nCX 15 44 0 20 0 21 21 45 21 34\nM 34\nDETECTOR rec[-1]\nCX 0 22 0 23 23 24 24 37\nM 37\nDETECTOR rec[-1]\nCX 23 25 23 43\nM 43\nDETECTOR rec[-1]\nCX 23 40\nM 40\nDETECTOR rec[-1]\nCX 23 33\nM 33\nDETECTOR rec[-1]\nCX 0 26 0 27 27 35\nM 35\nDETECTOR rec[-1]\nCX 27 31\nM 31\nDETECTOR rec[-1]\nCX 0 28 0 29 29 36\nM 36\nDETECTOR rec[-1]\nCX 0 44\nM 44\nDETECTOR rec[-1]\nCX 0 45\nM 45\nDETECTOR rec[-1]\n"
+    },
+    "t5-n31": {
+      "n": 31,
+      "t": 5,
+      "fileName": "cat_state_t5_n31_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n31_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 3 2 4 4 31 4 32 2 5 2 6 6 33 2 7 7 34 2 35 1 8 1 9 9 35\nM 35\nDETECTOR rec[-1]\nCX 9 36 1 10 1 11 11 12 11 13 13 14 13 37 13 38 13 31\nM 31\nDETECTOR rec[-1]\nCX 11 39 11 15 11 16 16 40 11 34\nM 34\nDETECTOR rec[-1]\nCX 11 41 1 17 17 18 18 42 17 43 17 38\nM 38\nDETECTOR rec[-1]\nCX 1 19 1 20 20 21 20 32\nM 32\nDETECTOR rec[-1]\nCX 20 41\nM 41\nDETECTOR rec[-1]\nCX 20 44 1 45 1 46 0 22 22 23 22 24 24 36\nM 36\nDETECTOR rec[-1]\nCX 24 45\nM 45\nDETECTOR rec[-1]\nCX 22 25 22 26 26 27 26 40\nM 40\nDETECTOR rec[-1]\nCX 26 28 28 37\nM 37\nDETECTOR rec[-1]\nCX 26 29 26 46\nM 46\nDETECTOR rec[-1]\nCX 26 42\nM 42\nDETECTOR rec[-1]\nCX 26 47 22 44\nM 44\nDETECTOR rec[-1]\nCX 22 43\nM 43\nDETECTOR rec[-1]\nCX 0 30 0 47\nM 47\nDETECTOR rec[-1]\nCX 0 33\nM 33\nDETECTOR rec[-1]\nCX 0 39\nM 39\nDETECTOR rec[-1]\n"
+    },
+    "t5-n32": {
+      "n": 32,
+      "t": 5,
+      "fileName": "cat_state_t5_n32_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n32_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 32 3 33 3 34 1 5 5 35 1 6 1 7 7 8 7 9 9 10 10 36 9 11 9 37 9 38 9 39 7 12 7 13 13 40 13 41 7 14 7 39\nM 39\nDETECTOR rec[-1]\nCX 7 42 7 43 1 15 15 16 15 17 17 41\nM 41\nDETECTOR rec[-1]\nCX 17 44 15 18 15 34\nM 34\nDETECTOR rec[-1]\nCX 15 45 15 46 1 19 1 43\nM 43\nDETECTOR rec[-1]\nCX 1 46\nM 46\nDETECTOR rec[-1]\nCX 1 37\nM 37\nDETECTOR rec[-1]\nCX 0 20 20 21 20 22 22 47 20 23 23 45\nM 45\nDETECTOR rec[-1]\nCX 20 24 20 35\nM 35\nDETECTOR rec[-1]\nCX 20 25 25 42\nM 42\nDETECTOR rec[-1]\nCX 20 26 20 27 27 28 27 44\nM 44\nDETECTOR rec[-1]\nCX 27 47\nM 47\nDETECTOR rec[-1]\nCX 27 33\nM 33\nDETECTOR rec[-1]\nCX 20 48 20 32\nM 32\nDETECTOR rec[-1]\nCX 0 29 29 38\nM 38\nDETECTOR rec[-1]\nCX 0 30 0 31 31 40\nM 40\nDETECTOR rec[-1]\nCX 0 36\nM 36\nDETECTOR rec[-1]\nCX 0 48\nM 48\nDETECTOR rec[-1]\n"
+    },
+    "t5-n33": {
+      "n": 33,
+      "t": 5,
+      "fileName": "cat_state_t5_n33_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n33_p1.stim",
+      "stim": "H 0\nCX 0 33 0 1 1 2 1 3 3 4 4 34 3 5 3 35 3 6 6 7 6 8 8 36 8 37 6 9 6 38 6 39 6 40 3 10 3 41 3 42 3 39\nM 39\nDETECTOR rec[-1]\nCX 1 11 1 12 12 13 12 43 12 44 12 42\nM 42\nDETECTOR rec[-1]\nCX 1 45 1 46 0 14 14 15 15 16 15 17 17 47 17 45\nM 45\nDETECTOR rec[-1]\nCX 15 18 15 19 19 20 19 21 21 33\nM 33\nDETECTOR rec[-1]\nCX 19 46\nM 46\nDETECTOR rec[-1]\nCX 19 48 15 22 22 35\nM 35\nDETECTOR rec[-1]\nCX 15 23 15 49 15 24 24 44\nM 44\nDETECTOR rec[-1]\nCX 15 50 14 37\nM 37\nDETECTOR rec[-1]\nCX 14 43\nM 43\nDETECTOR rec[-1]\nCX 0 25 0 26 26 48\nM 48\nDETECTOR rec[-1]\nCX 26 41\nM 41\nDETECTOR rec[-1]\nCX 0 27 0 28 28 29 28 30 30 50\nM 50\nDETECTOR rec[-1]\nCX 30 38\nM 38\nDETECTOR rec[-1]\nCX 28 31 28 34\nM 34\nDETECTOR rec[-1]\nCX 28 32 32 47\nM 47\nDETECTOR rec[-1]\nCX 28 36\nM 36\nDETECTOR rec[-1]\nCX 0 40\nM 40\nDETECTOR rec[-1]\nCX 0 49\nM 49\nDETECTOR rec[-1]\n"
+    },
+    "t5-n34": {
+      "n": 34,
+      "t": 5,
+      "fileName": "cat_state_t5_n34_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n34_p1.stim",
+      "stim": "H 0\nCX 0 34 0 1 1 2 1 3 3 35 1 4 4 5 4 6 6 7 7 36 6 8 6 37 6 38 6 39 4 9 4 10 10 40 10 41 4 11 4 42 4 43 4 37\nM 37\nDETECTOR rec[-1]\nCX 1 12 1 13 13 14 14 44 13 15 13 16 16 45 16 46 13 17 13 35\nM 35\nDETECTOR rec[-1]\nCX 13 18 18 47 13 48 1 19 1 20 20 48\nM 48\nDETECTOR rec[-1]\nCX 20 49 1 21 1 41\nM 41\nDETECTOR rec[-1]\nCX 1 36\nM 36\nDETECTOR rec[-1]\nCX 1 50 0 50\nM 50\nDETECTOR rec[-1]\nCX 0 22 0 23 23 49\nM 49\nDETECTOR rec[-1]\nCX 23 24 23 25 25 26 25 27 27 45\nM 45\nDETECTOR rec[-1]\nCX 25 47\nM 47\nDETECTOR rec[-1]\nCX 25 38\nM 38\nDETECTOR rec[-1]\nCX 23 51 23 42\nM 42\nDETECTOR rec[-1]\nCX 0 28 0 29 29 39\nM 39\nDETECTOR rec[-1]\nCX 29 40\nM 40\nDETECTOR rec[-1]\nCX 0 30 0 31 31 32 31 33 33 34\nM 34\nDETECTOR rec[-1]\nCX 31 46\nM 46\nDETECTOR rec[-1]\nCX 31 43\nM 43\nDETECTOR rec[-1]\nCX 0 44\nM 44\nDETECTOR rec[-1]\nCX 0 51\nM 51\nDETECTOR rec[-1]\n"
+    },
+    "t5-n35": {
+      "n": 35,
+      "t": 5,
+      "fileName": "cat_state_t5_n35_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n35_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 35 3 4 3 5 5 36 5 6 5 7 7 8 7 9 9 37 7 38 7 39 5 10 10 40 5 41 3 11 3 12 12 42 3 41\nM 41\nDETECTOR rec[-1]\nCX 3 43 1 13 1 14 14 15 14 44 14 45 14 46 1 16 16 47 1 17 1 18 18 48 18 35\nM 35\nDETECTOR rec[-1]\nCX 1 19 1 46\nM 46\nDETECTOR rec[-1]\nCX 1 20 20 38\nM 38\nDETECTOR rec[-1]\nCX 1 49 0 21 21 42\nM 42\nDETECTOR rec[-1]\nCX 21 50 0 22 0 51 0 23 23 24 23 25 25 39\nM 39\nDETECTOR rec[-1]\nCX 25 52 23 26 23 27 27 28 27 29 29 49\nM 49\nDETECTOR rec[-1]\nCX 29 36\nM 36\nDETECTOR rec[-1]\nCX 27 30 27 47\nM 47\nDETECTOR rec[-1]\nCX 27 40\nM 40\nDETECTOR rec[-1]\nCX 27 51\nM 51\nDETECTOR rec[-1]\nCX 23 31 31 45\nM 45\nDETECTOR rec[-1]\nCX 23 32 23 53 23 52\nM 52\nDETECTOR rec[-1]\nCX 23 48\nM 48\nDETECTOR rec[-1]\nCX 0 33 0 34 34 37\nM 37\nDETECTOR rec[-1]\nCX 34 43\nM 43\nDETECTOR rec[-1]\nCX 34 53\nM 53\nDETECTOR rec[-1]\nCX 0 50\nM 50\nDETECTOR rec[-1]\nCX 0 44\nM 44\nDETECTOR rec[-1]\n"
+    },
+    "t5-n36": {
+      "n": 36,
+      "t": 5,
+      "fileName": "cat_state_t5_n36_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n36_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 36 3 37 3 38 1 5 5 6 5 7 7 8 7 9 9 39 7 40 7 41 5 42 5 43 1 10 1 11 11 44 11 45 1 12 1 13 13 43\nM 43\nDETECTOR rec[-1]\nCX 13 46 1 14 1 15 15 47 1 48 1 16 1 17 17 49 1 50 1 42\nM 42\nDETECTOR rec[-1]\nCX 0 18 18 19 18 20 20 21 21 22 21 47\nM 47\nDETECTOR rec[-1]\nCX 21 41\nM 41\nDETECTOR rec[-1]\nCX 21 37\nM 37\nDETECTOR rec[-1]\nCX 20 23 20 45\nM 45\nDETECTOR rec[-1]\nCX 20 51 20 48\nM 48\nDETECTOR rec[-1]\nCX 18 24 18 25 25 26 25 52 25 53 25 44\nM 44\nDETECTOR rec[-1]\nCX 18 46\nM 46\nDETECTOR rec[-1]\nCX 18 40\nM 40\nDETECTOR rec[-1]\nCX 0 27 27 51\nM 51\nDETECTOR rec[-1]\nCX 0 28 0 29 29 30 29 31 31 36\nM 36\nDETECTOR rec[-1]\nCX 29 54 29 52\nM 52\nDETECTOR rec[-1]\nCX 0 39\nM 39\nDETECTOR rec[-1]\nCX 0 32 0 33 33 50\nM 50\nDETECTOR rec[-1]\nCX 0 34 34 54\nM 54\nDETECTOR rec[-1]\nCX 0 35 0 38\nM 38\nDETECTOR rec[-1]\nCX 0 49\nM 49\nDETECTOR rec[-1]\nCX 0 53\nM 53\nDETECTOR rec[-1]\n"
+    },
+    "t5-n37": {
+      "n": 37,
+      "t": 5,
+      "fileName": "cat_state_t5_n37_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n37_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 3 2 4 4 37 2 38 2 5 2 6 6 7 6 8 8 39 8 40 6 9 6 41 6 42 6 43 2 10 10 44 2 11 2 45 2 46 2 47 1 12 1 13 13 14 13 47\nM 47\nDETECTOR rec[-1]\nCX 13 48 13 49 1 15 15 50 1 16 1 17 17 51 17 38\nM 38\nDETECTOR rec[-1]\nCX 1 18 1 52 1 44\nM 44\nDETECTOR rec[-1]\nCX 1 53 0 19 19 20 19 21 21 39\nM 39\nDETECTOR rec[-1]\nCX 19 54 19 45\nM 45\nDETECTOR rec[-1]\nCX 0 22 0 23 23 24 24 25 24 26 26 54\nM 54\nDETECTOR rec[-1]\nCX 24 27 27 28 27 29 29 30 29 31 31 55 29 40\nM 40\nDETECTOR rec[-1]\nCX 29 46\nM 46\nDETECTOR rec[-1]\nCX 27 56 27 52\nM 52\nDETECTOR rec[-1]\nCX 24 32 24 43\nM 43\nDETECTOR rec[-1]\nCX 24 53\nM 53\nDETECTOR rec[-1]\nCX 24 48\nM 48\nDETECTOR rec[-1]\nCX 23 33 33 42\nM 42\nDETECTOR rec[-1]\nCX 23 34 23 35 35 55\nM 55\nDETECTOR rec[-1]\nCX 35 51\nM 51\nDETECTOR rec[-1]\nCX 23 36 23 50\nM 50\nDETECTOR rec[-1]\nCX 23 37\nM 37\nDETECTOR rec[-1]\nCX 23 41\nM 41\nDETECTOR rec[-1]\nCX 0 49\nM 49\nDETECTOR rec[-1]\nCX 0 56\nM 56\nDETECTOR rec[-1]\n"
+    },
+    "t5-n38": {
+      "n": 38,
+      "t": 5,
+      "fileName": "cat_state_t5_n38_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n38_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 5 6 5 7 7 38 5 39 5 40 3 41 3 42 1 43 1 44 0 8 8 45 8 9 8 10 10 46 10 47 8 11 8 12 12 13 13 48 12 14 12 15 15 16 16 49 15 17 15 38\nM 38\nDETECTOR rec[-1]\nCX 15 50 15 51 12 18 12 19 19 52 19 53 12 20 12 54 12 21 21 41\nM 41\nDETECTOR rec[-1]\nCX 12 55 8 22 8 55\nM 55\nDETECTOR rec[-1]\nCX 8 23 23 52\nM 52\nDETECTOR rec[-1]\nCX 8 24 8 44\nM 44\nDETECTOR rec[-1]\nCX 8 51\nM 51\nDETECTOR rec[-1]\nCX 8 56 0 25 0 56\nM 56\nDETECTOR rec[-1]\nCX 0 26 26 27 26 28 28 29 28 30 30 39\nM 39\nDETECTOR rec[-1]\nCX 28 49\nM 49\nDETECTOR rec[-1]\nCX 28 57 26 31 31 54\nM 54\nDETECTOR rec[-1]\nCX 26 32 26 33 33 45\nM 45\nDETECTOR rec[-1]\nCX 26 57\nM 57\nDETECTOR rec[-1]\nCX 26 43\nM 43\nDETECTOR rec[-1]\nCX 0 34 0 35 35 40\nM 40\nDETECTOR rec[-1]\nCX 35 46\nM 46\nDETECTOR rec[-1]\nCX 0 36 0 53\nM 53\nDETECTOR rec[-1]\nCX 0 42\nM 42\nDETECTOR rec[-1]\nCX 0 37 0 48\nM 48\nDETECTOR rec[-1]\nCX 0 47\nM 47\nDETECTOR rec[-1]\nCX 0 50\nM 50\nDETECTOR rec[-1]\n"
+    },
+    "t5-n39": {
+      "n": 39,
+      "t": 5,
+      "fileName": "cat_state_t5_n39_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n39_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 3 2 4 4 5 4 6 6 39 4 40 4 41 2 7 7 42 2 8 2 9 9 10 9 11 11 43 11 44 9 12 9 45 9 46 9 47 2 13 13 48 2 14 2 49 2 39\nM 39\nDETECTOR rec[-1]\nCX 2 50 1 15 1 16 16 17 17 51 16 18 16 52 16 53 16 54 1 19 1 20 20 55 20 56 1 21 21 57 1 47\nM 47\nDETECTOR rec[-1]\nCX 1 52\nM 52\nDETECTOR rec[-1]\nCX 0 22 22 23 22 50\nM 50\nDETECTOR rec[-1]\nCX 22 42\nM 42\nDETECTOR rec[-1]\nCX 22 58 0 24 0 57\nM 57\nDETECTOR rec[-1]\nCX 0 25 25 26 25 27 27 43\nM 43\nDETECTOR rec[-1]\nCX 25 28 28 29 28 30 30 49\nM 49\nDETECTOR rec[-1]\nCX 28 56\nM 56\nDETECTOR rec[-1]\nCX 28 40\nM 40\nDETECTOR rec[-1]\nCX 25 31 25 32 32 33 32 41\nM 41\nDETECTOR rec[-1]\nCX 32 44\nM 44\nDETECTOR rec[-1]\nCX 32 59 25 54\nM 54\nDETECTOR rec[-1]\nCX 25 55\nM 55\nDETECTOR rec[-1]\nCX 0 34 0 35 35 36 35 37 37 58\nM 58\nDETECTOR rec[-1]\nCX 37 45\nM 45\nDETECTOR rec[-1]\nCX 35 38 35 51\nM 51\nDETECTOR rec[-1]\nCX 35 48\nM 48\nDETECTOR rec[-1]\nCX 35 46\nM 46\nDETECTOR rec[-1]\nCX 0 59\nM 59\nDETECTOR rec[-1]\nCX 0 53\nM 53\nDETECTOR rec[-1]\n"
+    },
+    "t5-n40": {
+      "n": 40,
+      "t": 5,
+      "fileName": "cat_state_t5_n40_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n40_p1.stim",
+      "stim": "H 0\nCX 0 40 0 1 1 2 2 3 2 4 4 5 4 41 4 6 6 42 4 7 4 8 8 43 8 44 4 9 4 45 4 46 4 47 2 10 10 48 2 11 2 49 2 42\nM 42\nDETECTOR rec[-1]\nCX 2 50 1 12 1 13 13 46\nM 46\nDETECTOR rec[-1]\nCX 1 14 14 15 14 16 16 51 16 43\nM 43\nDETECTOR rec[-1]\nCX 14 17 14 18 18 52 18 53 14 19 14 54 14 55 14 56 1 20 1 56\nM 56\nDETECTOR rec[-1]\nCX 1 21 21 22 21 57 21 48\nM 48\nDETECTOR rec[-1]\nCX 21 58 1 23 1 24 24 25 25 59 24 41\nM 41\nDETECTOR rec[-1]\nCX 1 26 1 47\nM 47\nDETECTOR rec[-1]\nCX 1 50\nM 50\nDETECTOR rec[-1]\nCX 1 54\nM 54\nDETECTOR rec[-1]\nCX 0 27 0 28 28 29 28 53\nM 53\nDETECTOR rec[-1]\nCX 28 30 30 31 30 32 32 55\nM 55\nDETECTOR rec[-1]\nCX 30 33 33 34 33 35 35 52\nM 52\nDETECTOR rec[-1]\nCX 33 59\nM 59\nDETECTOR rec[-1]\nCX 33 51\nM 51\nDETECTOR rec[-1]\nCX 30 36 30 37 37 40\nM 40\nDETECTOR rec[-1]\nCX 30 60 30 57\nM 57\nDETECTOR rec[-1]\nCX 28 38 28 39 39 60\nM 60\nDETECTOR rec[-1]\nCX 28 44\nM 44\nDETECTOR rec[-1]\nCX 28 49\nM 49\nDETECTOR rec[-1]\nCX 0 58\nM 58\nDETECTOR rec[-1]\nCX 0 45\nM 45\nDETECTOR rec[-1]\n"
+    },
+    "t5-n41": {
+      "n": 41,
+      "t": 5,
+      "fileName": "cat_state_t5_n41_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n41_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 5 41 3 6 6 42 3 7 3 8 8 43 8 44 3 9 3 45 3 46 3 10 3 11 11 47 11 48 3 12 3 49 3 50 3 51 1 13 13 52 1 14 1 15 15 53 15 54 1 16 1 17 17 43\nM 43\nDETECTOR rec[-1]\nCX 1 55 1 56 0 18 18 19 18 20 20 57 20 21 20 22 22 58 22 49\nM 49\nDETECTOR rec[-1]\nCX 20 59 20 41\nM 41\nDETECTOR rec[-1]\nCX 20 46\nM 46\nDETECTOR rec[-1]\nCX 18 23 18 24 24 50\nM 50\nDETECTOR rec[-1]\nCX 18 54\nM 54\nDETECTOR rec[-1]\nCX 18 25 18 56\nM 56\nDETECTOR rec[-1]\nCX 18 26 26 60 18 61 0 27 27 58\nM 58\nDETECTOR rec[-1]\nCX 0 28 0 29 29 61\nM 61\nDETECTOR rec[-1]\nCX 29 62 0 30 0 31 31 32 31 33 33 53\nM 53\nDETECTOR rec[-1]\nCX 31 34 34 35 34 36 36 51\nM 51\nDETECTOR rec[-1]\nCX 36 55\nM 55\nDETECTOR rec[-1]\nCX 34 37 34 52\nM 52\nDETECTOR rec[-1]\nCX 34 60\nM 60\nDETECTOR rec[-1]\nCX 34 45\nM 45\nDETECTOR rec[-1]\nCX 31 38 31 48\nM 48\nDETECTOR rec[-1]\nCX 31 42\nM 42\nDETECTOR rec[-1]\nCX 31 57\nM 57\nDETECTOR rec[-1]\nCX 0 44\nM 44\nDETECTOR rec[-1]\nCX 0 39 0 40 40 47\nM 47\nDETECTOR rec[-1]\nCX 0 62\nM 62\nDETECTOR rec[-1]\nCX 0 59\nM 59\nDETECTOR rec[-1]\n"
+    },
+    "t5-n42": {
+      "n": 42,
+      "t": 5,
+      "fileName": "cat_state_t5_n42_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n42_p1.stim",
+      "stim": "H 0\nCX 0 1 1 42 0 2 2 3 2 4 4 43 4 5 4 6 6 7 6 8 8 44 6 9 9 10 9 42\nM 42\nDETECTOR rec[-1]\nCX 9 11 11 45 9 46 6 12 6 13 13 47 6 48 6 49 4 50 4 51 2 14 2 15 15 16 15 17 17 52 17 50\nM 50\nDETECTOR rec[-1]\nCX 15 18 15 19 19 49\nM 49\nDETECTOR rec[-1]\nCX 19 53 15 20 15 21 21 22 21 23 23 54 21 46\nM 46\nDETECTOR rec[-1]\nCX 21 43\nM 43\nDETECTOR rec[-1]\nCX 15 55 15 56 2 24 24 25 24 57 24 45\nM 45\nDETECTOR rec[-1]\nCX 24 58 2 26 2 27 27 59 27 52\nM 52\nDETECTOR rec[-1]\nCX 2 28 2 54\nM 54\nDETECTOR rec[-1]\nCX 2 29 29 60 2 61 0 30 30 31 30 32 32 33 32 51\nM 51\nDETECTOR rec[-1]\nCX 32 58\nM 58\nDETECTOR rec[-1]\nCX 32 34 32 62 32 47\nM 47\nDETECTOR rec[-1]\nCX 32 59\nM 59\nDETECTOR rec[-1]\nCX 30 60\nM 60\nDETECTOR rec[-1]\nCX 30 55\nM 55\nDETECTOR rec[-1]\nCX 0 35 0 36 36 62\nM 62\nDETECTOR rec[-1]\nCX 0 37 37 38 37 39 39 40 39 61\nM 61\nDETECTOR rec[-1]\nCX 39 44\nM 44\nDETECTOR rec[-1]\nCX 39 63 37 53\nM 53\nDETECTOR rec[-1]\nCX 37 57\nM 57\nDETECTOR rec[-1]\nCX 0 41 0 56\nM 56\nDETECTOR rec[-1]\nCX 0 63\nM 63\nDETECTOR rec[-1]\nCX 0 48\nM 48\nDETECTOR rec[-1]\n"
+    },
+    "t5-n43": {
+      "n": 43,
+      "t": 5,
+      "fileName": "cat_state_t5_n43_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n43_p1.stim",
+      "stim": "H 0\nCX 0 1 1 43 0 2 2 3 2 4 4 5 4 6 6 44 4 7 7 8 7 9 9 45 9 10 9 46 9 47 9 48 7 11 7 12 12 49 7 50 7 13 7 43\nM 43\nDETECTOR rec[-1]\nCX 7 14 14 51 7 52 4 15 15 53 15 54 4 16 4 17 17 18 17 19 19 55 17 56 17 57 4 58 4 59 2 20 20 47\nM 47\nDETECTOR rec[-1]\nCX 2 21 2 22 22 23 22 60 22 44\nM 44\nDETECTOR rec[-1]\nCX 22 56\nM 56\nDETECTOR rec[-1]\nCX 2 61 2 24 2 25 25 62 2 48\nM 48\nDETECTOR rec[-1]\nCX 2 58\nM 58\nDETECTOR rec[-1]\nCX 0 26 26 63 0 27 0 64 0 28 28 45\nM 45\nDETECTOR rec[-1]\nCX 0 29 0 30 30 31 31 32 31 33 33 63\nM 63\nDETECTOR rec[-1]\nCX 33 46\nM 46\nDETECTOR rec[-1]\nCX 31 34 31 35 35 50\nM 50\nDETECTOR rec[-1]\nCX 31 62\nM 62\nDETECTOR rec[-1]\nCX 31 53\nM 53\nDETECTOR rec[-1]\nCX 30 36 30 55\nM 55\nDETECTOR rec[-1]\nCX 30 49\nM 49\nDETECTOR rec[-1]\nCX 30 65 0 37 0 38 38 39 38 40 40 41 40 65\nM 65\nDETECTOR rec[-1]\nCX 40 52\nM 52\nDETECTOR rec[-1]\nCX 40 64\nM 64\nDETECTOR rec[-1]\nCX 38 57\nM 57\nDETECTOR rec[-1]\nCX 38 61\nM 61\nDETECTOR rec[-1]\nCX 0 59\nM 59\nDETECTOR rec[-1]\nCX 0 42 0 54\nM 54\nDETECTOR rec[-1]\nCX 0 51\nM 51\nDETECTOR rec[-1]\nCX 0 60\nM 60\nDETECTOR rec[-1]\n"
+    },
+    "t5-n44": {
+      "n": 44,
+      "t": 5,
+      "fileName": "cat_state_t5_n44_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n44_p1.stim",
+      "stim": "H 0\nCX 0 44 0 1 1 45 1 2 1 3 3 4 4 5 4 6 6 46 4 7 7 8 7 9 9 47 7 48 7 49 4 10 4 11 11 50 4 51 4 52 3 12 3 53 3 54 3 55 1 13 1 14 14 15 14 16 16 17 17 56 16 51\nM 51\nDETECTOR rec[-1]\nCX 14 18 14 49\nM 49\nDETECTOR rec[-1]\nCX 14 57 14 58 1 50\nM 50\nDETECTOR rec[-1]\nCX 1 19 1 59 1 56\nM 56\nDETECTOR rec[-1]\nCX 1 60 0 20 0 21 21 22 21 23 23 24 23 25 25 26 25 61 25 62 25 59\nM 59\nDETECTOR rec[-1]\nCX 23 27 27 45\nM 45\nDETECTOR rec[-1]\nCX 23 28 23 29 29 57\nM 57\nDETECTOR rec[-1]\nCX 23 30 30 31 30 52\nM 52\nDETECTOR rec[-1]\nCX 30 63 30 53\nM 53\nDETECTOR rec[-1]\nCX 23 32 23 64 23 33 33 48\nM 48\nDETECTOR rec[-1]\nCX 23 62\nM 62\nDETECTOR rec[-1]\nCX 21 34 34 35 34 47\nM 47\nDETECTOR rec[-1]\nCX 34 36 36 37 36 38 38 63\nM 63\nDETECTOR rec[-1]\nCX 36 46\nM 46\nDETECTOR rec[-1]\nCX 36 61\nM 61\nDETECTOR rec[-1]\nCX 34 39 34 40 40 65 40 66 34 41 34 58\nM 58\nDETECTOR rec[-1]\nCX 34 55\nM 55\nDETECTOR rec[-1]\nCX 34 44\nM 44\nDETECTOR rec[-1]\nCX 21 42 21 43 43 65\nM 65\nDETECTOR rec[-1]\nCX 21 60\nM 60\nDETECTOR rec[-1]\nCX 21 54\nM 54\nDETECTOR rec[-1]\nCX 0 66\nM 66\nDETECTOR rec[-1]\nCX 0 64\nM 64\nDETECTOR rec[-1]\n"
+    },
+    "t5-n45": {
+      "n": 45,
+      "t": 5,
+      "fileName": "cat_state_t5_n45_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n45_p1.stim",
+      "stim": "H 0\nCX 0 1 1 45 0 2 2 3 3 46 2 4 2 5 5 6 5 7 7 8 8 9 8 10 10 47 8 48 8 49 7 11 7 50 7 12 12 13 12 14 14 15 14 51 14 52 14 53 12 54 12 55 7 16 7 56 7 57 7 58 5 17 5 18 18 53\nM 53\nDETECTOR rec[-1]\nCX 18 59 5 19 5 58\nM 58\nDETECTOR rec[-1]\nCX 5 60 5 61 2 62 2 20 2 21 21 52\nM 52\nDETECTOR rec[-1]\nCX 2 22 22 23 22 46\nM 46\nDETECTOR rec[-1]\nCX 22 24 24 63 22 25 22 26 26 61\nM 61\nDETECTOR rec[-1]\nCX 26 64 22 27 22 28 28 57\nM 57\nDETECTOR rec[-1]\nCX 22 65 22 66 2 29 2 30 30 45\nM 45\nDETECTOR rec[-1]\nCX 30 51\nM 51\nDETECTOR rec[-1]\nCX 2 31 2 32 32 48\nM 48\nDETECTOR rec[-1]\nCX 2 67 2 65\nM 65\nDETECTOR rec[-1]\nCX 0 33 0 34 34 55\nM 55\nDETECTOR rec[-1]\nCX 34 35 34 36 36 68 34 37 37 60\nM 60\nDETECTOR rec[-1]\nCX 34 38 38 39 38 40 40 67\nM 67\nDETECTOR rec[-1]\nCX 38 64\nM 64\nDETECTOR rec[-1]\nCX 38 41 38 42 42 54\nM 54\nDETECTOR rec[-1]\nCX 38 63\nM 63\nDETECTOR rec[-1]\nCX 38 62\nM 62\nDETECTOR rec[-1]\nCX 34 47\nM 47\nDETECTOR rec[-1]\nCX 34 56\nM 56\nDETECTOR rec[-1]\nCX 0 43 0 49\nM 49\nDETECTOR rec[-1]\nCX 0 59\nM 59\nDETECTOR rec[-1]\nCX 0 44 0 68\nM 68\nDETECTOR rec[-1]\nCX 0 66\nM 66\nDETECTOR rec[-1]\nCX 0 50\nM 50\nDETECTOR rec[-1]\n"
+    },
+    "t5-n46": {
+      "n": 46,
+      "t": 5,
+      "fileName": "cat_state_t5_n46_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n46_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 46 3 47 1 4 1 5 5 48 5 49 1 6 1 7 7 8 7 9 9 10 10 50 9 11 9 51 9 52 9 53 7 12 7 13 13 54 13 55 7 14 7 15 15 56 7 47\nM 47\nDETECTOR rec[-1]\nCX 7 57 1 58 1 16 1 59 1 17 17 60 1 52\nM 52\nDETECTOR rec[-1]\nCX 0 18 18 19 19 20 19 21 21 22 21 53\nM 53\nDETECTOR rec[-1]\nCX 21 23 23 24 23 25 25 61 23 56\nM 56\nDETECTOR rec[-1]\nCX 23 58\nM 58\nDETECTOR rec[-1]\nCX 21 26 21 27 27 62 27 63 21 28 21 29 29 59\nM 59\nDETECTOR rec[-1]\nCX 21 64 21 54\nM 54\nDETECTOR rec[-1]\nCX 19 30 30 31 30 32 32 65 32 64\nM 64\nDETECTOR rec[-1]\nCX 30 33 30 34 34 66 30 50\nM 50\nDETECTOR rec[-1]\nCX 30 62\nM 62\nDETECTOR rec[-1]\nCX 19 35 19 49\nM 49\nDETECTOR rec[-1]\nCX 19 67 19 51\nM 51\nDETECTOR rec[-1]\nCX 18 36 18 55\nM 55\nDETECTOR rec[-1]\nCX 18 61\nM 61\nDETECTOR rec[-1]\nCX 18 68 0 37 0 38 38 39 38 40 40 41 40 42 42 43 42 44 44 67\nM 67\nDETECTOR rec[-1]\nCX 42 68\nM 68\nDETECTOR rec[-1]\nCX 42 69 40 63\nM 63\nDETECTOR rec[-1]\nCX 40 48\nM 48\nDETECTOR rec[-1]\nCX 38 60\nM 60\nDETECTOR rec[-1]\nCX 38 46\nM 46\nDETECTOR rec[-1]\nCX 0 66\nM 66\nDETECTOR rec[-1]\nCX 0 45 0 57\nM 57\nDETECTOR rec[-1]\nCX 0 69\nM 69\nDETECTOR rec[-1]\nCX 0 65\nM 65\nDETECTOR rec[-1]\n"
+    },
+    "t5-n47": {
+      "n": 47,
+      "t": 5,
+      "fileName": "cat_state_t5_n47_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n47_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 47 1 3 1 4 4 5 4 6 6 48 6 7 6 8 8 9 8 10 10 49 8 50 8 51 6 52 6 53 4 11 4 12 12 13 12 14 14 50\nM 50\nDETECTOR rec[-1]\nCX 12 54 12 55 4 56 4 57 1 15 15 16 15 58 15 55\nM 55\nDETECTOR rec[-1]\nCX 15 17 15 59 15 51\nM 51\nDETECTOR rec[-1]\nCX 15 60 1 18 1 61 1 19 19 20 19 49\nM 49\nDETECTOR rec[-1]\nCX 19 21 21 62 19 56\nM 56\nDETECTOR rec[-1]\nCX 1 22 1 23 23 47\nM 47\nDETECTOR rec[-1]\nCX 23 52\nM 52\nDETECTOR rec[-1]\nCX 1 24 1 63 1 64 1 65 0 25 25 26 25 27 27 66 25 28 28 54\nM 54\nDETECTOR rec[-1]\nCX 25 67 0 29 0 30 30 31 30 32 32 68 32 48\nM 48\nDETECTOR rec[-1]\nCX 30 33 30 65\nM 65\nDETECTOR rec[-1]\nCX 30 60\nM 60\nDETECTOR rec[-1]\nCX 30 34 30 35 35 36 36 69 35 37 35 38 38 58\nM 58\nDETECTOR rec[-1]\nCX 35 66\nM 66\nDETECTOR rec[-1]\nCX 35 70 30 39 30 40 40 41 41 64\nM 64\nDETECTOR rec[-1]\nCX 40 62\nM 62\nDETECTOR rec[-1]\nCX 40 59\nM 59\nDETECTOR rec[-1]\nCX 30 53\nM 53\nDETECTOR rec[-1]\nCX 30 71 0 42 42 43 42 57\nM 57\nDETECTOR rec[-1]\nCX 42 70\nM 70\nDETECTOR rec[-1]\nCX 42 68\nM 68\nDETECTOR rec[-1]\nCX 0 44 0 45 45 61\nM 61\nDETECTOR rec[-1]\nCX 0 71\nM 71\nDETECTOR rec[-1]\nCX 0 46 0 67\nM 67\nDETECTOR rec[-1]\nCX 0 69\nM 69\nDETECTOR rec[-1]\nCX 0 63\nM 63\nDETECTOR rec[-1]\n"
+    },
+    "t5-n48": {
+      "n": 48,
+      "t": 5,
+      "fileName": "cat_state_t5_n48_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n48_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 4 48 3 49 1 5 1 6 6 50 6 51 1 7 1 8 8 52 1 53 1 54 0 9 9 10 9 11 11 12 11 13 13 14 13 15 15 16 15 55 15 56 15 57 13 17 17 58 13 53\nM 53\nDETECTOR rec[-1]\nCX 11 59 11 60 9 61 9 18 9 19 19 20 20 62 19 21 19 22 22 23 22 24 24 25 24 26 26 59\nM 59\nDETECTOR rec[-1]\nCX 24 63 24 64 22 52\nM 52\nDETECTOR rec[-1]\nCX 22 65 19 66 19 27 19 28 28 55\nM 55\nDETECTOR rec[-1]\nCX 19 48\nM 48\nDETECTOR rec[-1]\nCX 19 67 9 29 9 30 30 31 30 32 32 68 30 33 33 56\nM 56\nDETECTOR rec[-1]\nCX 30 34 30 64\nM 64\nDETECTOR rec[-1]\nCX 30 67\nM 67\nDETECTOR rec[-1]\nCX 30 69 9 58\nM 58\nDETECTOR rec[-1]\nCX 9 63\nM 63\nDETECTOR rec[-1]\nCX 0 70 0 35 0 36 36 69\nM 69\nDETECTOR rec[-1]\nCX 36 61\nM 61\nDETECTOR rec[-1]\nCX 0 37 0 38 38 71 38 39 38 40 40 41 40 62\nM 62\nDETECTOR rec[-1]\nCX 40 72 40 50\nM 50\nDETECTOR rec[-1]\nCX 38 54\nM 54\nDETECTOR rec[-1]\nCX 38 42 38 49\nM 49\nDETECTOR rec[-1]\nCX 38 57\nM 57\nDETECTOR rec[-1]\nCX 38 72\nM 72\nDETECTOR rec[-1]\nCX 0 43 0 44 44 60\nM 60\nDETECTOR rec[-1]\nCX 44 66\nM 66\nDETECTOR rec[-1]\nCX 0 45 0 46 46 51\nM 51\nDETECTOR rec[-1]\nCX 46 70\nM 70\nDETECTOR rec[-1]\nCX 0 47 0 65\nM 65\nDETECTOR rec[-1]\nCX 0 68\nM 68\nDETECTOR rec[-1]\nCX 0 71\nM 71\nDETECTOR rec[-1]\n"
+    },
+    "t5-n49": {
+      "n": 49,
+      "t": 5,
+      "fileName": "cat_state_t5_n49_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n49_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 49 1 3 1 4 4 5 5 6 5 50 5 51 5 52 4 7 4 53 4 54 4 55 1 8 1 9 9 10 9 11 11 12 11 13 13 14 13 15 15 56 13 57 13 58 11 59 11 60 9 61 9 62 1 63 1 16 1 52\nM 52\nDETECTOR rec[-1]\nCX 1 64 1 57\nM 57\nDETECTOR rec[-1]\nCX 0 17 17 18 17 56\nM 56\nDETECTOR rec[-1]\nCX 17 19 19 20 19 21 21 22 22 23 22 24 24 65 24 66 22 25 22 26 26 67 22 27 27 61\nM 61\nDETECTOR rec[-1]\nCX 22 54\nM 54\nDETECTOR rec[-1]\nCX 21 28 21 68 21 69 21 64\nM 64\nDETECTOR rec[-1]\nCX 19 29 19 30 30 70 30 71 19 31 19 32 32 55\nM 55\nDETECTOR rec[-1]\nCX 32 63\nM 63\nDETECTOR rec[-1]\nCX 19 33 19 34 34 35 35 72 34 65\nM 65\nDETECTOR rec[-1]\nCX 19 36 19 49\nM 49\nDETECTOR rec[-1]\nCX 19 67\nM 67\nDETECTOR rec[-1]\nCX 19 51\nM 51\nDETECTOR rec[-1]\nCX 17 37 17 38 38 39 39 53\nM 53\nDETECTOR rec[-1]\nCX 38 40 38 73 38 74 38 69\nM 69\nDETECTOR rec[-1]\nCX 17 41 17 66\nM 66\nDETECTOR rec[-1]\nCX 17 42 42 43 42 44 44 68\nM 68\nDETECTOR rec[-1]\nCX 42 62\nM 62\nDETECTOR rec[-1]\nCX 42 50\nM 50\nDETECTOR rec[-1]\nCX 17 45 17 46 46 60\nM 60\nDETECTOR rec[-1]\nCX 46 74\nM 74\nDETECTOR rec[-1]\nCX 17 47 17 48 48 70\nM 70\nDETECTOR rec[-1]\nCX 17 58\nM 58\nDETECTOR rec[-1]\nCX 17 73\nM 73\nDETECTOR rec[-1]\nCX 0 71\nM 71\nDETECTOR rec[-1]\nCX 0 72\nM 72\nDETECTOR rec[-1]\nCX 0 59\nM 59\nDETECTOR rec[-1]\n"
+    },
+    "t5-n50": {
+      "n": 50,
+      "t": 5,
+      "fileName": "cat_state_t5_n50_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n50_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 50 3 51 1 4 1 5 5 6 5 7 7 52 7 53 5 8 5 9 9 10 10 50\nM 50\nDETECTOR rec[-1]\nCX 9 54 5 11 5 12 12 13 12 55 12 56 12 57 5 58 5 59 1 14 14 15 14 16 16 60 14 61 14 17 14 59\nM 59\nDETECTOR rec[-1]\nCX 14 51\nM 51\nDETECTOR rec[-1]\nCX 14 62 1 18 1 57\nM 57\nDETECTOR rec[-1]\nCX 1 63 1 64 0 19 19 20 20 21 20 22 22 65 20 23 23 24 23 25 25 26 25 27 27 66 25 64\nM 64\nDETECTOR rec[-1]\nCX 25 67 23 68 23 28 23 29 29 30 29 54\nM 54\nDETECTOR rec[-1]\nCX 29 60\nM 60\nDETECTOR rec[-1]\nCX 29 69 23 70 23 63\nM 63\nDETECTOR rec[-1]\nCX 20 31 20 32 32 67\nM 67\nDETECTOR rec[-1]\nCX 32 71 20 33 20 34 34 72 34 73 20 35 20 36 36 52\nM 52\nDETECTOR rec[-1]\nCX 20 66\nM 66\nDETECTOR rec[-1]\nCX 20 74 19 37 19 38 38 39 39 75 38 72\nM 72\nDETECTOR rec[-1]\nCX 19 40 19 41 41 42 41 69\nM 69\nDETECTOR rec[-1]\nCX 41 73\nM 73\nDETECTOR rec[-1]\nCX 41 43 41 74\nM 74\nDETECTOR rec[-1]\nCX 41 65\nM 65\nDETECTOR rec[-1]\nCX 41 58\nM 58\nDETECTOR rec[-1]\nCX 19 62\nM 62\nDETECTOR rec[-1]\nCX 19 55\nM 55\nDETECTOR rec[-1]\nCX 0 44 0 45 45 46 45 47 47 48 47 49 49 61\nM 61\nDETECTOR rec[-1]\nCX 47 75\nM 75\nDETECTOR rec[-1]\nCX 47 70\nM 70\nDETECTOR rec[-1]\nCX 45 53\nM 53\nDETECTOR rec[-1]\nCX 45 68\nM 68\nDETECTOR rec[-1]\nCX 0 71\nM 71\nDETECTOR rec[-1]\nCX 0 56\nM 56\nDETECTOR rec[-1]\n"
+    },
+    "t5-n8": {
+      "n": 8,
+      "t": 5,
+      "fileName": "cat_state_t5_n8_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n8_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 8 1 3 1 4 4 9 1 10 0 5 5 9\nM 9\nDETECTOR rec[-1]\nCX 5 11 0 6 0 10\nM 10\nDETECTOR rec[-1]\nCX 0 7 0 11\nM 11\nDETECTOR rec[-1]\nCX 0 8\nM 8\nDETECTOR rec[-1]\n"
+    },
+    "t5-n9": {
+      "n": 9,
+      "t": 5,
+      "fileName": "cat_state_t5_n9_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t5_n9_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 9 1 3 1 4 4 10 1 11 0 5 5 6 5 10\nM 10\nDETECTOR rec[-1]\nCX 5 12 0 7 0 11\nM 11\nDETECTOR rec[-1]\nCX 0 8 0 12\nM 12\nDETECTOR rec[-1]\nCX 0 9\nM 9\nDETECTOR rec[-1]\n"
+    },
+    "t6-n10": {
+      "n": 10,
+      "t": 6,
+      "fileName": "cat_state_t6_n10_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n10_p1.stim",
+      "stim": "H 0\nCX 0 1 1 10 1 11 1 12 0 2 2 3 2 4 4 5 4 13 4 11\nM 11\nDETECTOR rec[-1]\nCX 2 6 6 7 6 14 6 10\nM 10\nDETECTOR rec[-1]\nCX 2 8 2 12\nM 12\nDETECTOR rec[-1]\nCX 2 15 0 15\nM 15\nDETECTOR rec[-1]\nCX 0 9 9 14\nM 14\nDETECTOR rec[-1]\nCX 0 13\nM 13\nDETECTOR rec[-1]\n"
+    },
+    "t6-n11": {
+      "n": 11,
+      "t": 6,
+      "fileName": "cat_state_t6_n11_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n11_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 11 3 12 1 13 1 5 1 14 1 15 0 6 6 7 6 8 8 9 8 16 8 13\nM 13\nDETECTOR rec[-1]\nCX 6 10 10 11\nM 11\nDETECTOR rec[-1]\nCX 6 14\nM 14\nDETECTOR rec[-1]\nCX 0 15\nM 15\nDETECTOR rec[-1]\nCX 0 12\nM 12\nDETECTOR rec[-1]\nCX 0 16\nM 16\nDETECTOR rec[-1]\n"
+    },
+    "t6-n13": {
+      "n": 13,
+      "t": 6,
+      "fileName": "cat_state_t6_n13_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n13_p1.stim",
+      "stim": "H 0\nCX 0 1 1 13 1 2 1 3 3 14 3 15 1 4 1 16 1 17 1 18 0 5 5 6 6 17\nM 17\nDETECTOR rec[-1]\nCX 5 15\nM 15\nDETECTOR rec[-1]\nCX 5 19 0 7 0 8 8 9 8 10 10 14\nM 14\nDETECTOR rec[-1]\nCX 8 18\nM 18\nDETECTOR rec[-1]\nCX 8 20 0 11 11 16\nM 16\nDETECTOR rec[-1]\nCX 0 12 0 19\nM 19\nDETECTOR rec[-1]\nCX 0 20\nM 20\nDETECTOR rec[-1]\nCX 0 13\nM 13\nDETECTOR rec[-1]\n"
+    },
+    "t6-n21": {
+      "n": 21,
+      "t": 6,
+      "fileName": "cat_state_t6_n21_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n21_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 5 6 5 7 7 21 5 22 5 23 3 24 3 25 3 26 1 27 1 8 1 9 9 28 9 22\nM 22\nDETECTOR rec[-1]\nCX 1 29 1 30 0 10 10 11 10 12 12 13 12 14 14 15 14 16 16 31 16 27\nM 27\nDETECTOR rec[-1]\nCX 14 21\nM 21\nDETECTOR rec[-1]\nCX 14 32 12 17 17 25\nM 25\nDETECTOR rec[-1]\nCX 12 28\nM 28\nDETECTOR rec[-1]\nCX 10 18 18 23\nM 23\nDETECTOR rec[-1]\nCX 18 33 10 30\nM 30\nDETECTOR rec[-1]\nCX 10 24\nM 24\nDETECTOR rec[-1]\nCX 0 19 19 32\nM 32\nDETECTOR rec[-1]\nCX 19 29\nM 29\nDETECTOR rec[-1]\nCX 0 20 0 26\nM 26\nDETECTOR rec[-1]\nCX 0 33\nM 33\nDETECTOR rec[-1]\nCX 0 31\nM 31\nDETECTOR rec[-1]\n"
+    },
+    "t6-n22": {
+      "n": 22,
+      "t": 6,
+      "fileName": "cat_state_t6_n22_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n22_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 22 2 3 2 4 4 23 4 24 2 5 2 6 6 25 6 26 2 27 2 28 1 7 1 29 1 30 1 27\nM 27\nDETECTOR rec[-1]\nCX 0 8 8 9 8 10 10 11 11 31 10 24\nM 24\nDETECTOR rec[-1]\nCX 10 32 10 29\nM 29\nDETECTOR rec[-1]\nCX 8 12 8 13 13 33 8 34 8 25\nM 25\nDETECTOR rec[-1]\nCX 0 14 0 15 15 28\nM 28\nDETECTOR rec[-1]\nCX 15 16 15 17 17 18 18 32\nM 32\nDETECTOR rec[-1]\nCX 17 34\nM 34\nDETECTOR rec[-1]\nCX 15 35 15 22\nM 22\nDETECTOR rec[-1]\nCX 0 19 0 20 20 21 21 23\nM 23\nDETECTOR rec[-1]\nCX 20 33\nM 33\nDETECTOR rec[-1]\nCX 20 30\nM 30\nDETECTOR rec[-1]\nCX 0 26\nM 26\nDETECTOR rec[-1]\nCX 0 31\nM 31\nDETECTOR rec[-1]\nCX 0 35\nM 35\nDETECTOR rec[-1]\n"
+    },
+    "t6-n23": {
+      "n": 23,
+      "t": 6,
+      "fileName": "cat_state_t6_n23_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n23_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 23 3 24 3 25 1 4 1 26 1 27 1 28 0 5 5 6 6 29 6 30 5 7 5 8 8 9 8 10 10 31 10 23\nM 23\nDETECTOR rec[-1]\nCX 8 28\nM 28\nDETECTOR rec[-1]\nCX 8 32 5 11 11 33 5 12 5 13 13 34 13 35 5 25\nM 25\nDETECTOR rec[-1]\nCX 5 36 0 14 0 15 15 16 15 17 17 18 17 19 19 30\nM 30\nDETECTOR rec[-1]\nCX 19 24\nM 24\nDETECTOR rec[-1]\nCX 17 33\nM 33\nDETECTOR rec[-1]\nCX 17 26\nM 26\nDETECTOR rec[-1]\nCX 15 32\nM 32\nDETECTOR rec[-1]\nCX 15 34\nM 34\nDETECTOR rec[-1]\nCX 0 20 20 21 20 22 22 31\nM 31\nDETECTOR rec[-1]\nCX 20 35\nM 35\nDETECTOR rec[-1]\nCX 20 29\nM 29\nDETECTOR rec[-1]\nCX 0 36\nM 36\nDETECTOR rec[-1]\nCX 0 27\nM 27\nDETECTOR rec[-1]\n"
+    },
+    "t6-n24": {
+      "n": 24,
+      "t": 6,
+      "fileName": "cat_state_t6_n24_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n24_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 3 2 4 4 24 4 25 4 26 2 5 2 6 6 27 2 28 2 29 1 7 1 8 8 9 9 10 9 26\nM 26\nDETECTOR rec[-1]\nCX 9 30 9 31 8 32 8 33 1 11 1 12 12 29\nM 29\nDETECTOR rec[-1]\nCX 12 34 1 35 1 36 0 13 13 14 13 15 15 16 16 34\nM 34\nDETECTOR rec[-1]\nCX 16 30\nM 30\nDETECTOR rec[-1]\nCX 15 17 15 18 18 32\nM 32\nDETECTOR rec[-1]\nCX 15 36\nM 36\nDETECTOR rec[-1]\nCX 15 24\nM 24\nDETECTOR rec[-1]\nCX 13 19 13 20 20 21 21 25\nM 25\nDETECTOR rec[-1]\nCX 20 22 22 28\nM 28\nDETECTOR rec[-1]\nCX 20 33\nM 33\nDETECTOR rec[-1]\nCX 20 37 13 38 13 35\nM 35\nDETECTOR rec[-1]\nCX 0 23 0 37\nM 37\nDETECTOR rec[-1]\nCX 0 31\nM 31\nDETECTOR rec[-1]\nCX 0 27\nM 27\nDETECTOR rec[-1]\nCX 0 38\nM 38\nDETECTOR rec[-1]\n"
+    },
+    "t6-n25": {
+      "n": 25,
+      "t": 6,
+      "fileName": "cat_state_t6_n25_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n25_p1.stim",
+      "stim": "H 0\nCX 0 1 1 25 1 26 0 2 2 3 3 27 2 4 2 5 5 6 5 7 7 8 8 28 7 9 7 10 10 29 10 30 7 31 7 32 5 11 5 12 12 33 12 34 5 35 5 36 2 13 13 14 14 37 13 15 13 36\nM 36\nDETECTOR rec[-1]\nCX 13 30\nM 30\nDETECTOR rec[-1]\nCX 13 38 2 16 2 17 17 18 18 33\nM 33\nDETECTOR rec[-1]\nCX 17 38\nM 38\nDETECTOR rec[-1]\nCX 17 39 2 19 2 26\nM 26\nDETECTOR rec[-1]\nCX 2 32\nM 32\nDETECTOR rec[-1]\nCX 2 35\nM 35\nDETECTOR rec[-1]\nCX 0 20 0 39\nM 39\nDETECTOR rec[-1]\nCX 0 21 21 31\nM 31\nDETECTOR rec[-1]\nCX 0 22 0 23 23 37\nM 37\nDETECTOR rec[-1]\nCX 23 28\nM 28\nDETECTOR rec[-1]\nCX 23 25\nM 25\nDETECTOR rec[-1]\nCX 0 24 0 34\nM 34\nDETECTOR rec[-1]\nCX 0 27\nM 27\nDETECTOR rec[-1]\nCX 0 29\nM 29\nDETECTOR rec[-1]\n"
+    },
+    "t6-n26": {
+      "n": 26,
+      "t": 6,
+      "fileName": "cat_state_t6_n26_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n26_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 26 3 4 3 27 3 28 3 29 1 5 5 30 1 6 1 7 7 8 7 9 9 31 9 28\nM 28\nDETECTOR rec[-1]\nCX 7 32 7 33 1 34 1 35 0 10 10 11 10 12 12 32\nM 32\nDETECTOR rec[-1]\nCX 10 13 13 14 13 29\nM 29\nDETECTOR rec[-1]\nCX 13 15 15 36 15 34\nM 34\nDETECTOR rec[-1]\nCX 13 16 13 37 13 30\nM 30\nDETECTOR rec[-1]\nCX 13 38 10 17 10 18 18 19 19 39 18 26\nM 26\nDETECTOR rec[-1]\nCX 10 38\nM 38\nDETECTOR rec[-1]\nCX 10 40 0 20 20 35\nM 35\nDETECTOR rec[-1]\nCX 20 21 20 40\nM 40\nDETECTOR rec[-1]\nCX 20 33\nM 33\nDETECTOR rec[-1]\nCX 20 41 0 22 0 23 23 24 24 31\nM 31\nDETECTOR rec[-1]\nCX 23 39\nM 39\nDETECTOR rec[-1]\nCX 23 36\nM 36\nDETECTOR rec[-1]\nCX 0 25 25 37\nM 37\nDETECTOR rec[-1]\nCX 0 41\nM 41\nDETECTOR rec[-1]\nCX 0 27\nM 27\nDETECTOR rec[-1]\n"
+    },
+    "t6-n27": {
+      "n": 27,
+      "t": 6,
+      "fileName": "cat_state_t6_n27_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n27_p1.stim",
+      "stim": "H 0\nCX 0 27 0 1 1 2 2 28 2 29 1 3 1 30 1 4 4 31 1 5 1 6 6 32 6 33 1 34 1 35 0 7 0 8 8 33\nM 33\nDETECTOR rec[-1]\nCX 8 9 8 10 10 11 11 12 12 36 11 37 10 13 10 38 10 39 10 27\nM 27\nDETECTOR rec[-1]\nCX 8 14 8 15 15 16 15 17 17 28\nM 28\nDETECTOR rec[-1]\nCX 15 35\nM 35\nDETECTOR rec[-1]\nCX 15 40 8 41 8 42 8 39\nM 39\nDETECTOR rec[-1]\nCX 0 18 0 19 19 20 19 21 21 22 22 30\nM 30\nDETECTOR rec[-1]\nCX 21 40\nM 40\nDETECTOR rec[-1]\nCX 21 38\nM 38\nDETECTOR rec[-1]\nCX 19 23 19 24 24 42\nM 42\nDETECTOR rec[-1]\nCX 19 36\nM 36\nDETECTOR rec[-1]\nCX 19 34\nM 34\nDETECTOR rec[-1]\nCX 0 25 25 26 25 37\nM 37\nDETECTOR rec[-1]\nCX 25 29\nM 29\nDETECTOR rec[-1]\nCX 25 32\nM 32\nDETECTOR rec[-1]\nCX 0 31\nM 31\nDETECTOR rec[-1]\nCX 0 41\nM 41\nDETECTOR rec[-1]\n"
+    },
+    "t6-n28": {
+      "n": 28,
+      "t": 6,
+      "fileName": "cat_state_t6_n28_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n28_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 4 28 4 29 3 5 3 30 3 31 3 32 1 6 1 7 7 8 7 9 9 33 7 10 10 34 10 35 7 11 7 12 12 36 7 37 7 28\nM 28\nDETECTOR rec[-1]\nCX 1 38 1 39 0 13 13 14 14 15 14 16 16 17 17 18 17 35\nM 35\nDETECTOR rec[-1]\nCX 17 40 17 41 16 19 16 20 20 33\nM 33\nDETECTOR rec[-1]\nCX 20 42 16 21 16 22 22 23 23 37\nM 37\nDETECTOR rec[-1]\nCX 22 38\nM 38\nDETECTOR rec[-1]\nCX 16 32\nM 32\nDETECTOR rec[-1]\nCX 16 43 14 36\nM 36\nDETECTOR rec[-1]\nCX 14 31\nM 31\nDETECTOR rec[-1]\nCX 13 24 13 25 25 29\nM 29\nDETECTOR rec[-1]\nCX 25 44 13 39\nM 39\nDETECTOR rec[-1]\nCX 13 40\nM 40\nDETECTOR rec[-1]\nCX 0 26 0 27 27 43\nM 43\nDETECTOR rec[-1]\nCX 27 44\nM 44\nDETECTOR rec[-1]\nCX 27 34\nM 34\nDETECTOR rec[-1]\nCX 0 41\nM 41\nDETECTOR rec[-1]\nCX 0 42\nM 42\nDETECTOR rec[-1]\nCX 0 30\nM 30\nDETECTOR rec[-1]\n"
+    },
+    "t6-n29": {
+      "n": 29,
+      "t": 6,
+      "fileName": "cat_state_t6_n29_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n29_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 29 2 30 1 3 1 4 4 5 4 6 6 31 6 32 4 33 4 7 4 8 8 34 4 35 4 36 1 9 9 37 1 10 1 11 11 38 11 39 1 40 1 12 1 13 13 29\nM 29\nDETECTOR rec[-1]\nCX 1 41 1 31\nM 31\nDETECTOR rec[-1]\nCX 0 14 14 15 14 39\nM 39\nDETECTOR rec[-1]\nCX 14 16 16 42 14 33\nM 33\nDETECTOR rec[-1]\nCX 0 17 0 18 18 19 19 43 18 20 18 21 21 42\nM 42\nDETECTOR rec[-1]\nCX 21 44 18 36\nM 36\nDETECTOR rec[-1]\nCX 18 45 0 22 0 34\nM 34\nDETECTOR rec[-1]\nCX 0 23 23 24 23 25 25 44\nM 44\nDETECTOR rec[-1]\nCX 25 40\nM 40\nDETECTOR rec[-1]\nCX 23 26 23 27 27 43\nM 43\nDETECTOR rec[-1]\nCX 27 41\nM 41\nDETECTOR rec[-1]\nCX 23 37\nM 37\nDETECTOR rec[-1]\nCX 23 35\nM 35\nDETECTOR rec[-1]\nCX 0 30\nM 30\nDETECTOR rec[-1]\nCX 0 28 0 45\nM 45\nDETECTOR rec[-1]\nCX 0 32\nM 32\nDETECTOR rec[-1]\nCX 0 38\nM 38\nDETECTOR rec[-1]\n"
+    },
+    "t6-n30": {
+      "n": 30,
+      "t": 6,
+      "fileName": "cat_state_t6_n30_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n30_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 4 30 3 5 3 31 3 32 3 33 1 34 1 35 0 6 6 7 6 8 8 9 9 36 8 10 8 11 11 12 11 13 13 14 13 15 15 37 15 38 13 39 13 32\nM 32\nDETECTOR rec[-1]\nCX 11 35\nM 35\nDETECTOR rec[-1]\nCX 11 40 8 16 16 17 16 41 16 30\nM 30\nDETECTOR rec[-1]\nCX 16 37\nM 37\nDETECTOR rec[-1]\nCX 8 33\nM 33\nDETECTOR rec[-1]\nCX 8 42 6 38\nM 38\nDETECTOR rec[-1]\nCX 6 43 0 18 18 19 18 20 20 21 21 42\nM 42\nDETECTOR rec[-1]\nCX 21 44 20 22 20 23 23 43\nM 43\nDETECTOR rec[-1]\nCX 23 45 20 40\nM 40\nDETECTOR rec[-1]\nCX 20 46 18 24 18 25 25 39\nM 39\nDETECTOR rec[-1]\nCX 18 26 26 45\nM 45\nDETECTOR rec[-1]\nCX 26 47 18 27 18 36\nM 36\nDETECTOR rec[-1]\nCX 18 44\nM 44\nDETECTOR rec[-1]\nCX 18 34\nM 34\nDETECTOR rec[-1]\nCX 0 28 0 29 29 47\nM 47\nDETECTOR rec[-1]\nCX 29 41\nM 41\nDETECTOR rec[-1]\nCX 0 46\nM 46\nDETECTOR rec[-1]\nCX 0 31\nM 31\nDETECTOR rec[-1]\n"
+    },
+    "t6-n31": {
+      "n": 31,
+      "t": 6,
+      "fileName": "cat_state_t6_n31_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n31_p1.stim",
+      "stim": "H 0\nCX 0 31 0 1 1 32 1 2 1 3 3 4 4 33 4 34 3 5 3 6 6 35 3 36 3 37 1 7 1 8 8 9 8 10 10 38 10 39 8 40 8 11 8 12 12 41 12 33\nM 33\nDETECTOR rec[-1]\nCX 8 42 8 43 1 44 1 45 0 13 0 14 14 35\nM 35\nDETECTOR rec[-1]\nCX 14 15 15 46 14 16 14 17 17 47 17 40\nM 40\nDETECTOR rec[-1]\nCX 14 18 14 19 19 48 19 31\nM 31\nDETECTOR rec[-1]\nCX 14 43\nM 43\nDETECTOR rec[-1]\nCX 14 44\nM 44\nDETECTOR rec[-1]\nCX 0 20 20 21 21 38\nM 38\nDETECTOR rec[-1]\nCX 20 22 22 42\nM 42\nDETECTOR rec[-1]\nCX 20 36\nM 36\nDETECTOR rec[-1]\nCX 0 23 0 24 24 34\nM 34\nDETECTOR rec[-1]\nCX 24 25 24 26 26 27 27 49 26 47\nM 47\nDETECTOR rec[-1]\nCX 24 37\nM 37\nDETECTOR rec[-1]\nCX 24 48\nM 48\nDETECTOR rec[-1]\nCX 0 28 0 45\nM 45\nDETECTOR rec[-1]\nCX 0 29 29 30 29 39\nM 39\nDETECTOR rec[-1]\nCX 29 46\nM 46\nDETECTOR rec[-1]\nCX 29 41\nM 41\nDETECTOR rec[-1]\nCX 0 49\nM 49\nDETECTOR rec[-1]\nCX 0 32\nM 32\nDETECTOR rec[-1]\n"
+    },
+    "t6-n32": {
+      "n": 32,
+      "t": 6,
+      "fileName": "cat_state_t6_n32_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n32_p1.stim",
+      "stim": "H 0\nCX 0 32 0 1 1 2 2 3 3 33 2 34 1 4 1 5 5 6 6 7 6 8 8 35 6 36 6 37 5 38 5 39 1 9 1 10 10 40 10 41 1 11 11 12 11 13 13 42 13 32\nM 32\nDETECTOR rec[-1]\nCX 11 14 11 15 15 43 15 44 11 45 11 46 1 16 1 47 1 34\nM 34\nDETECTOR rec[-1]\nCX 1 48 0 17 0 18 18 19 19 20 19 21 21 35\nM 35\nDETECTOR rec[-1]\nCX 21 43\nM 43\nDETECTOR rec[-1]\nCX 19 41\nM 41\nDETECTOR rec[-1]\nCX 19 49 18 22 18 23 23 47\nM 47\nDETECTOR rec[-1]\nCX 18 24 24 38\nM 38\nDETECTOR rec[-1]\nCX 18 44\nM 44\nDETECTOR rec[-1]\nCX 18 50 0 25 0 26 26 27 26 50\nM 50\nDETECTOR rec[-1]\nCX 26 49\nM 49\nDETECTOR rec[-1]\nCX 26 28 26 29 29 37\nM 37\nDETECTOR rec[-1]\nCX 29 42\nM 42\nDETECTOR rec[-1]\nCX 26 33\nM 33\nDETECTOR rec[-1]\nCX 26 45\nM 45\nDETECTOR rec[-1]\nCX 0 30 30 48\nM 48\nDETECTOR rec[-1]\nCX 30 36\nM 36\nDETECTOR rec[-1]\nCX 0 31 0 39\nM 39\nDETECTOR rec[-1]\nCX 0 46\nM 46\nDETECTOR rec[-1]\nCX 0 40\nM 40\nDETECTOR rec[-1]\n"
+    },
+    "t6-n33": {
+      "n": 33,
+      "t": 6,
+      "fileName": "cat_state_t6_n33_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n33_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 33 1 4 4 34 1 35 1 5 1 36 1 37 1 6 1 7 7 8 8 38 7 33\nM 33\nDETECTOR rec[-1]\nCX 7 39 1 9 1 10 10 40 1 41 1 42 0 11 11 12 12 43 11 13 11 14 14 44 14 45 11 46 11 15 11 16 16 47 11 48 11 49 0 17 0 18 18 49\nM 49\nDETECTOR rec[-1]\nCX 18 50 0 40\nM 40\nDETECTOR rec[-1]\nCX 0 19 0 20 20 21 21 46\nM 46\nDETECTOR rec[-1]\nCX 20 22 20 23 23 24 23 25 25 50\nM 50\nDETECTOR rec[-1]\nCX 25 51 23 26 23 27 27 47\nM 47\nDETECTOR rec[-1]\nCX 27 41\nM 41\nDETECTOR rec[-1]\nCX 23 45\nM 45\nDETECTOR rec[-1]\nCX 23 35\nM 35\nDETECTOR rec[-1]\nCX 20 28 28 43\nM 43\nDETECTOR rec[-1]\nCX 28 37\nM 37\nDETECTOR rec[-1]\nCX 20 39\nM 39\nDETECTOR rec[-1]\nCX 20 52 20 44\nM 44\nDETECTOR rec[-1]\nCX 0 29 0 30 30 38\nM 38\nDETECTOR rec[-1]\nCX 30 31 30 32 32 34\nM 34\nDETECTOR rec[-1]\nCX 32 48\nM 48\nDETECTOR rec[-1]\nCX 30 42\nM 42\nDETECTOR rec[-1]\nCX 30 52\nM 52\nDETECTOR rec[-1]\nCX 0 51\nM 51\nDETECTOR rec[-1]\nCX 0 36\nM 36\nDETECTOR rec[-1]\n"
+    },
+    "t6-n34": {
+      "n": 34,
+      "t": 6,
+      "fileName": "cat_state_t6_n34_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n34_p1.stim",
+      "stim": "H 0\nCX 0 34 0 1 1 2 1 3 3 4 3 35 3 5 5 36 3 6 3 7 7 37 7 38 3 39 3 40 1 8 8 41 8 9 8 10 10 42 8 40\nM 40\nDETECTOR rec[-1]\nCX 8 43 1 11 1 12 12 13 12 14 14 15 14 16 16 17 16 18 18 44 16 45 16 46 14 47 14 42\nM 42\nDETECTOR rec[-1]\nCX 14 48 12 19 19 49 19 50 12 20 12 51 12 38\nM 38\nDETECTOR rec[-1]\nCX 12 52 1 21 21 22 21 23 23 45\nM 45\nDETECTOR rec[-1]\nCX 21 24 24 49\nM 49\nDETECTOR rec[-1]\nCX 21 25 25 37\nM 37\nDETECTOR rec[-1]\nCX 21 47\nM 47\nDETECTOR rec[-1]\nCX 1 26 1 27 27 43\nM 43\nDETECTOR rec[-1]\nCX 27 51\nM 51\nDETECTOR rec[-1]\nCX 1 36\nM 36\nDETECTOR rec[-1]\nCX 1 53 0 48\nM 48\nDETECTOR rec[-1]\nCX 0 28 0 29 29 30 29 31 31 39\nM 39\nDETECTOR rec[-1]\nCX 29 50\nM 50\nDETECTOR rec[-1]\nCX 29 32 29 33 33 53\nM 53\nDETECTOR rec[-1]\nCX 33 41\nM 41\nDETECTOR rec[-1]\nCX 29 44\nM 44\nDETECTOR rec[-1]\nCX 29 34\nM 34\nDETECTOR rec[-1]\nCX 0 52\nM 52\nDETECTOR rec[-1]\nCX 0 46\nM 46\nDETECTOR rec[-1]\nCX 0 35\nM 35\nDETECTOR rec[-1]\n"
+    },
+    "t6-n35": {
+      "n": 35,
+      "t": 6,
+      "fileName": "cat_state_t6_n35_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n35_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 3 2 4 4 35 2 5 5 36 2 6 6 37 2 7 2 38 2 39 2 40 1 8 1 9 9 41 1 10 10 40\nM 40\nDETECTOR rec[-1]\nCX 10 11 10 12 12 42 12 43 10 13 10 14 14 36\nM 36\nDETECTOR rec[-1]\nCX 14 44 14 45 10 15 15 46 10 47 10 48 1 16 1 17 17 18 17 19 19 20 20 49 19 50 19 42\nM 42\nDETECTOR rec[-1]\nCX 17 21 17 35\nM 35\nDETECTOR rec[-1]\nCX 17 51 17 52 1 46\nM 46\nDETECTOR rec[-1]\nCX 1 22 1 23 23 37\nM 37\nDETECTOR rec[-1]\nCX 23 53 1 52\nM 52\nDETECTOR rec[-1]\nCX 1 54 0 24 24 25 24 26 26 50\nM 50\nDETECTOR rec[-1]\nCX 24 54\nM 54\nDETECTOR rec[-1]\nCX 24 55 24 44\nM 44\nDETECTOR rec[-1]\nCX 0 27 0 28 28 38\nM 38\nDETECTOR rec[-1]\nCX 0 29 29 30 29 31 31 32 31 41\nM 41\nDETECTOR rec[-1]\nCX 31 33 33 45\nM 45\nDETECTOR rec[-1]\nCX 33 39\nM 39\nDETECTOR rec[-1]\nCX 31 34 31 53\nM 53\nDETECTOR rec[-1]\nCX 31 49\nM 49\nDETECTOR rec[-1]\nCX 31 47\nM 47\nDETECTOR rec[-1]\nCX 29 48\nM 48\nDETECTOR rec[-1]\nCX 29 55\nM 55\nDETECTOR rec[-1]\nCX 0 43\nM 43\nDETECTOR rec[-1]\nCX 0 51\nM 51\nDETECTOR rec[-1]\n"
+    },
+    "t6-n36": {
+      "n": 36,
+      "t": 6,
+      "fileName": "cat_state_t6_n36_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n36_p1.stim",
+      "stim": "H 0\nCX 0 1 1 36 0 2 2 3 2 4 4 37 4 38 2 5 2 6 6 7 6 8 8 9 8 10 10 39 10 40 10 41 8 11 8 12 12 13 12 14 14 15 15 42 14 43 12 38\nM 38\nDETECTOR rec[-1]\nCX 12 44 8 45 8 46 6 16 16 17 16 18 18 47 18 48 16 49 16 45\nM 45\nDETECTOR rec[-1]\nCX 6 19 6 20 20 21 20 36\nM 36\nDETECTOR rec[-1]\nCX 20 42\nM 42\nDETECTOR rec[-1]\nCX 20 50 6 41\nM 41\nDETECTOR rec[-1]\nCX 6 51 6 52 2 43\nM 43\nDETECTOR rec[-1]\nCX 2 22 22 23 22 53 22 54 22 55 2 24 2 48\nM 48\nDETECTOR rec[-1]\nCX 2 56 2 40\nM 40\nDETECTOR rec[-1]\nCX 0 25 25 26 26 49\nM 49\nDETECTOR rec[-1]\nCX 25 53\nM 53\nDETECTOR rec[-1]\nCX 0 27 0 28 28 44\nM 44\nDETECTOR rec[-1]\nCX 28 51\nM 51\nDETECTOR rec[-1]\nCX 0 29 0 30 30 31 31 54\nM 54\nDETECTOR rec[-1]\nCX 30 39\nM 39\nDETECTOR rec[-1]\nCX 0 50\nM 50\nDETECTOR rec[-1]\nCX 0 32 0 33 33 34 33 35 35 46\nM 46\nDETECTOR rec[-1]\nCX 35 56\nM 56\nDETECTOR rec[-1]\nCX 33 55\nM 55\nDETECTOR rec[-1]\nCX 33 37\nM 37\nDETECTOR rec[-1]\nCX 0 52\nM 52\nDETECTOR rec[-1]\nCX 0 47\nM 47\nDETECTOR rec[-1]\n"
+    },
+    "t6-n37": {
+      "n": 37,
+      "t": 6,
+      "fileName": "cat_state_t6_n37_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n37_p1.stim",
+      "stim": "H 0\nCX 0 1 1 37 1 38 0 2 2 3 3 4 3 5 5 6 5 7 7 39 7 8 8 9 8 10 10 40 8 11 11 41 8 42 7 12 7 13 13 43 7 44 7 37\nM 37\nDETECTOR rec[-1]\nCX 5 14 5 15 15 16 15 17 17 45 17 46 17 47 15 48 15 49 15 50 5 51 5 18 5 19 19 40\nM 40\nDETECTOR rec[-1]\nCX 19 52 5 53 5 49\nM 49\nDETECTOR rec[-1]\nCX 3 54 3 20 3 50\nM 50\nDETECTOR rec[-1]\nCX 3 21 21 55 3 56 3 51\nM 51\nDETECTOR rec[-1]\nCX 2 22 2 23 23 55\nM 55\nDETECTOR rec[-1]\nCX 23 57 2 24 2 25 25 43\nM 43\nDETECTOR rec[-1]\nCX 25 48\nM 48\nDETECTOR rec[-1]\nCX 2 42\nM 42\nDETECTOR rec[-1]\nCX 2 58 0 26 0 47\nM 47\nDETECTOR rec[-1]\nCX 0 52\nM 52\nDETECTOR rec[-1]\nCX 0 27 0 28 28 29 29 57\nM 57\nDETECTOR rec[-1]\nCX 29 44\nM 44\nDETECTOR rec[-1]\nCX 28 30 28 31 31 39\nM 39\nDETECTOR rec[-1]\nCX 28 58\nM 58\nDETECTOR rec[-1]\nCX 28 45\nM 45\nDETECTOR rec[-1]\nCX 0 32 0 33 33 34 33 35 35 36 36 46\nM 46\nDETECTOR rec[-1]\nCX 35 54\nM 54\nDETECTOR rec[-1]\nCX 33 41\nM 41\nDETECTOR rec[-1]\nCX 33 56\nM 56\nDETECTOR rec[-1]\nCX 0 38\nM 38\nDETECTOR rec[-1]\nCX 0 53\nM 53\nDETECTOR rec[-1]\n"
+    },
+    "t6-n38": {
+      "n": 38,
+      "t": 6,
+      "fileName": "cat_state_t6_n38_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n38_p1.stim",
+      "stim": "H 0\nCX 0 1 1 38 0 2 2 3 2 4 4 5 4 6 6 39 4 7 7 8 7 9 9 40 7 10 10 41 7 11 7 12 12 13 12 14 14 42 14 43 12 15 12 16 16 44 16 45 12 46 12 47 7 17 17 18 17 48 17 49 17 50 7 51 7 52 4 53 4 19 4 20 20 54 20 21 21 55 20 48\nM 48\nDETECTOR rec[-1]\nCX 4 22 4 52\nM 52\nDETECTOR rec[-1]\nCX 4 47\nM 47\nDETECTOR rec[-1]\nCX 4 56 2 55\nM 55\nDETECTOR rec[-1]\nCX 2 44\nM 44\nDETECTOR rec[-1]\nCX 0 23 23 24 23 25 25 54\nM 54\nDETECTOR rec[-1]\nCX 23 26 26 57 23 27 23 28 28 41\nM 41\nDETECTOR rec[-1]\nCX 28 29 28 58 28 39\nM 39\nDETECTOR rec[-1]\nCX 28 51\nM 51\nDETECTOR rec[-1]\nCX 23 50\nM 50\nDETECTOR rec[-1]\nCX 23 46\nM 46\nDETECTOR rec[-1]\nCX 0 56\nM 56\nDETECTOR rec[-1]\nCX 0 30 0 31 31 45\nM 45\nDETECTOR rec[-1]\nCX 31 32 31 33 33 40\nM 40\nDETECTOR rec[-1]\nCX 33 49\nM 49\nDETECTOR rec[-1]\nCX 31 34 34 42\nM 42\nDETECTOR rec[-1]\nCX 31 35 31 38\nM 38\nDETECTOR rec[-1]\nCX 31 59 31 53\nM 53\nDETECTOR rec[-1]\nCX 0 36 0 37 37 43\nM 43\nDETECTOR rec[-1]\nCX 37 58\nM 58\nDETECTOR rec[-1]\nCX 0 57\nM 57\nDETECTOR rec[-1]\nCX 0 59\nM 59\nDETECTOR rec[-1]\n"
+    },
+    "t6-n39": {
+      "n": 39,
+      "t": 6,
+      "fileName": "cat_state_t6_n39_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n39_p1.stim",
+      "stim": "H 0\nCX 0 39 0 1 1 2 1 3 3 4 4 5 4 40 4 6 6 41 4 42 3 43 3 7 3 8 8 44 8 45 3 9 3 10 10 46 10 47 3 48 3 39\nM 39\nDETECTOR rec[-1]\nCX 1 11 1 12 12 49 1 47\nM 47\nDETECTOR rec[-1]\nCX 1 50 1 13 1 14 14 15 14 16 16 48\nM 48\nDETECTOR rec[-1]\nCX 14 51 14 52 1 53 1 42\nM 42\nDETECTOR rec[-1]\nCX 1 54 0 17 17 18 17 19 19 20 20 55 19 21 21 40\nM 40\nDETECTOR rec[-1]\nCX 19 56 19 57 17 22 17 23 23 45\nM 45\nDETECTOR rec[-1]\nCX 23 24 23 57\nM 57\nDETECTOR rec[-1]\nCX 23 58 23 59 17 25 25 53\nM 53\nDETECTOR rec[-1]\nCX 17 26 17 27 27 28 27 29 29 60 29 50\nM 50\nDETECTOR rec[-1]\nCX 27 59\nM 59\nDETECTOR rec[-1]\nCX 27 51\nM 51\nDETECTOR rec[-1]\nCX 17 49\nM 49\nDETECTOR rec[-1]\nCX 17 61 0 30 0 31 31 32 32 33 32 34 34 56\nM 56\nDETECTOR rec[-1]\nCX 32 54\nM 54\nDETECTOR rec[-1]\nCX 32 46\nM 46\nDETECTOR rec[-1]\nCX 31 52\nM 52\nDETECTOR rec[-1]\nCX 31 44\nM 44\nDETECTOR rec[-1]\nCX 0 35 0 61\nM 61\nDETECTOR rec[-1]\nCX 0 36 36 41\nM 41\nDETECTOR rec[-1]\nCX 36 58\nM 58\nDETECTOR rec[-1]\nCX 0 37 0 38 38 43\nM 43\nDETECTOR rec[-1]\nCX 0 55\nM 55\nDETECTOR rec[-1]\nCX 0 60\nM 60\nDETECTOR rec[-1]\n"
+    },
+    "t6-n40": {
+      "n": 40,
+      "t": 6,
+      "fileName": "cat_state_t6_n40_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n40_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 3 2 4 4 5 4 6 6 40 4 7 7 8 8 41 7 9 7 10 10 42 10 43 7 11 7 12 12 44 12 45 7 46 7 47 4 13 4 48 4 49 4 46\nM 46\nDETECTOR rec[-1]\nCX 2 50 2 51 1 52 1 14 1 15 15 53 1 16 16 54 1 17 1 18 18 19 19 50\nM 50\nDETECTOR rec[-1]\nCX 18 20 20 49\nM 49\nDETECTOR rec[-1]\nCX 18 55 1 21 1 56 1 40\nM 40\nDETECTOR rec[-1]\nCX 1 57 0 22 22 23 22 45\nM 45\nDETECTOR rec[-1]\nCX 22 58 22 59 0 24 0 25 25 26 25 27 27 28 27 29 29 55\nM 55\nDETECTOR rec[-1]\nCX 29 30 29 31 31 32 31 33 33 60 33 44\nM 44\nDETECTOR rec[-1]\nCX 31 34 31 35 35 59\nM 59\nDETECTOR rec[-1]\nCX 35 48\nM 48\nDETECTOR rec[-1]\nCX 31 61 31 56\nM 56\nDETECTOR rec[-1]\nCX 29 36 36 37 36 62 36 41\nM 41\nDETECTOR rec[-1]\nCX 36 52\nM 52\nDETECTOR rec[-1]\nCX 29 51\nM 51\nDETECTOR rec[-1]\nCX 29 42\nM 42\nDETECTOR rec[-1]\nCX 27 38 27 39 39 54\nM 54\nDETECTOR rec[-1]\nCX 39 60\nM 60\nDETECTOR rec[-1]\nCX 27 57\nM 57\nDETECTOR rec[-1]\nCX 27 62\nM 62\nDETECTOR rec[-1]\nCX 25 43\nM 43\nDETECTOR rec[-1]\nCX 25 53\nM 53\nDETECTOR rec[-1]\nCX 25 58\nM 58\nDETECTOR rec[-1]\nCX 0 47\nM 47\nDETECTOR rec[-1]\nCX 0 61\nM 61\nDETECTOR rec[-1]\n"
+    },
+    "t6-n41": {
+      "n": 41,
+      "t": 6,
+      "fileName": "cat_state_t6_n41_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n41_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 41 1 3 3 4 3 5 5 6 5 7 7 8 7 9 9 42 9 43 7 44 7 45 5 46 5 47 5 48 3 49 3 50 1 51 1 10 1 11 11 12 11 13 13 14 13 52 13 45\nM 45\nDETECTOR rec[-1]\nCX 13 53 11 50\nM 50\nDETECTOR rec[-1]\nCX 11 54 11 55 1 56 1 15 1 16 16 43\nM 43\nDETECTOR rec[-1]\nCX 16 57 1 58 1 46\nM 46\nDETECTOR rec[-1]\nCX 0 17 17 18 17 19 19 20 20 54\nM 54\nDETECTOR rec[-1]\nCX 19 21 19 22 22 58\nM 58\nDETECTOR rec[-1]\nCX 19 59 19 60 17 53\nM 53\nDETECTOR rec[-1]\nCX 17 23 17 24 24 25 24 26 26 27 27 49\nM 49\nDETECTOR rec[-1]\nCX 26 61 24 60\nM 60\nDETECTOR rec[-1]\nCX 24 42\nM 42\nDETECTOR rec[-1]\nCX 17 62 17 51\nM 51\nDETECTOR rec[-1]\nCX 0 28 28 47\nM 47\nDETECTOR rec[-1]\nCX 0 29 0 30 30 31 31 56\nM 56\nDETECTOR rec[-1]\nCX 30 32 30 33 33 61\nM 61\nDETECTOR rec[-1]\nCX 33 63 30 34 34 59\nM 59\nDETECTOR rec[-1]\nCX 30 35 30 64 30 57\nM 57\nDETECTOR rec[-1]\nCX 30 41\nM 41\nDETECTOR rec[-1]\nCX 0 36 36 62\nM 62\nDETECTOR rec[-1]\nCX 0 37 0 38 38 39 38 40 40 63\nM 63\nDETECTOR rec[-1]\nCX 40 52\nM 52\nDETECTOR rec[-1]\nCX 38 48\nM 48\nDETECTOR rec[-1]\nCX 38 64\nM 64\nDETECTOR rec[-1]\nCX 0 55\nM 55\nDETECTOR rec[-1]\nCX 0 44\nM 44\nDETECTOR rec[-1]\n"
+    },
+    "t6-n42": {
+      "n": 42,
+      "t": 6,
+      "fileName": "cat_state_t6_n42_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n42_p1.stim",
+      "stim": "H 0\nCX 0 1 1 42 0 2 2 3 2 43 2 4 4 5 4 44 4 6 6 7 7 45 6 8 6 9 9 46 6 10 10 47 6 48 4 11 4 12 12 49 12 50 4 13 4 14 14 51 14 52 4 48\nM 48\nDETECTOR rec[-1]\nCX 4 53 2 15 2 16 16 54 16 17 16 18 18 19 18 55 18 20 20 56 18 57 18 43\nM 43\nDETECTOR rec[-1]\nCX 16 58 16 59 2 60 2 61 0 21 21 22 22 23 22 56\nM 56\nDETECTOR rec[-1]\nCX 22 24 24 25 25 62 24 26 24 27 27 63 27 60\nM 60\nDETECTOR rec[-1]\nCX 24 28 24 29 29 42\nM 42\nDETECTOR rec[-1]\nCX 29 51\nM 51\nDETECTOR rec[-1]\nCX 24 46\nM 46\nDETECTOR rec[-1]\nCX 24 54\nM 54\nDETECTOR rec[-1]\nCX 22 30 22 64 22 31 31 44\nM 44\nDETECTOR rec[-1]\nCX 22 32 22 33 33 65 33 63\nM 63\nDETECTOR rec[-1]\nCX 22 59\nM 59\nDETECTOR rec[-1]\nCX 22 66 21 53\nM 53\nDETECTOR rec[-1]\nCX 21 34 21 35 35 36 35 61\nM 61\nDETECTOR rec[-1]\nCX 35 45\nM 45\nDETECTOR rec[-1]\nCX 35 55\nM 55\nDETECTOR rec[-1]\nCX 21 62\nM 62\nDETECTOR rec[-1]\nCX 21 50\nM 50\nDETECTOR rec[-1]\nCX 21 58\nM 58\nDETECTOR rec[-1]\nCX 0 66\nM 66\nDETECTOR rec[-1]\nCX 0 37 0 38 38 39 38 40 40 57\nM 57\nDETECTOR rec[-1]\nCX 38 52\nM 52\nDETECTOR rec[-1]\nCX 38 65\nM 65\nDETECTOR rec[-1]\nCX 0 41 41 49\nM 49\nDETECTOR rec[-1]\nCX 0 47\nM 47\nDETECTOR rec[-1]\nCX 0 64\nM 64\nDETECTOR rec[-1]\n"
+    },
+    "t6-n43": {
+      "n": 43,
+      "t": 6,
+      "fileName": "cat_state_t6_n43_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n43_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 4 43 3 5 3 6 6 7 7 44 6 45 3 8 8 46 3 9 3 10 10 11 11 12 11 47 11 44\nM 44\nDETECTOR rec[-1]\nCX 11 48 10 49 10 50 3 13 3 14 14 15 14 16 16 51 16 52 14 48\nM 48\nDETECTOR rec[-1]\nCX 14 53 3 54 3 55 1 17 1 56 1 18 18 57 18 19 18 20 20 58 18 52\nM 52\nDETECTOR rec[-1]\nCX 18 49\nM 49\nDETECTOR rec[-1]\nCX 1 21 1 22 22 59 22 60 1 23 1 24 24 43\nM 43\nDETECTOR rec[-1]\nCX 24 61 1 55\nM 55\nDETECTOR rec[-1]\nCX 1 62 0 25 25 58\nM 58\nDETECTOR rec[-1]\nCX 25 54\nM 54\nDETECTOR rec[-1]\nCX 0 26 26 47\nM 47\nDETECTOR rec[-1]\nCX 0 27 0 28 28 63 28 29 28 30 30 61\nM 61\nDETECTOR rec[-1]\nCX 30 31 30 32 32 45\nM 45\nDETECTOR rec[-1]\nCX 32 64 30 65 30 56\nM 56\nDETECTOR rec[-1]\nCX 28 33 28 34 34 59\nM 59\nDETECTOR rec[-1]\nCX 28 35 35 66 35 67 28 36 28 46\nM 46\nDETECTOR rec[-1]\nCX 28 53\nM 53\nDETECTOR rec[-1]\nCX 28 57\nM 57\nDETECTOR rec[-1]\nCX 0 37 37 38 37 60\nM 60\nDETECTOR rec[-1]\nCX 37 39 39 40 39 41 41 65\nM 65\nDETECTOR rec[-1]\nCX 39 50\nM 50\nDETECTOR rec[-1]\nCX 39 63\nM 63\nDETECTOR rec[-1]\nCX 37 67\nM 67\nDETECTOR rec[-1]\nCX 37 51\nM 51\nDETECTOR rec[-1]\nCX 0 42 0 62\nM 62\nDETECTOR rec[-1]\nCX 0 64\nM 64\nDETECTOR rec[-1]\nCX 0 66\nM 66\nDETECTOR rec[-1]\n"
+    },
+    "t6-n44": {
+      "n": 44,
+      "t": 6,
+      "fileName": "cat_state_t6_n44_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n44_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 44 1 3 1 4 4 5 5 6 5 45 5 7 7 46 7 47 5 8 5 9 9 48 9 49 5 10 5 11 11 50 11 51 5 52 5 53 4 12 4 13 13 54 13 55 4 56 4 57 1 14 1 58 1 15 15 16 15 17 17 55\nM 55\nDETECTOR rec[-1]\nCX 17 59 15 18 15 19 19 20 20 60 19 61 19 45\nM 45\nDETECTOR rec[-1]\nCX 15 21 15 53\nM 53\nDETECTOR rec[-1]\nCX 15 44\nM 44\nDETECTOR rec[-1]\nCX 15 62 1 22 22 23 22 24 24 63 22 64 22 61\nM 61\nDETECTOR rec[-1]\nCX 1 25 1 26 26 27 26 28 28 65 28 50\nM 50\nDETECTOR rec[-1]\nCX 26 66 26 67 1 60\nM 60\nDETECTOR rec[-1]\nCX 1 68 0 29 29 30 29 31 31 32 32 66\nM 66\nDETECTOR rec[-1]\nCX 31 33 31 34 34 35 35 54\nM 54\nDETECTOR rec[-1]\nCX 34 49\nM 49\nDETECTOR rec[-1]\nCX 34 58\nM 58\nDETECTOR rec[-1]\nCX 31 69 31 36 36 46\nM 46\nDETECTOR rec[-1]\nCX 31 65\nM 65\nDETECTOR rec[-1]\nCX 29 37 29 38 38 63\nM 63\nDETECTOR rec[-1]\nCX 38 48\nM 48\nDETECTOR rec[-1]\nCX 29 39 39 40 39 51\nM 51\nDETECTOR rec[-1]\nCX 39 57\nM 57\nDETECTOR rec[-1]\nCX 39 41 39 42 42 59\nM 59\nDETECTOR rec[-1]\nCX 42 64\nM 64\nDETECTOR rec[-1]\nCX 39 62\nM 62\nDETECTOR rec[-1]\nCX 39 69\nM 69\nDETECTOR rec[-1]\nCX 29 43 29 47\nM 47\nDETECTOR rec[-1]\nCX 29 67\nM 67\nDETECTOR rec[-1]\nCX 29 52\nM 52\nDETECTOR rec[-1]\nCX 0 68\nM 68\nDETECTOR rec[-1]\nCX 0 56\nM 56\nDETECTOR rec[-1]\n"
+    },
+    "t6-n45": {
+      "n": 45,
+      "t": 6,
+      "fileName": "cat_state_t6_n45_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n45_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 4 5 4 6 6 45 6 46 6 47 4 7 4 8 8 48 8 49 4 9 4 10 10 50 10 51 4 52 4 53 3 54 3 11 3 12 12 55 3 56 3 50\nM 50\nDETECTOR rec[-1]\nCX 1 13 1 14 14 15 14 16 16 17 17 45\nM 45\nDETECTOR rec[-1]\nCX 16 18 16 51\nM 51\nDETECTOR rec[-1]\nCX 16 19 19 57 16 58 14 20 20 59 14 21 14 22 22 23 22 24 24 60 24 61 22 25 22 26 26 57\nM 57\nDETECTOR rec[-1]\nCX 26 48\nM 48\nDETECTOR rec[-1]\nCX 22 55\nM 55\nDETECTOR rec[-1]\nCX 22 62 14 27 27 28 27 29 29 46\nM 46\nDETECTOR rec[-1]\nCX 27 63 27 64 14 49\nM 49\nDETECTOR rec[-1]\nCX 14 65 1 65\nM 65\nDETECTOR rec[-1]\nCX 1 66 0 30 30 47\nM 47\nDETECTOR rec[-1]\nCX 30 31 30 32 32 58\nM 58\nDETECTOR rec[-1]\nCX 32 67 30 33 33 68 30 69 0 34 0 35 35 36 35 37 37 38 37 39 39 67\nM 67\nDETECTOR rec[-1]\nCX 39 61\nM 61\nDETECTOR rec[-1]\nCX 39 63\nM 63\nDETECTOR rec[-1]\nCX 37 40 37 53\nM 53\nDETECTOR rec[-1]\nCX 37 59\nM 59\nDETECTOR rec[-1]\nCX 37 41 37 42 42 56\nM 56\nDETECTOR rec[-1]\nCX 37 69\nM 69\nDETECTOR rec[-1]\nCX 37 64\nM 64\nDETECTOR rec[-1]\nCX 37 70 35 68\nM 68\nDETECTOR rec[-1]\nCX 35 54\nM 54\nDETECTOR rec[-1]\nCX 0 43 43 44 43 62\nM 62\nDETECTOR rec[-1]\nCX 43 70\nM 70\nDETECTOR rec[-1]\nCX 43 52\nM 52\nDETECTOR rec[-1]\nCX 0 66\nM 66\nDETECTOR rec[-1]\nCX 0 60\nM 60\nDETECTOR rec[-1]\n"
+    },
+    "t6-n46": {
+      "n": 46,
+      "t": 6,
+      "fileName": "cat_state_t6_n46_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n46_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 4 5 4 6 6 7 7 46 6 47 4 8 4 48 4 9 9 10 9 11 11 49 9 12 12 50 9 51 4 52 4 53 3 13 3 54 3 55 3 14 14 15 14 53\nM 53\nDETECTOR rec[-1]\nCX 14 56 14 57 3 16 3 58 3 59 3 60 1 61 1 17 1 18 18 62 1 63 1 64 0 19 19 20 20 21 21 46\nM 46\nDETECTOR rec[-1]\nCX 21 58\nM 58\nDETECTOR rec[-1]\nCX 20 22 20 23 23 24 23 57\nM 57\nDETECTOR rec[-1]\nCX 23 65 23 66 23 25 23 67 23 68 23 69 20 26 26 27 26 28 28 64\nM 64\nDETECTOR rec[-1]\nCX 28 70 26 50\nM 50\nDETECTOR rec[-1]\nCX 26 71 20 29 20 30 30 31 31 59\nM 59\nDETECTOR rec[-1]\nCX 30 72 20 49\nM 49\nDETECTOR rec[-1]\nCX 20 54\nM 54\nDETECTOR rec[-1]\nCX 19 32 19 33 33 34 33 35 35 36 35 37 37 38 38 52\nM 52\nDETECTOR rec[-1]\nCX 37 61\nM 61\nDETECTOR rec[-1]\nCX 35 39 35 40 40 47\nM 47\nDETECTOR rec[-1]\nCX 40 63\nM 63\nDETECTOR rec[-1]\nCX 35 51\nM 51\nDETECTOR rec[-1]\nCX 35 68\nM 68\nDETECTOR rec[-1]\nCX 33 41 41 69\nM 69\nDETECTOR rec[-1]\nCX 41 48\nM 48\nDETECTOR rec[-1]\nCX 33 42 33 43 43 55\nM 55\nDETECTOR rec[-1]\nCX 33 72\nM 72\nDETECTOR rec[-1]\nCX 33 65\nM 65\nDETECTOR rec[-1]\nCX 19 71\nM 71\nDETECTOR rec[-1]\nCX 19 44 19 45 45 62\nM 62\nDETECTOR rec[-1]\nCX 45 56\nM 56\nDETECTOR rec[-1]\nCX 19 60\nM 60\nDETECTOR rec[-1]\nCX 19 67\nM 67\nDETECTOR rec[-1]\nCX 0 70\nM 70\nDETECTOR rec[-1]\nCX 0 66\nM 66\nDETECTOR rec[-1]\n"
+    },
+    "t6-n47": {
+      "n": 47,
+      "t": 6,
+      "fileName": "cat_state_t6_n47_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n47_p1.stim",
+      "stim": "H 0\nCX 0 47 0 1 1 2 2 48 1 3 1 4 4 5 5 6 5 49 5 50 5 51 4 52 4 7 4 8 8 9 8 10 10 53 8 11 11 12 11 13 13 54 11 55 11 56 8 57 8 58 4 14 14 59 4 15 4 16 16 51\nM 51\nDETECTOR rec[-1]\nCX 16 60 4 56\nM 56\nDETECTOR rec[-1]\nCX 4 61 1 17 1 18 18 19 19 20 19 62 19 63 19 57\nM 57\nDETECTOR rec[-1]\nCX 18 64 18 65 1 21 1 22 22 23 22 24 24 66 24 50\nM 50\nDETECTOR rec[-1]\nCX 22 54\nM 54\nDETECTOR rec[-1]\nCX 22 67 1 68 1 25 1 26 26 27 26 28 28 52\nM 52\nDETECTOR rec[-1]\nCX 26 67\nM 67\nDETECTOR rec[-1]\nCX 26 69 1 29 29 63\nM 63\nDETECTOR rec[-1]\nCX 1 59\nM 59\nDETECTOR rec[-1]\nCX 1 70 0 30 30 31 30 61\nM 61\nDETECTOR rec[-1]\nCX 30 53\nM 53\nDETECTOR rec[-1]\nCX 30 71 0 32 0 70\nM 70\nDETECTOR rec[-1]\nCX 0 33 33 72 0 34 0 35 35 73 35 55\nM 55\nDETECTOR rec[-1]\nCX 0 36 36 37 36 58\nM 58\nDETECTOR rec[-1]\nCX 36 65\nM 65\nDETECTOR rec[-1]\nCX 36 66\nM 66\nDETECTOR rec[-1]\nCX 0 38 0 39 39 40 39 41 41 42 42 62\nM 62\nDETECTOR rec[-1]\nCX 41 72\nM 72\nDETECTOR rec[-1]\nCX 41 49\nM 49\nDETECTOR rec[-1]\nCX 39 43 39 48\nM 48\nDETECTOR rec[-1]\nCX 39 44 44 64\nM 64\nDETECTOR rec[-1]\nCX 39 73\nM 73\nDETECTOR rec[-1]\nCX 0 60\nM 60\nDETECTOR rec[-1]\nCX 0 45 0 46 46 69\nM 69\nDETECTOR rec[-1]\nCX 46 47\nM 47\nDETECTOR rec[-1]\nCX 0 71\nM 71\nDETECTOR rec[-1]\nCX 0 68\nM 68\nDETECTOR rec[-1]\n"
+    },
+    "t6-n48": {
+      "n": 48,
+      "t": 6,
+      "fileName": "cat_state_t6_n48_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n48_p1.stim",
+      "stim": "H 0\nCX 0 48 0 1 1 2 1 3 3 4 3 5 5 6 5 7 7 8 8 49 8 50 7 9 7 51 7 52 7 10 10 53 7 54 5 11 5 12 12 13 12 55 12 56 12 57 5 14 14 58 5 59 5 60 3 15 15 16 15 17 17 18 17 61 17 19 19 49\nM 49\nDETECTOR rec[-1]\nCX 17 62 15 20 20 51\nM 51\nDETECTOR rec[-1]\nCX 15 57\nM 57\nDETECTOR rec[-1]\nCX 15 48\nM 48\nDETECTOR rec[-1]\nCX 3 21 3 22 22 63 22 64 3 65 3 66 1 23 23 24 23 25 25 67 23 50\nM 50\nDETECTOR rec[-1]\nCX 23 68 1 53\nM 53\nDETECTOR rec[-1]\nCX 1 69 0 26 26 27 26 70 26 28 28 63\nM 63\nDETECTOR rec[-1]\nCX 26 71 26 61\nM 61\nDETECTOR rec[-1]\nCX 0 29 0 30 30 31 30 32 32 33 33 34 33 35 35 54\nM 54\nDETECTOR rec[-1]\nCX 35 55\nM 55\nDETECTOR rec[-1]\nCX 33 60\nM 60\nDETECTOR rec[-1]\nCX 33 65\nM 65\nDETECTOR rec[-1]\nCX 32 36 32 72 32 68\nM 68\nDETECTOR rec[-1]\nCX 32 73 32 59\nM 59\nDETECTOR rec[-1]\nCX 30 37 30 62\nM 62\nDETECTOR rec[-1]\nCX 30 38 38 39 39 74 38 56\nM 56\nDETECTOR rec[-1]\nCX 30 40 30 75 30 64\nM 64\nDETECTOR rec[-1]\nCX 30 73\nM 73\nDETECTOR rec[-1]\nCX 0 66\nM 66\nDETECTOR rec[-1]\nCX 0 41 41 42 41 43 43 74\nM 74\nDETECTOR rec[-1]\nCX 43 71\nM 71\nDETECTOR rec[-1]\nCX 41 44 41 45 45 67\nM 67\nDETECTOR rec[-1]\nCX 45 75\nM 75\nDETECTOR rec[-1]\nCX 41 58\nM 58\nDETECTOR rec[-1]\nCX 41 52\nM 52\nDETECTOR rec[-1]\nCX 0 46 0 47 47 72\nM 72\nDETECTOR rec[-1]\nCX 0 69\nM 69\nDETECTOR rec[-1]\nCX 0 70\nM 70\nDETECTOR rec[-1]\n"
+    },
+    "t6-n49": {
+      "n": 49,
+      "t": 6,
+      "fileName": "cat_state_t6_n49_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n49_p1.stim",
+      "stim": "H 0\nCX 0 49 0 1 1 2 2 50 2 51 1 3 1 4 4 5 4 6 6 7 6 8 8 52 8 53 6 9 6 10 10 11 11 54 10 55 10 56 6 12 6 13 13 14 13 15 15 57 15 58 13 59 13 60 6 61 6 49\nM 49\nDETECTOR rec[-1]\nCX 4 16 16 62 16 63 4 17 4 18 18 64 4 54\nM 54\nDETECTOR rec[-1]\nCX 4 65 1 66 1 67 0 19 0 20 20 21 20 22 22 23 23 24 23 68 23 51\nM 51\nDETECTOR rec[-1]\nCX 23 69 22 64\nM 64\nDETECTOR rec[-1]\nCX 22 25 22 26 26 27 26 28 28 69\nM 69\nDETECTOR rec[-1]\nCX 28 52\nM 52\nDETECTOR rec[-1]\nCX 26 70 26 66\nM 66\nDETECTOR rec[-1]\nCX 22 71 22 72 20 29 20 30 30 72\nM 72\nDETECTOR rec[-1]\nCX 30 31 30 32 32 60\nM 60\nDETECTOR rec[-1]\nCX 32 62\nM 62\nDETECTOR rec[-1]\nCX 30 33 30 34 34 67\nM 67\nDETECTOR rec[-1]\nCX 34 73 30 65\nM 65\nDETECTOR rec[-1]\nCX 30 74 20 75 20 35 20 58\nM 58\nDETECTOR rec[-1]\nCX 20 74\nM 74\nDETECTOR rec[-1]\nCX 20 50\nM 50\nDETECTOR rec[-1]\nCX 0 36 36 37 36 38 38 39 39 71\nM 71\nDETECTOR rec[-1]\nCX 38 53\nM 53\nDETECTOR rec[-1]\nCX 38 76 36 40 36 41 41 70\nM 70\nDETECTOR rec[-1]\nCX 36 63\nM 63\nDETECTOR rec[-1]\nCX 36 75\nM 75\nDETECTOR rec[-1]\nCX 0 42 0 43 43 44 43 45 45 59\nM 59\nDETECTOR rec[-1]\nCX 43 76\nM 76\nDETECTOR rec[-1]\nCX 43 55\nM 55\nDETECTOR rec[-1]\nCX 0 46 46 47 47 61\nM 61\nDETECTOR rec[-1]\nCX 46 68\nM 68\nDETECTOR rec[-1]\nCX 0 48 0 73\nM 73\nDETECTOR rec[-1]\nCX 0 56\nM 56\nDETECTOR rec[-1]\nCX 0 57\nM 57\nDETECTOR rec[-1]\n"
+    },
+    "t6-n50": {
+      "n": 50,
+      "t": 6,
+      "fileName": "cat_state_t6_n50_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n50_p1.stim",
+      "stim": "H 0\nCX 0 50 0 1 1 2 2 3 2 4 4 5 5 51 4 6 4 7 7 52 7 53 4 8 8 54 4 9 4 10 10 55 4 11 11 56 11 57 4 12 4 13 13 58 4 59 4 60 2 14 2 61 2 15 15 16 15 17 17 60\nM 60\nDETECTOR rec[-1]\nCX 17 62 15 63 15 64 2 65 2 18 2 19 19 66 19 50\nM 50\nDETECTOR rec[-1]\nCX 2 20 2 21 21 67 21 68 2 69 2 59\nM 59\nDETECTOR rec[-1]\nCX 1 22 22 70 1 23 1 24 24 71 1 64\nM 64\nDETECTOR rec[-1]\nCX 1 25 25 26 25 53\nM 53\nDETECTOR rec[-1]\nCX 25 72 25 69\nM 69\nDETECTOR rec[-1]\nCX 1 27 1 73 1 68\nM 68\nDETECTOR rec[-1]\nCX 1 74 0 28 0 29 29 55\nM 55\nDETECTOR rec[-1]\nCX 29 30 29 31 31 32 31 33 33 57\nM 57\nDETECTOR rec[-1]\nCX 33 75 31 34 31 35 35 36 35 37 37 54\nM 54\nDETECTOR rec[-1]\nCX 37 63\nM 63\nDETECTOR rec[-1]\nCX 35 38 35 39 39 76 39 66\nM 66\nDETECTOR rec[-1]\nCX 35 70\nM 70\nDETECTOR rec[-1]\nCX 35 67\nM 67\nDETECTOR rec[-1]\nCX 31 40 40 41 40 42 42 77 40 78 40 56\nM 56\nDETECTOR rec[-1]\nCX 31 51\nM 51\nDETECTOR rec[-1]\nCX 31 73\nM 73\nDETECTOR rec[-1]\nCX 29 43 43 74\nM 74\nDETECTOR rec[-1]\nCX 43 78\nM 78\nDETECTOR rec[-1]\nCX 29 44 29 45 45 62\nM 62\nDETECTOR rec[-1]\nCX 45 52\nM 52\nDETECTOR rec[-1]\nCX 29 46 29 47 47 75\nM 75\nDETECTOR rec[-1]\nCX 47 76\nM 76\nDETECTOR rec[-1]\nCX 29 71\nM 71\nDETECTOR rec[-1]\nCX 29 65\nM 65\nDETECTOR rec[-1]\nCX 0 48 0 49 49 58\nM 58\nDETECTOR rec[-1]\nCX 49 61\nM 61\nDETECTOR rec[-1]\nCX 0 77\nM 77\nDETECTOR rec[-1]\nCX 0 72\nM 72\nDETECTOR rec[-1]\n"
+    },
+    "t6-n8": {
+      "n": 8,
+      "t": 6,
+      "fileName": "cat_state_t6_n8_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n8_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 8 1 3 1 4 4 9 1 10 0 5 5 9\nM 9\nDETECTOR rec[-1]\nCX 5 11 0 6 0 10\nM 10\nDETECTOR rec[-1]\nCX 0 7 0 11\nM 11\nDETECTOR rec[-1]\nCX 0 8\nM 8\nDETECTOR rec[-1]\n"
+    },
+    "t6-n9": {
+      "n": 9,
+      "t": 6,
+      "fileName": "cat_state_t6_n9_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t6_n9_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 9 1 3 1 4 4 10 1 11 0 5 5 6 5 10\nM 10\nDETECTOR rec[-1]\nCX 5 12 0 7 0 11\nM 11\nDETECTOR rec[-1]\nCX 0 8 0 12\nM 12\nDETECTOR rec[-1]\nCX 0 9\nM 9\nDETECTOR rec[-1]\n"
+    },
+    "t7-n10": {
+      "n": 10,
+      "t": 7,
+      "fileName": "cat_state_t7_n10_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n10_p1.stim",
+      "stim": "H 0\nCX 0 1 1 10 1 11 1 12 0 2 2 3 3 13 2 14 0 4 0 5 5 12\nM 12\nDETECTOR rec[-1]\nCX 5 6 5 13\nM 13\nDETECTOR rec[-1]\nCX 5 15 0 7 0 8 8 9 8 14\nM 14\nDETECTOR rec[-1]\nCX 8 11\nM 11\nDETECTOR rec[-1]\nCX 0 15\nM 15\nDETECTOR rec[-1]\nCX 0 10\nM 10\nDETECTOR rec[-1]\n"
+    },
+    "t7-n11": {
+      "n": 11,
+      "t": 7,
+      "fileName": "cat_state_t7_n11_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n11_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 11 3 12 1 4 1 13 1 14 0 5 5 6 5 7 7 12\nM 12\nDETECTOR rec[-1]\nCX 7 15 5 14\nM 14\nDETECTOR rec[-1]\nCX 5 16 0 8 0 9 9 10 9 16\nM 16\nDETECTOR rec[-1]\nCX 9 11\nM 11\nDETECTOR rec[-1]\nCX 0 15\nM 15\nDETECTOR rec[-1]\nCX 0 13\nM 13\nDETECTOR rec[-1]\n"
+    },
+    "t7-n13": {
+      "n": 13,
+      "t": 7,
+      "fileName": "cat_state_t7_n13_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n13_p1.stim",
+      "stim": "H 0\nCX 0 1 1 13 1 2 1 3 3 14 3 15 1 4 1 5 5 16 1 17 1 18 0 6 6 7 6 8 8 17\nM 17\nDETECTOR rec[-1]\nCX 6 15\nM 15\nDETECTOR rec[-1]\nCX 6 19 0 9 0 10 10 11 11 14\nM 14\nDETECTOR rec[-1]\nCX 10 18\nM 18\nDETECTOR rec[-1]\nCX 10 20 0 16\nM 16\nDETECTOR rec[-1]\nCX 0 12 0 19\nM 19\nDETECTOR rec[-1]\nCX 0 20\nM 20\nDETECTOR rec[-1]\nCX 0 13\nM 13\nDETECTOR rec[-1]\n"
+    },
+    "t7-n24": {
+      "n": 24,
+      "t": 7,
+      "fileName": "cat_state_t7_n24_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n24_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 3 3 24 3 25 2 26 2 27 1 28 1 29 1 30 0 4 4 5 5 6 5 7 7 8 7 31 7 30\nM 30\nDETECTOR rec[-1]\nCX 7 32 7 9 7 25\nM 25\nDETECTOR rec[-1]\nCX 7 33 5 10 5 11 11 12 11 34 11 24\nM 24\nDETECTOR rec[-1]\nCX 5 13 13 14 13 35 13 28\nM 28\nDETECTOR rec[-1]\nCX 5 15 15 36 5 16 5 37 5 26\nM 26\nDETECTOR rec[-1]\nCX 4 38 4 39 4 37\nM 37\nDETECTOR rec[-1]\nCX 0 17 17 36\nM 36\nDETECTOR rec[-1]\nCX 17 32\nM 32\nDETECTOR rec[-1]\nCX 0 18 18 19 19 34\nM 34\nDETECTOR rec[-1]\nCX 18 20 18 21 21 39\nM 39\nDETECTOR rec[-1]\nCX 18 29\nM 29\nDETECTOR rec[-1]\nCX 0 22 22 27\nM 27\nDETECTOR rec[-1]\nCX 22 31\nM 31\nDETECTOR rec[-1]\nCX 0 23 23 35\nM 35\nDETECTOR rec[-1]\nCX 0 33\nM 33\nDETECTOR rec[-1]\nCX 0 38\nM 38\nDETECTOR rec[-1]\n"
+    },
+    "t7-n25": {
+      "n": 25,
+      "t": 7,
+      "fileName": "cat_state_t7_n25_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n25_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 25 3 5 3 6 6 26 3 7 7 27 3 28 3 29 1 8 8 30 1 31 1 9 1 32 1 28\nM 28\nDETECTOR rec[-1]\nCX 0 10 10 11 10 12 12 29\nM 29\nDETECTOR rec[-1]\nCX 12 33 12 34 10 13 13 14 14 35 14 30\nM 30\nDETECTOR rec[-1]\nCX 14 15 14 16 16 36 14 33\nM 33\nDETECTOR rec[-1]\nCX 13 17 17 37 17 32\nM 32\nDETECTOR rec[-1]\nCX 13 18 18 25\nM 25\nDETECTOR rec[-1]\nCX 13 34\nM 34\nDETECTOR rec[-1]\nCX 13 38 10 19 19 26\nM 26\nDETECTOR rec[-1]\nCX 19 36\nM 36\nDETECTOR rec[-1]\nCX 19 39 10 40 10 31\nM 31\nDETECTOR rec[-1]\nCX 0 20 0 21 21 22 21 39\nM 39\nDETECTOR rec[-1]\nCX 21 37\nM 37\nDETECTOR rec[-1]\nCX 0 23 23 24 23 27\nM 27\nDETECTOR rec[-1]\nCX 23 35\nM 35\nDETECTOR rec[-1]\nCX 0 38\nM 38\nDETECTOR rec[-1]\nCX 0 40\nM 40\nDETECTOR rec[-1]\n"
+    },
+    "t7-n27": {
+      "n": 27,
+      "t": 7,
+      "fileName": "cat_state_t7_n27_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n27_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 27 1 28 1 29 0 3 3 4 3 5 5 30 5 6 5 31 5 32 3 33 3 7 3 8 8 9 8 10 10 11 10 34 10 28\nM 28\nDETECTOR rec[-1]\nCX 8 35 8 12 12 36 8 13 8 37 8 30\nM 30\nDETECTOR rec[-1]\nCX 3 14 3 38 3 15 15 39 15 37\nM 37\nDETECTOR rec[-1]\nCX 3 16 3 27\nM 27\nDETECTOR rec[-1]\nCX 3 40 0 17 17 18 18 41 18 39\nM 39\nDETECTOR rec[-1]\nCX 17 19 19 42 19 35\nM 35\nDETECTOR rec[-1]\nCX 17 32\nM 32\nDETECTOR rec[-1]\nCX 17 43 17 38\nM 38\nDETECTOR rec[-1]\nCX 0 20 20 36\nM 36\nDETECTOR rec[-1]\nCX 20 21 20 22 22 43\nM 43\nDETECTOR rec[-1]\nCX 20 29\nM 29\nDETECTOR rec[-1]\nCX 20 23 23 44 20 41\nM 41\nDETECTOR rec[-1]\nCX 0 24 24 25 25 31\nM 31\nDETECTOR rec[-1]\nCX 24 34\nM 34\nDETECTOR rec[-1]\nCX 0 26 26 44\nM 44\nDETECTOR rec[-1]\nCX 26 33\nM 33\nDETECTOR rec[-1]\nCX 0 40\nM 40\nDETECTOR rec[-1]\nCX 0 42\nM 42\nDETECTOR rec[-1]\n"
+    },
+    "t7-n28": {
+      "n": 28,
+      "t": 7,
+      "fileName": "cat_state_t7_n28_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n28_p1.stim",
+      "stim": "H 0\nCX 0 1 1 28 1 2 1 29 1 30 0 3 3 4 3 5 5 6 5 7 7 8 8 31 7 9 7 32 7 33 5 34 5 35 3 10 3 11 11 36 11 12 11 37 11 38 3 13 13 14 13 15 15 39 15 16 15 40 15 28\nM 28\nDETECTOR rec[-1]\nCX 13 17 17 41 13 18 13 35\nM 35\nDETECTOR rec[-1]\nCX 13 42 3 19 3 43 3 44 0 20 20 21 21 33\nM 33\nDETECTOR rec[-1]\nCX 21 41\nM 41\nDETECTOR rec[-1]\nCX 21 38\nM 38\nDETECTOR rec[-1]\nCX 21 29\nM 29\nDETECTOR rec[-1]\nCX 20 44\nM 44\nDETECTOR rec[-1]\nCX 20 22 22 34\nM 34\nDETECTOR rec[-1]\nCX 20 45 20 37\nM 37\nDETECTOR rec[-1]\nCX 0 23 23 42\nM 42\nDETECTOR rec[-1]\nCX 23 24 24 36\nM 36\nDETECTOR rec[-1]\nCX 23 25 25 40\nM 40\nDETECTOR rec[-1]\nCX 23 32\nM 32\nDETECTOR rec[-1]\nCX 0 26 26 31\nM 31\nDETECTOR rec[-1]\nCX 26 30\nM 30\nDETECTOR rec[-1]\nCX 26 43\nM 43\nDETECTOR rec[-1]\nCX 0 27 27 45\nM 45\nDETECTOR rec[-1]\nCX 0 39\nM 39\nDETECTOR rec[-1]\n"
+    },
+    "t7-n29": {
+      "n": 29,
+      "t": 7,
+      "fileName": "cat_state_t7_n29_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n29_p1.stim",
+      "stim": "H 0\nCX 0 29 0 1 1 2 2 30 1 3 3 31 3 32 1 4 4 5 5 33 5 34 4 6 6 35 6 36 4 37 4 38 4 39 1 7 7 8 8 40 7 41 1 9 9 42 9 43 1 10 10 44 10 37\nM 37\nDETECTOR rec[-1]\nCX 1 45 1 46 0 11 0 12 12 13 12 14 14 44\nM 44\nDETECTOR rec[-1]\nCX 12 15 12 16 16 17 16 18 18 31\nM 31\nDETECTOR rec[-1]\nCX 16 19 16 20 20 34\nM 34\nDETECTOR rec[-1]\nCX 20 21 20 43\nM 43\nDETECTOR rec[-1]\nCX 20 29\nM 29\nDETECTOR rec[-1]\nCX 16 40\nM 40\nDETECTOR rec[-1]\nCX 16 38\nM 38\nDETECTOR rec[-1]\nCX 12 22 22 23 22 47 22 42\nM 42\nDETECTOR rec[-1]\nCX 12 24 24 35\nM 35\nDETECTOR rec[-1]\nCX 12 25 12 30\nM 30\nDETECTOR rec[-1]\nCX 12 45\nM 45\nDETECTOR rec[-1]\nCX 0 41\nM 41\nDETECTOR rec[-1]\nCX 0 36\nM 36\nDETECTOR rec[-1]\nCX 0 26 0 32\nM 32\nDETECTOR rec[-1]\nCX 0 27 0 28 28 46\nM 46\nDETECTOR rec[-1]\nCX 28 33\nM 33\nDETECTOR rec[-1]\nCX 0 39\nM 39\nDETECTOR rec[-1]\nCX 0 47\nM 47\nDETECTOR rec[-1]\n"
+    },
+    "t7-n30": {
+      "n": 30,
+      "t": 7,
+      "fileName": "cat_state_t7_n30_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n30_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 30 2 31 1 3 3 4 4 5 5 32 4 6 4 33 4 34 3 35 3 7 3 36 3 37 1 8 8 38 1 9 9 39 1 10 10 40 1 41 1 33\nM 33\nDETECTOR rec[-1]\nCX 0 11 11 12 12 37\nM 37\nDETECTOR rec[-1]\nCX 12 42 11 13 11 40\nM 40\nDETECTOR rec[-1]\nCX 11 14 11 15 15 16 16 17 16 18 18 19 19 20 19 43 19 35\nM 35\nDETECTOR rec[-1]\nCX 18 21 18 31\nM 31\nDETECTOR rec[-1]\nCX 18 41\nM 41\nDETECTOR rec[-1]\nCX 16 38\nM 38\nDETECTOR rec[-1]\nCX 16 22 16 42\nM 42\nDETECTOR rec[-1]\nCX 16 44 15 23 15 45 15 46 11 24 24 25 24 47 24 30\nM 30\nDETECTOR rec[-1]\nCX 11 26 11 32\nM 32\nDETECTOR rec[-1]\nCX 11 48 0 27 27 28 28 43\nM 43\nDETECTOR rec[-1]\nCX 27 29 29 44\nM 44\nDETECTOR rec[-1]\nCX 29 47\nM 47\nDETECTOR rec[-1]\nCX 27 34\nM 34\nDETECTOR rec[-1]\nCX 27 45\nM 45\nDETECTOR rec[-1]\nCX 0 48\nM 48\nDETECTOR rec[-1]\nCX 0 39\nM 39\nDETECTOR rec[-1]\nCX 0 46\nM 46\nDETECTOR rec[-1]\nCX 0 36\nM 36\nDETECTOR rec[-1]\n"
+    },
+    "t7-n31": {
+      "n": 31,
+      "t": 7,
+      "fileName": "cat_state_t7_n31_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n31_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 3 3 31 2 32 1 4 4 5 5 33 5 34 4 35 4 36 1 6 6 37 6 38 1 39 1 40 0 7 7 8 8 9 8 10 10 11 10 12 12 38\nM 38\nDETECTOR rec[-1]\nCX 12 13 13 14 13 41 13 42 12 15 12 43 12 35\nM 35\nDETECTOR rec[-1]\nCX 10 16 10 44 10 33\nM 33\nDETECTOR rec[-1]\nCX 8 17 8 18 18 19 19 32\nM 32\nDETECTOR rec[-1]\nCX 19 20 19 45 19 46 18 21 18 47 18 39\nM 39\nDETECTOR rec[-1]\nCX 8 22 8 36\nM 36\nDETECTOR rec[-1]\nCX 8 48 7 23 23 46\nM 46\nDETECTOR rec[-1]\nCX 23 43\nM 43\nDETECTOR rec[-1]\nCX 7 24 7 40\nM 40\nDETECTOR rec[-1]\nCX 7 49 0 25 25 26 26 47\nM 47\nDETECTOR rec[-1]\nCX 25 42\nM 42\nDETECTOR rec[-1]\nCX 25 27 25 34\nM 34\nDETECTOR rec[-1]\nCX 25 50 0 28 28 48\nM 48\nDETECTOR rec[-1]\nCX 28 29 29 37\nM 37\nDETECTOR rec[-1]\nCX 28 50\nM 50\nDETECTOR rec[-1]\nCX 28 45\nM 45\nDETECTOR rec[-1]\nCX 0 30 30 44\nM 44\nDETECTOR rec[-1]\nCX 0 49\nM 49\nDETECTOR rec[-1]\nCX 0 31\nM 31\nDETECTOR rec[-1]\nCX 0 41\nM 41\nDETECTOR rec[-1]\n"
+    },
+    "t7-n32": {
+      "n": 32,
+      "t": 7,
+      "fileName": "cat_state_t7_n32_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n32_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 3 5 5 6 6 7 7 32 6 33 6 8 8 34 6 35 5 36 5 9 9 37 9 38 5 39 5 40 3 10 10 41 10 42 3 11 11 43 3 44 3 37\nM 37\nDETECTOR rec[-1]\nCX 1 12 12 13 13 45 12 14 12 35\nM 35\nDETECTOR rec[-1]\nCX 12 46 1 15 1 38\nM 38\nDETECTOR rec[-1]\nCX 1 47 1 42\nM 42\nDETECTOR rec[-1]\nCX 1 48 0 16 16 17 16 18 18 19 18 20 20 40\nM 40\nDETECTOR rec[-1]\nCX 20 41\nM 41\nDETECTOR rec[-1]\nCX 18 49 18 21 18 45\nM 45\nDETECTOR rec[-1]\nCX 18 50 16 22 22 23 23 51 22 24 22 52 22 36\nM 36\nDETECTOR rec[-1]\nCX 16 25 16 34\nM 34\nDETECTOR rec[-1]\nCX 16 44\nM 44\nDETECTOR rec[-1]\nCX 0 26 26 27 27 28 27 43\nM 43\nDETECTOR rec[-1]\nCX 27 29 27 30 30 46\nM 46\nDETECTOR rec[-1]\nCX 30 39\nM 39\nDETECTOR rec[-1]\nCX 27 31 31 51\nM 51\nDETECTOR rec[-1]\nCX 31 47\nM 47\nDETECTOR rec[-1]\nCX 27 32\nM 32\nDETECTOR rec[-1]\nCX 27 49\nM 49\nDETECTOR rec[-1]\nCX 26 50\nM 50\nDETECTOR rec[-1]\nCX 26 52\nM 52\nDETECTOR rec[-1]\nCX 0 48\nM 48\nDETECTOR rec[-1]\nCX 0 33\nM 33\nDETECTOR rec[-1]\n"
+    },
+    "t7-n33": {
+      "n": 33,
+      "t": 7,
+      "fileName": "cat_state_t7_n33_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n33_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 3 3 33 2 34 2 35 1 4 4 36 4 37 1 5 5 38 5 39 1 6 6 7 6 40 6 41 1 8 8 42 1 43 1 44 0 9 9 10 10 11 10 12 12 13 12 14 14 15 15 45 15 16 15 46 15 36\nM 36\nDETECTOR rec[-1]\nCX 14 17 14 44\nM 44\nDETECTOR rec[-1]\nCX 14 47 12 18 12 19 19 48 12 34\nM 34\nDETECTOR rec[-1]\nCX 10 20 10 21 21 22 21 37\nM 37\nDETECTOR rec[-1]\nCX 21 49 10 23 23 24 23 33\nM 33\nDETECTOR rec[-1]\nCX 23 43\nM 43\nDETECTOR rec[-1]\nCX 10 39\nM 39\nDETECTOR rec[-1]\nCX 10 25 10 50 10 45\nM 45\nDETECTOR rec[-1]\nCX 9 26 26 40\nM 40\nDETECTOR rec[-1]\nCX 9 27 27 46\nM 46\nDETECTOR rec[-1]\nCX 9 28 9 35\nM 35\nDETECTOR rec[-1]\nCX 9 51 0 29 29 42\nM 42\nDETECTOR rec[-1]\nCX 29 49\nM 49\nDETECTOR rec[-1]\nCX 29 30 29 52 29 53 0 31 31 32 32 50\nM 50\nDETECTOR rec[-1]\nCX 31 41\nM 41\nDETECTOR rec[-1]\nCX 31 48\nM 48\nDETECTOR rec[-1]\nCX 31 52\nM 52\nDETECTOR rec[-1]\nCX 0 51\nM 51\nDETECTOR rec[-1]\nCX 0 47\nM 47\nDETECTOR rec[-1]\nCX 0 53\nM 53\nDETECTOR rec[-1]\nCX 0 38\nM 38\nDETECTOR rec[-1]\n"
+    },
+    "t7-n34": {
+      "n": 34,
+      "t": 7,
+      "fileName": "cat_state_t7_n34_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n34_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 3 2 4 4 5 4 34 4 6 6 7 6 35 6 36 4 8 8 9 8 37 8 38 4 10 4 39 4 40 2 11 2 12 12 13 12 14 14 41 12 42 2 43 2 38\nM 38\nDETECTOR rec[-1]\nCX 2 44 1 15 15 45 1 40\nM 40\nDETECTOR rec[-1]\nCX 1 46 0 16 16 17 17 47 16 48 16 41\nM 41\nDETECTOR rec[-1]\nCX 16 39\nM 39\nDETECTOR rec[-1]\nCX 0 18 18 19 19 20 19 49 19 21 19 22 22 23 23 50 22 24 24 25 24 47\nM 47\nDETECTOR rec[-1]\nCX 24 51 22 26 22 46\nM 46\nDETECTOR rec[-1]\nCX 22 52 19 53 19 27 19 54 19 48\nM 48\nDETECTOR rec[-1]\nCX 18 36\nM 36\nDETECTOR rec[-1]\nCX 18 55 0 28 28 44\nM 44\nDETECTOR rec[-1]\nCX 28 52\nM 52\nDETECTOR rec[-1]\nCX 28 29 29 35\nM 35\nDETECTOR rec[-1]\nCX 28 54\nM 54\nDETECTOR rec[-1]\nCX 0 30 30 50\nM 50\nDETECTOR rec[-1]\nCX 30 34\nM 34\nDETECTOR rec[-1]\nCX 0 31 31 32 32 42\nM 42\nDETECTOR rec[-1]\nCX 32 49\nM 49\nDETECTOR rec[-1]\nCX 31 51\nM 51\nDETECTOR rec[-1]\nCX 31 37\nM 37\nDETECTOR rec[-1]\nCX 0 33 33 45\nM 45\nDETECTOR rec[-1]\nCX 33 53\nM 53\nDETECTOR rec[-1]\nCX 0 55\nM 55\nDETECTOR rec[-1]\nCX 0 43\nM 43\nDETECTOR rec[-1]\n"
+    },
+    "t7-n35": {
+      "n": 35,
+      "t": 7,
+      "fileName": "cat_state_t7_n35_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n35_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 35 1 36 1 37 0 3 3 4 3 5 5 6 5 7 7 8 7 38 7 9 7 10 10 11 10 37\nM 37\nDETECTOR rec[-1]\nCX 10 39 7 40 7 12 12 13 12 41 12 42 7 14 7 43 7 44 5 15 15 45 5 46 5 16 5 47 5 36\nM 36\nDETECTOR rec[-1]\nCX 3 17 3 48 3 18 18 42\nM 42\nDETECTOR rec[-1]\nCX 18 47\nM 47\nDETECTOR rec[-1]\nCX 3 19 3 49 3 20 3 21 21 44\nM 44\nDETECTOR rec[-1]\nCX 21 50 3 51 3 22 3 23 23 52 3 53 0 24 24 25 25 26 26 52\nM 52\nDETECTOR rec[-1]\nCX 26 38\nM 38\nDETECTOR rec[-1]\nCX 25 27 27 43\nM 43\nDETECTOR rec[-1]\nCX 25 54 24 28 24 55 24 56 0 29 29 50\nM 50\nDETECTOR rec[-1]\nCX 29 46\nM 46\nDETECTOR rec[-1]\nCX 0 30 30 53\nM 53\nDETECTOR rec[-1]\nCX 30 41\nM 41\nDETECTOR rec[-1]\nCX 0 31 31 39\nM 39\nDETECTOR rec[-1]\nCX 31 32 32 49\nM 49\nDETECTOR rec[-1]\nCX 31 45\nM 45\nDETECTOR rec[-1]\nCX 31 55\nM 55\nDETECTOR rec[-1]\nCX 0 33 33 54\nM 54\nDETECTOR rec[-1]\nCX 33 48\nM 48\nDETECTOR rec[-1]\nCX 0 34 34 56\nM 56\nDETECTOR rec[-1]\nCX 34 40\nM 40\nDETECTOR rec[-1]\nCX 0 35\nM 35\nDETECTOR rec[-1]\nCX 0 51\nM 51\nDETECTOR rec[-1]\n"
+    },
+    "t7-n36": {
+      "n": 36,
+      "t": 7,
+      "fileName": "cat_state_t7_n36_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n36_p1.stim",
+      "stim": "H 0\nCX 0 36 0 1 1 2 2 3 3 37 2 4 2 38 2 5 2 6 6 7 7 8 7 9 9 10 9 39 9 36\nM 36\nDETECTOR rec[-1]\nCX 7 11 11 12 11 40 11 41 7 42 7 43 6 44 6 45 2 13 2 14 14 46 2 15 2 16 16 17 17 47 16 48 16 40\nM 40\nDETECTOR rec[-1]\nCX 2 18 2 49 2 50 1 19 1 20 20 50\nM 50\nDETECTOR rec[-1]\nCX 20 51 1 21 21 22 21 23 23 48\nM 48\nDETECTOR rec[-1]\nCX 21 24 21 25 25 52 25 39\nM 39\nDETECTOR rec[-1]\nCX 21 53 21 38\nM 38\nDETECTOR rec[-1]\nCX 1 26 1 54 1 55 0 27 0 47\nM 47\nDETECTOR rec[-1]\nCX 0 28 28 29 29 30 30 42\nM 42\nDETECTOR rec[-1]\nCX 29 53\nM 53\nDETECTOR rec[-1]\nCX 28 31 31 56 31 57 28 45\nM 45\nDETECTOR rec[-1]\nCX 28 55\nM 55\nDETECTOR rec[-1]\nCX 28 58 28 43\nM 43\nDETECTOR rec[-1]\nCX 28 49\nM 49\nDETECTOR rec[-1]\nCX 0 32 32 33 33 54\nM 54\nDETECTOR rec[-1]\nCX 32 46\nM 46\nDETECTOR rec[-1]\nCX 32 57\nM 57\nDETECTOR rec[-1]\nCX 32 52\nM 52\nDETECTOR rec[-1]\nCX 0 34 34 51\nM 51\nDETECTOR rec[-1]\nCX 34 44\nM 44\nDETECTOR rec[-1]\nCX 0 35 35 37\nM 37\nDETECTOR rec[-1]\nCX 35 58\nM 58\nDETECTOR rec[-1]\nCX 0 41\nM 41\nDETECTOR rec[-1]\nCX 0 56\nM 56\nDETECTOR rec[-1]\n"
+    },
+    "t7-n37": {
+      "n": 37,
+      "t": 7,
+      "fileName": "cat_state_t7_n37_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n37_p1.stim",
+      "stim": "H 0\nCX 0 1 1 37 0 2 2 3 2 4 4 38 2 5 5 6 6 7 7 39 6 40 6 41 5 8 8 9 9 42 9 43 8 44 8 45 8 46 5 10 10 47 10 48 5 49 5 50 5 51 2 11 11 52 11 53 2 12 12 54 12 55 12 37\nM 37\nDETECTOR rec[-1]\nCX 12 47\nM 47\nDETECTOR rec[-1]\nCX 2 13 13 56 13 44\nM 44\nDETECTOR rec[-1]\nCX 2 49\nM 49\nDETECTOR rec[-1]\nCX 2 57 2 58 0 14 0 15 15 51\nM 51\nDETECTOR rec[-1]\nCX 15 16 15 17 17 42\nM 42\nDETECTOR rec[-1]\nCX 15 18 15 19 19 20 19 59 19 57\nM 57\nDETECTOR rec[-1]\nCX 15 48\nM 48\nDETECTOR rec[-1]\nCX 15 53\nM 53\nDETECTOR rec[-1]\nCX 15 21 15 41\nM 41\nDETECTOR rec[-1]\nCX 15 45\nM 45\nDETECTOR rec[-1]\nCX 0 22 22 23 22 24 24 25 24 26 26 52\nM 52\nDETECTOR rec[-1]\nCX 24 27 27 28 28 56\nM 56\nDETECTOR rec[-1]\nCX 27 29 27 38\nM 38\nDETECTOR rec[-1]\nCX 27 60 24 30 24 39\nM 39\nDETECTOR rec[-1]\nCX 24 55\nM 55\nDETECTOR rec[-1]\nCX 22 31 22 32 32 33 33 34 33 46\nM 46\nDETECTOR rec[-1]\nCX 33 50\nM 50\nDETECTOR rec[-1]\nCX 32 60\nM 60\nDETECTOR rec[-1]\nCX 32 59\nM 59\nDETECTOR rec[-1]\nCX 22 35 22 43\nM 43\nDETECTOR rec[-1]\nCX 22 54\nM 54\nDETECTOR rec[-1]\nCX 0 36 0 58\nM 58\nDETECTOR rec[-1]\nCX 0 40\nM 40\nDETECTOR rec[-1]\n"
+    },
+    "t7-n38": {
+      "n": 38,
+      "t": 7,
+      "fileName": "cat_state_t7_n38_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n38_p1.stim",
+      "stim": "H 0\nCX 0 1 1 38 1 39 1 40 0 2 2 3 2 4 4 5 4 6 6 7 6 41 6 42 4 43 4 44 4 8 4 45 4 46 2 9 2 10 10 11 11 47 10 46\nM 46\nDETECTOR rec[-1]\nCX 10 48 2 12 2 13 13 14 13 15 15 16 16 49 15 50 15 17 15 51 15 38\nM 38\nDETECTOR rec[-1]\nCX 13 52 13 18 13 40\nM 40\nDETECTOR rec[-1]\nCX 13 53 2 19 2 20 20 21 21 42\nM 42\nDETECTOR rec[-1]\nCX 21 22 21 54 21 50\nM 50\nDETECTOR rec[-1]\nCX 20 23 20 55 20 39\nM 39\nDETECTOR rec[-1]\nCX 2 24 2 56 2 25 2 26 26 27 27 57 26 53\nM 53\nDETECTOR rec[-1]\nCX 26 58 2 28 2 48\nM 48\nDETECTOR rec[-1]\nCX 2 59 0 29 29 30 30 60 30 57\nM 57\nDETECTOR rec[-1]\nCX 30 41\nM 41\nDETECTOR rec[-1]\nCX 29 31 31 52\nM 52\nDETECTOR rec[-1]\nCX 29 61 29 32 32 51\nM 51\nDETECTOR rec[-1]\nCX 29 45\nM 45\nDETECTOR rec[-1]\nCX 0 33 33 59\nM 59\nDETECTOR rec[-1]\nCX 33 54\nM 54\nDETECTOR rec[-1]\nCX 0 34 34 58\nM 58\nDETECTOR rec[-1]\nCX 34 44\nM 44\nDETECTOR rec[-1]\nCX 0 35 35 61\nM 61\nDETECTOR rec[-1]\nCX 35 56\nM 56\nDETECTOR rec[-1]\nCX 0 36 36 37 37 55\nM 55\nDETECTOR rec[-1]\nCX 36 49\nM 49\nDETECTOR rec[-1]\nCX 36 43\nM 43\nDETECTOR rec[-1]\nCX 0 47\nM 47\nDETECTOR rec[-1]\nCX 0 60\nM 60\nDETECTOR rec[-1]\n"
+    },
+    "t7-n39": {
+      "n": 39,
+      "t": 7,
+      "fileName": "cat_state_t7_n39_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n39_p1.stim",
+      "stim": "H 0\nCX 0 39 0 1 1 2 1 3 3 40 3 4 4 5 4 41 4 42 3 6 3 43 3 44 1 7 1 8 8 9 9 10 9 45 9 46 8 11 8 47 8 12 8 13 13 48 8 49 8 42\nM 42\nDETECTOR rec[-1]\nCX 8 50 1 14 14 15 14 16 16 51 14 52 1 17 1 53 1 54 0 18 0 19 19 20 20 21 21 45\nM 45\nDETECTOR rec[-1]\nCX 20 22 20 55 20 56 19 23 19 57 19 58 0 24 24 25 25 48\nM 48\nDETECTOR rec[-1]\nCX 25 44\nM 44\nDETECTOR rec[-1]\nCX 25 54\nM 54\nDETECTOR rec[-1]\nCX 25 57\nM 57\nDETECTOR rec[-1]\nCX 24 26 26 27 27 28 27 59 27 60 26 50\nM 50\nDETECTOR rec[-1]\nCX 26 53\nM 53\nDETECTOR rec[-1]\nCX 24 29 29 40\nM 40\nDETECTOR rec[-1]\nCX 24 30 30 52\nM 52\nDETECTOR rec[-1]\nCX 30 61 24 58\nM 58\nDETECTOR rec[-1]\nCX 24 62 0 31 31 32 32 33 33 59\nM 59\nDETECTOR rec[-1]\nCX 32 34 32 61\nM 61\nDETECTOR rec[-1]\nCX 32 63 31 56\nM 56\nDETECTOR rec[-1]\nCX 31 41\nM 41\nDETECTOR rec[-1]\nCX 0 35 35 62\nM 62\nDETECTOR rec[-1]\nCX 35 49\nM 49\nDETECTOR rec[-1]\nCX 0 36 36 37 37 51\nM 51\nDETECTOR rec[-1]\nCX 37 55\nM 55\nDETECTOR rec[-1]\nCX 36 60\nM 60\nDETECTOR rec[-1]\nCX 36 47\nM 47\nDETECTOR rec[-1]\nCX 0 38 38 63\nM 63\nDETECTOR rec[-1]\nCX 38 39\nM 39\nDETECTOR rec[-1]\nCX 0 46\nM 46\nDETECTOR rec[-1]\nCX 0 43\nM 43\nDETECTOR rec[-1]\n"
+    },
+    "t7-n40": {
+      "n": 40,
+      "t": 7,
+      "fileName": "cat_state_t7_n40_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n40_p1.stim",
+      "stim": "H 0\nCX 0 40 0 1 1 2 1 3 3 4 3 5 5 6 5 7 7 8 7 41 7 42 5 9 9 43 5 10 10 44 5 11 5 45 5 46 3 12 3 13 13 14 13 47 13 15 13 48 13 16 16 49 13 42\nM 42\nDETECTOR rec[-1]\nCX 13 50 3 51 3 52 3 17 3 53 3 54 1 18 18 19 18 20 20 21 20 22 22 55 20 48\nM 48\nDETECTOR rec[-1]\nCX 18 23 23 56 23 57 18 24 18 58 18 51\nM 51\nDETECTOR rec[-1]\nCX 1 54\nM 54\nDETECTOR rec[-1]\nCX 1 25 1 59 1 26 1 27 27 60 27 61 27 58\nM 58\nDETECTOR rec[-1]\nCX 1 28 1 62 1 63 0 29 29 30 30 50\nM 50\nDETECTOR rec[-1]\nCX 30 61\nM 61\nDETECTOR rec[-1]\nCX 29 31 31 43\nM 43\nDETECTOR rec[-1]\nCX 31 56\nM 56\nDETECTOR rec[-1]\nCX 29 64 29 52\nM 52\nDETECTOR rec[-1]\nCX 0 32 32 33 33 49\nM 49\nDETECTOR rec[-1]\nCX 33 62\nM 62\nDETECTOR rec[-1]\nCX 32 44\nM 44\nDETECTOR rec[-1]\nCX 32 53\nM 53\nDETECTOR rec[-1]\nCX 0 34 34 35 35 60\nM 60\nDETECTOR rec[-1]\nCX 34 55\nM 55\nDETECTOR rec[-1]\nCX 34 64\nM 64\nDETECTOR rec[-1]\nCX 0 36 36 37 37 41\nM 41\nDETECTOR rec[-1]\nCX 36 38 38 59\nM 59\nDETECTOR rec[-1]\nCX 36 46\nM 46\nDETECTOR rec[-1]\nCX 36 47\nM 47\nDETECTOR rec[-1]\nCX 0 57\nM 57\nDETECTOR rec[-1]\nCX 0 63\nM 63\nDETECTOR rec[-1]\nCX 0 39 39 45\nM 45\nDETECTOR rec[-1]\nCX 0 40\nM 40\nDETECTOR rec[-1]\n"
+    },
+    "t7-n41": {
+      "n": 41,
+      "t": 7,
+      "fileName": "cat_state_t7_n41_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n41_p1.stim",
+      "stim": "H 0\nCX 0 41 0 1 1 42 1 2 2 3 3 4 4 43 3 44 3 45 2 5 5 6 6 46 6 7 7 47 6 48 5 49 5 50 2 51 2 52 2 53 1 8 8 9 9 54 8 55 8 52\nM 52\nDETECTOR rec[-1]\nCX 1 10 10 56 10 11 11 57 10 53\nM 53\nDETECTOR rec[-1]\nCX 10 58 10 59 1 12 12 60 12 61 1 51\nM 51\nDETECTOR rec[-1]\nCX 1 62 0 13 13 14 13 50\nM 50\nDETECTOR rec[-1]\nCX 13 56\nM 56\nDETECTOR rec[-1]\nCX 0 15 0 16 16 17 16 18 18 19 19 20 19 63 19 46\nM 46\nDETECTOR rec[-1]\nCX 18 61\nM 61\nDETECTOR rec[-1]\nCX 18 21 18 45\nM 45\nDETECTOR rec[-1]\nCX 18 58\nM 58\nDETECTOR rec[-1]\nCX 16 22 16 54\nM 54\nDETECTOR rec[-1]\nCX 16 23 16 24 24 25 24 64 24 44\nM 44\nDETECTOR rec[-1]\nCX 16 26 26 27 27 60\nM 60\nDETECTOR rec[-1]\nCX 26 65 16 28 16 47\nM 47\nDETECTOR rec[-1]\nCX 16 41\nM 41\nDETECTOR rec[-1]\nCX 0 29 0 30 30 31 31 32 31 48\nM 48\nDETECTOR rec[-1]\nCX 31 55\nM 55\nDETECTOR rec[-1]\nCX 30 33 30 43\nM 43\nDETECTOR rec[-1]\nCX 30 34 30 35 35 36 36 37 36 65\nM 65\nDETECTOR rec[-1]\nCX 36 49\nM 49\nDETECTOR rec[-1]\nCX 35 38 35 59\nM 59\nDETECTOR rec[-1]\nCX 35 42\nM 42\nDETECTOR rec[-1]\nCX 30 39 39 63\nM 63\nDETECTOR rec[-1]\nCX 30 40 30 57\nM 57\nDETECTOR rec[-1]\nCX 30 66 0 62\nM 62\nDETECTOR rec[-1]\nCX 0 66\nM 66\nDETECTOR rec[-1]\nCX 0 64\nM 64\nDETECTOR rec[-1]\n"
+    },
+    "t7-n42": {
+      "n": 42,
+      "t": 7,
+      "fileName": "cat_state_t7_n42_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n42_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 3 3 4 3 5 5 6 5 7 7 8 7 9 9 42 7 43 5 10 10 11 10 12 12 13 13 44 12 14 12 45 12 46 10 47 10 15 10 48 10 49 5 50 5 16 5 51 5 52 3 17 3 18 18 19 18 53 18 20 18 21 21 22 21 54 21 47\nM 47\nDETECTOR rec[-1]\nCX 18 23 23 43\nM 43\nDETECTOR rec[-1]\nCX 23 55 18 24 18 56 18 57 3 25 25 52\nM 52\nDETECTOR rec[-1]\nCX 25 26 25 58 25 59 3 27 3 60 3 61 2 57\nM 57\nDETECTOR rec[-1]\nCX 2 44\nM 44\nDETECTOR rec[-1]\nCX 2 62 1 28 28 61\nM 61\nDETECTOR rec[-1]\nCX 28 29 28 63 28 64 1 30 30 59\nM 59\nDETECTOR rec[-1]\nCX 30 31 30 62\nM 62\nDETECTOR rec[-1]\nCX 30 65 1 66 1 49\nM 49\nDETECTOR rec[-1]\nCX 1 67 1 51\nM 51\nDETECTOR rec[-1]\nCX 0 32 32 68 32 50\nM 50\nDETECTOR rec[-1]\nCX 0 33 33 46\nM 46\nDETECTOR rec[-1]\nCX 33 53\nM 53\nDETECTOR rec[-1]\nCX 0 34 34 35 35 36 36 48\nM 48\nDETECTOR rec[-1]\nCX 35 63\nM 63\nDETECTOR rec[-1]\nCX 34 55\nM 55\nDETECTOR rec[-1]\nCX 34 58\nM 58\nDETECTOR rec[-1]\nCX 0 37 37 67\nM 67\nDETECTOR rec[-1]\nCX 37 56\nM 56\nDETECTOR rec[-1]\nCX 0 38 38 39 39 42\nM 42\nDETECTOR rec[-1]\nCX 39 66\nM 66\nDETECTOR rec[-1]\nCX 38 64\nM 64\nDETECTOR rec[-1]\nCX 38 45\nM 45\nDETECTOR rec[-1]\nCX 0 40 40 54\nM 54\nDETECTOR rec[-1]\nCX 0 41 41 60\nM 60\nDETECTOR rec[-1]\nCX 0 65\nM 65\nDETECTOR rec[-1]\nCX 0 68\nM 68\nDETECTOR rec[-1]\n"
+    },
+    "t7-n43": {
+      "n": 43,
+      "t": 7,
+      "fileName": "cat_state_t7_n43_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n43_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 3 3 4 4 43 3 44 3 45 2 5 2 6 6 7 6 8 8 46 6 9 9 10 10 47 9 11 11 48 9 49 6 12 6 13 13 50 6 14 6 15 15 51 6 16 16 17 16 52 16 44\nM 44\nDETECTOR rec[-1]\nCX 6 53 6 54 2 18 2 19 19 20 20 55 20 52\nM 52\nDETECTOR rec[-1]\nCX 19 21 19 49\nM 49\nDETECTOR rec[-1]\nCX 19 56 2 22 2 57 2 23 2 58 2 24 24 25 24 47\nM 47\nDETECTOR rec[-1]\nCX 24 59 2 43\nM 43\nDETECTOR rec[-1]\nCX 2 60 1 61 1 50\nM 50\nDETECTOR rec[-1]\nCX 1 62 1 57\nM 57\nDETECTOR rec[-1]\nCX 0 26 26 27 27 55\nM 55\nDETECTOR rec[-1]\nCX 26 63 0 28 28 64 28 29 28 30 30 62\nM 62\nDETECTOR rec[-1]\nCX 28 31 28 32 32 33 32 65 32 34 32 63\nM 63\nDETECTOR rec[-1]\nCX 32 35 35 66 35 36 35 60\nM 60\nDETECTOR rec[-1]\nCX 35 64\nM 64\nDETECTOR rec[-1]\nCX 32 37 32 48\nM 48\nDETECTOR rec[-1]\nCX 32 53\nM 53\nDETECTOR rec[-1]\nCX 28 67 28 56\nM 56\nDETECTOR rec[-1]\nCX 28 38 28 51\nM 51\nDETECTOR rec[-1]\nCX 28 68 0 39 39 68\nM 68\nDETECTOR rec[-1]\nCX 39 59\nM 59\nDETECTOR rec[-1]\nCX 39 69 39 65\nM 65\nDETECTOR rec[-1]\nCX 0 40 40 54\nM 54\nDETECTOR rec[-1]\nCX 40 58\nM 58\nDETECTOR rec[-1]\nCX 0 41 41 45\nM 45\nDETECTOR rec[-1]\nCX 41 67\nM 67\nDETECTOR rec[-1]\nCX 0 42 42 46\nM 46\nDETECTOR rec[-1]\nCX 42 66\nM 66\nDETECTOR rec[-1]\nCX 0 61\nM 61\nDETECTOR rec[-1]\nCX 0 69\nM 69\nDETECTOR rec[-1]\n"
+    },
+    "t7-n44": {
+      "n": 44,
+      "t": 7,
+      "fileName": "cat_state_t7_n44_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n44_p1.stim",
+      "stim": "H 0\nCX 0 1 1 44 1 45 0 2 2 3 2 4 4 5 4 6 6 7 6 46 6 8 6 9 9 10 9 47 9 48 6 11 11 49 11 50 6 12 6 45\nM 45\nDETECTOR rec[-1]\nCX 6 51 4 52 4 53 4 54 2 13 2 14 14 15 14 16 16 17 16 18 18 51\nM 51\nDETECTOR rec[-1]\nCX 18 19 18 55 18 56 16 20 20 57 16 21 16 58 16 59 14 22 14 23 23 24 24 60 23 61 23 25 23 62 23 63 14 26 14 50\nM 50\nDETECTOR rec[-1]\nCX 14 64 2 27 27 65 27 28 27 66 27 67 2 29 2 68 2 69 0 30 30 31 31 70 31 32 32 62\nM 62\nDETECTOR rec[-1]\nCX 31 33 33 66\nM 66\nDETECTOR rec[-1]\nCX 31 46\nM 46\nDETECTOR rec[-1]\nCX 30 34 34 35 35 49\nM 49\nDETECTOR rec[-1]\nCX 34 65\nM 65\nDETECTOR rec[-1]\nCX 30 36 36 59\nM 59\nDETECTOR rec[-1]\nCX 36 47\nM 47\nDETECTOR rec[-1]\nCX 30 71 30 52\nM 52\nDETECTOR rec[-1]\nCX 0 37 37 64\nM 64\nDETECTOR rec[-1]\nCX 37 38 38 71\nM 71\nDETECTOR rec[-1]\nCX 37 67\nM 67\nDETECTOR rec[-1]\nCX 37 55\nM 55\nDETECTOR rec[-1]\nCX 0 39 39 40 40 61\nM 61\nDETECTOR rec[-1]\nCX 39 69\nM 69\nDETECTOR rec[-1]\nCX 39 58\nM 58\nDETECTOR rec[-1]\nCX 0 41 41 56\nM 56\nDETECTOR rec[-1]\nCX 41 48\nM 48\nDETECTOR rec[-1]\nCX 41 63\nM 63\nDETECTOR rec[-1]\nCX 41 53\nM 53\nDETECTOR rec[-1]\nCX 0 42 42 57\nM 57\nDETECTOR rec[-1]\nCX 42 70\nM 70\nDETECTOR rec[-1]\nCX 0 43 43 60\nM 60\nDETECTOR rec[-1]\nCX 43 44\nM 44\nDETECTOR rec[-1]\nCX 0 54\nM 54\nDETECTOR rec[-1]\nCX 0 68\nM 68\nDETECTOR rec[-1]\n"
+    },
+    "t7-n45": {
+      "n": 45,
+      "t": 7,
+      "fileName": "cat_state_t7_n45_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n45_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 3 3 4 3 45 3 46 2 47 2 48 2 49 1 5 5 50 5 51 5 52 1 6 6 53 6 54 1 7 7 8 7 55 7 56 1 57 1 58 0 9 9 10 10 59 10 55\nM 55\nDETECTOR rec[-1]\nCX 9 11 9 12 12 60 9 13 9 14 14 15 15 16 16 50\nM 50\nDETECTOR rec[-1]\nCX 15 17 15 61 15 48\nM 48\nDETECTOR rec[-1]\nCX 14 18 14 19 19 62 19 63 14 20 20 21 20 64 20 65 14 22 14 66 14 59\nM 59\nDETECTOR rec[-1]\nCX 9 23 9 24 24 25 24 26 26 54\nM 54\nDETECTOR rec[-1]\nCX 26 64\nM 64\nDETECTOR rec[-1]\nCX 24 27 27 28 27 29 29 67 27 62\nM 62\nDETECTOR rec[-1]\nCX 24 30 24 68 24 57\nM 57\nDETECTOR rec[-1]\nCX 9 31 9 32 32 33 33 69 32 34 32 52\nM 52\nDETECTOR rec[-1]\nCX 32 70 9 35 35 36 35 63\nM 63\nDETECTOR rec[-1]\nCX 35 71 9 37 9 58\nM 58\nDETECTOR rec[-1]\nCX 9 47\nM 47\nDETECTOR rec[-1]\nCX 0 38 38 39 39 40 39 49\nM 49\nDETECTOR rec[-1]\nCX 39 72 38 69\nM 69\nDETECTOR rec[-1]\nCX 38 65\nM 65\nDETECTOR rec[-1]\nCX 38 45\nM 45\nDETECTOR rec[-1]\nCX 0 41 41 42 42 68\nM 68\nDETECTOR rec[-1]\nCX 41 70\nM 70\nDETECTOR rec[-1]\nCX 41 66\nM 66\nDETECTOR rec[-1]\nCX 0 43 43 44 44 46\nM 46\nDETECTOR rec[-1]\nCX 44 67\nM 67\nDETECTOR rec[-1]\nCX 44 51\nM 51\nDETECTOR rec[-1]\nCX 43 56\nM 56\nDETECTOR rec[-1]\nCX 43 61\nM 61\nDETECTOR rec[-1]\nCX 0 71\nM 71\nDETECTOR rec[-1]\nCX 0 60\nM 60\nDETECTOR rec[-1]\nCX 0 72\nM 72\nDETECTOR rec[-1]\nCX 0 53\nM 53\nDETECTOR rec[-1]\n"
+    },
+    "t7-n46": {
+      "n": 46,
+      "t": 7,
+      "fileName": "cat_state_t7_n46_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n46_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 2 3 2 46 2 4 2 5 5 47 5 6 6 7 6 48 6 49 5 8 5 50 5 51 2 9 2 52 2 53 1 10 1 11 11 12 11 13 13 14 14 54 13 55 13 56 11 15 11 57 11 16 16 58 16 59 11 17 11 60 11 61 1 18 1 19 19 20 19 62 19 21 19 22 22 23 22 63 22 55\nM 55\nDETECTOR rec[-1]\nCX 19 24 24 64 19 51\nM 51\nDETECTOR rec[-1]\nCX 19 25 19 65 19 58\nM 58\nDETECTOR rec[-1]\nCX 1 66 1 61\nM 61\nDETECTOR rec[-1]\nCX 1 26 1 56\nM 56\nDETECTOR rec[-1]\nCX 1 67 0 27 27 68 27 28 27 69 27 70 0 29 0 64\nM 64\nDETECTOR rec[-1]\nCX 0 30 30 31 31 32 32 67\nM 67\nDETECTOR rec[-1]\nCX 32 69\nM 69\nDETECTOR rec[-1]\nCX 31 33 33 46\nM 46\nDETECTOR rec[-1]\nCX 31 34 31 71 31 72 30 73 30 35 35 36 36 74 35 57\nM 57\nDETECTOR rec[-1]\nCX 30 37 37 66\nM 66\nDETECTOR rec[-1]\nCX 30 38 38 70\nM 70\nDETECTOR rec[-1]\nCX 38 48\nM 48\nDETECTOR rec[-1]\nCX 30 53\nM 53\nDETECTOR rec[-1]\nCX 30 65\nM 65\nDETECTOR rec[-1]\nCX 0 39 39 54\nM 54\nDETECTOR rec[-1]\nCX 39 47\nM 47\nDETECTOR rec[-1]\nCX 0 40 40 41 41 49\nM 49\nDETECTOR rec[-1]\nCX 41 62\nM 62\nDETECTOR rec[-1]\nCX 40 74\nM 74\nDETECTOR rec[-1]\nCX 40 71\nM 71\nDETECTOR rec[-1]\nCX 0 42 42 43 43 52\nM 52\nDETECTOR rec[-1]\nCX 42 44 44 60\nM 60\nDETECTOR rec[-1]\nCX 42 72\nM 72\nDETECTOR rec[-1]\nCX 42 50\nM 50\nDETECTOR rec[-1]\nCX 0 45 45 73\nM 73\nDETECTOR rec[-1]\nCX 45 63\nM 63\nDETECTOR rec[-1]\nCX 0 59\nM 59\nDETECTOR rec[-1]\nCX 0 68\nM 68\nDETECTOR rec[-1]\n"
+    },
+    "t7-n47": {
+      "n": 47,
+      "t": 7,
+      "fileName": "cat_state_t7_n47_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n47_p1.stim",
+      "stim": "H 0\nCX 0 47 0 1 1 2 1 3 3 4 4 48 3 49 3 50 1 5 5 6 6 51 6 52 5 53 5 7 7 8 8 9 8 54 8 55 7 56 7 47\nM 47\nDETECTOR rec[-1]\nCX 5 57 5 10 10 58 5 59 5 60 5 61 1 11 11 62 11 63 1 12 12 57\nM 57\nDETECTOR rec[-1]\nCX 12 64 12 65 1 13 13 14 14 66 13 67 13 55\nM 55\nDETECTOR rec[-1]\nCX 13 68 1 15 15 53\nM 53\nDETECTOR rec[-1]\nCX 15 69 1 70 1 71 1 54\nM 54\nDETECTOR rec[-1]\nCX 0 16 0 17 17 18 18 72 18 64\nM 64\nDETECTOR rec[-1]\nCX 17 19 17 66\nM 66\nDETECTOR rec[-1]\nCX 17 20 17 21 21 63\nM 63\nDETECTOR rec[-1]\nCX 21 22 21 69\nM 69\nDETECTOR rec[-1]\nCX 21 49\nM 49\nDETECTOR rec[-1]\nCX 17 52\nM 52\nDETECTOR rec[-1]\nCX 17 23 17 73 17 60\nM 60\nDETECTOR rec[-1]\nCX 0 24 0 61\nM 61\nDETECTOR rec[-1]\nCX 0 25 0 26 26 27 27 74 27 28 27 58\nM 58\nDETECTOR rec[-1]\nCX 27 70\nM 70\nDETECTOR rec[-1]\nCX 26 29 26 30 30 62\nM 62\nDETECTOR rec[-1]\nCX 26 31 31 32 31 48\nM 48\nDETECTOR rec[-1]\nCX 31 67\nM 67\nDETECTOR rec[-1]\nCX 26 75 26 76 0 33 0 68\nM 68\nDETECTOR rec[-1]\nCX 0 34 0 35 35 36 35 50\nM 50\nDETECTOR rec[-1]\nCX 35 37 35 38 38 39 39 71\nM 71\nDETECTOR rec[-1]\nCX 38 73\nM 73\nDETECTOR rec[-1]\nCX 35 65\nM 65\nDETECTOR rec[-1]\nCX 35 40 35 76\nM 76\nDETECTOR rec[-1]\nCX 35 56\nM 56\nDETECTOR rec[-1]\nCX 0 41 41 42 41 43 43 75\nM 75\nDETECTOR rec[-1]\nCX 41 59\nM 59\nDETECTOR rec[-1]\nCX 0 44 44 51\nM 51\nDETECTOR rec[-1]\nCX 0 45 0 46 46 72\nM 72\nDETECTOR rec[-1]\nCX 0 74\nM 74\nDETECTOR rec[-1]\n"
+    },
+    "t7-n48": {
+      "n": 48,
+      "t": 7,
+      "fileName": "cat_state_t7_n48_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n48_p1.stim",
+      "stim": "H 0\nCX 0 48 0 1 1 2 2 3 2 49 2 4 4 5 4 50 4 6 4 51 4 7 7 8 7 52 7 9 7 10 10 11 11 53 10 12 10 54 10 55 7 13 13 14 13 56 13 57 7 15 7 58 7 49\nM 49\nDETECTOR rec[-1]\nCX 4 16 16 59 4 17 4 18 18 60 4 19 4 20 20 61 20 62 4 63 4 64 2 21 21 22 21 65 21 23 23 24 23 66 23 67 21 25 25 26 25 68 25 69 21 27 21 62\nM 62\nDETECTOR rec[-1]\nCX 21 28 21 29 29 70 29 58\nM 58\nDETECTOR rec[-1]\nCX 21 71 21 30 21 72 21 73 2 31 2 32 32 63\nM 63\nDETECTOR rec[-1]\nCX 2 33 2 34 34 69\nM 69\nDETECTOR rec[-1]\nCX 34 74 2 57\nM 57\nDETECTOR rec[-1]\nCX 2 35 2 75 2 76 1 73\nM 73\nDETECTOR rec[-1]\nCX 1 36 36 66\nM 66\nDETECTOR rec[-1]\nCX 1 77 1 52\nM 52\nDETECTOR rec[-1]\nCX 0 37 37 38 38 39 39 68\nM 68\nDETECTOR rec[-1]\nCX 38 40 40 54\nM 54\nDETECTOR rec[-1]\nCX 38 64\nM 64\nDETECTOR rec[-1]\nCX 38 72\nM 72\nDETECTOR rec[-1]\nCX 37 41 41 42 42 61\nM 61\nDETECTOR rec[-1]\nCX 41 77\nM 77\nDETECTOR rec[-1]\nCX 37 43 43 76\nM 76\nDETECTOR rec[-1]\nCX 43 71\nM 71\nDETECTOR rec[-1]\nCX 37 44 44 74\nM 74\nDETECTOR rec[-1]\nCX 44 51\nM 51\nDETECTOR rec[-1]\nCX 37 45 45 67\nM 67\nDETECTOR rec[-1]\nCX 45 56\nM 56\nDETECTOR rec[-1]\nCX 37 48\nM 48\nDETECTOR rec[-1]\nCX 37 60\nM 60\nDETECTOR rec[-1]\nCX 37 46 46 75\nM 75\nDETECTOR rec[-1]\nCX 37 55\nM 55\nDETECTOR rec[-1]\nCX 37 50\nM 50\nDETECTOR rec[-1]\nCX 0 47 47 53\nM 53\nDETECTOR rec[-1]\nCX 47 65\nM 65\nDETECTOR rec[-1]\nCX 0 59\nM 59\nDETECTOR rec[-1]\nCX 0 70\nM 70\nDETECTOR rec[-1]\n"
+    },
+    "t7-n49": {
+      "n": 49,
+      "t": 7,
+      "fileName": "cat_state_t7_n49_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n49_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 49 1 4 1 5 5 6 6 7 6 8 8 50 6 9 6 51 6 52 6 10 10 11 10 53 10 54 6 55 6 12 6 13 13 56 6 57 5 14 14 58 5 15 5 59 5 60 1 16 1 61 1 17 1 18 18 19 18 62 18 20 18 21 21 22 22 63 21 64 21 23 21 65 21 66 18 24 18 67 18 68 1 25 25 26 25 69 25 70 1 27 27 28 27 71 27 72 1 29 1 30 30 31 31 73 30 49\nM 49\nDETECTOR rec[-1]\nCX 30 74 1 32 1 75 1 52\nM 52\nDETECTOR rec[-1]\nCX 0 33 33 54\nM 54\nDETECTOR rec[-1]\nCX 33 34 34 35 35 58\nM 58\nDETECTOR rec[-1]\nCX 35 57\nM 57\nDETECTOR rec[-1]\nCX 35 67\nM 67\nDETECTOR rec[-1]\nCX 34 36 36 72\nM 72\nDETECTOR rec[-1]\nCX 36 66\nM 66\nDETECTOR rec[-1]\nCX 36 76 36 77 34 37 37 63\nM 63\nDETECTOR rec[-1]\nCX 37 51\nM 51\nDETECTOR rec[-1]\nCX 34 38 38 78 38 59\nM 59\nDETECTOR rec[-1]\nCX 34 74\nM 74\nDETECTOR rec[-1]\nCX 34 55\nM 55\nDETECTOR rec[-1]\nCX 33 39 39 77\nM 77\nDETECTOR rec[-1]\nCX 39 78\nM 78\nDETECTOR rec[-1]\nCX 33 40 40 73\nM 73\nDETECTOR rec[-1]\nCX 40 64\nM 64\nDETECTOR rec[-1]\nCX 33 41 41 68\nM 68\nDETECTOR rec[-1]\nCX 41 42 42 75\nM 75\nDETECTOR rec[-1]\nCX 41 43 43 61\nM 61\nDETECTOR rec[-1]\nCX 41 44 41 79 41 76\nM 76\nDETECTOR rec[-1]\nCX 33 45 45 46 46 53\nM 53\nDETECTOR rec[-1]\nCX 45 47 47 79\nM 79\nDETECTOR rec[-1]\nCX 45 50\nM 50\nDETECTOR rec[-1]\nCX 45 69\nM 69\nDETECTOR rec[-1]\nCX 33 48 48 60\nM 60\nDETECTOR rec[-1]\nCX 48 62\nM 62\nDETECTOR rec[-1]\nCX 33 56\nM 56\nDETECTOR rec[-1]\nCX 33 71\nM 71\nDETECTOR rec[-1]\nCX 0 70\nM 70\nDETECTOR rec[-1]\nCX 0 65\nM 65\nDETECTOR rec[-1]\n"
+    },
+    "t7-n50": {
+      "n": 50,
+      "t": 7,
+      "fileName": "cat_state_t7_n50_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n50_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 3 3 4 4 5 4 50 4 51 3 52 3 53 1 6 6 7 7 54 7 55 6 8 8 56 8 57 6 58 6 9 9 10 9 59 9 60 6 11 11 12 11 53\nM 53\nDETECTOR rec[-1]\nCX 11 61 6 62 6 63 1 13 13 64 13 60\nM 60\nDETECTOR rec[-1]\nCX 13 51\nM 51\nDETECTOR rec[-1]\nCX 13 65 1 14 14 15 15 66 14 67 14 68 14 69 1 16 16 70 16 50\nM 50\nDETECTOR rec[-1]\nCX 1 17 17 71 17 72 1 18 18 19 19 73 19 74 18 61\nM 61\nDETECTOR rec[-1]\nCX 18 75 1 20 20 76 20 77 1 78 1 59\nM 59\nDETECTOR rec[-1]\nCX 0 21 21 22 21 23 23 24 24 25 25 71\nM 71\nDETECTOR rec[-1]\nCX 24 26 24 57\nM 57\nDETECTOR rec[-1]\nCX 24 52\nM 52\nDETECTOR rec[-1]\nCX 23 27 23 66\nM 66\nDETECTOR rec[-1]\nCX 23 73\nM 73\nDETECTOR rec[-1]\nCX 21 28 21 29 29 78\nM 78\nDETECTOR rec[-1]\nCX 21 30 21 31 31 32 32 79 31 80 31 58\nM 58\nDETECTOR rec[-1]\nCX 21 33 21 75\nM 75\nDETECTOR rec[-1]\nCX 21 68\nM 68\nDETECTOR rec[-1]\nCX 0 34 0 35 35 36 36 37 36 79\nM 79\nDETECTOR rec[-1]\nCX 36 64\nM 64\nDETECTOR rec[-1]\nCX 35 38 38 39 38 69\nM 69\nDETECTOR rec[-1]\nCX 38 56\nM 56\nDETECTOR rec[-1]\nCX 35 40 35 41 41 62\nM 62\nDETECTOR rec[-1]\nCX 35 42 35 74\nM 74\nDETECTOR rec[-1]\nCX 35 55\nM 55\nDETECTOR rec[-1]\nCX 35 43 43 70\nM 70\nDETECTOR rec[-1]\nCX 35 44 35 77\nM 77\nDETECTOR rec[-1]\nCX 35 80\nM 80\nDETECTOR rec[-1]\nCX 0 45 0 46 46 47 46 65\nM 65\nDETECTOR rec[-1]\nCX 46 67\nM 67\nDETECTOR rec[-1]\nCX 0 48 48 72\nM 72\nDETECTOR rec[-1]\nCX 48 54\nM 54\nDETECTOR rec[-1]\nCX 0 49 0 63\nM 63\nDETECTOR rec[-1]\nCX 0 76\nM 76\nDETECTOR rec[-1]\n"
+    },
+    "t7-n8": {
+      "n": 8,
+      "t": 7,
+      "fileName": "cat_state_t7_n8_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n8_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 8 1 3 1 9 1 10 0 4 4 10\nM 10\nDETECTOR rec[-1]\nCX 4 11 0 5 0 6 6 9\nM 9\nDETECTOR rec[-1]\nCX 0 7 0 11\nM 11\nDETECTOR rec[-1]\nCX 0 8\nM 8\nDETECTOR rec[-1]\n"
+    },
+    "t7-n9": {
+      "n": 9,
+      "t": 7,
+      "fileName": "cat_state_t7_n9_p1.stim",
+      "sourcePath": "spidercat/circuits/cat_state_t7_n9_p1.stim",
+      "stim": "H 0\nCX 0 1 1 2 1 9 1 3 1 10 1 11 0 4 4 5 4 6 6 10\nM 10\nDETECTOR rec[-1]\nCX 4 7 4 12 4 9\nM 9\nDETECTOR rec[-1]\nCX 0 8 0 11\nM 11\nDETECTOR rec[-1]\nCX 0 12\nM 12\nDETECTOR rec[-1]\n"
+    }
+  },
+  "mqtCircuits": {
+    "t2-n10": {
+      "n": 10,
+      "t": 2,
+      "fileName": "ft_ghz_10_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_10_2.stim",
+      "stim": "H 0 10\nCX 0 8 10 14 0 4 8 9 10 12 0 2 4 6 10 11 12 13 9 14 0 1 2 3 4 5 6 7\nMR 14\nCX 1 11 3 13 5 10 7 12\nMR 10 11 12 13\n"
+    },
+    "t3-n10": {
+      "n": 10,
+      "t": 3,
+      "fileName": "ft_ghz_10_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_10_3.stim",
+      "stim": "H 0 10\nCX 0 8 10 14 0 4 8 9 10 12 14 16 0 2 4 6 10 11 12 13 14 15 0 1 2 3 4 5 6 7 9 13 1 16 2 14 3 10 4 11 5 12 6 15\nMR 13 10 11 12 14 15 16\n"
+    },
+    "t4-n10": {
+      "n": 10,
+      "t": 4,
+      "fileName": "ft_ghz_10_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_10_4.stim",
+      "stim": "H 0 10\nCX 0 8 10 14 0 4 8 9 10 12 14 16 0 2 4 6 10 11 12 13 14 15 9 16 0 1 2 3 4 5 6 7\nMR 16\nCX 1 11 2 12 3 14 4 15 5 10 6 13\nMR 10 11 12 13 14 15\n"
+    },
+    "t5-n10": {
+      "n": 10,
+      "t": 5,
+      "fileName": "ft_ghz_10_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_10_5.stim",
+      "stim": "H 0 10\nCX 0 8 10 14 0 4 8 9 10 12 14 16 0 2 4 6 10 11 12 13 14 15 9 16 0 1 2 3 4 5 6 7\nMR 16\nCX 1 11 2 12 3 14 4 15 5 10 6 13\nMR 10 11 12 13 14 15\n"
+    },
+    "t2-n11": {
+      "n": 11,
+      "t": 2,
+      "fileName": "ft_ghz_11_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_11_2.stim",
+      "stim": "H 0 11\nCX 0 8 11 15 0 4 8 10 11 13 15 16 0 2 4 6 8 9 11 12 13 14 0 1 2 3 4 5 6 7 8 12 10 13 0 11 3 15 5 16 6 14\nMR 12 13 11 14 15 16\n"
+    },
+    "t3-n11": {
+      "n": 11,
+      "t": 3,
+      "fileName": "ft_ghz_11_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_11_3.stim",
+      "stim": "H 0 11\nCX 0 8 11 15 0 4 8 10 11 13 15 17 0 2 4 6 8 9 11 12 13 14 15 16 17 18 0 1 2 3 4 5 6 7 8 15 10 11 0 18 2 14 3 16 4 17 5 13 6 12\nMR 11 15 12 13 14 16 17 18\n"
+    },
+    "t4-n11": {
+      "n": 11,
+      "t": 4,
+      "fileName": "ft_ghz_11_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_11_4.stim",
+      "stim": "H 0 11\nCX 0 8 11 15 0 4 8 10 11 13 15 17 0 2 4 6 8 9 11 12 13 14 15 16 17 18 0 1 2 3 4 5 6 7 8 16 10 13 0 11 2 14 3 18 4 12 5 15 6 17\nMR 13 16 11 12 14 15 17 18\n"
+    },
+    "t5-n11": {
+      "n": 11,
+      "t": 5,
+      "fileName": "ft_ghz_11_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_11_5.stim",
+      "stim": "H 0 11\nCX 0 8 11 15 0 4 8 10 11 13 15 17 0 2 4 6 8 9 11 12 13 14 15 16 17 18 0 1 2 3 4 5 6 7 8 16 10 13 0 11 2 14 3 18 4 12 5 15 6 17\nMR 13 16 11 12 14 15 17 18\n"
+    },
+    "t2-n12": {
+      "n": 12,
+      "t": 2,
+      "fileName": "ft_ghz_12_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_12_2.stim",
+      "stim": "H 0 12\nCX 0 8 12 16 0 4 8 10 12 14 16 17 0 2 4 6 8 9 10 11 12 13 14 15 0 1 2 3 4 5 6 7 8 13 10 16 0 12 2 14 5 15 6 17\nMR 13 16 12 14 15 17\n"
+    },
+    "t3-n12": {
+      "n": 12,
+      "t": 3,
+      "fileName": "ft_ghz_12_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_12_3.stim",
+      "stim": "H 0 12\nCX 0 8 12 20 0 4 8 10 12 16 0 2 4 6 8 9 10 11 12 14 16 18 0 1 2 3 4 5 6 7 12 13 14 15 16 17 18 19 0 13 2 19 3 20 4 18 5 16 7 14 8 17 10 12 11 15\nMR 12 13 14 15 16 17 18 19 20\n"
+    },
+    "t4-n12": {
+      "n": 12,
+      "t": 4,
+      "fileName": "ft_ghz_12_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_12_4.stim",
+      "stim": "H 0 12\nCX 0 8 12 20 0 4 8 10 12 16 0 2 4 6 8 9 10 11 12 14 16 18 0 1 2 3 4 5 6 7 12 13 14 15 16 17 18 19 0 14 2 19 3 20 4 18 5 12 7 17 8 13 10 16 11 15\nMR 12 13 14 15 16 17 18 19 20\n"
+    },
+    "t5-n12": {
+      "n": 12,
+      "t": 5,
+      "fileName": "ft_ghz_12_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_12_5.stim",
+      "stim": "H 0 12\nCX 0 8 12 20 0 4 8 10 12 16 20 22 0 2 4 6 8 9 10 11 12 14 16 18 20 21 0 1 2 3 4 5 6 7 12 13 14 15 16 17 18 19 8 20 0 22 1 19 2 13 3 16 4 18 5 15 7 21 9 17 10 14 11 12\nMR 20 12 13 14 15 16 17 18 19 21 22\n"
+    },
+    "t6-n12": {
+      "n": 12,
+      "t": 6,
+      "fileName": "ft_ghz_12_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_12_6.stim",
+      "stim": "H 0 12\nCX 0 8 12 20 0 4 8 10 12 16 20 22 0 2 4 6 8 9 10 11 12 14 16 18 20 21 0 1 2 3 4 5 6 7 12 13 14 15 16 17 18 19 8 20 0 22 1 19 2 13 3 16 4 18 5 15 7 21 9 17 10 14 11 12\nMR 20 12 13 14 15 16 17 18 19 21 22\n"
+    },
+    "t2-n13": {
+      "n": 13,
+      "t": 2,
+      "fileName": "ft_ghz_13_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_13_2.stim",
+      "stim": "H 0 13\nCX 0 8 13 17 0 4 8 12 13 15 17 18 0 2 4 6 8 10 13 14 15 16 0 1 2 3 4 5 6 7 8 9 10 11 1 16 3 13 5 15 6 17 8 18 10 14\nMR 13 14 15 16 17 18\n"
+    },
+    "t3-n13": {
+      "n": 13,
+      "t": 3,
+      "fileName": "ft_ghz_13_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_13_3.stim",
+      "stim": "H 0 13\nCX 0 8 13 21 0 4 8 12 13 17 0 2 4 6 8 10 13 15 17 19 0 1 2 3 4 5 6 7 8 9 10 11 13 14 15 16 17 18 19 20 0 16 2 17 3 20 4 13 5 15 6 21 8 14 9 18 11 19\nMR 13 14 15 16 17 18 19 20 21\n"
+    },
+    "t4-n13": {
+      "n": 13,
+      "t": 4,
+      "fileName": "ft_ghz_13_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_13_4.stim",
+      "stim": "H 0 13\nCX 0 8 13 21 0 4 8 12 13 17 21 22 0 2 4 6 8 10 13 15 17 19 0 1 2 3 4 5 6 7 8 9 10 11 13 14 15 16 17 18 19 20 0 18 2 19 3 13 4 22 5 14 7 16 8 21 10 20 11 15 12 17\nMR 13 14 15 16 17 18 19 20 21 22\n"
+    },
+    "t5-n13": {
+      "n": 13,
+      "t": 5,
+      "fileName": "ft_ghz_13_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_13_5.stim",
+      "stim": "H 0 13\nCX 0 8 13 21 0 4 8 12 13 17 21 23 0 2 4 6 8 10 13 15 17 19 21 22 0 1 2 3 4 5 6 7 8 9 10 11 13 14 15 16 17 18 19 20 1 19 2 15 3 21 4 13 5 17 7 23 8 14 9 22 10 18 11 16 12 20\nMR 13 14 15 16 17 18 19 20 21 22 23\n"
+    },
+    "t6-n13": {
+      "n": 13,
+      "t": 6,
+      "fileName": "ft_ghz_13_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_13_6.stim",
+      "stim": "H 0 13\nCX 0 8 13 21 0 4 8 12 13 17 21 23 0 2 4 6 8 10 13 15 17 19 21 22 0 1 2 3 4 5 6 7 8 9 10 11 13 14 15 16 17 18 19 20 1 19 2 15 3 21 4 13 5 17 7 23 8 14 9 22 10 18 11 16 12 20\nMR 13 14 15 16 17 18 19 20 21 22 23\n"
+    },
+    "t2-n14": {
+      "n": 14,
+      "t": 2,
+      "fileName": "ft_ghz_14_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_14_2.stim",
+      "stim": "H 0 14\nCX 0 8 14 18 0 4 8 12 14 16 18 20 0 2 4 6 8 10 12 13 14 15 16 17 18 19 0 1 2 3 4 5 6 7 8 9 10 11 12 19 0 15 3 18 5 16 7 14 9 20 10 17\nMR 19 14 15 16 17 18 20\n"
+    },
+    "t3-n14": {
+      "n": 14,
+      "t": 3,
+      "fileName": "ft_ghz_14_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_14_3.stim",
+      "stim": "H 0 14\nCX 0 8 14 22 0 4 8 12 14 18 22 23 0 2 4 6 8 10 12 13 14 16 18 20 0 1 2 3 4 5 6 7 8 9 10 11 14 15 16 17 18 19 20 21 12 23 0 16 1 15 3 18 5 14 6 20 7 17 9 21 10 19 11 22\nMR 23 14 15 16 17 18 19 20 21 22\n"
+    },
+    "t4-n14": {
+      "n": 14,
+      "t": 4,
+      "fileName": "ft_ghz_14_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_14_4.stim",
+      "stim": "H 0 14\nCX 0 8 14 22 0 4 8 12 14 18 22 23 0 2 4 6 8 10 12 13 14 16 18 20 0 1 2 3 4 5 6 7 8 9 10 11 14 15 16 17 18 19 20 21 12 23 0 16 1 22 3 18 5 14 6 20 7 17 9 21 10 19 11 15\nMR 23 14 15 16 17 18 19 20 21 22\n"
+    },
+    "t5-n14": {
+      "n": 14,
+      "t": 5,
+      "fileName": "ft_ghz_14_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_14_5.stim",
+      "stim": "H 0 14\nCX 0 8 14 22 0 4 8 12 14 18 22 24 0 2 4 6 8 10 12 13 14 16 18 20 22 23 24 25 0 1 2 3 4 5 6 7 8 9 10 11 14 15 16 17 18 19 20 21 1 22 2 17 3 21 4 25 5 19 7 14 8 24 9 16 10 18 11 23 12 15 13 20\nMR 14 15 16 17 18 19 20 21 22 23 24 25\n"
+    },
+    "t6-n14": {
+      "n": 14,
+      "t": 6,
+      "fileName": "ft_ghz_14_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_14_6.stim",
+      "stim": "H 0 14\nCX 0 8 14 22 0 4 8 12 14 18 22 26 0 2 4 6 8 10 12 13 14 16 18 20 22 24 0 1 2 3 4 5 6 7 8 9 10 11 14 15 16 17 18 19 20 21 22 23 24 25 0 18 1 15 2 24 3 21 4 19 5 23 7 16 8 22 9 26 10 17 11 20 12 25 13 14\nMR 14 15 16 17 18 19 20 21 22 23 24 25 26\n"
+    },
+    "t7-n14": {
+      "n": 14,
+      "t": 7,
+      "fileName": "ft_ghz_14_7.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_14_7.stim",
+      "stim": "H 0 14\nCX 0 8 14 22 0 4 8 12 14 18 22 26 0 2 4 6 8 10 12 13 14 16 18 20 22 24 0 1 2 3 4 5 6 7 8 9 10 11 14 15 16 17 18 19 20 21 22 23 24 25 0 18 1 15 2 24 3 21 4 19 5 23 7 16 8 22 9 26 10 17 11 20 12 25 13 14\nMR 14 15 16 17 18 19 20 21 22 23 24 25 26\n"
+    },
+    "t2-n15": {
+      "n": 15,
+      "t": 2,
+      "fileName": "ft_ghz_15_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_15_2.stim",
+      "stim": "H 0 15\nCX 0 8 15 19 0 4 8 12 15 17 19 21 0 2 4 6 8 10 12 14 15 16 17 18 19 20 21 22 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 17 1 20 3 16 4 19 7 18 8 15 11 22 13 21\nMR 17 15 16 18 19 20 21 22\n"
+    },
+    "t3-n15": {
+      "n": 15,
+      "t": 3,
+      "fileName": "ft_ghz_15_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_15_3.stim",
+      "stim": "H 0 15\nCX 0 8 15 23 0 4 8 12 15 19 23 25 0 2 4 6 8 10 12 14 15 17 19 21 23 24 0 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 21 22 0 17 1 22 3 19 5 15 6 25 7 24 9 18 10 20 11 23 12 21 13 16\nMR 15 16 17 18 19 20 21 22 23 24 25\n"
+    },
+    "t4-n15": {
+      "n": 15,
+      "t": 4,
+      "fileName": "ft_ghz_15_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_15_4.stim",
+      "stim": "H 0 15\nCX 0 8 15 23 0 4 8 12 15 19 23 25 0 2 4 6 8 10 12 14 15 17 19 21 23 24 0 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 21 22 0 20 1 24 3 15 5 22 6 16 7 23 9 19 10 21 11 18 12 25 13 17\nMR 15 16 17 18 19 20 21 22 23 24 25\n"
+    },
+    "t5-n15": {
+      "n": 15,
+      "t": 5,
+      "fileName": "ft_ghz_15_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_15_5.stim",
+      "stim": "H 0 15\nCX 0 8 15 23 0 4 8 12 15 19 23 25 0 2 4 6 8 10 12 14 15 17 19 21 23 24 25 26 0 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 21 22 0 19 2 18 3 23 4 21 5 15 7 25 8 17 9 26 10 16 11 20 12 22 13 24\nMR 15 16 17 18 19 20 21 22 23 24 25 26\n"
+    },
+    "t6-n15": {
+      "n": 15,
+      "t": 6,
+      "fileName": "ft_ghz_15_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_15_6.stim",
+      "stim": "H 0 15\nCX 0 8 15 23 0 4 8 12 15 19 23 27 0 2 4 6 8 10 12 14 15 17 19 21 23 25 0 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 21 22 23 24 25 26 1 15 2 25 3 21 4 20 5 18 7 27 8 24 9 16 10 19 11 26 12 23 13 22 14 17\nMR 15 16 17 18 19 20 21 22 23 24 25 26 27\n"
+    },
+    "t7-n15": {
+      "n": 15,
+      "t": 7,
+      "fileName": "ft_ghz_15_7.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_15_7.stim",
+      "stim": "H 0 15\nCX 0 8 15 23 0 4 8 12 15 19 23 27 0 2 4 6 8 10 12 14 15 17 19 21 23 25 0 1 2 3 4 5 6 7 8 9 10 11 12 13 15 16 17 18 19 20 21 22 23 24 25 26 1 15 2 25 3 21 4 20 5 18 7 27 8 24 9 16 10 19 11 26 12 23 13 22 14 17\nMR 15 16 17 18 19 20 21 22 23 24 25 26 27\n"
+    },
+    "t2-n16": {
+      "n": 16,
+      "t": 2,
+      "fileName": "ft_ghz_16_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_16_2.stim",
+      "stim": "H 0 16\nCX 0 8 16 20 0 4 8 12 16 18 20 22 0 2 4 6 8 10 12 14 16 17 18 19 20 21 22 23 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 0 18 3 20 4 23 7 16 8 22 10 19 13 17 14 21\nMR 16 17 18 19 20 21 22 23\n"
+    },
+    "t3-n16": {
+      "n": 16,
+      "t": 3,
+      "fileName": "ft_ghz_16_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_16_3.stim",
+      "stim": "H 0 16\nCX 0 8 16 24 0 4 8 12 16 20 24 26 0 2 4 6 8 10 12 14 16 18 20 22 24 25 26 27 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 0 26 1 23 3 20 4 27 5 24 6 17 8 22 10 21 11 18 13 19 14 16 15 25\nMR 16 17 18 19 20 21 22 23 24 25 26 27\n"
+    },
+    "t4-n16": {
+      "n": 16,
+      "t": 4,
+      "fileName": "ft_ghz_16_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_16_4.stim",
+      "stim": "H 0 16\nCX 0 8 16 24 0 4 8 12 16 20 24 26 0 2 4 6 8 10 12 14 16 18 20 22 24 25 26 27 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 0 26 1 23 3 20 4 27 5 24 6 17 8 22 10 21 11 18 13 19 14 16 15 25\nMR 16 17 18 19 20 21 22 23 24 25 26 27\n"
+    },
+    "t5-n16": {
+      "n": 16,
+      "t": 5,
+      "fileName": "ft_ghz_16_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_16_5.stim",
+      "stim": "H 0 16\nCX 0 8 16 24 0 4 8 12 16 20 24 28 0 2 4 6 8 10 12 14 16 18 20 22 24 26 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 1 22 2 19 3 27 4 17 5 20 6 25 8 24 9 18 10 16 11 23 12 28 14 21 15 26\nMR 16 17 18 19 20 21 22 23 24 25 26 27 28\n"
+    },
+    "t6-n16": {
+      "n": 16,
+      "t": 6,
+      "fileName": "ft_ghz_16_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_16_6.stim",
+      "stim": "H 0 16\nCX 0 8 16 24 0 4 8 12 16 20 24 28 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 29 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 0 23 1 25 2 19 3 28 4 22 5 26 6 16 8 29 9 21 10 24 11 17 12 20 14 27 15 18\nMR 16 17 18 19 20 21 22 23 24 25 26 27 28 29\n"
+    },
+    "t7-n16": {
+      "n": 16,
+      "t": 7,
+      "fileName": "ft_ghz_16_7.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_16_7.stim",
+      "stim": "H 0 16\nCX 0 8 16 24 0 4 8 12 16 20 24 28 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 0 17 1 24 2 27 3 20 4 22 5 18 6 29 7 21 8 16 9 28 10 19 11 26 12 30 14 23 15 25\nMR 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30\n"
+    },
+    "t2-n17": {
+      "n": 17,
+      "t": 2,
+      "fileName": "ft_ghz_17_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_17_2.stim",
+      "stim": "H 0 17\nCX 0 16 17 21 0 8 17 19 21 23 0 4 8 12 17 18 19 20 21 22 23 24 0 2 4 6 8 10 12 14 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 0 17 2 19 4 20 7 22 8 18 10 24 13 21 15 23\nMR 17 18 19 20 21 22 23 24\n"
+    },
+    "t3-n17": {
+      "n": 17,
+      "t": 3,
+      "fileName": "ft_ghz_17_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_17_3.stim",
+      "stim": "H 0 17\nCX 0 16 17 25 0 8 17 21 25 27 0 4 8 12 17 19 21 23 25 26 27 28 0 2 4 6 8 10 12 14 17 18 19 20 21 22 23 24 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 0 28 1 21 2 18 4 17 5 24 7 22 8 25 9 20 11 23 12 27 13 19 14 26\nMR 17 18 19 20 21 22 23 24 25 26 27 28\n"
+    },
+    "t4-n17": {
+      "n": 17,
+      "t": 4,
+      "fileName": "ft_ghz_17_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_17_4.stim",
+      "stim": "H 0 17\nCX 0 16 17 25 0 8 17 21 25 27 0 4 8 12 17 19 21 23 25 26 27 28 0 2 4 6 8 10 12 14 17 18 19 20 21 22 23 24 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 0 22 1 28 2 18 4 19 5 21 7 27 8 25 9 23 11 20 12 26 13 17 14 24\nMR 17 18 19 20 21 22 23 24 25 26 27 28\n"
+    },
+    "t5-n17": {
+      "n": 17,
+      "t": 5,
+      "fileName": "ft_ghz_17_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_17_5.stim",
+      "stim": "H 0 17\nCX 0 16 17 25 0 8 17 21 25 29 0 4 8 12 17 19 21 23 25 27 0 2 4 6 8 10 12 14 17 18 19 20 21 22 23 24 25 26 27 28 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 0 28 1 20 2 22 4 17 5 21 6 26 7 19 9 29 10 27 11 24 12 23 13 18 15 25\nMR 17 18 19 20 21 22 23 24 25 26 27 28 29\n"
+    },
+    "t6-n17": {
+      "n": 17,
+      "t": 6,
+      "fileName": "ft_ghz_17_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_17_6.stim",
+      "stim": "H 0 17\nCX 0 16 17 25 0 8 17 21 25 29 0 4 8 12 17 19 21 23 25 27 29 30 0 2 4 6 8 10 12 14 17 18 19 20 21 22 23 24 25 26 27 28 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 0 29 2 21 3 25 4 20 5 27 6 24 7 18 8 30 9 19 10 26 11 23 12 17 13 22 14 28\nMR 17 18 19 20 21 22 23 24 25 26 27 28 29 30\n"
+    },
+    "t7-n17": {
+      "n": 17,
+      "t": 7,
+      "fileName": "ft_ghz_17_7.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_17_7.stim",
+      "stim": "H 0 17\nCX 0 16 17 25 0 8 17 21 25 29 0 4 8 12 17 19 21 23 25 27 29 31 0 2 4 6 8 10 12 14 17 18 19 20 21 22 23 24 25 26 27 28 29 30 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 0 30 1 23 2 25 3 21 4 17 5 27 6 29 7 19 9 31 10 18 11 22 12 26 13 20 14 24 15 28\nMR 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31\n"
+    },
+    "t2-n18": {
+      "n": 18,
+      "t": 2,
+      "fileName": "ft_ghz_18_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_18_2.stim",
+      "stim": "H 0 18\nCX 0 16 18 26 0 8 16 17 18 22 0 4 8 12 18 20 22 24 17 26 0 2 4 6 8 10 12 14 18 19 20 21 22 23 24 25\nMR 26\nCX 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 1 23 3 18 4 19 6 25 9 20 10 22 12 21 15 24\nMR 18 19 20 21 22 23 24 25\n"
+    },
+    "t3-n18": {
+      "n": 18,
+      "t": 3,
+      "fileName": "ft_ghz_18_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_18_3.stim",
+      "stim": "H 0 18\nCX 0 16 18 26 0 8 16 17 18 22 26 30 0 4 8 12 18 20 22 24 26 28 0 2 4 6 8 10 12 14 18 19 20 21 22 23 24 25 26 27 28 29 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 17 27 0 30 2 29 3 23 4 19 6 21 7 24 8 25 10 18 11 28 12 20 14 22 15 26\nMR 27 18 19 20 21 22 23 24 25 26 28 29 30\n"
+    },
+    "t4-n18": {
+      "n": 18,
+      "t": 4,
+      "fileName": "ft_ghz_18_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_18_4.stim",
+      "stim": "H 0 18\nCX 0 16 18 26 0 8 16 17 18 22 26 30 0 4 8 12 18 20 22 24 26 28 0 2 4 6 8 10 12 14 18 19 20 21 22 23 24 25 26 27 28 29 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 17 28 0 24 2 30 3 20 4 26 6 21 7 23 8 18 10 25 11 29 12 22 14 27 15 19\nMR 28 18 19 20 21 22 23 24 25 26 27 29 30\n"
+    },
+    "t5-n18": {
+      "n": 18,
+      "t": 5,
+      "fileName": "ft_ghz_18_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_18_5.stim",
+      "stim": "H 0 18\nCX 0 16 18 26 0 8 16 17 18 22 26 30 0 4 8 12 18 20 22 24 26 28 30 32 0 2 4 6 8 10 12 14 18 19 20 21 22 23 24 25 26 27 28 29 30 31 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 20 17 25 0 27 1 32 2 24 4 21 5 23 6 28 9 31 10 26 11 18 12 29 13 19 14 30 15 22\nMR 20 25 18 19 21 22 23 24 26 27 28 29 30 31 32\n"
+    },
+    "t6-n18": {
+      "n": 18,
+      "t": 6,
+      "fileName": "ft_ghz_18_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_18_6.stim",
+      "stim": "H 0 18\nCX 0 16 18 26 0 8 16 17 18 22 26 30 0 4 8 12 18 20 22 24 26 28 30 32 0 2 4 6 8 10 12 14 18 19 20 21 22 23 24 25 26 27 28 29 30 31 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 18 0 30 1 22 2 19 3 29 4 24 5 20 6 27 8 26 9 23 10 32 11 21 12 28 13 25 14 31\nMR 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32\n"
+    },
+    "t7-n18": {
+      "n": 18,
+      "t": 7,
+      "fileName": "ft_ghz_18_7.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_18_7.stim",
+      "stim": "H 0 18\nCX 0 16 18 34 0 8 16 17 18 26 0 4 8 12 18 22 26 30 0 2 4 6 8 10 12 14 18 20 22 24 26 28 30 32 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 0 26 1 18 2 34 4 20 5 24 6 28 7 32 8 27 9 25 10 31 11 23 12 29 13 21 14 19 15 30 16 33 17 22\nMR 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34\n"
+    },
+    "t2-n19": {
+      "n": 19,
+      "t": 2,
+      "fileName": "ft_ghz_19_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_19_2.stim",
+      "stim": "H 0 19\nCX 0 16 19 27 0 8 16 18 19 23 27 28 0 4 8 12 16 17 19 21 23 25 0 2 4 6 8 10 12 14 19 20 21 22 23 24 25 26 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 17 21 18 24 1 22 2 23 5 28 7 25 9 19 10 26 13 20 15 27\nMR 21 24 19 20 22 23 25 26 27 28\n"
+    },
+    "t3-n19": {
+      "n": 19,
+      "t": 3,
+      "fileName": "ft_ghz_19_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_19_3.stim",
+      "stim": "H 0 19\nCX 0 16 19 27 0 8 16 18 19 23 27 31 0 4 8 12 16 17 19 21 23 25 27 29 31 32 0 2 4 6 8 10 12 14 19 20 21 22 23 24 25 26 27 28 29 30 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 25 18 22 0 23 2 20 3 27 4 21 6 26 7 31 8 24 9 29 11 32 12 28 14 30 15 19\nMR 22 25 19 20 21 23 24 26 27 28 29 30 31 32\n"
+    },
+    "t4-n19": {
+      "n": 19,
+      "t": 4,
+      "fileName": "ft_ghz_19_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_19_4.stim",
+      "stim": "H 0 19\nCX 0 16 19 27 0 8 16 18 19 23 27 31 0 4 8 12 16 17 19 21 23 25 27 29 31 32 0 2 4 6 8 10 12 14 19 20 21 22 23 24 25 26 27 28 29 30 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 22 18 28 0 23 2 25 3 27 4 29 6 31 7 20 8 24 9 21 11 32 12 26 14 30 15 19\nMR 22 28 19 20 21 23 24 25 26 27 29 30 31 32\n"
+    },
+    "t5-n19": {
+      "n": 19,
+      "t": 5,
+      "fileName": "ft_ghz_19_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_19_5.stim",
+      "stim": "H 0 19\nCX 0 16 19 27 0 8 16 18 19 23 27 31 0 4 8 12 16 17 19 21 23 25 27 29 31 33 0 2 4 6 8 10 12 14 19 20 21 22 23 24 25 26 27 28 29 30 31 32 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 24 17 29 0 28 1 32 3 25 4 19 5 26 6 22 7 30 8 33 10 27 11 20 13 21 14 31 15 23\nMR 24 29 19 20 21 22 23 25 26 27 28 30 31 32 33\n"
+    },
+    "t6-n19": {
+      "n": 19,
+      "t": 6,
+      "fileName": "ft_ghz_19_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_19_6.stim",
+      "stim": "H 0 19\nCX 0 16 19 27 0 8 16 18 19 23 27 31 0 4 8 12 16 17 19 21 23 25 27 29 31 33 0 2 4 6 8 10 12 14 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 33 17 24 18 20 0 26 2 21 3 27 4 32 5 25 6 29 7 34 8 22 9 23 10 30 12 28 13 31 14 19\nMR 20 24 33 19 21 22 23 25 26 27 28 29 30 31 32 34\n"
+    },
+    "t7-n19": {
+      "n": 19,
+      "t": 7,
+      "fileName": "ft_ghz_19_7.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_19_7.stim",
+      "stim": "H 0 19\nCX 0 16 19 35 0 8 16 18 19 27 0 4 8 12 16 17 19 23 27 31 0 2 4 6 8 10 12 14 19 21 23 25 27 29 31 33 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 0 35 2 32 3 21 4 30 5 23 6 27 7 20 8 33 9 28 10 24 11 31 12 34 13 25 14 29 15 22 17 26 18 19\nMR 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35\n"
+    },
+    "t2-n20": {
+      "n": 20,
+      "t": 2,
+      "fileName": "ft_ghz_20_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_20_2.stim",
+      "stim": "H 0 20\nCX 0 16 20 28 0 8 16 18 20 24 28 29 0 4 8 12 16 17 18 19 20 22 24 26 0 2 4 6 8 10 12 14 20 21 22 23 24 25 26 27 17 28 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 19 26\nMR 28\nCX 0 24 3 21 4 29 7 20 8 25 11 22 13 27 15 23\nMR 26 20 21 22 23 24 25 27 29\n"
+    },
+    "t3-n20": {
+      "n": 20,
+      "t": 3,
+      "fileName": "ft_ghz_20_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_20_3.stim",
+      "stim": "H 0 20\nCX 0 16 20 28 0 8 16 18 20 24 28 32 0 4 8 12 16 17 18 19 20 22 24 26 28 30 32 34 0 2 4 6 8 10 12 14 20 21 22 23 24 25 26 27 28 29 30 31 32 33 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 26 17 31 18 28 0 33 1 27 3 34 4 21 5 29 6 30 8 32 10 23 11 25 12 22 14 24 15 20\nMR 26 28 31 20 21 22 23 24 25 27 29 30 32 33 34\n"
+    },
+    "t4-n20": {
+      "n": 20,
+      "t": 4,
+      "fileName": "ft_ghz_20_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_20_4.stim",
+      "stim": "H 0 20\nCX 0 16 20 28 0 8 16 18 20 24 28 32 0 4 8 12 16 17 18 19 20 22 24 26 28 30 32 34 0 2 4 6 8 10 12 14 20 21 22 23 24 25 26 27 28 29 30 31 32 33 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 26 17 31 18 28 0 34 1 21 3 22 4 33 5 29 6 30 8 32 10 23 11 25 12 20 14 24 15 27\nMR 26 28 31 20 21 22 23 24 25 27 29 30 32 33 34\n"
+    },
+    "t5-n20": {
+      "n": 20,
+      "t": 5,
+      "fileName": "ft_ghz_20_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_20_5.stim",
+      "stim": "H 0 20\nCX 0 16 20 36 0 8 16 18 20 28 0 4 8 12 16 17 18 19 20 24 28 32 0 2 4 6 8 10 12 14 20 22 24 26 28 30 32 34 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 0 28 1 32 3 22 4 23 5 24 6 21 7 31 8 27 9 29 10 25 11 34 12 36 14 20 15 33 17 30 18 26 19 35\nMR 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36\n"
+    },
+    "t6-n20": {
+      "n": 20,
+      "t": 6,
+      "fileName": "ft_ghz_20_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_20_6.stim",
+      "stim": "H 0 20\nCX 0 16 20 36 0 8 16 18 20 28 0 4 8 12 16 17 18 19 20 24 28 32 0 2 4 6 8 10 12 14 20 22 24 26 28 30 32 34 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 0 36 2 30 3 35 4 34 5 22 6 32 7 25 8 29 9 21 10 31 11 26 12 24 13 28 14 23 16 27 18 33 19 20\nMR 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36\n"
+    },
+    "t7-n20": {
+      "n": 20,
+      "t": 7,
+      "fileName": "ft_ghz_20_7.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_20_7.stim",
+      "stim": "H 0 20\nCX 0 16 20 36 0 8 16 18 20 28 36 38 0 4 8 12 16 17 18 19 20 24 28 32 36 37 0 2 4 6 8 10 12 14 20 22 24 26 28 30 32 34 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 0 32 1 24 2 30 3 20 4 28 5 25 6 23 7 36 8 37 9 33 10 27 11 29 12 35 14 21 15 38 16 31 17 22 18 34 19 26\nMR 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38\n"
+    },
+    "t2-n21": {
+      "n": 21,
+      "t": 2,
+      "fileName": "ft_ghz_21_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_21_2.stim",
+      "stim": "H 0 21\nCX 0 16 21 29 0 8 16 20 21 25 29 30 0 4 8 12 16 18 21 23 25 27 0 2 4 6 8 10 12 14 16 17 18 19 21 22 23 24 25 26 27 28 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 17 23 19 28 0 24 2 25 5 22 7 29 8 26 10 21 13 30 15 27\nMR 23 28 21 22 24 25 26 27 29 30\n"
+    },
+    "t3-n21": {
+      "n": 21,
+      "t": 3,
+      "fileName": "ft_ghz_21_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_21_3.stim",
+      "stim": "H 0 21\nCX 0 16 21 29 0 8 16 20 21 25 29 33 0 4 8 12 16 18 21 23 25 27 29 31 33 35 0 2 4 6 8 10 12 14 16 17 18 19 21 22 23 24 25 26 27 28 29 30 31 32 33 34 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 27 17 32 19 29 0 34 1 28 3 35 4 22 5 30 6 31 9 33 10 24 11 26 12 23 13 25 15 21\nMR 27 29 32 21 22 23 24 25 26 28 30 31 33 34 35\n"
+    },
+    "t4-n21": {
+      "n": 21,
+      "t": 4,
+      "fileName": "ft_ghz_21_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_21_4.stim",
+      "stim": "H 0 21\nCX 0 16 21 29 0 8 16 20 21 25 29 33 0 4 8 12 16 18 21 23 25 27 29 31 33 35 0 2 4 6 8 10 12 14 16 17 18 19 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 31 17 35 19 29 20 33 0 21 1 26 3 28 4 30 5 36 7 22 8 23 9 25 10 34 12 32 14 24 15 27\nMR 29 31 33 35 21 22 23 24 25 26 27 28 30 32 34 36\n"
+    },
+    "t5-n21": {
+      "n": 21,
+      "t": 5,
+      "fileName": "ft_ghz_21_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_21_5.stim",
+      "stim": "H 0 21\nCX 0 16 21 37 0 8 16 20 21 29 0 4 8 12 16 18 21 25 29 33 0 2 4 6 8 10 12 14 16 17 18 19 21 23 25 27 29 31 33 35 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 0 27 1 31 3 21 4 34 5 26 6 24 7 28 9 36 10 25 11 23 12 29 13 33 15 37 16 30 17 22 18 35 19 32\nMR 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37\n"
+    },
+    "t6-n21": {
+      "n": 21,
+      "t": 6,
+      "fileName": "ft_ghz_21_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_21_6.stim",
+      "stim": "H 0 21\nCX 0 16 21 37 0 8 16 20 21 29 0 4 8 12 16 18 21 25 29 33 0 2 4 6 8 10 12 14 16 17 18 19 21 23 25 27 29 31 33 35 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 0 23 1 26 3 37 4 22 5 32 6 36 7 28 9 31 10 25 11 33 12 24 13 30 15 35 16 27 17 29 18 34 19 21\nMR 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37\n"
+    },
+    "t7-n21": {
+      "n": 21,
+      "t": 7,
+      "fileName": "ft_ghz_21_7.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_21_7.stim",
+      "stim": "H 0 21\nCX 0 16 21 37 0 8 16 20 21 29 37 39 0 4 8 12 16 18 21 25 29 33 37 38 0 2 4 6 8 10 12 14 16 17 18 19 21 23 25 27 29 31 33 35 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 0 24 1 38 2 34 3 25 4 29 5 21 6 27 8 26 9 35 10 37 11 30 12 39 14 33 15 32 16 36 17 22 18 31 19 23 20 28\nMR 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39\n"
+    },
+    "t2-n22": {
+      "n": 22,
+      "t": 2,
+      "fileName": "ft_ghz_22_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_22_2.stim",
+      "stim": "H 0 22\nCX 0 16 22 30 0 8 16 20 22 26 30 32 0 4 8 12 16 18 20 21 22 24 26 28 30 31 0 2 4 6 8 10 12 14 16 17 18 19 22 23 24 25 26 27 28 29 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 17 26 18 28 20 29 0 24 3 30 5 31 6 23 9 27 11 25 12 22 14 32\nMR 26 28 29 22 23 24 25 27 30 31 32\n"
+    },
+    "t3-n22": {
+      "n": 22,
+      "t": 3,
+      "fileName": "ft_ghz_22_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_22_3.stim",
+      "stim": "H 0 22\nCX 0 16 22 30 0 8 16 20 22 26 30 34 0 4 8 12 16 18 20 21 22 24 26 28 30 32 34 36 0 2 4 6 8 10 12 14 16 17 18 19 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 22 17 28 18 30 21 35 0 29 2 23 3 26 4 27 5 37 6 25 8 24 9 31 11 33 12 36 14 32 15 34\nMR 22 28 30 35 23 24 25 26 27 29 31 32 33 34 36 37\n"
+    },
+    "t4-n22": {
+      "n": 22,
+      "t": 4,
+      "fileName": "ft_ghz_22_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_22_4.stim",
+      "stim": "H 0 22\nCX 0 16 22 30 0 8 16 20 22 26 30 34 0 4 8 12 16 18 20 21 22 24 26 28 30 32 34 36 0 2 4 6 8 10 12 14 16 17 18 19 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 36 17 33 19 25 20 35 0 32 2 27 3 22 5 26 6 29 7 30 8 28 9 23 10 31 12 34 13 24 15 37\nMR 25 33 35 36 22 23 24 26 27 28 29 30 31 32 34 37\n"
+    },
+    "t5-n22": {
+      "n": 22,
+      "t": 5,
+      "fileName": "ft_ghz_22_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_22_5.stim",
+      "stim": "H 0 22\nCX 0 16 22 38 0 8 16 20 22 30 38 39 0 4 8 12 16 18 20 21 22 26 30 34 0 2 4 6 8 10 12 14 16 17 18 19 22 24 26 28 30 32 34 36 20 38 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37\nMR 38\nCX 0 26 1 34 3 32 4 37 5 30 6 39 7 35 9 29 10 25 11 31 12 27 13 23 15 36 16 33 17 24 18 28 19 22\nMR 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 39\n"
+    },
+    "t6-n22": {
+      "n": 22,
+      "t": 6,
+      "fileName": "ft_ghz_22_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_22_6.stim",
+      "stim": "H 0 22\nCX 0 16 22 38 0 8 16 20 22 30 38 39 0 4 8 12 16 18 20 21 22 26 30 34 0 2 4 6 8 10 12 14 16 17 18 19 22 24 26 28 30 32 34 36 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 17 38 0 23 1 27 3 35 4 39 5 25 6 30 7 36 9 24 10 32 11 26 12 37 13 22 15 29 16 28 18 33 19 34 20 31\nMR 38 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 39\n"
+    },
+    "t7-n22": {
+      "n": 22,
+      "t": 7,
+      "fileName": "ft_ghz_22_7.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_22_7.stim",
+      "stim": "H 0 22\nCX 0 16 22 38 0 8 16 20 22 30 38 42 0 4 8 12 16 18 20 21 22 26 30 34 38 40 0 2 4 6 8 10 12 14 16 17 18 19 22 24 26 28 30 32 34 36 38 39 40 41 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 20 40 0 42 2 31 3 35 4 39 5 23 6 33 7 28 8 37 9 22 10 27 11 38 12 41 13 30 14 24 15 26 16 32 17 29 18 25 19 34 21 36\nMR 40 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 41 42\n"
+    },
+    "t2-n23": {
+      "n": 23,
+      "t": 2,
+      "fileName": "ft_ghz_23_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_23_2.stim",
+      "stim": "H 0 23\nCX 0 16 23 31 0 8 16 20 23 27 31 33 0 4 8 12 16 18 20 22 23 25 27 29 31 32 33 34 0 2 4 6 8 10 12 14 16 17 18 19 20 21 23 24 25 26 27 28 29 30 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 31 19 28 21 29 22 27 1 24 3 32 5 33 6 26 9 23 10 34 13 25 14 30\nMR 27 28 29 31 23 24 25 26 30 32 33 34\n"
+    },
+    "t3-n23": {
+      "n": 23,
+      "t": 3,
+      "fileName": "ft_ghz_23_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_23_3.stim",
+      "stim": "H 0 23\nCX 0 16 23 39 0 8 16 20 23 31 0 4 8 12 16 18 20 22 23 27 31 35 0 2 4 6 8 10 12 14 16 17 18 19 20 21 23 25 27 29 31 33 35 37 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 0 26 1 28 2 39 4 32 5 37 6 36 8 24 9 35 10 27 12 25 13 29 14 23 17 30 18 31 19 33 21 38 22 34\nMR 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39\n"
+    },
+    "t4-n23": {
+      "n": 23,
+      "t": 4,
+      "fileName": "ft_ghz_23_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_23_4.stim",
+      "stim": "H 0 23\nCX 0 16 23 39 0 8 16 20 23 31 0 4 8 12 16 18 20 22 23 27 31 35 0 2 4 6 8 10 12 14 16 17 18 19 20 21 23 25 27 29 31 33 35 37 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 0 24 1 30 2 27 5 31 6 37 7 23 8 33 9 39 10 26 13 35 14 28 15 25 17 29 18 32 19 36 21 34 22 38\nMR 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39\n"
+    },
+    "t5-n23": {
+      "n": 23,
+      "t": 5,
+      "fileName": "ft_ghz_23_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_23_5.stim",
+      "stim": "H 0 23\nCX 0 16 23 39 0 8 16 20 23 31 39 41 0 4 8 12 16 18 20 22 23 27 31 35 39 40 0 2 4 6 8 10 12 14 16 17 18 19 20 21 23 25 27 29 31 33 35 37 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 0 39 1 31 3 24 4 33 5 23 6 35 7 28 9 41 10 38 11 26 12 25 13 40 15 30 16 27 17 32 18 29 19 37 21 36 22 34\nMR 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41\n"
+    },
+    "t6-n23": {
+      "n": 23,
+      "t": 6,
+      "fileName": "ft_ghz_23_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_23_6.stim",
+      "stim": "H 0 23\nCX 0 16 23 39 0 8 16 20 23 31 39 41 0 4 8 12 16 18 20 22 23 27 31 35 39 40 41 42 0 2 4 6 8 10 12 14 16 17 18 19 20 21 23 25 27 29 31 33 35 37 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 0 25 1 30 3 40 4 42 5 37 6 28 8 33 9 39 10 35 11 26 12 23 13 27 14 31 15 41 16 24 17 38 18 34 19 29 21 32 22 36\nMR 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42\n"
+    },
+    "t7-n23": {
+      "n": 23,
+      "t": 7,
+      "fileName": "ft_ghz_23_7.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_23_7.stim",
+      "stim": "H 0 23\nCX 0 16 23 39 0 8 16 20 23 31 39 43 0 4 8 12 16 18 20 22 23 27 31 35 39 41 0 2 4 6 8 10 12 14 16 17 18 19 20 21 23 25 27 29 31 33 35 37 39 40 41 42 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 16 42 18 40 0 33 1 30 2 35 3 41 4 28 5 26 6 32 8 39 9 37 10 43 11 31 12 36 13 27 14 34 15 24 17 29 19 25 20 23 21 38\nMR 40 42 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 41 43\n"
+    },
+    "t2-n24": {
+      "n": 24,
+      "t": 2,
+      "fileName": "ft_ghz_24_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_24_2.stim",
+      "stim": "H 0 24\nCX 0 16 24 32 0 8 16 20 24 28 32 34 0 4 8 12 16 18 20 22 24 26 28 30 32 33 34 35 0 2 4 6 8 10 12 14 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 24 19 26 21 28 23 35 1 29 3 27 5 34 6 30 8 33 11 31 12 25 15 32\nMR 24 26 28 35 25 27 29 30 31 32 33 34\n"
+    },
+    "t3-n24": {
+      "n": 24,
+      "t": 3,
+      "fileName": "ft_ghz_24_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_24_3.stim",
+      "stim": "H 0 24\nCX 0 16 24 40 0 8 16 20 24 32 40 41 0 4 8 12 16 18 20 22 24 28 32 36 0 2 4 6 8 10 12 14 16 17 18 19 20 21 22 23 24 26 28 30 32 34 36 38 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 0 35 1 40 3 39 5 33 6 25 7 26 9 41 10 30 11 36 12 29 13 38 15 27 16 31 17 32 18 37 20 24 21 28 22 34\nMR 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41\n"
+    },
+    "t4-n24": {
+      "n": 24,
+      "t": 4,
+      "fileName": "ft_ghz_24_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_24_4.stim",
+      "stim": "H 0 24\nCX 0 16 24 40 0 8 16 20 24 32 40 41 0 4 8 12 16 18 20 22 24 28 32 36 0 2 4 6 8 10 12 14 16 17 18 19 20 21 22 23 24 26 28 30 32 34 36 38 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 21 41 1 25 2 26 3 29 4 37 5 40 6 31 8 24 9 34 10 27 13 36 14 32 15 39 16 28 18 33 19 35 22 30 23 38\nMR 41 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40\n"
+    },
+    "t5-n24": {
+      "n": 24,
+      "t": 5,
+      "fileName": "ft_ghz_24_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_24_5.stim",
+      "stim": "H 0 24\nCX 0 16 24 40 0 8 16 20 24 32 40 42 0 4 8 12 16 18 20 22 24 28 32 36 40 41 42 43 0 2 4 6 8 10 12 14 16 17 18 19 20 21 22 23 24 26 28 30 32 34 36 38 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 18 41 22 43 0 33 1 26 3 40 4 36 5 28 6 38 7 27 9 29 10 42 11 32 12 35 13 30 14 39 16 31 17 24 19 37 21 25 23 34\nMR 41 43 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 42\n"
+    },
+    "t6-n24": {
+      "n": 24,
+      "t": 6,
+      "fileName": "ft_ghz_24_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_24_6.stim",
+      "stim": "H 0 24\nCX 0 16 24 40 0 8 16 20 24 32 40 42 0 4 8 12 16 18 20 22 24 28 32 36 40 41 42 43 0 2 4 6 8 10 12 14 16 17 18 19 20 21 22 23 24 26 28 30 32 34 36 38 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 16 41 0 31 1 32 3 38 4 34 5 43 6 26 7 28 9 40 10 25 11 30 12 42 13 37 14 27 17 33 18 24 19 39 21 35 22 29 23 36\nMR 41 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 42 43\n"
+    },
+    "t7-n24": {
+      "n": 24,
+      "t": 7,
+      "fileName": "ft_ghz_24_7.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_24_7.stim",
+      "stim": "H 0 24\nCX 0 16 24 40 0 8 16 20 24 32 40 44 0 4 8 12 16 18 20 22 24 28 32 36 40 42 44 46 0 2 4 6 8 10 12 14 16 17 18 19 20 21 22 23 24 26 28 30 32 34 36 38 40 41 42 43 44 45 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 16 43 17 46 21 45 23 41 0 27 1 29 2 39 4 30 5 36 6 32 7 40 8 28 9 44 10 25 11 34 12 26 13 42 14 35 15 37 18 31 19 33 20 24 22 38\nMR 41 43 45 46 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 42 44\n"
+    },
+    "t2-n25": {
+      "n": 25,
+      "t": 2,
+      "fileName": "ft_ghz_25_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_25_2.stim",
+      "stim": "H 0 25\nCX 0 16 25 33 0 8 16 24 25 29 33 35 0 4 8 12 16 20 25 27 29 31 33 34 35 36 0 2 4 6 8 10 12 14 16 18 20 22 25 26 27 28 29 30 31 32 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 1 32 3 26 4 27 6 36 9 35 11 29 12 30 15 34 16 33 19 31 20 25 22 28\nMR 25 26 27 28 29 30 31 32 33 34 35 36\n"
+    },
+    "t3-n25": {
+      "n": 25,
+      "t": 3,
+      "fileName": "ft_ghz_25_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_25_3.stim",
+      "stim": "H 0 25\nCX 0 16 25 41 0 8 16 24 25 33 41 42 0 4 8 12 16 20 25 29 33 37 0 2 4 6 8 10 12 14 16 18 20 22 25 27 29 31 33 35 37 39 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 0 29 2 28 3 36 5 37 6 30 7 41 8 27 10 31 11 39 12 38 13 42 15 33 16 25 17 34 19 32 20 35 21 40 23 26\nMR 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42\n"
+    },
+    "t4-n25": {
+      "n": 25,
+      "t": 4,
+      "fileName": "ft_ghz_25_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_25_4.stim",
+      "stim": "H 0 25\nCX 0 16 25 41 0 8 16 24 25 33 41 43 0 4 8 12 16 20 25 29 33 37 41 42 0 2 4 6 8 10 12 14 16 18 20 22 25 27 29 31 33 35 37 39 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 0 30 1 36 3 34 5 41 6 27 7 32 9 26 10 40 11 43 13 39 14 25 15 31 17 37 18 35 19 42 20 29 21 33 22 28 24 38\nMR 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43\n"
+    },
+    "t5-n25": {
+      "n": 25,
+      "t": 5,
+      "fileName": "ft_ghz_25_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_25_5.stim",
+      "stim": "H 0 25\nCX 0 16 25 41 0 8 16 24 25 33 41 43 0 4 8 12 16 20 25 29 33 37 41 42 43 44 0 2 4 6 8 10 12 14 16 18 20 22 25 27 29 31 33 35 37 39 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 0 32 1 34 2 44 5 30 6 33 7 39 8 26 9 35 10 28 11 40 12 37 13 43 14 25 15 29 17 27 18 38 19 42 20 31 21 41 23 36\nMR 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44\n"
+    },
+    "t6-n25": {
+      "n": 25,
+      "t": 6,
+      "fileName": "ft_ghz_25_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_25_6.stim",
+      "stim": "H 0 25\nCX 0 16 25 41 0 8 16 24 25 33 41 45 0 4 8 12 16 20 25 29 33 37 41 43 45 46 0 2 4 6 8 10 12 14 16 18 20 22 25 27 29 31 33 35 37 39 41 42 43 44 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 0 28 1 32 2 42 3 36 4 37 5 43 6 46 7 30 8 29 9 40 11 25 12 33 13 31 14 26 15 35 16 41 17 39 18 27 19 44 21 38 22 34 23 45\nMR 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46\n"
+    },
+    "t7-n25": {
+      "n": 25,
+      "t": 7,
+      "fileName": "ft_ghz_25_7.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_25_7.stim",
+      "stim": "H 0 25\nCX 0 16 25 41 0 8 16 24 25 33 41 45 0 4 8 12 16 20 25 29 33 37 41 43 45 47 0 2 4 6 8 10 12 14 16 18 20 22 25 27 29 31 33 35 37 39 41 42 43 44 45 46 47 48 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 0 31 1 37 2 42 4 26 5 47 6 29 7 33 8 28 9 43 10 35 11 40 12 25 13 41 14 30 15 39 16 27 17 38 18 44 19 46 20 36 21 45 22 32 23 48 24 34\nMR 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48\n"
+    },
+    "t2-n26": {
+      "n": 26,
+      "t": 2,
+      "fileName": "ft_ghz_26_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_26_2.stim",
+      "stim": "H 0 26\nCX 0 16 26 34 0 8 16 24 26 30 34 38 0 4 8 12 16 20 24 25 26 28 30 32 34 36 0 2 4 6 8 10 12 14 16 18 20 22 26 27 28 29 30 31 32 33 34 35 36 37 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 25 37 0 28 3 36 4 38 7 34 8 30 10 29 13 26 15 33 16 35 18 27 21 31 22 32\nMR 37 26 27 28 29 30 31 32 33 34 35 36 38\n"
+    },
+    "t3-n26": {
+      "n": 26,
+      "t": 3,
+      "fileName": "ft_ghz_26_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_26_3.stim",
+      "stim": "H 0 26\nCX 0 16 26 42 0 8 16 24 26 34 42 44 0 4 8 12 16 20 24 25 26 30 34 38 42 43 0 2 4 6 8 10 12 14 16 18 20 22 26 28 30 32 34 36 38 40 25 44 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41\nMR 44\nCX 0 32 2 38 3 40 5 41 6 36 7 42 9 43 10 27 11 33 12 28 13 31 15 26 16 34 17 39 18 29 20 30 21 37 22 35\nMR 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43\n"
+    },
+    "t4-n26": {
+      "n": 26,
+      "t": 4,
+      "fileName": "ft_ghz_26_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_26_4.stim",
+      "stim": "H 0 26\nCX 0 16 26 42 0 8 16 24 26 34 42 44 0 4 8 12 16 20 24 25 26 30 34 38 42 43 44 45 0 2 4 6 8 10 12 14 16 18 20 22 26 28 30 32 34 36 38 40 25 43 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41\nMR 43\nCX 0 26 1 37 2 38 4 40 5 45 6 33 8 29 9 39 11 44 12 28 14 34 15 42 16 27 18 32 19 35 20 31 21 41 22 30 23 36\nMR 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 44 45\n"
+    },
+    "t5-n26": {
+      "n": 26,
+      "t": 5,
+      "fileName": "ft_ghz_26_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_26_5.stim",
+      "stim": "H 0 26\nCX 0 16 26 42 0 8 16 24 26 34 42 46 0 4 8 12 16 20 24 25 26 30 34 38 42 44 46 47 0 2 4 6 8 10 12 14 16 18 20 22 26 28 30 32 34 36 38 40 42 43 44 45 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 0 31 1 34 2 27 3 45 4 36 5 38 6 46 7 40 8 28 9 30 10 44 13 33 14 35 15 26 16 47 17 32 18 39 19 43 20 29 21 42 22 37 25 41\nMR 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47\n"
+    },
+    "t6-n26": {
+      "n": 26,
+      "t": 6,
+      "fileName": "ft_ghz_26_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_26_6.stim",
+      "stim": "H 0 26\nCX 0 16 26 42 0 8 16 24 26 34 42 46 0 4 8 12 16 20 24 25 26 30 34 38 42 44 46 47 0 2 4 6 8 10 12 14 16 18 20 22 26 28 30 32 34 36 38 40 42 43 44 45 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 0 38 1 29 2 33 3 45 4 26 5 40 6 44 7 34 8 31 9 37 10 41 13 42 14 39 15 35 16 43 17 36 18 30 19 47 20 32 21 27 22 46 25 28\nMR 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47\n"
+    },
+    "t7-n26": {
+      "n": 26,
+      "t": 7,
+      "fileName": "ft_ghz_26_7.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_26_7.stim",
+      "stim": "H 0 26\nCX 0 16 26 42 0 8 16 24 26 34 42 50 0 4 8 12 16 20 24 25 26 30 34 38 42 46 0 2 4 6 8 10 12 14 16 18 20 22 26 28 30 32 34 36 38 40 42 44 46 48 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 0 27 1 31 2 32 3 40 4 44 5 46 6 29 7 39 8 28 9 45 10 30 11 49 12 41 13 43 14 35 15 47 16 37 17 48 18 38 19 42 20 26 21 50 22 33 23 36 24 34\nMR 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50\n"
+    },
+    "t2-n27": {
+      "n": 27,
+      "t": 2,
+      "fileName": "ft_ghz_27_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_27_2.stim",
+      "stim": "H 0 27\nCX 0 16 27 35 0 8 16 24 27 31 35 39 0 4 8 12 16 20 24 26 27 29 31 33 35 37 39 40 0 2 4 6 8 10 12 14 16 18 20 22 24 25 27 28 29 30 31 32 33 34 35 36 37 38 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 38 25 39 1 27 2 35 4 34 7 30 9 28 11 36 12 40 15 29 16 31 18 33 20 32 23 37\nMR 38 39 27 28 29 30 31 32 33 34 35 36 37 40\n"
+    },
+    "t3-n27": {
+      "n": 27,
+      "t": 3,
+      "fileName": "ft_ghz_27_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_27_3.stim",
+      "stim": "H 0 27\nCX 0 16 27 43 0 8 16 24 27 35 43 45 0 4 8 12 16 20 24 26 27 31 35 39 43 44 45 46 0 2 4 6 8 10 12 14 16 18 20 22 24 25 27 29 31 33 35 37 39 41 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 0 43 2 34 3 41 4 46 6 29 7 31 8 32 10 27 11 44 12 38 14 40 15 45 16 30 17 39 19 33 20 35 21 42 22 28 24 36 25 37\nMR 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46\n"
+    },
+    "t4-n27": {
+      "n": 27,
+      "t": 4,
+      "fileName": "ft_ghz_27_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_27_4.stim",
+      "stim": "H 0 27\nCX 0 16 27 43 0 8 16 24 27 35 43 47 0 4 8 12 16 20 24 26 27 31 35 39 43 45 0 2 4 6 8 10 12 14 16 18 20 22 24 25 27 29 31 33 35 37 39 41 43 44 45 46 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 0 27 1 42 3 37 4 41 5 46 6 44 8 28 10 43 11 47 13 45 14 33 15 39 16 29 18 32 19 40 20 34 21 35 22 30 23 38 25 36 26 31\nMR 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47\n"
+    },
+    "t5-n27": {
+      "n": 27,
+      "t": 5,
+      "fileName": "ft_ghz_27_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_27_5.stim",
+      "stim": "H 0 27\nCX 0 16 27 43 0 8 16 24 27 35 43 47 0 4 8 12 16 20 24 26 27 31 35 39 43 45 47 49 0 2 4 6 8 10 12 14 16 18 20 22 24 25 27 29 31 33 35 37 39 41 43 44 45 46 47 48 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 26 46 0 37 1 32 2 42 3 27 4 39 5 49 6 30 7 43 8 45 9 29 10 40 13 34 14 41 15 48 16 31 17 47 18 36 19 33 20 35 21 28 22 44 24 38\nMR 46 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 47 48 49\n"
+    },
+    "t6-n27": {
+      "n": 27,
+      "t": 6,
+      "fileName": "ft_ghz_27_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_27_6.stim",
+      "stim": "H 0 27\nCX 0 16 27 43 0 8 16 24 27 35 43 47 0 4 8 12 16 20 24 26 27 31 35 39 43 45 47 49 0 2 4 6 8 10 12 14 16 18 20 22 24 25 27 29 31 33 35 37 39 41 43 44 45 46 47 48 49 50 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 24 47 26 44 0 28 1 38 2 32 3 42 4 34 5 43 6 31 7 49 8 35 9 29 10 41 12 37 13 48 14 33 15 39 16 30 17 50 18 36 19 45 20 40 21 46 22 27\nMR 44 47 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 45 46 48 49 50\n"
+    },
+    "t7-n27": {
+      "n": 27,
+      "t": 7,
+      "fileName": "ft_ghz_27_7.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_27_7.stim",
+      "stim": "H 0 27\nCX 0 16 27 43 0 8 16 24 27 35 43 51 0 4 8 12 16 20 24 26 27 31 35 39 43 47 0 2 4 6 8 10 12 14 16 18 20 22 24 25 27 29 31 33 35 37 39 41 43 45 47 49 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 0 51 2 34 3 43 4 46 5 48 6 29 7 50 8 27 9 39 10 38 11 47 12 32 13 36 14 41 15 49 16 33 17 37 18 35 19 42 20 30 21 44 22 28 23 31 24 40 25 45\nMR 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51\n"
+    },
+    "t2-n28": {
+      "n": 28,
+      "t": 2,
+      "fileName": "ft_ghz_28_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_28_2.stim",
+      "stim": "H 0 28\nCX 0 16 28 36 0 8 16 24 28 32 36 40 0 4 8 12 16 20 24 26 28 30 32 34 36 38 40 41 0 2 4 6 8 10 12 14 16 18 20 22 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 37 27 39 1 32 2 34 5 30 7 40 9 29 10 41 12 38 14 28 17 33 19 31 21 35 23 36\nMR 37 39 28 29 30 31 32 33 34 35 36 38 40 41\n"
+    },
+    "t3-n28": {
+      "n": 28,
+      "t": 3,
+      "fileName": "ft_ghz_28_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_28_3.stim",
+      "stim": "H 0 28\nCX 0 16 28 44 0 8 16 24 28 36 44 48 0 4 8 12 16 20 24 26 28 32 36 40 44 46 0 2 4 6 8 10 12 14 16 18 20 22 24 25 26 27 28 30 32 34 36 38 40 42 44 45 46 47 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 27 48 1 33 2 43 3 47 5 42 6 34 7 39 8 31 9 41 10 45 12 32 13 36 15 35 16 37 17 38 19 40 20 29 21 44 22 46 25 30 26 28\nMR 48 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47\n"
+    },
+    "t4-n28": {
+      "n": 28,
+      "t": 4,
+      "fileName": "ft_ghz_28_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_28_4.stim",
+      "stim": "H 0 28\nCX 0 16 28 44 0 8 16 24 28 36 44 48 0 4 8 12 16 20 24 26 28 32 36 40 44 46 0 2 4 6 8 10 12 14 16 18 20 22 24 25 26 27 28 30 32 34 36 38 40 42 44 45 46 47 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 0 28 1 41 3 44 5 47 6 36 7 45 8 30 9 32 10 39 13 40 14 42 15 48 16 35 18 31 19 46 20 33 21 37 23 29 24 43 26 34 27 38\nMR 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48\n"
+    },
+    "t5-n28": {
+      "n": 28,
+      "t": 5,
+      "fileName": "ft_ghz_28_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_28_5.stim",
+      "stim": "H 0 28\nCX 0 16 28 44 0 8 16 24 28 36 44 48 0 4 8 12 16 20 24 26 28 32 36 40 44 46 48 50 0 2 4 6 8 10 12 14 16 18 20 22 24 25 26 27 28 30 32 34 36 38 40 42 44 45 46 47 48 49 50 51 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 25 47 0 44 1 30 2 33 3 48 4 40 5 31 6 45 7 51 8 37 9 34 10 50 13 39 14 43 15 49 16 38 17 46 18 28 19 36 20 42 21 35 22 29 24 32 27 41\nMR 47 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 48 49 50 51\n"
+    },
+    "t6-n28": {
+      "n": 28,
+      "t": 6,
+      "fileName": "ft_ghz_28_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_28_6.stim",
+      "stim": "H 0 28\nCX 0 16 28 44 0 8 16 24 28 36 44 48 0 4 8 12 16 20 24 26 28 32 36 40 44 46 48 50 0 2 4 6 8 10 12 14 16 18 20 22 24 25 26 27 28 30 32 34 36 38 40 42 44 45 46 47 48 49 50 51 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 24 44 0 36 1 47 2 49 3 28 4 48 5 40 6 35 7 31 8 45 9 38 10 29 13 37 14 50 15 34 16 51 17 42 18 32 19 39 20 46 21 30 22 43 25 41 27 33\nMR 44 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 45 46 47 48 49 50 51\n"
+    },
+    "t7-n28": {
+      "n": 28,
+      "t": 7,
+      "fileName": "ft_ghz_28_7.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_28_7.stim",
+      "stim": "H 0 28\nCX 0 16 28 44 0 8 16 24 28 36 44 52 0 4 8 12 16 20 24 26 28 32 36 40 44 48 52 54 0 2 4 6 8 10 12 14 16 18 20 22 24 25 26 27 28 30 32 34 36 38 40 42 44 46 48 50 52 53 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 25 52 0 30 1 37 2 40 3 50 4 51 5 53 6 29 7 47 8 36 9 43 10 46 11 48 12 41 13 44 14 38 16 35 17 42 18 33 19 45 20 34 21 54 22 28 23 39 24 32 26 31 27 49\nMR 52 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 53 54\n"
+    },
+    "t2-n29": {
+      "n": 29,
+      "t": 2,
+      "fileName": "ft_ghz_29_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_29_2.stim",
+      "stim": "H 0 29\nCX 0 16 29 37 0 8 16 24 29 33 37 41 0 4 8 12 16 20 24 28 29 31 33 35 37 39 41 42 0 2 4 6 8 10 12 14 16 18 20 22 24 26 29 30 31 32 33 34 35 36 37 38 39 40 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 0 40 2 31 4 30 6 33 9 42 11 32 13 41 14 39 17 34 18 29 21 37 23 36 25 35 27 38\nMR 29 30 31 32 33 34 35 36 37 38 39 40 41 42\n"
+    },
+    "t3-n29": {
+      "n": 29,
+      "t": 3,
+      "fileName": "ft_ghz_29_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_29_3.stim",
+      "stim": "H 0 29\nCX 0 16 29 45 0 8 16 24 29 37 45 49 0 4 8 12 16 20 24 28 29 33 37 41 45 47 0 2 4 6 8 10 12 14 16 18 20 22 24 26 29 31 33 35 37 39 41 43 45 46 47 48 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 0 48 2 44 3 45 5 46 6 35 7 38 8 40 9 47 10 49 12 41 13 43 14 31 16 36 18 29 19 33 21 39 22 30 23 34 24 32 25 37 26 42\nMR 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49\n"
+    },
+    "t4-n29": {
+      "n": 29,
+      "t": 4,
+      "fileName": "ft_ghz_29_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_29_4.stim",
+      "stim": "H 0 29\nCX 0 16 29 45 0 8 16 24 29 37 45 49 0 4 8 12 16 20 24 28 29 33 37 41 45 47 49 50 0 2 4 6 8 10 12 14 16 18 20 22 24 26 29 31 33 35 37 39 41 43 45 46 47 48 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 28 48 0 38 2 29 3 44 4 50 6 41 7 43 9 36 10 40 11 46 12 34 14 31 15 37 16 39 17 49 19 45 20 35 21 42 23 47 25 30 26 32 27 33\nMR 48 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 49 50\n"
+    },
+    "t5-n29": {
+      "n": 29,
+      "t": 5,
+      "fileName": "ft_ghz_29_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_29_5.stim",
+      "stim": "H 0 29\nCX 0 16 29 45 0 8 16 24 29 37 45 49 0 4 8 12 16 20 24 28 29 33 37 41 45 47 49 51 0 2 4 6 8 10 12 14 16 18 20 22 24 26 29 31 33 35 37 39 41 43 45 46 47 48 49 50 51 52 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 28 48 0 41 1 51 2 36 3 37 4 32 5 44 6 33 7 39 8 50 9 45 10 34 13 52 14 40 15 43 17 38 18 30 19 49 20 29 21 35 22 47 24 46 25 42 27 31\nMR 48 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 49 50 51 52\n"
+    },
+    "t6-n29": {
+      "n": 29,
+      "t": 6,
+      "fileName": "ft_ghz_29_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_29_6.stim",
+      "stim": "H 0 29\nCX 0 16 29 45 0 8 16 24 29 37 45 53 0 4 8 12 16 20 24 28 29 33 37 41 45 49 0 2 4 6 8 10 12 14 16 18 20 22 24 26 29 31 33 35 37 39 41 43 45 47 49 51 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 0 30 1 47 2 49 3 42 4 43 5 46 6 37 7 53 8 52 9 29 10 33 13 41 14 48 15 40 17 38 18 51 19 36 20 44 21 32 22 50 23 34 24 31 25 35 27 45 28 39\nMR 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53\n"
+    },
+    "t7-n29": {
+      "n": 29,
+      "t": 7,
+      "fileName": "ft_ghz_29_7.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_29_7.stim",
+      "stim": "H 0 29\nCX 0 16 29 45 0 8 16 24 29 37 45 53 0 4 8 12 16 20 24 28 29 33 37 41 45 49 53 55 0 2 4 6 8 10 12 14 16 18 20 22 24 26 29 31 33 35 37 39 41 43 45 47 49 51 53 54 55 56 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 0 43 1 51 2 54 4 32 5 34 6 37 7 56 8 36 9 46 10 48 11 55 12 42 13 47 14 33 15 39 16 31 17 53 18 38 19 41 20 30 21 50 22 45 23 49 24 29 25 40 26 35 27 44 28 52\nMR 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56\n"
+    },
+    "t2-n30": {
+      "n": 30,
+      "t": 2,
+      "fileName": "ft_ghz_30_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_30_2.stim",
+      "stim": "H 0 30\nCX 0 16 30 38 0 8 16 24 30 34 38 42 0 4 8 12 16 20 24 28 30 32 34 36 38 40 42 44 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 37 0 36 2 42 5 33 7 34 9 43 11 40 12 44 14 32 16 30 19 41 21 39 22 31 24 38 26 35\nMR 37 30 31 32 33 34 35 36 38 39 40 41 42 43 44\n"
+    },
+    "t3-n30": {
+      "n": 30,
+      "t": 3,
+      "fileName": "ft_ghz_30_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_30_3.stim",
+      "stim": "H 0 30\nCX 0 16 30 46 0 8 16 24 30 38 46 50 0 4 8 12 16 20 24 28 30 34 38 42 46 48 50 51 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 29 30 32 34 36 38 40 42 44 46 47 48 49 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 28 47 0 39 1 49 3 41 4 51 6 32 7 46 8 48 10 43 11 44 12 31 14 34 15 42 16 33 18 30 19 50 20 37 21 40 23 35 25 45 26 36 27 38\nMR 47 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 48 49 50 51\n"
+    },
+    "t4-n30": {
+      "n": 30,
+      "t": 4,
+      "fileName": "ft_ghz_30_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_30_4.stim",
+      "stim": "H 0 30\nCX 0 16 30 46 0 8 16 24 30 38 46 50 0 4 8 12 16 20 24 28 30 34 38 42 46 48 50 52 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 29 30 32 34 36 38 40 42 44 46 47 48 49 50 51 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 0 45 1 46 3 41 5 51 6 36 7 40 8 38 9 44 11 47 12 32 13 49 15 42 16 43 17 50 18 31 19 52 20 48 22 34 23 37 24 35 25 39 26 30 28 33\nMR 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52\n"
+    },
+    "t5-n30": {
+      "n": 30,
+      "t": 5,
+      "fileName": "ft_ghz_30_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_30_5.stim",
+      "stim": "H 0 30\nCX 0 16 30 46 0 8 16 24 30 38 46 54 0 4 8 12 16 20 24 28 30 34 38 42 46 50 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 29 30 32 34 36 38 40 42 44 46 48 50 52 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 0 51 1 39 2 43 3 49 4 44 5 38 6 31 7 42 8 52 9 32 10 54 13 45 14 47 15 35 17 30 18 37 19 41 20 36 21 33 22 50 24 40 25 34 27 48 28 46 29 53\nMR 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54\n"
+    },
+    "t6-n30": {
+      "n": 30,
+      "t": 6,
+      "fileName": "ft_ghz_30_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_30_6.stim",
+      "stim": "H 0 30\nCX 0 16 30 46 0 8 16 24 30 38 46 54 0 4 8 12 16 20 24 28 30 34 38 42 46 50 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 29 30 32 34 36 38 40 42 44 46 48 50 52 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 0 41 1 36 2 53 3 47 4 50 5 37 6 32 7 45 8 38 9 48 10 35 13 54 14 42 15 52 17 46 18 51 19 30 20 44 21 49 22 40 24 43 25 39 27 33 28 31 29 34\nMR 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54\n"
+    },
+    "t7-n30": {
+      "n": 30,
+      "t": 7,
+      "fileName": "ft_ghz_30_7.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_30_7.stim",
+      "stim": "H 0 30\nCX 0 16 30 46 0 8 16 24 30 38 46 54 0 4 8 12 16 20 24 28 30 34 38 42 46 50 54 58 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 29 30 32 34 36 38 40 42 44 46 48 50 52 54 56 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 0 42 1 48 2 58 4 33 5 39 6 46 7 57 8 34 9 50 10 51 11 54 12 36 13 49 14 53 15 56 16 32 17 43 18 31 19 35 20 44 21 47 22 41 23 55 24 30 25 52 26 37 27 38 28 40 29 45\nMR 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58\n"
+    },
+    "t2-n31": {
+      "n": 31,
+      "t": 2,
+      "fileName": "ft_ghz_31_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_31_2.stim",
+      "stim": "H 0 31\nCX 0 16 31 39 0 8 16 24 31 35 39 43 0 4 8 12 16 20 24 28 31 33 35 37 39 41 43 45 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 0 32 3 40 4 44 6 33 9 45 10 38 12 35 14 46 16 34 19 41 20 43 22 37 24 36 26 31 28 39 29 42\nMR 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46\n"
+    },
+    "t3-n31": {
+      "n": 31,
+      "t": 3,
+      "fileName": "ft_ghz_31_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_31_3.stim",
+      "stim": "H 0 31\nCX 0 16 31 47 0 8 16 24 31 39 47 51 0 4 8 12 16 20 24 28 31 35 39 43 47 49 51 53 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 31 33 35 37 39 41 43 45 47 48 49 50 51 52 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 0 47 1 49 3 31 4 32 5 46 6 43 8 35 9 52 11 39 12 44 13 53 14 36 16 37 17 48 18 42 20 40 21 45 23 34 25 38 26 41 27 50 28 33 29 51\nMR 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53\n"
+    },
+    "t4-n31": {
+      "n": 31,
+      "t": 4,
+      "fileName": "ft_ghz_31_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_31_4.stim",
+      "stim": "H 0 31\nCX 0 16 31 47 0 8 16 24 31 39 47 51 0 4 8 12 16 20 24 28 31 35 39 43 47 49 51 53 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 31 33 35 37 39 41 43 45 47 48 49 50 51 52 53 54 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 0 37 2 43 3 54 5 46 6 34 7 47 8 31 9 38 10 41 11 51 12 33 13 53 14 39 16 42 18 40 19 49 21 48 22 35 23 45 25 36 26 50 27 52 28 32 30 44\nMR 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54\n"
+    },
+    "t5-n31": {
+      "n": 31,
+      "t": 5,
+      "fileName": "ft_ghz_31_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_31_5.stim",
+      "stim": "H 0 31\nCX 0 16 31 47 0 8 16 24 31 39 47 55 0 4 8 12 16 20 24 28 31 35 39 43 47 51 55 56 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 31 33 35 37 39 41 43 45 47 49 51 53 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 0 44 1 35 2 52 3 41 4 45 5 32 6 56 7 34 8 49 9 37 10 31 13 39 14 46 15 53 16 55 18 47 19 42 20 38 21 43 22 50 23 40 24 33 25 48 27 51 29 36 30 54\nMR 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56\n"
+    },
+    "t6-n31": {
+      "n": 31,
+      "t": 6,
+      "fileName": "ft_ghz_31_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_31_6.stim",
+      "stim": "H 0 31\nCX 0 16 31 47 0 8 16 24 31 39 47 55 0 4 8 12 16 20 24 28 31 35 39 43 47 51 55 57 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 31 33 35 37 39 41 43 45 47 49 51 53 55 56 57 58 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 0 34 1 49 2 52 4 43 6 53 7 55 8 38 9 45 10 33 11 39 12 46 13 56 14 31 15 42 16 32 17 40 18 44 19 47 20 35 21 54 22 41 23 57 24 37 25 50 27 58 28 48 29 51 30 36\nMR 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58\n"
+    },
+    "t7-n31": {
+      "n": 31,
+      "t": 7,
+      "fileName": "ft_ghz_31_7.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_31_7.stim",
+      "stim": "H 0 31\nCX 0 16 31 47 0 8 16 24 31 39 47 55 0 4 8 12 16 20 24 28 31 35 39 43 47 51 55 59 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 31 33 35 37 39 41 43 45 47 49 51 53 55 57 59 60 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 1 31 2 36 3 39 4 45 5 50 6 47 7 53 8 38 9 55 10 33 11 51 12 43 13 58 14 32 15 49 16 41 17 52 18 46 19 60 20 35 21 48 22 57 23 59 24 34 25 44 26 40 27 56 28 37 29 42 30 54\nMR 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60\n"
+    },
+    "t2-n32": {
+      "n": 32,
+      "t": 2,
+      "fileName": "ft_ghz_32_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_32_2.stim",
+      "stim": "H 0 32\nCX 0 16 32 40 0 8 16 24 32 36 40 44 0 4 8 12 16 20 24 28 32 34 36 38 40 42 44 46 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 0 47 3 42 4 44 7 33 9 39 10 35 12 43 14 32 17 37 18 41 21 40 23 38 25 46 27 36 29 34 30 45\nMR 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47\n"
+    },
+    "t3-n32": {
+      "n": 32,
+      "t": 3,
+      "fileName": "ft_ghz_32_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_32_3.stim",
+      "stim": "H 0 32\nCX 0 16 32 48 0 8 16 24 32 40 48 52 0 4 8 12 16 20 24 28 32 36 40 44 48 50 52 54 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40 42 44 46 48 49 50 51 52 53 54 55 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 0 32 1 36 2 48 4 39 6 50 7 52 8 51 10 34 11 41 12 46 14 42 15 49 17 37 18 38 19 55 21 53 22 40 23 44 25 45 26 47 27 54 28 43 30 33 31 35\nMR 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55\n"
+    },
+    "t4-n32": {
+      "n": 32,
+      "t": 4,
+      "fileName": "ft_ghz_32_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_32_4.stim",
+      "stim": "H 0 32\nCX 0 16 32 48 0 8 16 24 32 40 48 52 0 4 8 12 16 20 24 28 32 36 40 44 48 50 52 54 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40 42 44 46 48 49 50 51 52 53 54 55 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 0 35 1 49 2 52 5 45 6 39 7 42 9 37 10 41 11 46 13 48 14 51 15 55 17 40 18 33 19 50 20 36 21 44 22 54 24 43 25 53 27 38 29 32 30 34 31 47\nMR 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55\n"
+    },
+    "t5-n32": {
+      "n": 32,
+      "t": 5,
+      "fileName": "ft_ghz_32_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_32_5.stim",
+      "stim": "H 0 32\nCX 0 16 32 48 0 8 16 24 32 40 48 56 0 4 8 12 16 20 24 28 32 36 40 44 48 52 56 58 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40 42 44 46 48 50 52 54 56 57 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 0 55 1 33 2 56 3 53 4 32 5 46 6 42 7 36 8 51 9 54 10 43 13 57 14 50 15 39 16 34 18 45 19 52 20 49 21 44 22 58 23 35 24 37 25 41 27 47 29 48 30 40 31 38\nMR 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58\n"
+    },
+    "t6-n32": {
+      "n": 32,
+      "t": 6,
+      "fileName": "ft_ghz_32_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_32_6.stim",
+      "stim": "H 0 32\nCX 0 16 32 48 0 8 16 24 32 40 48 56 0 4 8 12 16 20 24 28 32 36 40 44 48 52 56 58 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40 42 44 46 48 50 52 54 56 57 58 59 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 0 50 1 55 3 59 5 53 6 39 7 42 8 48 10 43 11 57 12 33 13 37 14 46 15 49 17 32 18 44 19 54 20 36 21 41 22 51 23 56 24 38 25 47 26 35 27 58 28 40 29 45 30 34 31 52\nMR 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59\n"
+    },
+    "t7-n32": {
+      "n": 32,
+      "t": 7,
+      "fileName": "ft_ghz_32_7.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_32_7.stim",
+      "stim": "H 0 32\nCX 0 16 32 48 0 8 16 24 32 40 48 56 0 4 8 12 16 20 24 28 32 36 40 44 48 52 56 60 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40 42 44 46 48 50 52 54 56 58 60 62 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 0 35 1 43 2 44 3 50 4 51 5 61 6 46 7 52 8 38 9 45 10 55 11 59 12 48 13 54 14 34 15 57 16 41 17 58 18 32 19 36 20 39 21 42 22 37 23 62 24 47 25 49 26 53 27 56 28 40 29 60 30 33 31 63\nMR 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63\n"
+    },
+    "t2-n33": {
+      "n": 33,
+      "t": 2,
+      "fileName": "ft_ghz_33_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_33_2.stim",
+      "stim": "H 0 33\nCX 0 32 33 41 0 16 33 37 41 45 0 8 16 24 33 35 37 39 41 43 45 47 0 4 8 12 16 20 24 28 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 0 34 2 47 5 44 6 45 9 37 10 33 12 42 14 38 16 48 18 43 21 46 22 41 24 35 27 40 29 39 30 36\nMR 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48\n"
+    },
+    "t3-n33": {
+      "n": 33,
+      "t": 3,
+      "fileName": "ft_ghz_33_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_33_3.stim",
+      "stim": "H 0 33\nCX 0 32 33 49 0 16 33 41 49 53 0 8 16 24 33 37 41 45 49 51 53 55 0 4 8 12 16 20 24 28 33 35 37 39 41 43 45 47 49 50 51 52 53 54 55 56 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 0 45 1 49 2 54 4 46 6 33 7 41 9 51 10 47 11 50 12 56 14 39 15 53 16 48 18 37 19 55 20 34 21 36 23 43 25 38 26 40 27 44 28 35 29 52 31 42\nMR 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56\n"
+    },
+    "t4-n33": {
+      "n": 33,
+      "t": 4,
+      "fileName": "ft_ghz_33_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_33_4.stim",
+      "stim": "H 0 33\nCX 0 32 33 49 0 16 33 41 49 57 0 8 16 24 33 37 41 45 49 53 0 4 8 12 16 20 24 28 33 35 37 39 41 43 45 47 49 51 53 55 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 53 1 45 2 48 3 54 4 41 5 39 6 33 8 46 9 35 11 38 12 57 13 40 14 49 16 56 18 34 19 43 20 44 21 55 23 47 24 51 25 42 26 36 28 50 29 37 31 52\nMR 53 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 54 55 56 57\n"
+    },
+    "t5-n33": {
+      "n": 33,
+      "t": 5,
+      "fileName": "ft_ghz_33_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_33_5.stim",
+      "stim": "H 0 33\nCX 0 32 33 49 0 16 33 41 49 57 0 8 16 24 33 37 41 45 49 53 57 59 0 4 8 12 16 20 24 28 33 35 37 39 41 43 45 47 49 51 53 55 57 58 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 45 0 41 1 55 3 46 4 58 5 36 6 43 7 47 8 37 9 42 11 35 12 54 13 50 14 39 15 56 16 44 18 33 19 52 20 34 21 48 23 53 24 51 25 38 26 59 28 49 29 57 31 40\nMR 45 33 34 35 36 37 38 39 40 41 42 43 44 46 47 48 49 50 51 52 53 54 55 56 57 58 59\n"
+    },
+    "t6-n33": {
+      "n": 33,
+      "t": 6,
+      "fileName": "ft_ghz_33_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_33_6.stim",
+      "stim": "H 0 33\nCX 0 32 33 49 0 16 33 41 49 57 0 8 16 24 33 37 41 45 49 53 57 59 0 4 8 12 16 20 24 28 33 35 37 39 41 43 45 47 49 51 53 55 57 58 59 60 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 50 0 47 1 41 3 49 4 35 5 58 6 53 7 38 8 45 9 52 11 54 12 37 13 44 14 55 15 59 16 33 18 46 19 42 20 39 21 60 22 34 23 56 24 51 25 57 26 40 28 48 29 36 31 43\nMR 50 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 51 52 53 54 55 56 57 58 59 60\n"
+    },
+    "t7-n33": {
+      "n": 33,
+      "t": 7,
+      "fileName": "ft_ghz_33_7.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_33_7.stim",
+      "stim": "H 0 33\nCX 0 32 33 65 0 16 33 49 0 8 16 24 33 41 49 57 0 4 8 12 16 20 24 28 33 37 41 45 49 53 57 61 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 33 35 37 39 41 43 45 47 49 51 53 55 57 59 61 63 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 0 37 1 39 2 44 3 47 4 49 5 58 6 43 7 54 8 53 9 61 10 36 11 65 12 48 13 62 14 34 15 41 16 38 17 60 18 42 19 51 20 33 21 59 22 57 23 64 24 56 25 63 26 40 27 50 28 35 29 46 30 45 31 52 32 55\nMR 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65\n"
+    },
+    "t2-n34": {
+      "n": 34,
+      "t": 2,
+      "fileName": "ft_ghz_34_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_34_2.stim",
+      "stim": "H 0 34\nCX 0 32 34 50 0 16 32 33 34 42 0 8 16 24 34 38 42 46 0 4 8 12 16 20 24 28 34 36 38 40 42 44 46 48 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 33 49 0 34 2 40 5 39 6 36 8 46 10 43 13 44 14 37 17 47 19 41 21 38 22 48 24 42 26 45 28 50 30 35\nMR 49 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 50\n"
+    },
+    "t3-n34": {
+      "n": 34,
+      "t": 3,
+      "fileName": "ft_ghz_34_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_34_3.stim",
+      "stim": "H 0 34\nCX 0 32 34 50 0 16 32 33 34 42 50 58 0 8 16 24 34 38 42 46 50 54 0 4 8 12 16 20 24 28 34 36 38 40 42 44 46 48 50 52 54 56 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 33 38 0 36 1 47 2 48 5 46 6 52 7 58 8 39 9 57 11 35 13 56 14 41 15 44 16 51 18 49 19 53 21 55 22 37 23 50 25 45 26 43 27 54 28 40 30 34 31 42\nMR 38 34 35 36 37 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58\n"
+    },
+    "t4-n34": {
+      "n": 34,
+      "t": 4,
+      "fileName": "ft_ghz_34_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_34_4.stim",
+      "stim": "H 0 34\nCX 0 32 34 50 0 16 32 33 34 42 50 58 0 8 16 24 34 38 42 46 50 54 58 59 0 4 8 12 16 20 24 28 34 36 38 40 42 44 46 48 50 52 54 56 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 44 33 57 0 39 1 42 3 59 5 43 6 37 7 40 8 46 9 53 10 56 12 51 13 52 15 47 16 45 17 48 18 54 21 36 22 38 23 58 24 34 25 50 26 49 29 41 30 35 31 55\nMR 44 57 34 35 36 37 38 39 40 41 42 43 45 46 47 48 49 50 51 52 53 54 55 56 58 59\n"
+    },
+    "t5-n34": {
+      "n": 34,
+      "t": 5,
+      "fileName": "ft_ghz_34_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_34_5.stim",
+      "stim": "H 0 34\nCX 0 32 34 50 0 16 32 33 34 42 50 58 0 8 16 24 34 38 42 46 50 54 58 60 0 4 8 12 16 20 24 28 34 36 38 40 42 44 46 48 50 52 54 56 58 59 60 61 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 33 58 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31\nMR 58\nCX 0 61 1 48 3 55 4 39 5 59 6 36 7 56 8 35 9 43 11 47 12 34 13 51 14 57 15 40 16 45 17 49 19 50 20 42 21 52 22 37 24 46 25 44 26 38 27 54 28 53 29 60 30 41\nMR 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 59 60 61\n"
+    },
+    "t6-n34": {
+      "n": 34,
+      "t": 6,
+      "fileName": "ft_ghz_34_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_34_6.stim",
+      "stim": "H 0 34\nCX 0 32 34 50 0 16 32 33 34 42 50 58 0 8 16 24 34 38 42 46 50 54 58 62 0 4 8 12 16 20 24 28 34 36 38 40 42 44 46 48 50 52 54 56 58 60 62 63 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 46 33 51 0 38 1 50 3 43 4 49 5 57 6 44 7 61 8 35 9 59 10 39 11 45 12 54 13 63 14 36 16 56 18 52 19 62 21 47 22 34 23 41 24 42 25 58 26 53 27 60 28 40 29 55 30 37 31 48\nMR 46 51 34 35 36 37 38 39 40 41 42 43 44 45 47 48 49 50 52 53 54 55 56 57 58 59 60 61 62 63\n"
+    },
+    "t2-n35": {
+      "n": 35,
+      "t": 2,
+      "fileName": "ft_ghz_35_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_35_2.stim",
+      "stim": "H 0 35\nCX 0 32 35 51 0 16 32 34 35 43 51 52 0 8 16 24 32 33 35 39 43 47 34 51 0 4 8 12 16 20 24 28 35 37 39 41 43 45 47 49\nMR 51\nCX 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 33 39 0 47 2 38 5 52 7 36 8 48 11 42 12 37 15 44 17 46 19 40 20 43 22 41 24 35 26 50 28 49 30 45\nMR 39 35 36 37 38 40 41 42 43 44 45 46 47 48 49 50 52\n"
+    },
+    "t3-n35": {
+      "n": 35,
+      "t": 3,
+      "fileName": "ft_ghz_35_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_35_3.stim",
+      "stim": "H 0 35\nCX 0 32 35 51 0 16 32 34 35 43 51 59 0 8 16 24 32 33 35 39 43 47 51 55 59 60 0 4 8 12 16 20 24 28 35 37 39 41 43 45 47 49 51 53 55 57 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 52 34 58 1 38 2 39 3 53 5 56 6 40 7 44 8 37 9 45 10 48 12 57 14 47 15 55 17 35 18 51 19 60 20 43 22 42 23 59 24 46 25 49 27 54 28 36 29 41 30 50\nMR 52 58 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 53 54 55 56 57 59 60\n"
+    },
+    "t4-n35": {
+      "n": 35,
+      "t": 4,
+      "fileName": "ft_ghz_35_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_35_4.stim",
+      "stim": "H 0 35\nCX 0 32 35 51 0 16 32 34 35 43 51 59 0 8 16 24 32 33 35 39 43 47 51 55 59 61 0 4 8 12 16 20 24 28 35 37 39 41 43 45 47 49 51 53 55 57 59 60 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 34 60 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 35 33 58\nMR 60\nCX 0 50 2 51 3 53 5 44 6 38 7 45 9 59 10 42 11 55 13 47 14 52 15 57 16 40 17 61 19 56 20 37 21 54 23 36 25 46 26 43 27 49 28 41 29 48 31 39\nMR 35 58 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 59 61\n"
+    },
+    "t5-n35": {
+      "n": 35,
+      "t": 5,
+      "fileName": "ft_ghz_35_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_35_5.stim",
+      "stim": "H 0 35\nCX 0 32 35 51 0 16 32 34 35 43 51 59 0 8 16 24 32 33 35 39 43 47 51 55 59 63 0 4 8 12 16 20 24 28 35 37 39 41 43 45 47 49 51 53 55 57 59 61 32 63 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62\nMR 63\nCX 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 34 40 0 42 1 60 3 38 4 43 5 51 6 45 7 53 8 35 9 47 10 59 11 55 12 36 13 62 14 37 15 49 16 46 17 56 18 61 20 50 21 58 23 54 24 41 25 52 27 48 28 44 30 39 31 57\nMR 40 35 36 37 38 39 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62\n"
+    },
+    "t6-n35": {
+      "n": 35,
+      "t": 6,
+      "fileName": "ft_ghz_35_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_35_6.stim",
+      "stim": "H 0 35\nCX 0 32 35 51 0 16 32 34 35 43 51 59 0 8 16 24 32 33 35 39 43 47 51 55 59 63 0 4 8 12 16 20 24 28 35 37 39 41 43 45 47 49 51 53 55 57 59 61 63 65 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 42 33 56 34 60 0 55 1 61 2 65 5 43 6 47 7 53 8 41 9 52 10 39 11 54 12 49 13 51 14 37 15 45 16 44 17 50 18 48 19 66 20 59 21 64 22 36 23 40 24 46 25 58 27 35 28 62 29 63 30 38 31 57\nMR 42 56 60 35 36 37 38 39 40 41 43 44 45 46 47 48 49 50 51 52 53 54 55 57 58 59 61 62 63 64 65 66\n"
+    },
+    "t2-n36": {
+      "n": 36,
+      "t": 2,
+      "fileName": "ft_ghz_36_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_36_2.stim",
+      "stim": "H 0 36\nCX 0 32 36 52 0 16 32 34 36 44 52 53 0 8 16 24 32 33 34 35 36 40 44 48 0 4 8 12 16 20 24 28 36 38 40 42 44 46 48 50 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 33 41 34 46 1 43 3 36 5 49 7 47 9 53 10 37 13 52 15 50 16 39 19 48 21 42 23 45 25 44 26 51 28 40 30 38\nMR 41 46 36 37 38 39 40 42 43 44 45 47 48 49 50 51 52 53\n"
+    },
+    "t3-n36": {
+      "n": 36,
+      "t": 3,
+      "fileName": "ft_ghz_36_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_36_3.stim",
+      "stim": "H 0 36\nCX 0 32 36 52 0 16 32 34 36 44 52 60 0 8 16 24 32 33 34 35 36 40 44 48 52 56 60 62 0 4 8 12 16 20 24 28 36 38 40 42 44 46 48 50 52 54 56 58 60 61 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 55 33 59 34 45 1 37 2 46 3 50 5 56 6 43 7 61 8 40 9 58 10 42 12 36 13 51 15 39 17 49 18 60 19 62 20 38 21 48 23 53 25 54 26 44 27 52 28 47 29 57 31 41\nMR 45 55 59 36 37 38 39 40 41 42 43 44 46 47 48 49 50 51 52 53 54 56 57 58 60 61 62\n"
+    },
+    "t4-n36": {
+      "n": 36,
+      "t": 4,
+      "fileName": "ft_ghz_36_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_36_4.stim",
+      "stim": "H 0 36\nCX 0 32 36 52 0 16 32 34 36 44 52 60 0 8 16 24 32 33 34 35 36 40 44 48 52 56 60 62 0 4 8 12 16 20 24 28 36 38 40 42 44 46 48 50 52 54 56 58 60 61 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 47 33 49 35 39 0 38 1 55 3 37 5 57 6 44 7 58 8 42 9 61 11 50 13 48 14 59 15 60 16 53 18 51 19 62 20 36 21 52 22 54 25 43 26 40 27 46 28 45 29 56 31 41\nMR 39 47 49 36 37 38 40 41 42 43 44 45 46 48 50 51 52 53 54 55 56 57 58 59 60 61 62\n"
+    },
+    "t5-n36": {
+      "n": 36,
+      "t": 5,
+      "fileName": "ft_ghz_36_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_36_5.stim",
+      "stim": "H 0 36\nCX 0 32 36 52 0 16 32 34 36 44 52 60 0 8 16 24 32 33 34 35 36 40 44 48 52 56 60 64 0 4 8 12 16 20 24 28 36 38 40 42 44 46 48 50 52 54 56 58 60 62 64 66 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 50 33 52 35 60 0 36 1 46 3 49 4 62 5 38 6 53 7 48 8 42 9 37 10 54 11 39 12 56 13 61 14 65 15 58 16 57 17 51 18 40 20 63 21 55 23 59 24 41 25 45 26 47 27 64 28 44 29 43 31 66\nMR 50 52 60 36 37 38 39 40 41 42 43 44 45 46 47 48 49 51 53 54 55 56 57 58 59 61 62 63 64 65 66\n"
+    },
+    "t6-n36": {
+      "n": 36,
+      "t": 6,
+      "fileName": "ft_ghz_36_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_36_6.stim",
+      "stim": "H 0 36\nCX 0 32 36 52 0 16 32 34 36 44 52 60 0 8 16 24 32 33 34 35 36 40 44 48 52 56 60 64 0 4 8 12 16 20 24 28 36 38 40 42 44 46 48 50 52 54 56 58 60 62 64 66 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 38 33 55 34 49 35 67 0 44 1 52 2 61 4 58 6 36 7 40 8 47 9 53 10 50 11 60 12 43 13 48 14 54 15 59 16 45 17 57 18 62 19 66 21 42 22 37 23 51 24 41 25 65 26 46 27 64 29 39 30 56 31 63\nMR 38 49 55 67 36 37 39 40 41 42 43 44 45 46 47 48 50 51 52 53 54 56 57 58 59 60 61 62 63 64 65 66\n"
+    },
+    "t2-n37": {
+      "n": 37,
+      "t": 2,
+      "fileName": "ft_ghz_37_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_37_2.stim",
+      "stim": "H 0 37\nCX 0 32 37 53 0 16 32 36 37 45 53 54 0 8 16 24 32 34 37 41 45 49 0 4 8 12 16 20 24 28 32 33 34 35 37 39 41 43 45 47 49 51 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 47 34 51 1 46 3 43 4 54 7 49 9 40 11 45 13 53 15 52 17 41 18 48 21 50 22 37 24 42 26 39 28 38 31 44\nMR 47 51 37 38 39 40 41 42 43 44 45 46 48 49 50 52 53 54\n"
+    },
+    "t3-n37": {
+      "n": 37,
+      "t": 3,
+      "fileName": "ft_ghz_37_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_37_3.stim",
+      "stim": "H 0 37\nCX 0 32 37 53 0 16 32 36 37 45 53 61 0 8 16 24 32 34 37 41 45 49 53 57 61 63 0 4 8 12 16 20 24 28 32 33 34 35 37 39 41 43 45 47 49 51 53 55 57 59 61 62 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 54 34 52 35 57 0 56 1 62 3 48 4 63 6 50 7 55 8 37 10 45 11 53 13 44 14 38 15 60 16 40 17 46 18 61 21 58 22 39 23 42 24 43 25 47 27 49 29 59 30 41 31 51\nMR 52 54 57 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 53 55 56 58 59 60 61 62 63\n"
+    },
+    "t4-n37": {
+      "n": 37,
+      "t": 4,
+      "fileName": "ft_ghz_37_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_37_4.stim",
+      "stim": "H 0 37\nCX 0 32 37 53 0 16 32 36 37 45 53 61 0 8 16 24 32 34 37 41 45 49 53 57 61 63 0 4 8 12 16 20 24 28 32 33 34 35 37 39 41 43 45 47 49 51 53 55 57 59 61 62 63 64 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 44 33 47 34 53 36 38 0 37 2 55 3 60 5 63 6 43 7 54 8 58 9 62 10 46 12 40 13 48 14 42 16 39 18 41 19 51 21 57 22 45 23 50 24 52 26 56 27 61 28 59 30 49 31 64\nMR 38 44 47 53 37 39 40 41 42 43 45 46 48 49 50 51 52 54 55 56 57 58 59 60 61 62 63 64\n"
+    },
+    "t5-n37": {
+      "n": 37,
+      "t": 5,
+      "fileName": "ft_ghz_37_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_37_5.stim",
+      "stim": "H 0 37\nCX 0 32 37 53 0 16 32 36 37 45 53 61 0 8 16 24 32 34 37 41 45 49 53 57 61 65 0 4 8 12 16 20 24 28 32 33 34 35 37 39 41 43 45 47 49 51 53 55 57 59 61 63 65 67 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 54 33 48 35 39 36 42 0 62 2 37 3 47 4 52 5 53 6 45 7 66 8 41 10 59 11 65 12 58 13 44 14 63 15 40 17 57 18 51 19 64 21 55 22 50 23 46 25 67 26 60 27 38 28 56 29 43 30 49 31 61\nMR 39 42 48 54 37 38 40 41 43 44 45 46 47 49 50 51 52 53 55 56 57 58 59 60 61 62 63 64 65 66 67\n"
+    },
+    "t6-n37": {
+      "n": 37,
+      "t": 6,
+      "fileName": "ft_ghz_37_6.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_37_6.stim",
+      "stim": "H 0 37\nCX 0 32 37 69 0 16 32 36 37 53 0 8 16 24 32 34 37 45 53 61 0 4 8 12 16 20 24 28 32 33 34 35 37 41 45 49 53 57 61 65 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 37 39 41 43 45 47 49 51 53 55 57 59 61 63 65 67 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 0 40 1 69 3 46 4 53 5 61 6 45 7 65 8 44 9 67 10 47 11 49 12 52 14 41 15 64 16 54 17 63 18 38 19 55 20 37 21 48 22 50 23 60 25 43 26 57 27 66 28 58 29 68 30 39 31 51 32 56 33 62 34 59 36 42\nMR 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69\n"
+    },
+    "t2-n38": {
+      "n": 38,
+      "t": 2,
+      "fileName": "ft_ghz_38_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_38_2.stim",
+      "stim": "H 0 38\nCX 0 32 38 54 0 16 32 36 38 46 54 56 0 8 16 24 32 34 36 37 38 42 46 50 54 55 0 4 8 12 16 20 24 28 32 33 34 35 38 40 42 44 46 48 50 52 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 33 56 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 34 44 37 50\nMR 56\nCX 0 48 3 39 5 51 6 43 8 40 10 52 13 49 15 41 17 45 19 42 21 54 22 53 25 38 27 46 29 55 31 47\nMR 44 50 38 39 40 41 42 43 45 46 47 48 49 51 52 53 54 55\n"
+    },
+    "t3-n38": {
+      "n": 38,
+      "t": 3,
+      "fileName": "ft_ghz_38_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_38_3.stim",
+      "stim": "H 0 38\nCX 0 32 38 54 0 16 32 36 38 46 54 62 0 8 16 24 32 34 36 37 38 42 46 50 54 58 62 64 0 4 8 12 16 20 24 28 32 33 34 35 38 40 42 44 46 48 50 52 54 56 58 60 62 63 64 65 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 33 65 37 62 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 34 59 35 61\nMR 62 65\nCX 0 51 2 41 3 63 5 46 6 53 7 54 9 48 10 40 11 58 12 60 14 42 15 50 17 44 18 49 19 57 20 39 21 55 23 52 24 43 26 45 27 56 28 38 30 47 31 64\nMR 59 61 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 60 63 64\n"
+    },
+    "t4-n38": {
+      "n": 38,
+      "t": 4,
+      "fileName": "ft_ghz_38_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_38_4.stim",
+      "stim": "H 0 38\nCX 0 32 38 54 0 16 32 36 38 46 54 62 0 8 16 24 32 34 36 37 38 42 46 50 54 58 62 66 0 4 8 12 16 20 24 28 32 33 34 35 38 40 42 44 46 48 50 52 54 56 58 60 62 64 37 66 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65\nMR 66\nCX 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 47 33 61 35 49 0 39 1 59 3 54 4 55 5 64 6 62 8 43 9 63 10 48 11 51 12 52 13 57 14 58 16 41 17 53 18 38 21 50 22 44 23 65 25 42 26 40 27 45 28 56 29 60 30 46\nMR 47 49 61 38 39 40 41 42 43 44 45 46 48 50 51 52 53 54 55 56 57 58 59 60 62 63 64 65\n"
+    },
+    "t5-n38": {
+      "n": 38,
+      "t": 5,
+      "fileName": "ft_ghz_38_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_38_5.stim",
+      "stim": "H 0 38\nCX 0 32 38 70 0 16 32 36 38 54 0 8 16 24 32 34 36 37 38 46 54 62 0 4 8 12 16 20 24 28 32 33 34 35 38 42 46 50 54 58 62 66 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 38 40 42 44 46 48 50 52 54 56 58 60 62 64 66 68 33 70 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69\nMR 70\nCX 0 48 2 51 3 54 4 44 5 49 6 41 7 56 8 43 10 50 11 39 12 60 14 68 15 64 16 47 17 42 18 65 19 66 20 63 21 69 22 67 23 45 25 57 26 38 27 46 28 59 29 40 30 53 31 61 34 55 35 58 36 52 37 62\nMR 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69\n"
+    },
+    "t2-n39": {
+      "n": 39,
+      "t": 2,
+      "fileName": "ft_ghz_39_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_39_2.stim",
+      "stim": "H 0 39\nCX 0 32 39 55 0 16 32 36 39 47 55 57 0 8 16 24 32 34 36 38 39 43 47 51 55 56 57 58 0 4 8 12 16 20 24 28 32 33 34 35 36 37 39 41 43 45 47 49 51 53 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 37 55 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 46 34 48 38 51\nMR 55\nCX 0 47 2 43 5 44 6 56 8 57 10 50 13 53 14 49 17 52 18 45 20 41 22 40 25 39 26 58 28 42 30 54\nMR 46 48 51 39 40 41 42 43 44 45 47 49 50 52 53 54 56 57 58\n"
+    },
+    "t3-n39": {
+      "n": 39,
+      "t": 3,
+      "fileName": "ft_ghz_39_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_39_3.stim",
+      "stim": "H 0 39\nCX 0 32 39 55 0 16 32 36 39 47 55 63 0 8 16 24 32 34 36 38 39 43 47 51 55 59 63 67 0 4 8 12 16 20 24 28 32 33 34 35 36 37 39 41 43 45 47 49 51 53 55 57 59 61 63 65 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 33 63 34 45 35 49 36 41 37 61 0 54 1 58 2 60 4 47 6 59 7 65 8 39 9 52 10 44 12 55 14 48 15 64 16 50 17 62 18 57 20 66 21 67 22 51 24 40 26 43 27 53 29 42 30 46 31 56\nMR 41 45 49 61 63 39 40 42 43 44 46 47 48 50 51 52 53 54 55 56 57 58 59 60 62 64 65 66 67\n"
+    },
+    "t4-n39": {
+      "n": 39,
+      "t": 4,
+      "fileName": "ft_ghz_39_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_39_4.stim",
+      "stim": "H 0 39\nCX 0 32 39 55 0 16 32 36 39 47 55 63 0 8 16 24 32 34 36 38 39 43 47 51 55 59 63 67 0 4 8 12 16 20 24 28 32 33 34 35 36 37 39 41 43 45 47 49 51 53 55 57 59 61 63 65 67 68 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 33 68 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 63 35 46 37 49 38 59\nMR 68\nCX 0 43 1 50 3 61 4 62 5 66 6 48 8 54 9 56 10 60 11 67 13 55 14 45 15 52 16 42 18 58 19 64 20 40 22 57 23 65 24 41 25 53 27 44 28 39 29 47 30 51\nMR 46 49 59 63 39 40 41 42 43 44 45 47 48 50 51 52 53 54 55 56 57 58 60 61 62 64 65 66 67\n"
+    },
+    "t5-n39": {
+      "n": 39,
+      "t": 5,
+      "fileName": "ft_ghz_39_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_39_5.stim",
+      "stim": "H 0 39\nCX 0 32 39 71 0 16 32 36 39 55 0 8 16 24 32 34 36 38 39 47 55 63 0 4 8 12 16 20 24 28 32 33 34 35 36 37 39 43 47 51 55 59 63 67 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 39 41 43 45 47 49 51 53 55 57 59 61 63 65 67 69 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 0 58 2 49 3 62 4 53 5 68 6 69 7 61 8 41 9 45 10 71 12 60 13 43 14 67 15 46 16 57 17 66 18 52 19 64 20 39 21 51 22 48 23 44 25 63 26 50 27 42 28 70 30 56 31 54 32 55 33 65 35 59 36 40 38 47\nMR 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71\n"
+    },
+    "t2-n40": {
+      "n": 40,
+      "t": 2,
+      "fileName": "ft_ghz_40_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_40_2.stim",
+      "stim": "H 0 40\nCX 0 32 40 56 0 16 32 36 40 48 56 58 0 8 16 24 32 34 36 38 40 44 48 52 56 57 58 59 0 4 8 12 16 20 24 28 32 33 34 35 36 37 38 39 40 42 44 46 48 50 52 54 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 35 59 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 44 37 50 38 40\nMR 59\nCX 1 46 2 53 4 55 7 48 8 41 10 52 13 57 14 47 17 45 18 43 20 51 22 49 25 56 27 58 29 42 30 54\nMR 40 44 50 41 42 43 45 46 47 48 49 51 52 53 54 55 56 57 58\n"
+    },
+    "t3-n40": {
+      "n": 40,
+      "t": 3,
+      "fileName": "ft_ghz_40_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_40_3.stim",
+      "stim": "H 0 40\nCX 0 32 40 56 0 16 32 36 40 48 56 64 0 8 16 24 32 34 36 38 40 44 48 52 56 60 64 68 0 4 8 12 16 20 24 28 32 33 34 35 36 37 38 39 40 42 44 46 48 50 52 54 56 58 60 62 64 66 68 69 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 37 68 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 45 34 53 35 57 36 47 38 43\nMR 68\nCX 0 44 1 63 3 60 5 48 6 59 7 62 8 56 10 58 11 61 12 46 14 55 15 64 17 40 18 42 19 69 20 49 21 66 22 51 24 41 25 65 27 67 28 50 29 54 30 52\nMR 43 45 47 53 57 40 41 42 44 46 48 49 50 51 52 54 55 56 58 59 60 61 62 63 64 65 66 67 69\n"
+    },
+    "t4-n40": {
+      "n": 40,
+      "t": 4,
+      "fileName": "ft_ghz_40_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_40_4.stim",
+      "stim": "H 0 40\nCX 0 32 40 56 0 16 32 36 40 48 56 64 0 8 16 24 32 34 36 38 40 44 48 52 56 60 64 68 0 4 8 12 16 20 24 28 32 33 34 35 36 37 38 39 40 42 44 46 48 50 52 54 56 58 60 62 64 66 68 69 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 52 33 65 35 66 37 46 38 63 39 67 0 48 2 42 3 44 4 56 6 47 7 58 8 40 9 54 10 64 12 50 13 55 14 43 16 49 17 53 18 59 21 51 22 61 23 62 24 57 25 68 27 41 28 60 29 69 31 45\nMR 46 52 63 65 66 67 40 41 42 43 44 45 47 48 49 50 51 53 54 55 56 57 58 59 60 61 62 64 68 69\n"
+    },
+    "t5-n40": {
+      "n": 40,
+      "t": 5,
+      "fileName": "ft_ghz_40_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_40_5.stim",
+      "stim": "H 0 40\nCX 0 32 40 72 0 16 32 36 40 56 72 74 0 8 16 24 32 34 36 38 40 48 56 64 72 73 0 4 8 12 16 20 24 28 32 33 34 35 36 37 38 39 40 44 48 52 56 60 64 68 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 40 42 44 46 48 50 52 54 56 58 60 62 64 66 68 70 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 0 49 2 63 3 52 4 61 5 53 6 65 7 71 8 54 9 70 10 40 12 74 13 72 14 66 15 46 16 60 17 48 18 51 19 73 20 45 21 58 22 56 23 41 24 59 26 50 27 47 28 69 29 67 30 44 31 42 33 68 34 57 35 43 36 64 38 62 39 55\nMR 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74\n"
+    },
+    "t2-n41": {
+      "n": 41,
+      "t": 2,
+      "fileName": "ft_ghz_41_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_41_2.stim",
+      "stim": "H 0 41\nCX 0 32 41 57 0 16 32 40 41 49 57 59 0 8 16 24 32 36 41 45 49 53 57 58 59 60 0 4 8 12 16 20 24 28 32 34 36 38 41 43 45 47 49 51 53 55 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 60 35 43 37 44 39 45 1 41 3 53 5 56 7 59 9 54 10 49 13 47 14 51 16 58 18 50 20 48 23 57 25 55 27 42 28 52 30 46\nMR 43 44 45 60 41 42 46 47 48 49 50 51 52 53 54 55 56 57 58 59\n"
+    },
+    "t3-n41": {
+      "n": 41,
+      "t": 3,
+      "fileName": "ft_ghz_41_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_41_3.stim",
+      "stim": "H 0 41\nCX 0 32 41 57 0 16 32 40 41 49 57 65 0 8 16 24 32 36 41 45 49 53 57 61 65 69 0 4 8 12 16 20 24 28 32 34 36 38 41 43 45 47 49 51 53 55 57 59 61 63 65 67 69 70 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 59 34 62 35 63 37 48 38 53 39 69 0 50 2 44 3 60 5 64 6 45 7 49 8 41 9 47 11 56 13 67 14 61 15 65 16 46 17 55 18 57 20 70 22 51 23 58 25 52 26 43 27 66 28 42 30 54 31 68\nMR 48 53 59 62 63 69 41 42 43 44 45 46 47 49 50 51 52 54 55 56 57 58 60 61 64 65 66 67 68 70\n"
+    },
+    "t4-n41": {
+      "n": 41,
+      "t": 4,
+      "fileName": "ft_ghz_41_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_41_4.stim",
+      "stim": "H 0 41\nCX 0 32 41 57 0 16 32 40 41 49 57 65 0 8 16 24 32 36 41 45 49 53 57 61 65 69 0 4 8 12 16 20 24 28 32 34 36 38 41 43 45 47 49 51 53 55 57 59 61 63 65 67 69 71 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 33 41 34 61 35 70 36 44 37 60 38 47 40 63 0 50 2 57 3 67 5 66 6 64 7 71 8 48 9 56 11 68 12 55 13 59 15 46 16 42 17 51 19 53 20 45 21 65 22 52 24 49 25 62 27 69 28 54 29 58 31 43\nMR 41 44 47 60 61 63 70 42 43 45 46 48 49 50 51 52 53 54 55 56 57 58 59 62 64 65 66 67 68 69 71\n"
+    },
+    "t5-n41": {
+      "n": 41,
+      "t": 5,
+      "fileName": "ft_ghz_41_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_41_5.stim",
+      "stim": "H 0 41\nCX 0 32 41 73 0 16 32 40 41 57 73 75 0 8 16 24 32 36 41 49 57 65 73 74 75 76 0 4 8 12 16 20 24 28 32 34 36 38 41 45 49 53 57 61 65 69 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 41 43 45 47 49 51 53 55 57 59 61 63 65 67 69 71 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 0 62 2 74 3 69 4 60 5 76 6 45 7 66 8 71 9 59 10 44 12 72 13 73 14 67 15 47 16 52 17 55 18 57 19 65 20 41 21 70 22 53 23 42 24 75 26 50 27 48 28 64 29 68 30 56 32 43 33 51 34 49 35 63 36 58 37 54 39 46 40 61\nMR 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76\n"
+    },
+    "t2-n42": {
+      "n": 42,
+      "t": 2,
+      "fileName": "ft_ghz_42_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_42_2.stim",
+      "stim": "H 0 42\nCX 0 32 42 58 0 16 32 40 42 50 58 62 0 8 16 24 32 36 40 41 42 46 50 54 58 60 0 4 8 12 16 20 24 28 32 34 36 38 42 44 46 48 50 52 54 56 58 59 60 61 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 47 35 42 37 50 38 46 40 43 0 48 3 56 5 53 7 45 9 60 11 54 12 44 15 61 17 52 18 62 20 57 23 59 25 58 26 49 28 51 31 55\nMR 42 43 46 47 50 44 45 48 49 51 52 53 54 55 56 57 58 59 60 61 62\n"
+    },
+    "t3-n42": {
+      "n": 42,
+      "t": 3,
+      "fileName": "ft_ghz_42_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_42_3.stim",
+      "stim": "H 0 42\nCX 0 32 42 58 0 16 32 40 42 50 58 66 0 8 16 24 32 36 40 41 42 46 50 54 58 62 66 70 0 4 8 12 16 20 24 28 32 34 36 38 42 44 46 48 50 52 54 56 58 60 62 64 66 68 70 72 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 60 33 62 35 53 37 69 38 47 39 58 40 70 1 46 2 55 3 57 4 65 6 43 7 59 8 52 9 68 11 66 12 63 13 64 15 54 16 44 17 71 19 48 20 42 21 49 22 51 24 61 26 67 27 72 28 50 29 56 30 45\nMR 47 53 58 60 62 69 70 42 43 44 45 46 48 49 50 51 52 54 55 56 57 59 61 63 64 65 66 67 68 71 72\n"
+    },
+    "t4-n42": {
+      "n": 42,
+      "t": 4,
+      "fileName": "ft_ghz_42_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_42_4.stim",
+      "stim": "H 0 42\nCX 0 32 42 58 0 16 32 40 42 50 58 66 0 8 16 24 32 36 40 41 42 46 50 54 58 62 66 70 0 4 8 12 16 20 24 28 32 34 36 38 42 44 46 48 50 52 54 56 58 60 62 64 66 68 70 72 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 48 33 59 34 43 36 44 37 53 39 60 40 47 0 51 1 70 2 73 4 58 5 67 6 65 8 46 9 54 10 64 11 72 12 52 13 57 14 55 17 71 18 50 19 62 21 45 22 42 23 69 25 49 26 56 27 63 28 68 30 61 31 66\nMR 43 44 47 48 53 59 60 42 45 46 49 50 51 52 54 55 56 57 58 61 62 63 64 65 66 67 68 69 70 71 72 73\n"
+    },
+    "t5-n42": {
+      "n": 42,
+      "t": 5,
+      "fileName": "ft_ghz_42_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_42_5.stim",
+      "stim": "H 0 42\nCX 0 32 42 74 0 16 32 40 42 58 74 76 0 8 16 24 32 36 40 41 42 50 58 66 74 75 0 4 8 12 16 20 24 28 32 34 36 38 42 46 50 54 58 62 66 70 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 42 44 46 48 50 52 54 56 58 60 62 64 66 68 70 72 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 0 76 2 67 3 60 4 58 6 45 7 54 8 44 9 66 10 51 12 62 13 43 14 71 15 49 16 72 17 48 18 61 19 46 20 74 21 59 22 50 23 73 24 52 25 69 26 65 28 53 29 57 30 75 31 64 32 47 34 55 35 68 36 63 37 70 38 56 41 42\nMR 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76\n"
+    },
+    "t2-n43": {
+      "n": 43,
+      "t": 2,
+      "fileName": "ft_ghz_43_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_43_2.stim",
+      "stim": "H 0 43\nCX 0 32 43 59 0 16 32 40 43 51 59 63 0 8 16 24 32 36 40 42 43 47 51 55 59 61 63 64 0 4 8 12 16 20 24 28 32 34 36 38 40 41 43 45 47 49 51 53 55 57 59 60 61 62 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 33 59 35 53 37 48 38 54 41 47 42 46 0 44 2 56 4 52 7 63 9 49 10 55 13 60 15 62 17 61 18 64 21 50 22 57 24 51 26 45 29 43 30 58\nMR 46 47 48 53 54 59 43 44 45 49 50 51 52 55 56 57 58 60 61 62 63 64\n"
+    },
+    "t3-n43": {
+      "n": 43,
+      "t": 3,
+      "fileName": "ft_ghz_43_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_43_3.stim",
+      "stim": "H 0 43\nCX 0 32 43 75 0 16 32 40 43 59 0 8 16 24 32 36 40 42 43 51 59 67 0 4 8 12 16 20 24 28 32 34 36 38 40 41 43 47 51 55 59 63 67 71 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 43 45 47 49 51 53 55 57 59 61 63 65 67 69 71 73 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 0 54 1 63 2 73 4 47 6 57 7 64 8 43 9 75 11 56 12 44 14 65 15 68 16 46 17 67 18 49 20 60 21 66 22 69 24 58 26 51 27 61 28 62 30 71 31 74 32 70 33 72 34 52 37 45 38 53 39 55 40 48 41 50 42 59\nMR 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75\n"
+    },
+    "t4-n43": {
+      "n": 43,
+      "t": 4,
+      "fileName": "ft_ghz_43_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_43_4.stim",
+      "stim": "H 0 43\nCX 0 32 43 75 0 16 32 40 43 59 0 8 16 24 32 36 40 42 43 51 59 67 0 4 8 12 16 20 24 28 32 34 36 38 40 41 43 47 51 55 59 63 67 71 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 43 45 47 49 51 53 55 57 59 61 63 65 67 69 71 73 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 0 48 1 54 2 65 4 56 6 53 7 70 8 49 10 43 11 55 12 50 13 66 15 61 16 47 17 57 18 62 19 64 21 69 22 67 23 75 24 44 25 72 26 59 28 51 29 73 31 45 32 63 33 74 35 68 37 71 38 46 39 60 41 52 42 58\nMR 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75\n"
+    },
+    "t5-n43": {
+      "n": 43,
+      "t": 5,
+      "fileName": "ft_ghz_43_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_43_5.stim",
+      "stim": "H 0 43\nCX 0 32 43 75 0 16 32 40 43 59 75 79 0 8 16 24 32 36 40 42 43 51 59 67 75 77 79 80 0 4 8 12 16 20 24 28 32 34 36 38 40 41 43 47 51 55 59 63 67 71 75 76 77 78 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 43 45 47 49 51 53 55 57 59 61 63 65 67 69 71 73 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 36 79 0 58 2 71 3 59 4 57 5 64 6 61 7 44 8 77 9 74 10 69 12 45 13 80 14 63 15 76 16 78 17 47 18 73 19 52 20 55 21 43 22 66 23 54 24 46 26 75 27 48 28 60 29 50 30 53 31 68 33 51 34 56 35 67 37 65 38 70 39 49 41 62 42 72\nMR 79 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 80\n"
+    },
+    "t2-n44": {
+      "n": 44,
+      "t": 2,
+      "fileName": "ft_ghz_44_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_44_2.stim",
+      "stim": "H 0 44\nCX 0 32 44 60 0 16 32 40 44 52 60 64 0 8 16 24 32 36 40 42 44 48 52 56 60 62 64 65 0 4 8 12 16 20 24 28 32 34 36 38 40 41 42 43 44 46 48 50 52 54 56 58 60 61 62 63 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 48 35 62 36 45 39 60 40 50 43 49 1 54 2 57 4 63 6 51 8 59 11 44 12 52 15 61 16 56 18 53 20 58 23 47 25 64 26 46 29 65 31 55\nMR 45 48 49 50 60 62 44 46 47 51 52 53 54 55 56 57 58 59 61 63 64 65\n"
+    },
+    "t4-n44": {
+      "n": 44,
+      "t": 4,
+      "fileName": "ft_ghz_44_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_44_4.stim",
+      "stim": "H 0 44\nCX 0 32 44 76 0 16 32 40 44 60 76 80 0 8 16 24 32 36 40 42 44 52 60 68 76 78 80 82 0 4 8 12 16 20 24 28 32 34 36 38 40 41 42 43 44 48 52 56 60 64 68 72 76 77 78 79 80 81 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 44 46 48 50 52 54 56 58 60 62 64 66 68 70 72 74 40 76 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 35 80 39 79\nMR 76\nCX 0 48 1 77 3 75 4 67 5 56 6 68 7 70 8 47 9 60 10 62 12 44 13 53 14 46 15 66 16 58 17 72 18 45 19 65 20 78 21 59 22 74 23 54 24 51 25 73 26 81 27 49 28 82 30 52 31 61 33 55 34 69 36 71 37 64 38 63 42 50 43 57\nMR 79 80 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 77 78 81 82\n"
+    },
+    "t5-n44": {
+      "n": 44,
+      "t": 5,
+      "fileName": "ft_ghz_44_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_44_5.stim",
+      "stim": "H 0 44\nCX 0 32 44 76 0 16 32 40 44 60 76 80 0 8 16 24 32 36 40 42 44 52 60 68 76 78 80 82 0 4 8 12 16 20 24 28 32 34 36 38 40 41 42 43 44 48 52 56 60 64 68 72 76 77 78 79 80 81 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 44 46 48 50 52 54 56 58 60 62 64 66 68 70 72 74 42 81 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 34 80 35 76\nMR 81\nCX 0 62 1 64 3 50 4 67 5 63 6 77 7 66 8 47 9 71 10 79 12 44 13 53 14 46 15 49 16 58 17 72 18 45 19 48 20 78 21 59 22 74 23 54 24 51 25 73 26 75 27 70 28 82 30 52 31 61 33 55 36 60 37 68 38 56 39 65 40 69 43 57\nMR 76 80 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 77 78 79 82\n"
+    },
+    "t2-n45": {
+      "n": 45,
+      "t": 2,
+      "fileName": "ft_ghz_45_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_45_2.stim",
+      "stim": "H 0 45\nCX 0 32 45 61 0 16 32 40 45 53 61 65 0 8 16 24 32 36 40 44 45 49 53 57 61 63 65 66 0 4 8 12 16 20 24 28 32 34 36 38 40 42 45 47 49 51 53 55 57 59 61 62 63 64 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 40 41 42 43 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 33 61 35 64 37 54 38 51 41 58 43 46 1 45 2 52 4 49 7 47 9 60 10 62 13 57 14 50 16 56 19 63 20 48 23 55 25 53 27 65 28 66 30 59\nMR 46 51 54 58 61 64 45 47 48 49 50 52 53 55 56 57 59 60 62 63 65 66\n"
+    },
+    "t4-n45": {
+      "n": 45,
+      "t": 4,
+      "fileName": "ft_ghz_45_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_45_4.stim",
+      "stim": "H 0 45\nCX 0 32 45 77 0 16 32 40 45 61 77 79 0 8 16 24 32 36 40 44 45 53 61 69 77 78 79 80 0 4 8 12 16 20 24 28 32 34 36 38 40 42 45 49 53 57 61 65 69 73 44 80 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 40 41 42 43 45 47 49 51 53 55 57 59 61 63 65 67 69 71 73 75\nMR 80\nCX 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 0 54 1 68 3 57 4 66 6 58 7 70 8 47 10 75 11 63 13 45 14 49 15 77 16 71 17 62 18 65 19 59 20 79 21 69 22 64 24 76 26 56 27 46 28 78 30 55 31 52 32 74 33 72 34 48 35 73 37 50 38 61 39 67 40 51 41 53 43 60\nMR 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79\n"
+    },
+    "t5-n45": {
+      "n": 45,
+      "t": 5,
+      "fileName": "ft_ghz_45_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_45_5.stim",
+      "stim": "H 0 45\nCX 0 32 45 77 0 16 32 40 45 61 77 81 0 8 16 24 32 36 40 44 45 53 61 69 77 79 81 82 0 4 8 12 16 20 24 28 32 34 36 38 40 42 45 49 53 57 61 65 69 73 77 78 79 80 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 40 41 42 43 45 47 49 51 53 55 57 59 61 63 65 67 69 71 73 75 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 0 50 1 66 3 48 4 51 6 61 7 77 8 79 10 62 11 56 13 72 14 60 15 78 16 54 17 81 18 59 19 64 20 58 21 80 22 49 23 71 24 82 26 46 27 74 28 70 29 45 30 65 31 52 33 63 34 57 35 68 36 76 37 69 38 53 39 47 40 55 41 67 43 75 44 73\nMR 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82\n"
+    },
+    "t2-n46": {
+      "n": 46,
+      "t": 2,
+      "fileName": "ft_ghz_46_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_46_2.stim",
+      "stim": "H 0 46\nCX 0 32 46 62 0 16 32 40 46 54 62 66 0 8 16 24 32 36 40 44 46 50 54 58 62 64 66 68 0 4 8 12 16 20 24 28 32 34 36 38 40 42 44 45 46 48 50 52 54 56 58 60 62 63 64 65 66 67 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 40 41 42 43 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 45 66 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 62 34 57 36 52 38 47 41 60 42 59\nMR 66\nCX 0 46 2 67 4 63 7 51 9 68 11 48 12 53 14 50 17 56 19 61 20 55 22 64 24 54 26 49 28 65 30 58\nMR 47 52 57 59 60 62 46 48 49 50 51 53 54 55 56 58 61 63 64 65 67 68\n"
+    },
+    "t4-n46": {
+      "n": 46,
+      "t": 4,
+      "fileName": "ft_ghz_46_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_46_4.stim",
+      "stim": "H 0 46\nCX 0 32 46 78 0 16 32 40 46 62 78 82 0 8 16 24 32 36 40 44 46 54 62 70 78 80 82 84 0 4 8 12 16 20 24 28 32 34 36 38 40 42 44 45 46 50 54 58 62 66 70 74 78 79 80 81 82 83 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 40 41 42 43 46 48 50 52 54 56 58 60 62 64 66 68 70 72 74 76 44 79 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 41 78 42 81\nMR 79\nCX 0 61 1 63 3 75 4 51 6 84 7 72 8 73 10 58 11 80 13 66 14 65 15 52 16 77 17 70 18 71 19 82 20 59 21 47 22 46 23 67 24 56 25 83 27 55 28 50 29 60 30 64 31 57 32 69 34 53 35 76 36 74 37 62 38 48 39 49 40 54 45 68\nMR 78 81 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 80 82 83 84\n"
+    },
+    "t5-n46": {
+      "n": 46,
+      "t": 5,
+      "fileName": "ft_ghz_46_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_46_5.stim",
+      "stim": "H 0 46\nCX 0 32 46 78 0 16 32 40 46 62 78 82 0 8 16 24 32 36 40 44 46 54 62 70 78 80 82 84 0 4 8 12 16 20 24 28 32 34 36 38 40 42 44 45 46 50 54 58 62 66 70 74 78 79 80 81 82 83 84 85 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 40 41 42 43 46 48 50 52 54 56 58 60 62 64 66 68 70 72 74 76 44 79 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 37 81 41 83\nMR 79\nCX 0 76 1 63 3 46 4 80 6 65 7 67 8 54 10 82 11 59 12 53 13 78 14 71 15 66 16 50 17 58 18 77 19 84 20 73 21 47 22 62 23 85 24 56 25 74 27 51 28 69 29 75 30 60 31 57 32 70 34 48 35 52 36 61 38 55 39 64 40 49 42 68 45 72\nMR 81 83 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 80 82 84 85\n"
+    },
+    "t2-n47": {
+      "n": 47,
+      "t": 2,
+      "fileName": "ft_ghz_47_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_47_2.stim",
+      "stim": "H 0 47\nCX 0 32 47 63 0 16 32 40 47 55 63 67 0 8 16 24 32 36 40 44 47 51 55 59 63 65 67 69 0 4 8 12 16 20 24 28 32 34 36 38 40 42 44 46 47 49 51 53 55 57 59 61 63 64 65 66 67 68 69 70 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 40 41 42 43 44 45 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 33 69 35 54 36 60 39 64 41 68 42 65 45 56 46 57 1 67 3 59 4 62 6 66 9 47 11 50 12 70 15 49 16 63 19 55 20 53 22 52 24 58 27 61 29 51 30 48\nMR 54 56 57 60 64 65 68 69 47 48 49 50 51 52 53 55 58 59 61 62 63 66 67 70\n"
+    },
+    "t4-n47": {
+      "n": 47,
+      "t": 4,
+      "fileName": "ft_ghz_47_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_47_4.stim",
+      "stim": "H 0 47\nCX 0 32 47 79 0 16 32 40 47 63 79 83 0 8 16 24 32 36 40 44 47 55 63 71 79 81 83 85 0 4 8 12 16 20 24 28 32 34 36 38 40 42 44 46 47 51 55 59 63 67 71 75 79 80 81 82 83 84 85 86 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 40 41 42 43 44 45 47 49 51 53 55 57 59 61 63 65 67 69 71 73 75 77 46 80 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 33 84 41 81 42 83\nMR 80\nCX 0 76 1 65 3 47 4 64 6 50 7 78 8 62 9 63 10 60 11 70 12 61 13 85 14 56 15 69 16 79 17 77 18 55 19 86 20 71 21 82 22 75 23 67 24 58 25 51 26 53 27 73 28 66 30 74 31 54 32 57 35 49 36 59 38 68 39 52 40 48 45 72\nMR 81 83 84 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 82 85 86\n"
+    },
+    "t5-n47": {
+      "n": 47,
+      "t": 5,
+      "fileName": "ft_ghz_47_5.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_47_5.stim",
+      "stim": "H 0 47\nCX 0 32 47 79 0 16 32 40 47 63 79 87 0 8 16 24 32 36 40 44 47 55 63 71 79 83 0 4 8 12 16 20 24 28 32 34 36 38 40 42 44 46 47 51 55 59 63 67 71 75 79 81 83 85 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 40 41 42 43 44 45 47 49 51 53 55 57 59 61 63 65 67 69 71 73 75 77 79 80 81 82 83 84 85 86 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 36 87 40 82 0 86 1 65 2 79 3 47 4 68 6 54 7 81 8 50 9 85 10 70 11 76 12 61 13 67 14 58 15 83 16 80 17 53 18 63 19 49 20 77 21 55 22 51 23 62 24 74 25 78 26 57 27 72 28 84 30 73 31 66 32 69 33 59 35 64 38 75 39 52 41 60 42 56 45 48 46 71\nMR 82 87 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 83 84 85 86\n"
+    },
+    "t2-n48": {
+      "n": 48,
+      "t": 2,
+      "fileName": "ft_ghz_48_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_48_2.stim",
+      "stim": "H 0 48\nCX 0 32 48 64 0 16 32 40 48 56 64 68 0 8 16 24 32 36 40 44 48 52 56 60 64 66 68 70 0 4 8 12 16 20 24 28 32 34 36 38 40 42 44 46 48 50 52 54 56 58 60 62 64 65 66 67 68 69 70 71 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 33 54 34 60 37 53 39 55 41 50 42 57 44 69 46 67 0 63 2 58 5 71 6 68 9 64 10 48 13 52 15 59 17 62 19 49 20 65 22 66 24 56 26 51 28 61 30 70\nMR 50 53 54 55 57 60 67 69 48 49 51 52 56 58 59 61 62 63 64 65 66 68 70 71\n"
+    },
+    "t4-n48": {
+      "n": 48,
+      "t": 4,
+      "fileName": "ft_ghz_48_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_48_4.stim",
+      "stim": "H 0 48\nCX 0 32 48 80 0 16 32 40 48 64 80 88 0 8 16 24 32 36 40 44 48 56 64 72 80 84 0 4 8 12 16 20 24 28 32 34 36 38 40 42 44 46 48 52 56 60 64 68 72 76 80 82 84 86 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 50 52 54 56 58 60 62 64 66 68 70 72 74 76 78 80 81 82 83 84 85 86 87 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 42 84 44 83 46 87 47 88 0 73 1 66 3 85 4 79 6 74 7 52 8 53 10 57 11 71 12 75 13 61 14 72 16 68 17 81 19 48 20 64 21 77 22 69 23 60 24 62 25 80 26 76 27 82 28 50 29 59 30 49 31 86 32 58 33 55 34 67 36 51 37 54 38 78 39 70 40 65 41 56 43 63\nMR 83 84 87 88 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 85 86\n"
+    },
+    "t2-n49": {
+      "n": 49,
+      "t": 2,
+      "fileName": "ft_ghz_49_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_49_2.stim",
+      "stim": "H 0 49\nCX 0 32 49 65 0 16 32 48 49 57 65 69 0 8 16 24 32 40 49 53 57 61 65 67 69 71 0 4 8 12 16 20 24 28 32 36 40 44 49 51 53 55 57 59 61 63 65 66 67 68 69 70 71 72 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40 42 44 46 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 0 65 2 56 5 60 7 72 9 59 11 52 12 57 14 53 17 50 19 71 20 58 23 62 25 49 27 51 28 64 31 67 32 61 34 69 37 68 39 63 40 66 42 70 45 54 46 55\nMR 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72\n"
+    },
+    "t4-n49": {
+      "n": 49,
+      "t": 4,
+      "fileName": "ft_ghz_49_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_49_4.stim",
+      "stim": "H 0 49\nCX 0 32 49 81 0 16 32 48 49 65 81 85 0 8 16 24 32 40 49 57 65 73 81 83 85 87 0 4 8 12 16 20 24 28 32 36 40 44 49 53 57 61 65 69 73 77 81 82 83 84 85 86 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40 42 44 46 49 51 53 55 57 59 61 63 65 67 69 71 73 75 77 79 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 0 52 1 61 3 77 4 62 6 49 7 73 8 59 10 51 11 82 12 55 13 83 14 64 16 63 17 67 18 87 19 58 20 71 21 57 22 85 23 69 24 72 25 79 27 50 28 75 30 70 31 66 33 86 34 81 35 78 37 56 38 68 39 65 40 74 42 60 43 54 44 76 45 53 46 84 48 80\nMR 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87\n"
+    },
+    "t2-n50": {
+      "n": 50,
+      "t": 2,
+      "fileName": "ft_ghz_50_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_50_2.stim",
+      "stim": "H 0 50\nCX 0 32 50 66 0 16 32 48 50 58 66 74 0 8 16 24 32 40 48 49 50 54 58 62 66 70 0 4 8 12 16 20 24 28 32 36 40 44 50 52 54 56 58 60 62 64 66 68 70 72 0 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 40 42 44 46 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 67 1 72 3 57 4 60 7 53 8 71 10 54 13 59 14 62 17 66 18 74 20 50 22 64 24 51 27 52 29 70 31 65 33 63 34 69 36 73 39 58 41 56 42 61 45 68 47 55\nMR 67 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 68 69 70 71 72 73 74\n"
+    },
+    "t2-n8": {
+      "n": 8,
+      "t": 2,
+      "fileName": "ft_ghz_8_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_8_2.stim",
+      "stim": "H 0 8\nCX 0 4 8 10 0 2 4 6 8 9 10 11 0 1 2 3 4 5 6 7 0 11 3 8 4 10 6 9\nMR 8 9 10 11\n"
+    },
+    "t3-n8": {
+      "n": 8,
+      "t": 3,
+      "fileName": "ft_ghz_8_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_8_3.stim",
+      "stim": "H 0 8\nCX 0 4 8 12 0 2 4 6 8 10 12 13 0 1 2 3 4 5 6 7 8 9 10 11 1 10 2 13 3 8 5 12 6 11 7 9\nMR 8 9 10 11 12 13\n"
+    },
+    "t4-n8": {
+      "n": 8,
+      "t": 4,
+      "fileName": "ft_ghz_8_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_8_4.stim",
+      "stim": "H 0 8\nCX 0 4 8 12 0 2 4 6 8 10 12 13 0 1 2 3 4 5 6 7 8 9 10 11 1 10 2 13 3 8 5 12 6 11 7 9\nMR 8 9 10 11 12 13\n"
+    },
+    "t2-n9": {
+      "n": 9,
+      "t": 2,
+      "fileName": "ft_ghz_9_2.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_9_2.stim",
+      "stim": "H 0 9\nCX 0 8 9 11 0 4 9 10 11 12 0 2 4 6 0 1 2 3 4 5 6 7 1 10 3 12 5 11 7 9\nMR 9 10 11 12\n"
+    },
+    "t3-n9": {
+      "n": 9,
+      "t": 3,
+      "fileName": "ft_ghz_9_3.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_9_3.stim",
+      "stim": "H 0 9\nCX 0 8 9 13 0 4 9 11 13 14 0 2 4 6 9 10 11 12 0 1 2 3 4 5 6 7 1 13 2 11 3 9 4 14 5 10 6 12\nMR 9 10 11 12 13 14\n"
+    },
+    "t4-n9": {
+      "n": 9,
+      "t": 4,
+      "fileName": "ft_ghz_9_4.stim",
+      "sourcePath": "spidercat/MQT_circuits/ft_ghz_9_4.stim",
+      "stim": "H 0 9\nCX 0 8 9 13 0 4 9 11 13 14 0 2 4 6 9 10 11 12 0 1 2 3 4 5 6 7 1 13 2 11 3 9 4 14 5 10 6 12\nMR 9 10 11 12 13 14\n"
     }
   }
 };

@@ -9,7 +9,8 @@ import networkx as nx
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEMO_DIR = ROOT / "demo"
+# Write next to this script so regenerating updates the live demo bundle.
+DEMO_DIR = Path(__file__).resolve().parent
 COMPARISON_N_MIN = 8
 COMPARISON_N_MAX = 50
 COMPARISON_T_MIN = 2
@@ -275,6 +276,64 @@ def parse_noise_snapshots() -> dict[str, dict[str, object]]:
     return snapshots
 
 
+def build_spider_circuits() -> dict[str, dict[str, object]]:
+    """Bundle the native STIM circuit text for each in-range SpiderCat (n, t).
+
+    The demo is fully static, so the raw repo circuit is embedded here to let the
+    web UI offer a one-click export of the exact bundled circuit.
+    """
+    circuits: dict[str, dict[str, object]] = {}
+    pattern = re.compile(r"cat_state_t([^_]+)_n(\d+)_p1\.stim$")
+    for path in sorted(SPIDERCAT_CIRCUITS.glob("cat_state_t*_n*_p1.stim")):
+        match = pattern.search(path.name)
+        if not match:
+            continue
+        t_text, n_text = match.groups()
+        if t_text == "inf":
+            continue
+        n = int(n_text)
+        t = int(t_text)
+        if not (COMPARISON_N_MIN <= n <= COMPARISON_N_MAX and COMPARISON_T_MIN <= t <= COMPARISON_T_MAX):
+            continue
+        key = f"t{t}-n{n}"
+        circuits[key] = {
+            "n": n,
+            "t": t,
+            "fileName": path.name,
+            "sourcePath": path.relative_to(ROOT).as_posix(),
+            "stim": path.read_text(),
+        }
+    return circuits
+
+
+def build_mqt_circuits() -> dict[str, dict[str, object]]:
+    """Bundle the native STIM circuit text for each in-range MQT benchmark (n, t).
+
+    Mirrors build_spider_circuits so the web UI can offer a one-click export of the
+    exact bundled MQT circuit (Stim format) alongside the SpiderCat circuits.
+    """
+    circuits: dict[str, dict[str, object]] = {}
+    pattern = re.compile(r"ft_ghz_(\d+)_(\d+)\.stim$")
+    for path in sorted(MQT_CIRCUITS.glob("ft_ghz_*_*.stim")):
+        match = pattern.search(path.name)
+        if not match:
+            continue
+        n_text, t_text = match.groups()
+        n = int(n_text)
+        t = int(t_text)
+        if not (COMPARISON_N_MIN <= n <= COMPARISON_N_MAX and COMPARISON_T_MIN <= t <= COMPARISON_T_MAX):
+            continue
+        key = f"t{t}-n{n}"
+        circuits[key] = {
+            "n": n,
+            "t": t,
+            "fileName": path.name,
+            "sourcePath": path.relative_to(ROOT).as_posix(),
+            "stim": path.read_text(),
+        }
+    return circuits
+
+
 def build_spider_graphs() -> dict[str, dict[str, object]]:
     graphs: dict[str, dict[str, object]] = {}
     pattern = re.compile(r"cat_state_t(\d+)_n(\d+)_p1\.json$")
@@ -342,6 +401,8 @@ def build_dataset() -> dict[str, object]:
     flag_metrics = parse_flag_metrics()
     mqt_metrics = parse_mqt_metrics()
     graphs = build_spider_graphs()
+    spider_circuits = build_spider_circuits()
+    mqt_circuits = build_mqt_circuits()
     noise = parse_noise_snapshots()
 
     comparison_ns = list(range(COMPARISON_N_MIN, COMPARISON_N_MAX + 1))
@@ -432,6 +493,10 @@ def build_dataset() -> dict[str, object]:
                 "optimize": "Parallel benchmark baseline",
                 "paperHook": "Repo benchmark",
                 "description": "Another bundled benchmark family with relatively shallow clean circuits but more ancilla overhead.",
+                "links": [
+                    {"label": "Paper", "url": "https://arxiv.org/pdf/2601.03343"},
+                    {"label": "GitHub", "url": "https://github.com/munich-quantum-toolkit/qecc/tree/main/src/mqt/qecc/circuit_synthesis"},
+                ],
             },
         },
         "controls": {
@@ -448,6 +513,8 @@ def build_dataset() -> dict[str, object]:
         },
         "simulationMetrics": noise,
         "spiderGraphs": graphs,
+        "spiderCircuits": spider_circuits,
+        "mqtCircuits": mqt_circuits,
     }
 
 

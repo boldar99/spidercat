@@ -88,12 +88,13 @@ code {
 }
 
 .eyebrow {
-  margin: 0 0 0.6rem;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
+  margin: 0 0 0.7rem;
+  font-size: clamp(1rem, 1.5vw, 1.25rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #6ee7df;
+  color: #8ff0e6;
+  text-shadow: 0 0 18px rgba(110, 231, 223, 0.35);
 }
 
 .hero h1 {
@@ -125,8 +126,8 @@ code {
 .hero-links {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 0.7rem;
-  margin-top: 1.1rem;
 }
 
 .hero-link {
@@ -192,34 +193,6 @@ code {
   /* circular badge — render as a round logo */
   border-radius: 50%;
   filter: drop-shadow(0 14px 30px rgba(2, 8, 25, 0.6));
-}
-
-.hero-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.6rem;
-  width: 100%;
-}
-
-.hero-stat {
-  display: grid;
-  gap: 0.2rem;
-  padding: 0.7rem 0.6rem;
-  border-radius: 1rem;
-  border: 1px solid rgba(180, 205, 255, 0.22);
-  background: rgba(255, 255, 255, 0.05);
-  text-align: center;
-}
-
-.hero-stat strong {
-  font-size: 1.5rem;
-  line-height: 1;
-  color: #ffd9a8;
-}
-
-.hero-stat-label {
-  font-size: 0.72rem;
-  color: #9fb0d6;
 }
 
 /* ---------- Pipeline ---------- */
@@ -356,7 +329,32 @@ input[type="range"] {
   gap: 1rem;
 }
 
+.method-group-head {
+  grid-row: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.7rem;
+  margin-top: 0.4rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.method-group-head h3 {
+  margin: 0;
+  font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
+  font-size: 1.15rem;
+  color: #eaf0ff;
+}
+
+.method-group-head p {
+  margin: 0;
+  color: #aab8da;
+  font-size: 0.92rem;
+}
+
 .method-card {
+  grid-row: 2;
   display: grid;
   gap: 0.9rem;
   padding: 1rem;
@@ -579,6 +577,169 @@ input[type="range"] {
   height: auto;
 }
 
+.view-toggle {
+  display: inline-flex;
+  gap: 0.25rem;
+  margin: 0.6rem 0.6rem 0;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: rgba(13, 27, 62, 0.06);
+  border: 1px solid rgba(13, 27, 62, 0.08);
+}
+
+.view-toggle-button {
+  padding: 0.4rem 0.95rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.86rem;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.view-toggle-button:hover {
+  color: var(--ink);
+}
+
+.view-toggle-button.active {
+  background: var(--card);
+  color: var(--recursive);
+  box-shadow: 0 4px 12px rgba(8, 18, 48, 0.12);
+}
+
+.zx-figure {
+  margin: 0;
+  padding: 0.4rem 0.8rem 0.9rem;
+  display: grid;
+  justify-items: center;
+}
+
+.zx-image {
+  display: block;
+  width: 100%;
+  max-width: 980px;
+  height: auto;
+  border-radius: 0.75rem;
+  background: #ffffff;
+}
+
+.export-panel {
+  margin: 0.4rem 0.6rem 0.6rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(13, 27, 62, 0.1);
+  background: rgba(244, 247, 255, 0.9);
+  display: grid;
+  gap: 0.6rem;
+}
+
+.export-summary {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+.export-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.export-flags {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.export-flags input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--recursive);
+  cursor: pointer;
+}
+
+.export-button {
+  padding: 0.45rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--recursive);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.86rem;
+  cursor: pointer;
+  transition: background 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+  box-shadow: 0 6px 16px rgba(217, 93, 57, 0.28);
+}
+
+.export-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 9px 20px rgba(217, 93, 57, 0.36);
+}
+
+.export-button.ghost {
+  background: var(--card);
+  color: var(--recursive);
+  border-color: rgba(217, 93, 57, 0.4);
+  box-shadow: none;
+}
+
+.export-button.ghost:hover {
+  background: #fff3ee;
+}
+
+.export-button.copied {
+  background: #2e8b57;
+  box-shadow: none;
+}
+
+.export-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Draggable ZZ-measurements in the recursive ZX diagram */
+.zx-meas-handle {
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.zx-meas-handle circle,
+.zx-meas-handle line {
+  transition: filter 0.12s ease;
+}
+
+.zx-meas-handle:hover circle,
+.zx-meas-handle:focus-visible circle,
+.zx-meas-handle.dragging circle {
+  filter: drop-shadow(0 0 3px rgba(13, 27, 62, 0.45));
+}
+
+.zx-meas-handle:focus {
+  outline: none;
+}
+
+.dragging-zx,
+.dragging-zx .zx-meas-handle {
+  cursor: ew-resize;
+}
+
+.zx-reset-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.2rem 0.7rem 0.6rem;
+}
+
 .zoomable-figure {
   display: grid;
   gap: 0.7rem;
@@ -668,6 +829,16 @@ input[type="range"] {
   pointer-events: none;
 }
 
+.circuit-gate-handle {
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.circuit-gate-handle.dragging,
+.dragging-graph .circuit-gate-handle {
+  cursor: grabbing;
+}
+
 .visual-caption {
   margin: 0.75rem 0 0;
   color: var(--muted);
@@ -723,6 +894,50 @@ input[type="range"] {
 .detail-kpi strong {
   font-size: 1.08rem;
   color: var(--blue);
+}
+
+/* ---------- Export ---------- */
+.export-block {
+  margin-top: 1rem;
+  padding-top: 0.95rem;
+  border-top: 1px dashed rgba(13, 27, 62, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.export-label {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.export-button {
+  cursor: pointer;
+  border: 1px solid var(--spider-stroke);
+  background: var(--spider-fill);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  padding: 0.5rem 0.95rem;
+  border-radius: 0.7rem;
+  transition: filter 0.15s ease, transform 0.05s ease;
+}
+
+.export-button:hover {
+  filter: brightness(0.96);
+}
+
+.export-button:active {
+  transform: translateY(1px);
+}
+
+.export-hint {
+  font-size: 0.82rem;
+  color: var(--muted);
 }
 
 /* ---------- Notes ---------- */
@@ -798,6 +1013,17 @@ input[type="range"] {
 
   .method-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Below the wide breakpoint there aren't enough columns for the single-row
+     layout, so revert headers and cards to natural grouped stacking. */
+  .method-group-head {
+    grid-row: auto !important;
+    grid-column: 1 / -1 !important;
+  }
+
+  .method-card {
+    grid-row: auto;
   }
 
   .control-note {
