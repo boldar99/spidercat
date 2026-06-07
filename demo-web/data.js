@@ -78,14 +78,22 @@ window.SPIDERCAT_DEMO_DATA = {
       "kind": "baseline",
       "optimize": "Simple flagged layout",
       "paperHook": "Repo benchmark",
-      "description": "A bundled flagged baseline circuit family used in the repo's benchmark scripts."
+      "description": "A bundled flagged baseline circuit family used in the repo's benchmark scripts.",
+      "links": [
+        { "label": "Paper", "url": "https://arxiv.org/pdf/2508.14200" },
+        { "label": "GitHub", "url": "https://github.com/Quantinuum/flag_at_origin_paper" }
+      ]
     },
     "mqt": {
       "label": "MQT",
       "kind": "baseline",
       "optimize": "Parallel benchmark baseline",
       "paperHook": "Repo benchmark",
-      "description": "Another bundled benchmark family with relatively shallow clean circuits but more ancilla overhead."
+      "description": "Another bundled benchmark family with relatively shallow clean circuits but more ancilla overhead.",
+      "links": [
+        { "label": "Paper", "url": "https://arxiv.org/pdf/2601.03343" },
+        { "label": "GitHub", "url": "https://github.com/munich-quantum-toolkit/qecc/tree/main/src/mqt/qecc/circuit_synthesis" }
+      ]
     }
   },
   "controls": {

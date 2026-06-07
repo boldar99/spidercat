@@ -324,6 +324,13 @@ function cardHtml(model) {
     .map((highlight) => `<span class="highlight-pill">${highlight}</span>`)
     .join("");
 
+  const linksHtml = (model.links || [])
+    .map(
+      (link) =>
+        `<a class="method-link" href="${link.url}" target="_blank" rel="noreferrer" onclick="event.stopPropagation()">${link.label} &rarr;</a>`,
+    )
+    .join("");
+
   const noiseHtml =
     model.noise != null
       ? `<span>p = ${model.noise.p2.toFixed(2)} snapshot: accept ${formatPercent(model.noise.acceptanceRate)}, clean|accepted ${formatPercent(model.noise.cleanGivenAccepted)}.</span>`
@@ -348,6 +355,7 @@ function cardHtml(model) {
         <span>${model.paperHook}</span>
         <span>${model.note}</span>
         ${model.estimated ? `<span>${model.formulaLabel}</span>` : noiseHtml}
+        ${linksHtml ? `<div class="method-links">${linksHtml}</div>` : ""}
       </div>
     </article>
   `;
@@ -500,6 +508,7 @@ function renderSpiderGraph(model) {
   }
 
   legendPills([
+    { color: "var(--spider-fill)", label: "Z spider (qubit)" },
     { color: "var(--forest)", label: "spanning forest edge" },
     { color: "rgba(20, 33, 61, 0.28)", label: "non-forest edge" },
     { color: "var(--mark)", label: "mark location" },
@@ -631,9 +640,10 @@ function renderSpiderGraph(model) {
         cx: 0,
         cy: 0,
         r: nodeRadius,
-        fill: "#fffef8",
-        stroke: "var(--ink)",
-        "stroke-width": 4,
+        // Z spider convention (cf. poster): light-green fill, thin dark-green outline
+        fill: "var(--spider-fill)",
+        stroke: "var(--spider-stroke)",
+        "stroke-width": 2.5,
       }),
     );
 
@@ -643,7 +653,7 @@ function renderSpiderGraph(model) {
         "text-anchor": "middle",
         "font-size": labelFontSize,
         "font-weight": 600,
-        fill: "var(--muted)",
+        fill: "var(--ink)",
       });
       label.textContent = String(node.id);
       nodeGroup.appendChild(label);
@@ -763,7 +773,7 @@ function renderSchedule(metric, dataQubits, accentColor, caption, zoomKey = "sch
   legendPills([
     { color: "var(--data-wire)", label: "data qubit" },
     { color: "var(--flag-wire)", label: "flag / ancilla" },
-    { color: accentColor, label: "CNOT layer" },
+    { color: "var(--ink)", label: "CNOT (control • / target ⊕)" },
   ]);
 
   const width = Math.max(860, 120 + metric.layers.length * 34);
@@ -838,36 +848,59 @@ function renderSchedule(metric, dataQubits, accentColor, caption, zoomKey = "sch
     pairs.forEach(([control, target]) => {
       const y1 = topPad + control * rowGap;
       const y2 = topPad + target * rowGap;
-      const usesFlag = control >= dataQubits || target >= dataQubits;
+      // CNOT notation (cf. poster): solid control dot --- vertical line --- (+) target,
+      // drawn in monochrome ink. Qubit role stays encoded on the wires themselves.
+      const gateColor = "var(--ink)";
       svg.appendChild(
         svgNode("line", {
           x1: x,
           y1,
           x2: x,
           y2,
-          stroke: usesFlag ? "var(--flag-wire)" : accentColor,
-          "stroke-width": 2.6,
+          stroke: gateColor,
+          "stroke-width": 1.8,
           "stroke-linecap": "round",
         }),
       );
+      // control: filled dot
       svg.appendChild(
         svgNode("circle", {
           cx: x,
           cy: y1,
-          r: 4.8,
-          fill: usesFlag ? "var(--flag-wire)" : accentColor,
-          stroke: "#fff",
-          "stroke-width": 1.4,
+          r: 4,
+          fill: gateColor,
         }),
       );
+      // target: (+) — open circle with a cross
+      const targetR = 5.6;
       svg.appendChild(
         svgNode("circle", {
           cx: x,
           cy: y2,
-          r: 4.8,
-          fill: "#fffef8",
-          stroke: usesFlag ? "var(--flag-wire)" : accentColor,
-          "stroke-width": 2,
+          r: targetR,
+          fill: "#ffffff",
+          stroke: gateColor,
+          "stroke-width": 1.8,
+        }),
+      );
+      svg.appendChild(
+        svgNode("line", {
+          x1: x - targetR,
+          y1: y2,
+          x2: x + targetR,
+          y2: y2,
+          stroke: gateColor,
+          "stroke-width": 1.8,
+        }),
+      );
+      svg.appendChild(
+        svgNode("line", {
+          x1: x,
+          y1: y2 - targetR,
+          x2: x,
+          y2: y2 + targetR,
+          stroke: gateColor,
+          "stroke-width": 1.8,
         }),
       );
     });
@@ -1252,7 +1285,8 @@ function renderShallowSchematic(model) {
           cx: x,
           cy: y,
           r: 8,
-          fill: "#fffef8",
+          // Z spider convention: light-green fill (row color kept on the outline)
+          fill: "var(--spider-fill)",
           stroke: layerColors[layerIndex],
           "stroke-width": 2.5,
         }),

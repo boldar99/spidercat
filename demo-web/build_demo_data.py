@@ -421,6 +421,10 @@ def build_dataset() -> dict[str, object]:
                 "optimize": "Simple flagged layout",
                 "paperHook": "Repo benchmark",
                 "description": "A bundled flagged baseline circuit family used in the repo's benchmark scripts.",
+                "links": [
+                    {"label": "Paper", "url": "https://arxiv.org/pdf/2508.14200"},
+                    {"label": "GitHub", "url": "https://github.com/Quantinuum/flag_at_origin_paper"},
+                ],
             },
             "mqt": {
                 "label": "MQT",
