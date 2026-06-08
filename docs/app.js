@@ -58,6 +58,9 @@ const refs = {
   visualHost: document.getElementById("visualHost"),
   visualCaption: document.getElementById("visualCaption"),
   detailInfo: document.getElementById("detailInfo"),
+  comparisonLegend: document.getElementById("comparisonLegend"),
+  comparisonHost: document.getElementById("comparisonHost"),
+  comparisonCaption: document.getElementById("comparisonCaption"),
 };
 
 refs.nRange.value = String(state.n);
@@ -873,8 +876,8 @@ function clearVisual() {
   refs.visualCaption.textContent = "";
 }
 
-function legendPills(items) {
-  refs.visualLegend.innerHTML = items
+function legendPills(items, target = refs.visualLegend) {
+  target.innerHTML = items
     .map(
       (item) =>
         `<span class="inline-pill"><span style="display:inline-block;width:0.8rem;height:0.8rem;border-radius:999px;background:${item.color};"></span>${item.label}</span>`,
@@ -903,6 +906,7 @@ function renderZoomableSvg(svg, zoomKey, options = {}) {
   // instead of a percentage of the viewport, so an oversized figure overflows
   // and both scrollbars appear for panning rather than being squeezed to fit.
   const naturalSize = options.naturalSize || null;
+  const host = options.host || refs.visualHost;
 
   if (state.zoomScales[zoomKey] == null) {
     state.zoomScales[zoomKey] = 1;
@@ -1004,7 +1008,7 @@ function renderZoomableSvg(svg, zoomKey, options = {}) {
 
   applyZoom();
   figure.append(toolbar, viewport);
-  refs.visualHost.appendChild(figure);
+  host.appendChild(figure);
 }
 
 function renderSpiderGraph(model) {
@@ -1013,6 +1017,12 @@ function renderSpiderGraph(model) {
   if (!graphBundle) {
     refs.visualHost.innerHTML = `<div class="empty-state">No SpiderCat graph is bundled for t = ${state.t}.</div>`;
     refs.visualCaption.textContent = "The graph explorer only covers SpiderCat instances saved in spidercat/circuits_data.";
+    return;
+  }
+  if (!graphBundle.exact) {
+    refs.visualHost.innerHTML = `<div class="empty-state">No exact SpiderCat graph is bundled at n = ${state.n}, t = ${state.t}, so there is nothing to draw.</div>`;
+    refs.visualCaption.textContent =
+      "The graph view renders the exact repo instance, available only at bundled (n, t) points. Try a nearby (n, t).";
     return;
   }
 
@@ -2161,22 +2171,434 @@ function buildRecursiveZXSvg(construction) {
   return svg;
 }
 
+// Simplified scheme: instead of drawing every ZZ-measurement, collapse the
+// transversal ZZ-measurements that share a CNOT-depth layer into bolded vertical
+// edges over the wires they act on. Each layer gets its own column and colour; a
+// layer that fuses several disjoint blocks yields one bold edge per contiguous
+// run of supported wires. Built from the same fusion-tree port as the schematic.
+function contiguousRuns(sortedWires) {
+  const runs = [];
+  let start = null;
+  let prev = null;
+  for (const w of sortedWires) {
+    if (start === null) {
+      start = w;
+    } else if (w !== prev + 1) {
+      runs.push([start, prev]);
+      start = w;
+    }
+    prev = w;
+  }
+  if (start !== null) {
+    runs.push([start, prev]);
+  }
+  return runs;
+}
+
+function renderRecursiveSimplified(model) {
+  clearVisual();
+  const construction = buildRecursiveConstruction(state.n, state.t);
+  const { n, t, measurements, maxLayer } = construction;
+
+  legendPills(
+    Array.from({ length: maxLayer }, (_, i) => ({
+      color: ZZ_LAYER_COLORS[i % ZZ_LAYER_COLORS.length],
+      label: `Layer ${i + 1}`,
+    })),
+  );
+
+  // Supported wires per layer (the union of all qL/qR measured in that layer).
+  const layerWires = new Map();
+  for (const m of measurements) {
+    if (!layerWires.has(m.layer)) {
+      layerWires.set(m.layer, new Set());
+    }
+    layerWires.get(m.layer).add(m.qL);
+    layerWires.get(m.layer).add(m.qR);
+  }
+
+  const wireGap = 26;
+  const colGap = 128;
+  const leftPad = 60;
+  const topPad = 34;
+  const rightPad = 40;
+  const bottomPad = 34;
+  const width = leftPad + maxLayer * colGap + rightPad;
+  const height = topPad + (n - 1) * wireGap + bottomPad;
+  const yOf = (q) => topPad + q * wireGap;
+  const xOf = (layer) => leftPad + (layer - 0.5) * colGap;
+
+  const svg = svgNode("svg", {
+    viewBox: `0 0 ${width} ${height}`,
+    width,
+    height,
+    "aria-label": `Simplified recursive CAT^${n} scheme: ZZ-measurement layers as bolded vertical edges`,
+  });
+
+  // Horizontal qubit wires with labels on the left.
+  for (let q = 0; q < n; q += 1) {
+    svg.appendChild(svgNode("line", {
+      x1: leftPad - 18, y1: yOf(q), x2: width - rightPad + 12, y2: yOf(q),
+      stroke: "rgba(20, 33, 61, 0.22)", "stroke-width": 1,
+    }));
+    const label = svgNode("text", {
+      x: leftPad - 24, y: yOf(q) + 4,
+      "text-anchor": "end", "font-size": 11, fill: "var(--muted)",
+    });
+    label.textContent = `q${q}`;
+    svg.appendChild(label);
+  }
+
+  // One bold vertical edge per contiguous run of supported wires in each layer.
+  for (const [layer, wireSet] of [...layerWires.entries()].sort((a, b) => a[0] - b[0])) {
+    const color = ZZ_LAYER_COLORS[(layer - 1) % ZZ_LAYER_COLORS.length];
+    const x = xOf(layer);
+    const sorted = [...wireSet].sort((a, b) => a - b);
+    for (const [lo, hi] of contiguousRuns(sorted)) {
+      svg.appendChild(svgNode("line", {
+        x1: x, y1: yOf(lo), x2: x, y2: yOf(hi),
+        stroke: color, "stroke-width": 5, "stroke-linecap": "round",
+      }));
+      for (let q = lo; q <= hi; q += 1) {
+        svg.appendChild(svgNode("circle", {
+          cx: x, cy: yOf(q), r: 4.5, fill: color,
+        }));
+      }
+    }
+    const head = svgNode("text", {
+      x, y: topPad - 14, "text-anchor": "middle",
+      "font-size": 11, "font-weight": 600, fill: color,
+    });
+    head.textContent = `Layer ${layer}`;
+    svg.appendChild(head);
+  }
+
+  renderZoomableSvg(svg, "recursive-simplified", {
+    minScale: 0.3,
+    maxScale: 5,
+    naturalSize: { width, height },
+    hint: "Each bold vertical edge collapses one CNOT-depth layer of transversal ZZ-measurements onto the wires it acts on. If it runs off-screen, drag the scrollbars to pan, or zoom out.",
+  });
+
+  const clampedNote =
+    t !== Math.round(state.t)
+      ? ` (t capped at ${t}: transversal ZZ needs t + 1 <= the CAT^4 base size)`
+      : "";
+  refs.visualCaption.textContent =
+    `Simplified scheme for the recursive CAT^${n} preparation at t = ${t}${clampedNote}. ` +
+    `The ${measurements.length} transversal ZZ-measurements are grouped into ${maxLayer} CNOT-depth ` +
+    `layer${maxLayer === 1 ? "" : "s"}; each layer is one column drawn as bolded vertical edge(s) over the ` +
+    `wires it acts on, and each layer has its own colour.`;
+}
+
+// In-browser port of pyzx's recursive_unfuse_FE (zxcalc/pyzx unfuse_FE_rules.py,
+// arXiv:2506.17181), so the fault-equivalent ZX diagram is generated live for any
+// n (the slider goes to 500 — too many/too-large graphs to precompute). Verified
+// to match pyzx's vertex/edge counts and degree sequence over n=8..50, t=2..7.
+// Vertex types: 0 boundary, 1 Z, 2 X. Edge types: 1 simple, 2 hadamard.
+const ZX_BOUNDARY = 0;
+const ZX_Z = 1;
+const ZX_SIMPLE = 1;
+
+class UnfuseGraph {
+  constructor() {
+    this.next = 0;
+    this.ty = new Map();
+    this.q = new Map();
+    this.r = new Map();
+    this.adj = new Map(); // id -> Map(neighbor -> edgeType); insertion order preserved
+  }
+  addVertex(type, qubit = -1, row = -1) {
+    const v = this.next++;
+    this.ty.set(v, type);
+    this.q.set(v, qubit);
+    this.r.set(v, row);
+    this.adj.set(v, new Map());
+    return v;
+  }
+  addEdge(a, b, et = ZX_SIMPLE) {
+    this.adj.get(a).set(b, et);
+    this.adj.get(b).set(a, et);
+  }
+  removeVertex(v) {
+    for (const nb of this.adj.get(v).keys()) {
+      this.adj.get(nb).delete(v);
+    }
+    this.adj.delete(v);
+    this.ty.delete(v);
+    this.q.delete(v);
+    this.r.delete(v);
+  }
+  neighbors(v) {
+    return [...this.adj.get(v).keys()];
+  }
+  degree(v) {
+    return this.adj.get(v).size;
+  }
+  vertices() {
+    return [...this.ty.keys()];
+  }
+}
+
+// All permutations of arr (arr length <= 5 here: only used for degree-4/5 unfuse).
+function permutationsOf(arr) {
+  if (arr.length <= 1) {
+    return [arr.slice()];
+  }
+  const out = [];
+  for (let i = 0; i < arr.length; i += 1) {
+    const rest = arr.slice(0, i).concat(arr.slice(i + 1));
+    for (const p of permutationsOf(rest)) {
+      out.push([arr[i], ...p]);
+    }
+  }
+  return out;
+}
+
+// Brute-force min-cost assignment (pyzx's _linear_sum_assignment_itertools).
+function minCostAssignment(cost) {
+  const rows = cost.length;
+  const cols = rows ? cost[0].length : 0;
+  let best = Infinity;
+  let bestPerm = [];
+  for (const perm of permutationsOf([...Array(cols).keys()].slice(0, cols))) {
+    if (perm.length < rows) continue;
+    let s = 0;
+    for (let i = 0; i < rows; i += 1) {
+      s += cost[i][perm[i]];
+    }
+    if (s < best) {
+      best = s;
+      bestPerm = perm.slice(0, rows);
+    }
+  }
+  return bestPerm;
+}
+
+function bestPairing(g, neighbors, newVerts) {
+  const m = neighbors.length;
+  if (m === 0) return [];
+  const cost = Array.from({ length: m }, () => new Array(m).fill(0));
+  for (let i = 0; i < m; i += 1) {
+    const nq = g.q.get(neighbors[i]);
+    const nr = g.r.get(neighbors[i]);
+    for (let j = 0; j < m; j += 1) {
+      cost[i][j] = Math.hypot(g.q.get(newVerts[j]) - nq, g.r.get(newVerts[j]) - nr);
+    }
+  }
+  return minCostAssignment(cost);
+}
+
+function squareCoords(q, r) {
+  const d = 0.5;
+  return [[q - d, r - d], [q + d, r - d], [q + d, r + d], [q - d, r + d]];
+}
+
+function nCycleCoords(N, q, r) {
+  const radius = (0.75 * N) / 5;
+  const coords = [];
+  for (let i = 0; i < N; i += 1) {
+    const angle = (2 * Math.PI * i) / N + Math.PI;
+    coords.push([q + radius * Math.cos(angle), r - radius * Math.sin(angle)]);
+  }
+  return coords;
+}
+
+// Unfuse a spider into a polygon of new spiders (degree-4 square, degree-5 pentagon).
+function unfusePolygon(g, v, coordsFn) {
+  const vType = g.ty.get(v);
+  const neighs = g.neighbors(v);
+  const originalEdge = new Map(neighs.map((n) => [n, g.adj.get(v).get(n)]));
+  const coords = coordsFn(g.q.get(v), g.r.get(v));
+  const newVs = coords.map(([qc, rc]) => g.addVertex(vType, qc, rc));
+  for (let i = 0; i < newVs.length; i += 1) {
+    g.addEdge(newVs[i], newVs[(i + 1) % newVs.length]);
+  }
+  const assignment = bestPairing(g, neighs, newVs);
+  neighs.forEach((nb, i) => g.addEdge(nb, newVs[assignment[i]], originalEdge.get(nb)));
+  g.removeVertex(v);
+}
+
+function splitNeighbors(g, neighbors) {
+  const sorted = neighbors.slice().sort((a, b) => g.q.get(a) - g.q.get(b));
+  const mid = Math.floor(sorted.length / 2);
+  return [sorted.slice(0, mid), sorted.slice(mid)];
+}
+
+// Core 2n-degree unfusion: two inner spiders plus w parity-check gadgets.
+function unfuse2nCore(g, v, w) {
+  const vType = g.ty.get(v);
+  const [group1, group2] = splitNeighbors(g, g.neighbors(v));
+  const degreeN = group1.length;
+  const all = group1.concat(group2);
+  const startFrom = Math.min(...all.map((n) => g.r.get(n))) - 1;
+  const posQ1 = group1.reduce((s, n) => s + g.q.get(n), 0) / group1.length;
+  const posQ2 = group2.reduce((s, n) => s + g.q.get(n), 0) / group2.length;
+
+  const inner1 = g.addVertex(vType, posQ1, startFrom - degreeN - 1);
+  const inner2 = g.addVertex(vType, posQ2, startFrom - degreeN - 1);
+
+  const pairs = Math.min(group1.length, group2.length);
+  for (let i = 0; i < pairs; i += 1) {
+    const n1 = group1[i];
+    const n2 = group2[i];
+    if (w == null || w >= i + 1) {
+      const v1 = g.addVertex(vType, g.q.get(n1), startFrom - i);
+      const v2 = g.addVertex(vType, g.q.get(n2), startFrom - i);
+      g.addEdge(v1, n1);
+      g.addEdge(v2, n2);
+      g.addEdge(v1, v2);
+      g.addEdge(inner1, v1);
+      g.addEdge(inner2, v2);
+    } else {
+      g.addEdge(inner1, n1);
+      g.addEdge(inner2, n2);
+    }
+  }
+  if (group2.length > group1.length) {
+    g.addEdge(inner2, group2[group2.length - 1]);
+  }
+  g.removeVertex(v);
+  return [inner1, inner2];
+}
+
+function recursiveUnfuse(g, v, w) {
+  const degree = g.degree(v);
+  if (degree <= 3) return;
+  if (degree === 4) {
+    unfusePolygon(g, v, squareCoords);
+    return;
+  }
+  if (degree === 5) {
+    unfusePolygon(g, v, (q, r) => nCycleCoords(5, q, r));
+    return;
+  }
+  const [inner1, inner2] = unfuse2nCore(g, v, w);
+  recursiveUnfuse(g, inner1, w);
+  recursiveUnfuse(g, inner2, w);
+}
+
+// Build the unfused fault-equivalent ZX diagram for CAT^n at fault weight t and
+// return it as a {v, e, o, nSpiders} structure for buildUnfuseZXSvg.
+function recursiveZxStructure(nRaw, tRaw) {
+  const n = Math.max(4, Math.round(nRaw));
+  const t = Math.max(1, Math.round(tRaw));
+  const g = new UnfuseGraph();
+  const centre = g.addVertex(ZX_Z, (n - 1) / 2, 0);
+  const outputs = [];
+  for (let i = 0; i < n; i += 1) {
+    const b = g.addVertex(ZX_BOUNDARY, i, 2);
+    g.addEdge(centre, b);
+    outputs.push(b);
+  }
+  recursiveUnfuse(g, centre, t);
+
+  const ids = g.vertices();
+  const index = new Map(ids.map((id, i) => [id, i]));
+  const v = ids.map((id) => [g.ty.get(id), g.q.get(id), g.r.get(id)]);
+  const seen = new Set();
+  const e = [];
+  for (const a of ids) {
+    for (const [b, et] of g.adj.get(a)) {
+      const key = index.get(a) < index.get(b)
+        ? `${index.get(a)},${index.get(b)}`
+        : `${index.get(b)},${index.get(a)}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        e.push([index.get(a), index.get(b), et]);
+      }
+    }
+  }
+  return {
+    v,
+    e,
+    o: outputs.map((id) => index.get(id)),
+    nSpiders: ids.filter((id) => g.ty.get(id) !== ZX_BOUNDARY).length,
+  };
+}
+
+// Draw a pyzx graph structure {v:[[type,qubit,row]], e:[[a,b,edgeType]], o:[...]}.
+// pyzx uses `qubit` as the vertical axis and `row` as the horizontal axis, so we
+// map x <- row and y <- qubit and keep pyzx's own coordinates (hence layout).
+function buildUnfuseZXSvg(struct) {
+  const XS = 78; // px per row unit (horizontal)
+  const YS = 30; // px per qubit unit (vertical)
+  const pad = 36;
+  const rows = struct.v.map((vt) => vt[2]);
+  const qubits = struct.v.map((vt) => vt[1]);
+  const rMin = Math.min(...rows);
+  const qMin = Math.min(...qubits);
+  const width = (Math.max(...rows) - rMin) * XS + pad * 2;
+  const height = (Math.max(...qubits) - qMin) * YS + pad * 2;
+  const px = (vt) => pad + (vt[2] - rMin) * XS;
+  const py = (vt) => pad + (vt[1] - qMin) * YS;
+
+  const svg = svgNode("svg", {
+    viewBox: `0 0 ${width} ${height}`,
+    width,
+    height,
+    "aria-label": `Fault-equivalent ZX diagram from pyzx recursive_unfuse_FE`,
+  });
+
+  // Edges first so spiders draw on top.
+  for (const [a, b, et] of struct.e) {
+    const va = struct.v[a];
+    const vb = struct.v[b];
+    const line = svgNode("line", {
+      x1: px(va), y1: py(va), x2: px(vb), y2: py(vb),
+      stroke: "#000000",
+      "stroke-width": 1.6,
+      "stroke-dasharray": et === 2 ? "5 4" : "none", // Hadamard edge dashed
+    });
+    svg.appendChild(line);
+    if (et === 2) {
+      // Hadamard box at the edge midpoint.
+      const mx = (px(va) + px(vb)) / 2;
+      const my = (py(va) + py(vb)) / 2;
+      svg.appendChild(svgNode("rect", {
+        x: mx - 5, y: my - 5, width: 10, height: 10,
+        fill: "#ffd166", stroke: "#14213d", "stroke-width": 1,
+      }));
+    }
+  }
+
+  const outputs = new Set(struct.o);
+  struct.v.forEach((vt, i) => {
+    const type = vt[0];
+    if (type === 0) {
+      // Boundary (output wire end): small open marker.
+      svg.appendChild(svgNode("circle", {
+        cx: px(vt), cy: py(vt), r: 3.5,
+        fill: outputs.has(i) ? "#14213d" : "#ffffff",
+        stroke: "#14213d", "stroke-width": 1.2,
+      }));
+      return;
+    }
+    // Z-spider green, X-spider red (only Z appears in this construction).
+    svg.appendChild(svgNode("circle", {
+      cx: px(vt), cy: py(vt), r: 7,
+      fill: type === 2 ? "#f3b6b6" : "var(--spider-fill)",
+      stroke: type === 2 ? "#b3261e" : "var(--recursive)",
+      "stroke-width": 1.6,
+    }));
+  });
+
+  return svg;
+}
+
 function renderRecursiveZX(model) {
   clearVisual();
 
-  const construction = buildRecursiveConstruction(state.n, state.t);
+  const struct = recursiveZxStructure(state.n, state.t);
+
   legendPills([
-    { color: "var(--spider-fill)", label: "Z-spider" },
-    ...Array.from({ length: construction.maxLayer }, (_, layer) => ({
-      color: ZZ_LAYER_COLORS[layer % ZZ_LAYER_COLORS.length],
-      label: `Layer ${layer + 1} (CNOT depth 1)`,
-    })),
+    { color: "var(--spider-fill)", label: "Z-spider (degree <= 3)" },
+    { color: "#14213d", label: "output boundary" },
   ]);
 
-  const svg = buildRecursiveZXSvg(construction);
+  const svg = buildUnfuseZXSvg(struct);
   // Render at natural pixel size so a large diagram overflows the viewport and
-  // both scrollbars appear (drag them to pan up/down and left/right) instead of
-  // being squeezed to fit; zoom out for the whole figure.
+  // both scrollbars appear (drag them to pan) instead of being squeezed to fit.
   const [, , vbWidth, vbHeight] = (svg.getAttribute("viewBox") || "0 0 900 480")
     .split(/\s+/)
     .map(Number);
@@ -2184,36 +2606,17 @@ function renderRecursiveZX(model) {
     minScale: 0.3,
     maxScale: 5,
     naturalSize: { width: vbWidth, height: vbHeight },
-    hint: "Drag any ZZ-measurement sideways to pull it off a crowded time slice. Columns are scheduling layers. If the diagram runs off-screen, drag the scrollbars to pan up/down and left/right, or zoom out for the whole figure.",
+    hint: "Fault-equivalent ZX diagram generated by pyzx recursive_unfuse_FE. If it runs off-screen, drag the scrollbars to pan, or zoom out for the whole figure.",
   });
 
-  // Reset-layout control: clears the drag overrides for this (n, t) instance.
-  const layoutKey = `${construction.n}-${construction.t}`;
-  const hasOverrides = Object.keys(state.recursiveZxLayout[layoutKey] || {}).length > 0;
-  const resetRow = document.createElement("div");
-  resetRow.className = "zx-reset-row";
-  const resetButton = document.createElement("button");
-  resetButton.type = "button";
-  resetButton.className = "export-button ghost";
-  resetButton.textContent = "Reset spider layout";
-  resetButton.disabled = !hasOverrides;
-  resetButton.addEventListener("click", () => {
-    state.recursiveZxLayout[layoutKey] = {};
-    render();
-  });
-  resetRow.appendChild(resetButton);
-  refs.visualHost.appendChild(resetRow);
-
-  const clampedNote =
-    construction.t !== Math.round(state.t)
-      ? ` (t capped at ${construction.t}: transversal ZZ needs t + 1 <= the CAT^4 base size)`
-      : "";
+  const n = Math.round(state.n);
+  const t = Math.round(state.t);
   refs.visualCaption.textContent =
-    `Dynamic ZX diagram for the recursive CAT^${construction.n} preparation at t = ${construction.t}${clampedNote}. ` +
-    `${construction.leaves.length} CAT^4 base-case seed spiders (left) are fused up a binary tree with ` +
-    `${construction.numFusions} fusions and ${construction.totalZZ} transversal ZZ-measurements. ` +
-    `Each colour is one CNOT-depth-1 layer (${construction.maxLayer} total), acting on a disjoint set of wires; ` +
-    `drag any measurement sideways to declutter a shared time slice.`;
+    `Fault-equivalent ZX diagram for CAT^${n} at t = ${t}, generated by an in-browser port of ` +
+    `pyzx's recursive_unfuse_FE (zxcalc/pyzx unfuse_FE_rules.py, arXiv:2506.17181): a single ` +
+    `degree-${n} Z-spider is recursively unfused with fault weight w = ${t} into ` +
+    `${struct.nSpiders} degree-<=3 Z-spiders. The n output legs are on the right. ` +
+    `Generated live, so it scales with the n slider.`;
 }
 
 function renderRecursiveSchematic(model) {
@@ -2434,6 +2837,270 @@ function renderRecursiveSchematic(model) {
   refs.visualHost.appendChild(svg);
   refs.visualCaption.textContent =
     `Concept sketch for the recursive paper construction. Pairwise fusions repeat for ${levels} recursive round${levels === 1 ? "" : "s"}, and each fusion uses ${state.t + 1} transversal ZZ checks.`;
+}
+
+// Pull the headline metric (CNOT count or depth) for a method at a given (n, t).
+// The two paper constructions expose closed-form estimators over any n, so they
+// draw as continuous curves; the bundled-circuit methods only return a value at
+// their saved (n, t) points, leaving natural gaps in the scatter.
+function scalabilityMetricAt(methodId, n, t, field) {
+  if (methodId === "recursive") {
+    return recursiveEstimate(n, t)[field];
+  }
+  if (methodId === "shallow") {
+    const estimate = shallowEstimate(n, t);
+    return estimate.available ? estimate[field] : null;
+  }
+  const actual = getActualMetric(methodId, n, t);
+  if (!actual) {
+    return null;
+  }
+  if (field === "depth") {
+    return actual.depth;
+  }
+  if (field === "ancillas") {
+    return actual.numFlags;
+  }
+  return actual.numCx;
+}
+
+// "Compare Different Methods" section: overlay how CNOT count, CNOT depth, and
+// ancilla count grow with the target size n for every construction at the current
+// fault weight t. The recursive construction's depth is 2*log2(t) + 2 — constant
+// in n — so its curve reads as a flat line while the baselines climb, the
+// scalability story Theorem 3.1 makes, while its CNOT count stays near-linear.
+function renderMethodComparison() {
+  refs.comparisonLegend.innerHTML = "";
+  refs.comparisonHost.innerHTML = "";
+  refs.comparisonCaption.textContent = "";
+
+  const SERIES = data.methods.order.map((id) => ({
+    id,
+    label: data.methods[id].label,
+    color: METHOD_ACCENTS[id],
+  }));
+
+  legendPills(
+    SERIES.map((series) => ({ color: series.color, label: series.label })),
+    refs.comparisonLegend,
+  );
+
+  const ns = data.controls.comparisonNs;
+  const nMin = ns[0];
+  const nMax = ns[ns.length - 1];
+  const t = state.t;
+
+  const width = 980;
+  const panelHeight = 300;
+  const panelGap = 56;
+  const height = panelHeight * 3 + panelGap * 2 + 40;
+  const plotLeft = 84;
+  const plotRight = width - 220; // leave room for the inline series labels
+  const plotW = plotRight - plotLeft;
+
+  const svg = svgNode("svg", {
+    viewBox: `0 0 ${width} ${height}`,
+    role: "img",
+    "aria-label": `Scalability of every construction in n at t = ${t}`,
+  });
+
+  const xOfN = (n) => plotLeft + ((n - nMin) / (nMax - nMin)) * plotW;
+
+  function niceCeil(value) {
+    if (value <= 0) {
+      return 1;
+    }
+    const magnitude = 10 ** Math.floor(Math.log10(value));
+    for (const step of [1, 2, 2.5, 5, 10]) {
+      const candidate = step * magnitude;
+      if (candidate >= value) {
+        return candidate;
+      }
+    }
+    return 10 * magnitude;
+  }
+
+  function drawPanel(top, field, title, subtitle) {
+    const bottom = top + panelHeight;
+    const plotTop = top + 30;
+    const plotBottom = bottom - 44;
+    const plotH = plotBottom - plotTop;
+
+    // Gather each method's points and the panel's shared y-range.
+    const seriesPoints = SERIES.map((series) => {
+      const points = [];
+      for (const n of ns) {
+        const value = scalabilityMetricAt(series.id, n, t, field);
+        if (value != null && Number.isFinite(value)) {
+          points.push({ n, value });
+        }
+      }
+      return { ...series, points };
+    });
+
+    const maxValue = Math.max(
+      1,
+      ...seriesPoints.flatMap((series) => series.points.map((point) => point.value)),
+    );
+    const yMax = niceCeil(maxValue);
+    const yOf = (value) => plotBottom - (value / yMax) * plotH;
+
+    // Panel title + subtitle.
+    const titleNode = svgNode("text", {
+      x: plotLeft,
+      y: top + 12,
+      "font-size": 15,
+      "font-weight": 700,
+      fill: "var(--ink)",
+    });
+    titleNode.textContent = title;
+    svg.appendChild(titleNode);
+
+    const subtitleNode = svgNode("text", {
+      x: plotLeft,
+      y: top + 28,
+      "font-size": 11.5,
+      fill: "var(--muted)",
+    });
+    subtitleNode.textContent = subtitle;
+    svg.appendChild(subtitleNode);
+
+    // Horizontal gridlines + y tick labels.
+    const yTicks = 4;
+    for (let i = 0; i <= yTicks; i += 1) {
+      const value = (yMax * i) / yTicks;
+      const y = yOf(value);
+      svg.appendChild(
+        svgNode("line", {
+          x1: plotLeft,
+          y1: y,
+          x2: plotRight,
+          y2: y,
+          stroke: "rgba(20, 33, 61, 0.1)",
+          "stroke-width": i === 0 ? 1.4 : 1,
+        }),
+      );
+      const tick = svgNode("text", {
+        x: plotLeft - 10,
+        y: y + 4,
+        "font-size": 10.5,
+        "text-anchor": "end",
+        fill: "var(--muted)",
+      });
+      tick.textContent = String(Math.round(value));
+      svg.appendChild(tick);
+    }
+
+    // X axis ticks + labels.
+    const xTickNs = ns.filter((n, index) => index % 6 === 0 || n === nMax);
+    for (const n of xTickNs) {
+      const x = xOfN(n);
+      svg.appendChild(
+        svgNode("line", {
+          x1: x,
+          y1: plotBottom,
+          x2: x,
+          y2: plotBottom + 5,
+          stroke: "rgba(20, 33, 61, 0.4)",
+          "stroke-width": 1,
+        }),
+      );
+      const label = svgNode("text", {
+        x,
+        y: plotBottom + 18,
+        "font-size": 10.5,
+        "text-anchor": "middle",
+        fill: "var(--muted)",
+      });
+      label.textContent = String(n);
+      svg.appendChild(label);
+    }
+
+    const xAxisLabel = svgNode("text", {
+      x: (plotLeft + plotRight) / 2,
+      y: plotBottom + 36,
+      "font-size": 11.5,
+      "font-weight": 600,
+      "text-anchor": "middle",
+      fill: "var(--ink)",
+    });
+    xAxisLabel.textContent = "target size n";
+    svg.appendChild(xAxisLabel);
+
+    // One polyline + dotted markers per method, with an inline right-hand label.
+    for (const series of seriesPoints) {
+      if (!series.points.length) {
+        continue;
+      }
+      const emphasised = series.id === "recursive";
+      const pointsAttr = series.points
+        .map((point) => `${xOfN(point.n)},${yOf(point.value)}`)
+        .join(" ");
+      svg.appendChild(
+        svgNode("polyline", {
+          points: pointsAttr,
+          fill: "none",
+          stroke: series.color,
+          "stroke-width": emphasised ? 3.6 : 2,
+          "stroke-linecap": "round",
+          "stroke-linejoin": "round",
+          "stroke-opacity": emphasised ? 1 : 0.85,
+          // Sparse bundled-circuit families read better dashed, so the eye does
+          // not mistake the interpolation for measured intermediate points.
+          "stroke-dasharray": series.points.length < ns.length ? "6 5" : "none",
+        }),
+      );
+      for (const point of series.points) {
+        svg.appendChild(
+          svgNode("circle", {
+            cx: xOfN(point.n),
+            cy: yOf(point.value),
+            r: emphasised ? 3 : 2.2,
+            fill: series.color,
+          }),
+        );
+      }
+
+      const last = series.points[series.points.length - 1];
+      const labelNode = svgNode("text", {
+        x: plotRight + 12,
+        y: yOf(last.value) + 4,
+        "font-size": emphasised ? 12 : 11,
+        "font-weight": emphasised ? 700 : 600,
+        fill: series.color,
+      });
+      labelNode.textContent = series.label;
+      svg.appendChild(labelNode);
+    }
+  }
+
+  drawPanel(
+    20,
+    "numCx",
+    "CNOT count vs n",
+    "The recursive count grows only near-linearly: n·(1 + log2(t+1)) − 2(t+1).",
+  );
+  drawPanel(
+    20 + panelHeight + panelGap,
+    "depth",
+    "CNOT depth vs n",
+    `The recursive depth 2·log2(t)+2 stays flat in n at t = ${t}; the baselines climb with n.`,
+  );
+  drawPanel(
+    20 + (panelHeight + panelGap) * 2,
+    "ancillas",
+    "Ancilla count vs n",
+    "Ancilla usage per construction: recursive needs n/2, while the shallow trade buys depth 3 with more ancillae.",
+  );
+
+  renderZoomableSvg(svg, `method-comparison-${t}`, {
+    host: refs.comparisonHost,
+    maxScale: 3,
+    hint: "Solid curves are closed-form paper estimators; dashed curves are bundled-circuit families plotted at their saved (n, t) points.",
+  });
+
+  refs.comparisonCaption.textContent =
+    `Method comparison at t = ${t}, across CNOT count, CNOT depth, and ancilla count. The recursive construction (Theorem 3.1) holds CNOT depth constant in n — its defining scalability advantage — while keeping the CNOT count near-linear. Bundled baselines (SpiderCat, flag-at-origin, MQT) are charted only where the repo ships an exact circuit, so their curves are sparser.`;
 }
 
 function renderShallowSchematic(model) {
@@ -3774,7 +4441,7 @@ function renderDetailInfo(model) {
   } else if (!model.available) {
     rangeNote = "This exact point is not bundled in the repo.";
   } else if (model.id === "spidercat" && model.spiderGraph && !model.spiderGraph.exact) {
-    rangeNote = `Graph view is snapped to the nearest available SpiderCat instance at n = ${model.spiderGraph.targetN}.`;
+    rangeNote = `No exact SpiderCat graph is bundled at n = ${state.n}, t = ${state.t}; the graph view is available only at bundled (n, t) points.`;
   }
 
   // SpiderCat optimal ships concrete circuits in the repo, so offer a one-click
@@ -3861,6 +4528,8 @@ function renderDetail(model) {
   if (model.id === "recursive") {
     if (state.recursiveView === "zx") {
       renderRecursiveZX(model);
+    } else if (state.recursiveView === "simplified") {
+      renderRecursiveSimplified(model);
     } else {
       renderRecursiveSchematic(model);
     }
@@ -3869,6 +4538,7 @@ function renderDetail(model) {
       [
         { id: "schematic", label: "Schematic" },
         { id: "zx", label: "ZX diagram" },
+        { id: "simplified", label: "Simplified" },
       ],
       state.recursiveView,
       (view) => {
@@ -4009,6 +4679,8 @@ function render() {
 
   const selected = models.find((model) => model.id === state.selectedMethod) || models[0];
   renderDetail(selected);
+
+  renderMethodComparison();
 }
 
 render();

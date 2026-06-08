@@ -47,14 +47,14 @@
           <div class="control-block">
             <label for="nRange">Target size</label>
             <div class="control-row">
-              <input id="nRange" type="range" min="8" max="50" step="1" value="20">
+              <input id="nRange" type="range" min="8" max="500" step="1" value="20">
               <strong id="nValue">n = 20</strong>
             </div>
           </div>
           <div class="control-block">
             <label for="tRange">Fault weight</label>
             <div class="control-row">
-              <input id="tRange" type="range" min="2" max="7" step="1" value="4">
+              <input id="tRange" type="range" min="2" max="20" step="1" value="4">
               <strong id="tValue">t = 4</strong>
             </div>
           </div>
@@ -86,9 +86,21 @@
           </div>
         </section>
 
+        <section class="comparison-section">
+          <div class="section-heading">
+            <h2>Compare Different Methods</h2>
+            <p>How every construction scales with the target size n at the current fault weight t, side by side in CNOT count, CNOT depth, and ancilla count.</p>
+          </div>
+          <div class="comparison-panel visual-panel">
+            <div id="comparisonLegend" class="visual-legend"></div>
+            <div id="comparisonHost" class="visual-host"></div>
+            <p id="comparisonCaption" class="visual-caption"></p>
+          </div>
+        </section>
+
         <section class="notes-section">
           <div class="section-heading">
-            <h2>What the paper changes</h2>
+            <h2>How SpiderCat Improves on Existing Methods?</h2>
           </div>
           <div class="notes-grid">
             <article class="note-card">

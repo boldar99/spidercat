@@ -1001,6 +1001,19 @@ input[type="range"] {
   text-align: center;
 }
 
+.decomp-output {
+  margin: 0.6rem;
+  padding: 1rem 1.1rem;
+  border-radius: 0.75rem;
+  background: #0d1b3e;
+  color: #e6edff;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  white-space: pre;
+  overflow: auto;
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 1180px) {
   .hero,
