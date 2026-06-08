@@ -307,11 +307,11 @@ def single_thread_search_no_siblings(n: int, max_attempts: int = 10000):
     return G, None
 
 
-# if __name__ == "__main__":
-#     G, M_opt = single_thread_search_no_siblings(n=11, max_attempts=1000)
-#     print(M_opt)
-#     if M_opt:
-#         visualize_cat_graph(G, M_opt)
+if __name__ == "__main__":
+    G, M_opt = single_thread_search_no_siblings(n=4, max_attempts=1000)
+    print(M_opt)
+    if M_opt:
+        visualize_cat_graph(G, M_opt)
 
 # Another idea is as follows, it seems that if the graph is 3 regular, n=11 is the limit. Now, change the implementation so that the root node can have an arbitrary degree. Can we go beyond n=
 
@@ -564,5 +564,5 @@ def sweep_topological_limits():
                 print(f"   [FAILURE] Hit {max_attempts} attempts. degree={d} is mathematically too constrained.")
 
 
-if __name__ == "__main__":
-    sweep_topological_limits()
+# if __name__ == "__main__":
+#     sweep_topological_limits()
