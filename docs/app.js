@@ -484,16 +484,76 @@ function parseStimCircuit(text) {
   return { ops, numQubits, initialKet };
 }
 
-// As-soon-as-possible layout: assign each op the earliest column where all of
-// its qubits are free, preserving per-wire ordering. Mutates ops with a `col`.
-function scheduleStimOps(ops, numQubits) {
+// Layout tuned for the optimal-shallow circuit. Two rules beyond plain ASAP:
+//   1. Every Hadamard is forced into a single shared column placed after the
+//      last CNOT, so the H gates read as one clean layer.
+//   2. Two CNOTs may only share a column when their vertical spans
+//      [min(control, target), max(control, target)] are disjoint, so connectors
+//      never draw on top of one another. This is interval-graph packing, so the
+//      column count is the minimum needed to keep the CNOTs visually separated.
+// The circuit gets wider as a result, which the scrollable viewport handles.
+function scheduleShallowOps(gateOps, numQubits) {
   const freeAt = new Array(numQubits).fill(0);
+  const columnSpans = []; // columnSpans[col] = array of [lo, hi] CNOT spans
+  let maxCxCol = -1;
+
+  for (const op of gateOps) {
+    if (op.type !== "cx") {
+      continue;
+    }
+    const lo = Math.min(op.control, op.target);
+    const hi = Math.max(op.control, op.target);
+    let col = Math.max(freeAt[op.control], freeAt[op.target]);
+    for (;;) {
+      const spans = columnSpans[col] || (columnSpans[col] = []);
+      const overlaps = spans.some(([a, b]) => lo <= b && a <= hi);
+      if (!overlaps) {
+        spans.push([lo, hi]);
+        break;
+      }
+      col += 1;
+    }
+    op.col = col;
+    freeAt[op.control] = col + 1;
+    freeAt[op.target] = col + 1;
+    maxCxCol = Math.max(maxCxCol, col);
+  }
+
+  const hOps = gateOps.filter((op) => op.type === "h");
+  const hCol = maxCxCol + 1;
+  for (const op of hOps) {
+    op.col = hCol;
+  }
+  return hOps.length ? hCol + 1 : maxCxCol + 1;
+}
+
+// ASAP layout with one extra rule: every gate occupies its full vertical span,
+// so two gates may share a column only when their spans
+// [min(qubit), max(qubit)] are disjoint. A CNOT spans its control..target; a
+// single-qubit gate is a one-wire point. As a result no CNOT connector ever
+// crosses another gate in the same column, at the cost of more columns (which
+// the scrollable viewport handles). Per-wire op ordering is preserved via freeAt.
+function scheduleNonOverlappingOps(gateOps, numQubits) {
+  const freeAt = new Array(numQubits).fill(0);
+  const columnSpans = []; // columnSpans[col] = array of [lo, hi] spans
   let maxCol = 0;
-  for (const op of ops) {
+
+  for (const op of gateOps) {
     const qubits = op.type === "cx" ? [op.control, op.target] : [op.qubit];
+    const lo = Math.min(...qubits);
+    const hi = Math.max(...qubits);
     let col = 0;
     for (const qubit of qubits) {
       col = Math.max(col, freeAt[qubit]);
+    }
+    for (;;) {
+      const spans = columnSpans[col] || (columnSpans[col] = []);
+      const overlaps = spans.some(([a, b]) => lo <= b && a <= hi);
+      if (!overlaps) {
+        spans.push([lo, hi]);
+        break;
+      }
+      col += 1;
     }
     op.col = col;
     for (const qubit of qubits) {
@@ -839,6 +899,10 @@ function renderZoomableSvg(svg, zoomKey, options = {}) {
   const maxScale = options.maxScale ?? 3;
   const step = options.step ?? 0.25;
   const hintText = options.hint || "Use the zoom controls if the figure feels too small.";
+  // When provided, the stage is sized in real pixels (natural width × zoom)
+  // instead of a percentage of the viewport, so an oversized figure overflows
+  // and both scrollbars appear for panning rather than being squeezed to fit.
+  const naturalSize = options.naturalSize || null;
 
   if (state.zoomScales[zoomKey] == null) {
     state.zoomScales[zoomKey] = 1;
@@ -883,13 +947,22 @@ function renderZoomableSvg(svg, zoomKey, options = {}) {
 
   const stage = document.createElement("div");
   stage.className = "zoom-stage";
+  if (naturalSize) {
+    // Let the stage shrink below the viewport width and center when it fits.
+    stage.style.minWidth = "0";
+    stage.style.marginInline = "auto";
+  }
   stage.appendChild(svg);
   viewport.appendChild(stage);
 
   function applyZoom() {
     const scale = clampNumber(state.zoomScales[zoomKey], minScale, maxScale);
     state.zoomScales[zoomKey] = scale;
-    stage.style.width = `${scale * 100}%`;
+    if (naturalSize) {
+      stage.style.width = `${Math.round(naturalSize.width * scale)}px`;
+    } else {
+      stage.style.width = `${scale * 100}%`;
+    }
     zoomReset.textContent = `${Math.round(scale * 100)}%`;
     zoomOut.disabled = scale <= minScale + 1e-9;
     zoomIn.disabled = scale >= maxScale - 1e-9;
@@ -1226,10 +1299,13 @@ function renderSpiderCircuit(model) {
   // across all bundled circuits), so they all sit in one final column.
   const gateOps = ops.filter((op) => op.type !== "m");
   const measureOps = ops.filter((op) => op.type === "m");
-  const numCols = scheduleStimOps(gateOps, numQubits);
+  // Pack gates so no two CNOTs (or a CNOT and another gate) overlap in a column.
+  const numCols = scheduleNonOverlappingOps(gateOps, numQubits);
   const dataQubits = state.n;
 
-  const rowGap = numQubits <= 24 ? 26 : numQubits <= 48 ? 17 : 12;
+  // Comfortable row spacing now that the viewport scrolls instead of squeezing
+  // every wire into the visible height.
+  const rowGap = numQubits <= 24 ? 26 : numQubits <= 48 ? 18 : numQubits <= 120 ? 13 : 10;
   const colGap = 32;
   const leftPad = 92;
   const rightPad = 36;
@@ -1525,12 +1601,14 @@ function renderSpiderCircuit(model) {
   svg.appendChild(handleLayer);
 
   renderZoomableSvg(svg, circuitId, {
+    minScale: 0.2,
     maxScale: 6,
-    hint: "Drag a CNOT's control (•) or target (⊕) sideways to spread out overlapping gates; double-click an endpoint to reset it. Ctrl-scroll to zoom.",
+    naturalSize: { width, height },
+    hint: "Large circuits render at full size — drag the scrollbars to pan up/down and left/right. Drag a CNOT's control (•) or target (⊕) to nudge it; double-click to reset. Ctrl-scroll to zoom; zoom out to see the whole circuit.",
   });
 
   refs.visualCaption.textContent =
-    `Exact SpiderCat optimal circuit for n = ${state.n}, t = ${state.t} (${gateOps.filter((op) => op.type === "cx").length} CNOTs, ${measureOps.length} measurements), rendered from the bundled ${circuit.fileName}. The origin spider starts in |+⟩; all flag/ancilla wires (a0, a1, …) are measured in the Z basis at the end, and the data wires (q0 … q${state.n - 1}) carry the output cat state. Drag a CNOT's control or target sideways to declutter time slices where gates overlap; double-click an endpoint to reset. Use Export above to download the Stim source.`;
+    `Exact SpiderCat optimal circuit for n = ${state.n}, t = ${state.t} (${gateOps.filter((op) => op.type === "cx").length} CNOTs, ${measureOps.length} measurements), rendered from the bundled ${circuit.fileName}. The origin spider starts in |+⟩; all flag/ancilla wires (a0, a1, …) are measured in the Z basis at the end, and the data wires (q0 … q${state.n - 1}) carry the output cat state. The CNOTs are spread across columns so no two connectors overlap, which can make the diagram wide — drag the scrollbars to pan, or zoom out for the full view. Use Export above to download the Stim source.`;
 }
 
 function renderSchedule(metric, dataQubits, accentColor, caption, zoomKey = "schedule") {
@@ -1780,11 +1858,56 @@ function buildRecursiveZXSvg(construction) {
   const layerGap = clampNumber(Math.round(760 / Math.max(maxLayer, 1)), 26, 60);
   const firstLayerX = wiresStart + 30;
   const rightPad = 40;
-  const width = firstLayerX + Math.max(maxLayer, 1) * layerGap + rightPad;
 
   const rowY = (qubit) => topPad + qubit * rowGap;
-  const layerX = (layer) => firstLayerX + (layer - 1) * layerGap;
   const nodeR = clampNumber(rowGap * 0.22, 3, 5.5);
+
+  // Default layout that keeps ZZ-measurements from overlapping: within each
+  // scheduling layer, measurements whose vertical spans intersect are placed in
+  // separate sub-columns (greedy interval partitioning), so no two connectors
+  // ever sit on top of one another before the user drags anything.
+  const subGap = Math.max(nodeR * 2 + 5, 11);
+  const slotByIdx = new Array(measurements.length).fill(0);
+  const layerSlotCount = new Map();
+  {
+    const byLayer = new Map();
+    measurements.forEach((m, idx) => {
+      if (!byLayer.has(m.layer)) {
+        byLayer.set(m.layer, []);
+      }
+      byLayer.get(m.layer).push(idx);
+    });
+    const spanLo = (idx) => Math.min(measurements[idx].qL, measurements[idx].qR);
+    const spanHi = (idx) => Math.max(measurements[idx].qL, measurements[idx].qR);
+    for (const [layer, idxs] of byLayer.entries()) {
+      const sorted = idxs.slice().sort((a, b) => spanLo(a) - spanLo(b));
+      // slotEnds[s] = highest qubit row currently occupied in sub-column s.
+      const slotEnds = [];
+      for (const idx of sorted) {
+        let slot = 0;
+        while (slot < slotEnds.length && slotEnds[slot] >= spanLo(idx)) {
+          slot += 1;
+        }
+        slotByIdx[idx] = slot;
+        slotEnds[slot] = spanHi(idx);
+      }
+      layerSlotCount.set(layer, slotEnds.length);
+    }
+  }
+
+  // Lay out each layer's left edge cumulatively, leaving room for its widest
+  // fan-out of sub-columns plus a constant gap before the next layer.
+  const layerColX = new Map();
+  let layerCursor = firstLayerX;
+  for (let layer = 1; layer <= Math.max(maxLayer, 1); layer += 1) {
+    layerColX.set(layer, layerCursor);
+    const slots = layerSlotCount.get(layer) || 1;
+    layerCursor += (slots - 1) * subGap + layerGap;
+  }
+  const width = layerCursor - layerGap + rightPad;
+
+  const defaultMeasX = (idx) =>
+    (layerColX.get(measurements[idx].layer) || firstLayerX) + slotByIdx[idx] * subGap;
 
   const svg = svgNode("svg", {
     viewBox: `0 0 ${width} ${height}`,
@@ -1918,7 +2041,7 @@ function buildRecursiveZXSvg(construction) {
   function measX(idx) {
     return overrides[idx] != null
       ? clampNumber(overrides[idx], dragMinX, dragMaxX)
-      : layerX(measurements[idx].layer);
+      : defaultMeasX(idx);
   }
 
   function eventXInSvg(event) {
@@ -2051,10 +2174,17 @@ function renderRecursiveZX(model) {
   ]);
 
   const svg = buildRecursiveZXSvg(construction);
+  // Render at natural pixel size so a large diagram overflows the viewport and
+  // both scrollbars appear (drag them to pan up/down and left/right) instead of
+  // being squeezed to fit; zoom out for the whole figure.
+  const [, , vbWidth, vbHeight] = (svg.getAttribute("viewBox") || "0 0 900 480")
+    .split(/\s+/)
+    .map(Number);
   renderZoomableSvg(svg, "recursive-zx", {
-    minScale: 1,
+    minScale: 0.3,
     maxScale: 5,
-    hint: "Drag any ZZ-measurement sideways to pull it off a crowded time slice. Columns are scheduling layers.",
+    naturalSize: { width: vbWidth, height: vbHeight },
+    hint: "Drag any ZZ-measurement sideways to pull it off a crowded time slice. Columns are scheduling layers. If the diagram runs off-screen, drag the scrollbars to pan up/down and left/right, or zoom out for the whole figure.",
   });
 
   // Reset-layout control: clears the drag overrides for this (n, t) instance.
@@ -2539,10 +2669,14 @@ function renderShallowCircuit(model) {
   // all sit in one final column.
   const gateOps = ops.filter((op) => op.type !== "m");
   const measureOps = ops.filter((op) => op.type === "m");
-  const numCols = scheduleStimOps(gateOps, numQubits);
+  // Shallow-specific layout: all Hadamards in one column, CNOTs packed so their
+  // vertical spans never overlap (see scheduleShallowOps).
+  const numCols = scheduleShallowOps(gateOps, numQubits);
   const dataQubits = construction.dataQubits;
 
-  const rowGap = numQubits <= 24 ? 22 : numQubits <= 60 ? 14 : numQubits <= 140 ? 9 : 6;
+  // Comfortable row spacing now that the viewport scrolls instead of squeezing
+  // every wire into the visible height.
+  const rowGap = numQubits <= 24 ? 26 : numQubits <= 60 ? 18 : numQubits <= 140 ? 13 : 10;
   const colGap = 30;
   const leftPad = 96;
   const rightPad = 36;
@@ -2821,8 +2955,10 @@ function renderShallowCircuit(model) {
   svg.appendChild(handleLayer);
 
   renderZoomableSvg(svg, circuitId, {
+    minScale: 0.2,
     maxScale: 8,
-    hint: "Drag a CNOT's control (•) or target (⊕) sideways to spread out overlapping depth-3 gates; double-click an endpoint to reset it. Ctrl-scroll to zoom.",
+    naturalSize: { width, height },
+    hint: "Large circuits render at full size — drag the scrollbars to pan up/down and left/right. Drag a CNOT's control (•) or target (⊕) to nudge it; double-click to reset. Ctrl-scroll to zoom; zoom out to see the whole circuit.",
   });
 
   const rt = data.paper.optimal.rtValues[String(construction.t)];
@@ -2836,7 +2972,7 @@ function renderShallowCircuit(model) {
     `${construction.cnotCount} CNOTs in CNOT depth 3 on ${construction.numQubits} qubits (${construction.ancillaCount} ancillae)` +
     (optimalCx != null ? `; the theorem's direct-CNOT pass lowers this to ${optimalCx} CNOTs.` : ".") +
     ` Data wires q0…q${construction.n - 1} carry the output cat state; a0, a1, … are ancilla legs consumed by the Bell measurements.${snap} ` +
-    `Because depth 3 packs many CNOTs into the same time slices, drag any control or target sideways to declutter; double-click to reset. Use Export above to download the Stim source.`;
+    `The Hadamards are laid out in a single layer and the CNOTs are spread across columns so no two connectors overlap, which makes the diagram wide — drag the scrollbars to pan, or zoom out for the full view. Use Export above to download the Stim source.`;
 }
 
 function appendShallowExport() {
@@ -3315,15 +3451,35 @@ function renderMqtCircuit(model) {
   const { numQubits, layers } = metric;
   const dataQubits = state.n;
 
-  // Flatten the layers into a draggable CNOT list; entangling layer i sits in
-  // column i. Each endpoint can later be dragged off its default column.
+  // Flatten the layers into a draggable CNOT list. Each entangling layer is
+  // meant to run in parallel, but two CNOTs in the same layer whose vertical
+  // spans [min(control, target), max(control, target)] overlap would draw their
+  // connectors on top of one another. So within each layer we interval-pack the
+  // CNOTs into sub-columns (the minimum count that keeps every span disjoint per
+  // column), preserving the layer/depth grouping while spreading overlaps apart.
+  // Each endpoint can later be dragged off its default column.
   const cxGates = [];
-  layers.forEach((pairs, layerIndex) => {
+  let colBase = 0;
+  layers.forEach((pairs) => {
+    const subColumnSpans = []; // subColumnSpans[i] = array of [lo, hi] CNOT spans
     pairs.forEach(([control, target]) => {
-      cxGates.push({ control, target, col: layerIndex });
+      const lo = Math.min(control, target);
+      const hi = Math.max(control, target);
+      let sub = 0;
+      for (;;) {
+        const spans = subColumnSpans[sub] || (subColumnSpans[sub] = []);
+        const overlaps = spans.some(([a, b]) => lo <= b && a <= hi);
+        if (!overlaps) {
+          spans.push([lo, hi]);
+          break;
+        }
+        sub += 1;
+      }
+      cxGates.push({ control, target, col: colBase + sub });
     });
+    colBase += Math.max(subColumnSpans.length, 1);
   });
-  const numCols = Math.max(layers.length, 1);
+  const numCols = Math.max(colBase, 1);
 
   const rowGap = numQubits <= 24 ? 24 : numQubits <= 60 ? 15 : numQubits <= 140 ? 10 : 7;
   const colGap = 30;
@@ -3520,8 +3676,10 @@ function renderMqtCircuit(model) {
   svg.appendChild(handleLayer);
 
   renderZoomableSvg(svg, circuitId, {
+    minScale: 0.2,
     maxScale: 6,
-    hint: "Drag a CNOT's control (•) or target (⊕) sideways to spread out overlapping gates; double-click an endpoint to reset it. Ctrl-scroll to zoom.",
+    naturalSize: { width, height },
+    hint: "Large circuits render at full size — drag the scrollbars to pan up/down and left/right. Drag a CNOT's control (•) or target (⊕) sideways to spread out overlapping gates; double-click an endpoint to reset. Ctrl-scroll to zoom; zoom out to see the whole circuit.",
   });
 
   const circuit = getMqtCircuit(state.n, state.t);
