@@ -2171,30 +2171,39 @@ function buildRecursiveZXSvg(construction) {
   return svg;
 }
 
-// Simplified scheme: instead of drawing every ZZ-measurement, collapse the
-// transversal ZZ-measurements that share a CNOT-depth layer into bolded vertical
-// edges over the wires they act on. Each layer gets its own column and colour; a
-// layer that fuses several disjoint blocks yields one bold edge per contiguous
-// run of supported wires. Built from the same fusion-tree port as the schematic.
-function contiguousRuns(sortedWires) {
-  const runs = [];
-  let start = null;
-  let prev = null;
-  for (const w of sortedWires) {
-    if (start === null) {
-      start = w;
-    } else if (w !== prev + 1) {
-      runs.push([start, prev]);
-      start = w;
-    }
-    prev = w;
-  }
-  if (start !== null) {
-    runs.push([start, prev]);
-  }
-  return runs;
+// Mix two hex colours; amount 0 -> base, 1 -> target.
+function mixHex(base, target, amount) {
+  const parse = (hex) => {
+    const h = hex.replace("#", "");
+    return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
+  };
+  const [r1, g1, b1] = parse(base);
+  const [r2, g2, b2] = parse(target);
+  const mix = (a, b) => Math.round(a + (b - a) * amount);
+  const hex = (v) => v.toString(16).padStart(2, "0");
+  return `#${hex(mix(r1, r2))}${hex(mix(g1, g2))}${hex(mix(b1, b2))}`;
 }
 
+// A distinct shade of a layer's base colour for the i-th of `count` ZZ-
+// measurements in that layer: lighter shades first, darkening toward near-black,
+// so every shade stays legible on the white canvas while reading as one hue.
+function zzShade(base, i, count) {
+  if (count <= 1) {
+    return base;
+  }
+  const frac = i / (count - 1); // 0 -> lightest, 1 -> darkest
+  return frac <= 0.5
+    ? mixHex(base, "#ffffff", (0.5 - frac) * 2 * 0.34)
+    : mixHex(base, "#0b1020", (frac - 0.5) * 2 * 0.5);
+}
+
+// Simplified scheme: one column band per CNOT-depth layer, but inside each band
+// every transversal ZZ-measurement is drawn as its own vertical edge connecting
+// exactly the two wires it fuses (a dot at each end), so it's clear which wire
+// pairs with which. Overlapping measurements are packed into sub-columns, and
+// each measurement gets a distinct shade of its layer's colour — the two wires
+// of one ZZ-measurement share a tone, different measurements use different tones.
+// Built from the same fusion-tree port as the schematic.
 function renderRecursiveSimplified(model) {
   clearVisual();
   const construction = buildRecursiveConstruction(state.n, state.t);
@@ -2207,32 +2216,68 @@ function renderRecursiveSimplified(model) {
     })),
   );
 
-  // Supported wires per layer (the union of all qL/qR measured in that layer).
-  const layerWires = new Map();
+  // Group the individual ZZ-measurements by layer (each keeps its own wire pair).
+  const layerMeas = new Map();
   for (const m of measurements) {
-    if (!layerWires.has(m.layer)) {
-      layerWires.set(m.layer, new Set());
+    if (!layerMeas.has(m.layer)) {
+      layerMeas.set(m.layer, []);
     }
-    layerWires.get(m.layer).add(m.qL);
-    layerWires.get(m.layer).add(m.qR);
+    layerMeas.get(m.layer).push({ lo: Math.min(m.qL, m.qR), hi: Math.max(m.qL, m.qR) });
+  }
+  const layers = [...layerMeas.keys()].sort((a, b) => a - b);
+
+  // Per layer: pack measurements into non-overlapping vertical tracks (greedy
+  // interval colouring) so stacked edges don't sit on the same sub-column, and
+  // assign each a distinct shade of the layer colour.
+  const layerPlan = new Map();
+  for (const layer of layers) {
+    const ms = layerMeas
+      .get(layer)
+      .slice()
+      .sort((a, b) => a.lo - b.lo || a.hi - b.hi);
+    const base = ZZ_LAYER_COLORS[(layer - 1) % ZZ_LAYER_COLORS.length];
+    const trackEnds = []; // last hi placed on each track
+    ms.forEach((mm, i) => {
+      let track = trackEnds.findIndex((end) => end < mm.lo);
+      if (track === -1) {
+        track = trackEnds.length;
+        trackEnds.push(mm.hi);
+      } else {
+        trackEnds[track] = mm.hi;
+      }
+      mm.track = track;
+      mm.color = zzShade(base, i, ms.length);
+    });
+    layerPlan.set(layer, { ms, tracks: Math.max(1, trackEnds.length), base });
   }
 
   const wireGap = 26;
-  const colGap = 128;
+  const subColGap = 22; // px between sub-columns within a layer band
+  const layerPad = 40; // gap between adjacent layer bands
   const leftPad = 60;
-  const topPad = 34;
+  const topPad = 40;
   const rightPad = 40;
   const bottomPad = 34;
-  const width = leftPad + maxLayer * colGap + rightPad;
+
+  // Lay the layer bands out left-to-right, each as wide as its track count needs.
+  const bandX = new Map();
+  let cursor = leftPad;
+  for (const layer of layers) {
+    const tracks = layerPlan.get(layer).tracks;
+    const bandWidth = tracks * subColGap;
+    bandX.set(layer, { start: cursor, width: bandWidth });
+    cursor += bandWidth + layerPad;
+  }
+  const width = Math.max(leftPad + 80, cursor - layerPad + rightPad);
   const height = topPad + (n - 1) * wireGap + bottomPad;
   const yOf = (q) => topPad + q * wireGap;
-  const xOf = (layer) => leftPad + (layer - 0.5) * colGap;
+  const subX = (layer, track) => bandX.get(layer).start + (track + 0.5) * subColGap;
 
   const svg = svgNode("svg", {
     viewBox: `0 0 ${width} ${height}`,
     width,
     height,
-    "aria-label": `Simplified recursive CAT^${n} scheme: ZZ-measurement layers as bolded vertical edges`,
+    "aria-label": `Simplified recursive CAT^${n} scheme: each ZZ-measurement as a shaded vertical edge between the two wires it fuses`,
   });
 
   // Horizontal qubit wires with labels on the left.
@@ -2249,25 +2294,25 @@ function renderRecursiveSimplified(model) {
     svg.appendChild(label);
   }
 
-  // One bold vertical edge per contiguous run of supported wires in each layer.
-  for (const [layer, wireSet] of [...layerWires.entries()].sort((a, b) => a[0] - b[0])) {
-    const color = ZZ_LAYER_COLORS[(layer - 1) % ZZ_LAYER_COLORS.length];
-    const x = xOf(layer);
-    const sorted = [...wireSet].sort((a, b) => a - b);
-    for (const [lo, hi] of contiguousRuns(sorted)) {
+  // One shaded vertical edge per ZZ-measurement, connecting its two wires.
+  for (const layer of layers) {
+    const { ms, base, tracks } = layerPlan.get(layer);
+    for (const mm of ms) {
+      const x = subX(layer, mm.track);
       svg.appendChild(svgNode("line", {
-        x1: x, y1: yOf(lo), x2: x, y2: yOf(hi),
-        stroke: color, "stroke-width": 5, "stroke-linecap": "round",
+        x1: x, y1: yOf(mm.lo), x2: x, y2: yOf(mm.hi),
+        stroke: mm.color, "stroke-width": 3.4, "stroke-linecap": "round",
       }));
-      for (let q = lo; q <= hi; q += 1) {
+      for (const q of [mm.lo, mm.hi]) {
         svg.appendChild(svgNode("circle", {
-          cx: x, cy: yOf(q), r: 4.5, fill: color,
+          cx: x, cy: yOf(q), r: 4.2, fill: mm.color,
         }));
       }
     }
+    const band = bandX.get(layer);
     const head = svgNode("text", {
-      x, y: topPad - 14, "text-anchor": "middle",
-      "font-size": 11, "font-weight": 600, fill: color,
+      x: band.start + (tracks * subColGap) / 2, y: topPad - 16,
+      "text-anchor": "middle", "font-size": 11, "font-weight": 600, fill: base,
     });
     head.textContent = `Layer ${layer}`;
     svg.appendChild(head);
@@ -2277,7 +2322,7 @@ function renderRecursiveSimplified(model) {
     minScale: 0.3,
     maxScale: 5,
     naturalSize: { width, height },
-    hint: "Each bold vertical edge collapses one CNOT-depth layer of transversal ZZ-measurements onto the wires it acts on. If it runs off-screen, drag the scrollbars to pan, or zoom out.",
+    hint: "Each shaded vertical edge is one transversal ZZ-measurement linking the two wires it fuses; shades of a layer's colour tell its individual measurements apart. If it runs off-screen, drag the scrollbars to pan, or zoom out.",
   });
 
   const clampedNote =
@@ -2287,8 +2332,9 @@ function renderRecursiveSimplified(model) {
   refs.visualCaption.textContent =
     `Simplified scheme for the recursive CAT^${n} preparation at t = ${t}${clampedNote}. ` +
     `The ${measurements.length} transversal ZZ-measurements are grouped into ${maxLayer} CNOT-depth ` +
-    `layer${maxLayer === 1 ? "" : "s"}; each layer is one column drawn as bolded vertical edge(s) over the ` +
-    `wires it acts on, and each layer has its own colour.`;
+    `layer${maxLayer === 1 ? "" : "s"}, one column band each. Within a band every ZZ-measurement is a ` +
+    `separate vertical edge joining the two wires it fuses, drawn in its own shade of the layer's colour so ` +
+    `wires sharing a measurement share a tone.`;
 }
 
 // In-browser port of pyzx's recursive_unfuse_FE (zxcalc/pyzx unfuse_FE_rules.py,
