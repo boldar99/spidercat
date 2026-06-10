@@ -4574,8 +4574,8 @@ function renderDetail(model) {
   if (model.id === "recursive") {
     if (state.recursiveView === "zx") {
       renderRecursiveZX(model);
-    } else if (state.recursiveView === "simplified") {
-      renderRecursiveSimplified(model);
+    // } else if (state.recursiveView === "simplified") {
+    //   renderRecursiveSimplified(model);
     } else {
       renderRecursiveSchematic(model);
     }
@@ -4584,7 +4584,7 @@ function renderDetail(model) {
       [
         { id: "schematic", label: "Schematic" },
         { id: "zx", label: "ZX diagram" },
-        { id: "simplified", label: "Simplified" },
+        // { id: "simplified", label: "Simplified" },
       ],
       state.recursiveView,
       (view) => {
