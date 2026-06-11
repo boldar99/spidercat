@@ -162,12 +162,12 @@ function recursiveEstimate(n, t) {
 // a power-of-two multiple of the seed size. Returns ZZ-measurements in .py order.
 const RECURSIVE_BASE_SIZE = 4;
 
-// The seed/base CAT block must be large enough to host w = t + 1 transversal
-// ZZ-measurements per fusion, so the hard floor is t + 1. The user picks the seed
-// size (requestedBase); we clamp it up to that floor — e.g. at t = 4 the seed is
-// at least CAT^5, giving a 5-FE decomposition (five ZZ-edges per fusion).
-function recursiveBaseSize(t, requestedBase = RECURSIVE_BASE_SIZE) {
-  return Math.max(Math.round(t) + 1, Math.round(requestedBase));
+// The base/seed CAT block size is a free user choice (the recursion's leaf size).
+// Each fusion still performs t + 1 ZZ-measurements, but they reuse the block's
+// qubits across rounds (see the round loop below), so the seed need NOT be as
+// large as t + 1 — only a valid CAT block (>= 2 qubits). n / baseSize leaves result.
+function recursiveBaseSize(requestedBase = RECURSIVE_BASE_SIZE) {
+  return Math.max(2, Math.round(requestedBase));
 }
 
 function makeLeafBlocks(n, baseSize) {
@@ -221,12 +221,12 @@ function argMinDepth(depths, lo, hi) {
 
 function buildRecursiveConstruction(nRaw, tRaw, baseRaw = state.recursiveBase) {
   const n = Math.max(2, Math.round(nRaw));
-  // FUSE-Nw fuses two blocks with w = t + 1 TRANSVERSAL ZZ-measurements, and
-  // transversality requires w <= block size. The user-chosen seed size is clamped
-  // up to t + 1 (recursiveBaseSize) so the fusion is always transversal — e.g. a
-  // requested CAT^4 seed at t = 4 is raised to CAT^5 (a 5-FE decomposition).
+  // FUSE-Nw fuses two sibling blocks with w = t + 1 ZZ-measurements, picking the
+  // min-depth qubit on each side per round (qubits are reused across rounds, so
+  // the seed size is independent of t). The leaf/seed size is the user's choice;
+  // n splits into ceil(n / baseSize) base CAT blocks.
   const t = Math.max(0, Math.round(tRaw));
-  const baseSize = recursiveBaseSize(t, baseRaw);
+  const baseSize = recursiveBaseSize(baseRaw);
 
   const leaves = makeLeafBlocks(n, baseSize);
   const root = buildFusionTree(leaves);
@@ -265,6 +265,7 @@ function buildRecursiveConstruction(nRaw, tRaw, baseRaw = state.recursiveBase) {
     t,
     baseSize,
     leaves,
+    root,
     measurements,
     numFusions: internal.length,
     totalZZ: measurements.length,
@@ -1860,11 +1861,11 @@ function appendRecursiveExport() {
   const controls = document.createElement("div");
   controls.className = "export-controls";
 
-  // Base-case CAT size: the seed block the binary fusion tree starts from. The
-  // floor is t + 1 (transversality); commit on release so the live drag doesn't
+  // Base-case CAT size: the leaf/seed block the binary fusion tree starts from
+  // (>= 2 qubits, independent of t). Commit on release so the live drag doesn't
   // tear down this panel mid-gesture (render() rebuilds it).
-  const minBase = construction.t + 1;
-  const maxBase = Math.max(minBase, 16);
+  const minBase = 2;
+  const maxBase = 16;
   const baseLabel = document.createElement("label");
   baseLabel.className = "export-base";
   const baseText = document.createElement("span");
@@ -2757,15 +2758,48 @@ function renderRecursiveSchematic(model) {
     { color: "rgba(20, 33, 61, 0.16)", label: "smaller CAT block" },
   ]);
 
-  const levels = Math.max(1, Math.ceil(Math.log2(state.t + 1)));
-  const width = 980;
-  const height = 220 + levels * 130;
+  const construction = buildRecursiveConstruction(state.n, state.t);
+  const { root, baseSize } = construction;
+
+  // Walk the ACTUAL fusion tree, tagging each node with a leaf-slot index (its x)
+  // and its height (the row it sits in). Leaves are height 0 at the top; the root
+  // is deepest and becomes the final output. Leaf count is ceil(n / baseSize), so
+  // unbalanced trees (counts that aren't powers of two) show the true block count
+  // per round — e.g. n = 20, base 4 gives 5 seeds, not a padded 8.
+  const allNodes = [];
+  let leafCursor = 0;
+  function place(node) {
+    if (node.leaf) {
+      node._slot = leafCursor;
+      leafCursor += 1;
+      node._h = 0;
+    } else {
+      place(node.left);
+      place(node.right);
+      node._slot = (node.left._slot + node.right._slot) / 2;
+      node._h = node.height;
+    }
+    allNodes.push(node);
+  }
+  place(root);
+
+  const numLeaves = leafCursor;
+  const maxHeight = root._h;
+  const internalNodes = allNodes.filter((node) => !node.leaf);
+
   const laneLeft = 192;
   const laneRight = 64;
+  const colWidth = 132;
+  const width = Math.max(980, laneLeft + laneRight + numLeaves * colWidth);
   const usableWidth = width - laneLeft - laneRight;
   const topPad = 92;
-  const laneGap = 128;
+  const laneGap = 130;
   const boxHeight = 58;
+  const height = topPad + maxHeight * laneGap + 96;
+
+  const xOf = (slot) => laneLeft + (usableWidth * (slot + 0.5)) / numLeaves;
+  const yOf = (h) => topPad + h * laneGap;
+
   const svg = svgNode("svg", {
     viewBox: `0 0 ${width} ${height}`,
     role: "img",
@@ -2774,26 +2808,6 @@ function renderRecursiveSchematic(model) {
 
   function clamp(value, min, max) {
     return Math.min(Math.max(value, min), max);
-  }
-
-  function stageTitle(level) {
-    if (level === 0) {
-      return "Seed blocks";
-    }
-    if (level === levels) {
-      return "Output";
-    }
-    return `Fusion round ${level}`;
-  }
-
-  function stageSubtitle(level, count) {
-    if (level === 0) {
-      return `${count} smaller CAT blocks`;
-    }
-    if (level === levels) {
-      return "final fault-tolerant CAT state";
-    }
-    return `${count} merged CAT blocks`;
   }
 
   function appendBoxLabel(x, y, lines, isFinal) {
@@ -2806,170 +2820,111 @@ function renderRecursiveSchematic(model) {
       fill: "var(--ink)",
     });
     lines.forEach((line, index) => {
-      const span = svgNode("tspan", {
-        x,
-        dy: index === 0 ? 0 : 16,
-      });
+      const span = svgNode("tspan", { x, dy: index === 0 ? 0 : 16 });
       span.textContent = line;
       text.appendChild(span);
     });
     svg.appendChild(text);
   }
 
-  const positionsByLevel = [];
-  for (let level = 0; level <= levels; level += 1) {
-    const count = 2 ** (levels - level);
-    const y = topPad + level * laneGap;
-    const xs = [];
-    for (let index = 0; index < count; index += 1) {
-      const x = laneLeft + (usableWidth * (index + 0.5)) / count;
-      xs.push(x);
-    }
-    positionsByLevel.push({ count, y, xs });
-  }
-
-  positionsByLevel.forEach((levelData, level) => {
-    const lane = svgNode("rect", {
+  // One lane background + title per height row.
+  const rowCounts = new Array(maxHeight + 1).fill(0);
+  allNodes.forEach((node) => { rowCounts[node._h] += 1; });
+  for (let h = 0; h <= maxHeight; h += 1) {
+    const y = yOf(h);
+    const isOutput = h === maxHeight;
+    svg.appendChild(svgNode("rect", {
       x: 18,
-      y: levelData.y - 48,
+      y: y - 48,
       width: width - 36,
       height: 88,
       rx: 26,
-      fill: level === levels ? "rgba(217, 93, 57, 0.08)" : "rgba(255, 255, 255, 0.32)",
-      stroke: level === levels ? "rgba(217, 93, 57, 0.18)" : "rgba(20, 33, 61, 0.06)",
+      fill: isOutput ? "rgba(217, 93, 57, 0.08)" : "rgba(255, 255, 255, 0.32)",
+      stroke: isOutput ? "rgba(217, 93, 57, 0.18)" : "rgba(20, 33, 61, 0.06)",
       "stroke-width": 1.2,
-    });
-    svg.appendChild(lane);
+    }));
 
-    const title = svgNode("text", {
-      x: 42,
-      y: levelData.y - 8,
-      "font-size": 12,
-      "font-weight": 700,
-      fill: "var(--ink)",
-    });
-    title.textContent = stageTitle(level);
+    const title = svgNode("text", { x: 42, y: y - 8, "font-size": 12, "font-weight": 700, fill: "var(--ink)" });
+    title.textContent = h === 0 ? "Seed blocks" : isOutput ? "Output" : `Fusion round ${h}`;
     svg.appendChild(title);
 
-    const subtitle = svgNode("text", {
-      x: 42,
-      y: levelData.y + 12,
-      "font-size": 11,
-      fill: "var(--muted)",
-    });
-    subtitle.textContent = stageSubtitle(level, levelData.count);
+    const subtitle = svgNode("text", { x: 42, y: y + 12, "font-size": 11, fill: "var(--muted)" });
+    subtitle.textContent =
+      h === 0
+        ? `${numLeaves} base CAT^${baseSize} block${numLeaves === 1 ? "" : "s"}`
+        : isOutput
+          ? "final fault-tolerant CAT state"
+          : `${rowCounts[h]} merged CAT block${rowCounts[h] === 1 ? "" : "s"}`;
     svg.appendChild(subtitle);
-  });
-
-  for (let level = 0; level < levels; level += 1) {
-    const current = positionsByLevel[level];
-    const next = positionsByLevel[level + 1];
-    for (let index = 0; index < current.xs.length; index += 2) {
-      const left = current.xs[index];
-      const right = current.xs[index + 1];
-      const parent = next.xs[index / 2];
-      const childBottom = current.y + boxHeight / 2;
-      const parentTop = next.y - boxHeight / 2;
-      const junctionY = current.y + 52;
-      const labelWidth = 94;
-      const labelCenterY = junctionY + 18;
-      svg.appendChild(
-        svgNode("path", {
-          d: `M ${left} ${childBottom} Q ${left} ${junctionY - 12}, ${parent} ${junctionY}`,
-          fill: "none",
-          stroke: "var(--recursive)",
-          "stroke-width": 3.5,
-          "stroke-linecap": "round",
-        }),
-      );
-      svg.appendChild(
-        svgNode("path", {
-          d: `M ${right} ${childBottom} Q ${right} ${junctionY - 12}, ${parent} ${junctionY}`,
-          fill: "none",
-          stroke: "var(--recursive)",
-          "stroke-width": 3.5,
-          "stroke-linecap": "round",
-        }),
-      );
-      svg.appendChild(
-        svgNode("line", {
-          x1: parent,
-          y1: junctionY,
-          x2: parent,
-          y2: parentTop,
-          stroke: "var(--recursive)",
-          "stroke-width": 3.5,
-          "stroke-linecap": "round",
-        }),
-      );
-      svg.appendChild(
-        svgNode("circle", {
-          cx: parent,
-          cy: junctionY,
-          r: 4.5,
-          fill: "var(--recursive)",
-          stroke: "#fff",
-          "stroke-width": 1.4,
-        }),
-      );
-      svg.appendChild(
-        svgNode("rect", {
-          x: parent - labelWidth / 2,
-          y: labelCenterY - 11,
-          width: labelWidth,
-          height: 22,
-          rx: 11,
-          fill: "rgba(255, 250, 241, 0.96)",
-          stroke: "rgba(217, 93, 57, 0.2)",
-          "stroke-width": 1,
-        }),
-      );
-
-      const label = svgNode("text", {
-        x: parent,
-        y: labelCenterY + 4,
-        "font-size": 11.5,
-        "font-weight": 700,
-        "text-anchor": "middle",
-        fill: "var(--recursive)",
-      });
-      label.textContent = `${state.t + 1} ZZ checks`;
-      svg.appendChild(label);
-    }
   }
 
-  positionsByLevel.forEach((levelData, level) => {
-    levelData.xs.forEach((x) => {
-      const widthBox =
-        level === levels
-          ? 340
-          : clamp(usableWidth / Math.max(1, levelData.xs.length) - 22, 96, 150);
-      const rect = svgNode("rect", {
-        x: x - widthBox / 2,
-        y: levelData.y - boxHeight / 2,
-        width: widthBox,
-        height: boxHeight,
-        rx: 22,
-        fill: level === levels ? "rgba(217, 93, 57, 0.16)" : "rgba(20, 33, 61, 0.06)",
-        stroke: level === levels ? "var(--recursive)" : "rgba(20, 33, 61, 0.18)",
-        "stroke-width": level === levels ? 2.6 : 1.5,
-      });
-      svg.appendChild(rect);
-
-      appendBoxLabel(
-        x,
-        levelData.y + 2,
-        level === levels ? ["final", `CAT_${state.n}`] : ["CAT", "sub-block"],
-        level === levels,
-      );
+  // Fusion connectors: each internal node fuses its two children with (t+1) ZZ
+  // checks. Children may sit several rows up (a block that waits its turn), so a
+  // connector can span more than one lane.
+  internalNodes.forEach((node) => {
+    const parentX = xOf(node._slot);
+    const parentTop = yOf(node._h) - boxHeight / 2;
+    const junctionY = parentTop - 26;
+    [node.left, node.right].forEach((child) => {
+      const childX = xOf(child._slot);
+      const childBottom = yOf(child._h) + boxHeight / 2;
+      svg.appendChild(svgNode("path", {
+        d: `M ${childX} ${childBottom} C ${childX} ${junctionY - 18}, ${parentX} ${junctionY - 18}, ${parentX} ${junctionY}`,
+        fill: "none",
+        stroke: "var(--recursive)",
+        "stroke-width": 3.5,
+        "stroke-linecap": "round",
+      }));
     });
+    svg.appendChild(svgNode("line", {
+      x1: parentX, y1: junctionY, x2: parentX, y2: parentTop,
+      stroke: "var(--recursive)", "stroke-width": 3.5, "stroke-linecap": "round",
+    }));
+    svg.appendChild(svgNode("circle", {
+      cx: parentX, cy: junctionY, r: 4.5, fill: "var(--recursive)", stroke: "#fff", "stroke-width": 1.4,
+    }));
+    const labelWidth = 94;
+    svg.appendChild(svgNode("rect", {
+      x: parentX - labelWidth / 2, y: junctionY + 5, width: labelWidth, height: 22, rx: 11,
+      fill: "rgba(255, 250, 241, 0.96)", stroke: "rgba(217, 93, 57, 0.2)", "stroke-width": 1,
+    }));
+    const label = svgNode("text", {
+      x: parentX, y: junctionY + 20, "font-size": 11.5, "font-weight": 700, "text-anchor": "middle", fill: "var(--recursive)",
+    });
+    label.textContent = `${state.t + 1} ZZ checks`;
+    svg.appendChild(label);
   });
 
-  refs.visualHost.appendChild(svg);
+  // Blocks: seeds, merged sub-blocks, and the final output (the root).
+  allNodes.forEach((node) => {
+    const x = xOf(node._slot);
+    const y = yOf(node._h);
+    const isOutput = node === root;
+    const widthBox = isOutput ? 340 : clamp(usableWidth / numLeaves - 22, 96, 150);
+    svg.appendChild(svgNode("rect", {
+      x: x - widthBox / 2,
+      y: y - boxHeight / 2,
+      width: widthBox,
+      height: boxHeight,
+      rx: 22,
+      fill: isOutput ? "rgba(217, 93, 57, 0.16)" : "rgba(20, 33, 61, 0.06)",
+      stroke: isOutput ? "var(--recursive)" : "rgba(20, 33, 61, 0.18)",
+      "stroke-width": isOutput ? 2.6 : 1.5,
+    }));
+    appendBoxLabel(x, y + 2, isOutput ? ["final", `CAT_${state.n}`] : ["CAT", "sub-block"], isOutput);
+  });
+
+  renderZoomableSvg(svg, "recursive-schematic", {
+    minScale: 0.3,
+    maxScale: 3,
+    naturalSize: { width, height },
+    hint: "Recursive fusion tree. If it runs off-screen, drag the scrollbars to pan, or zoom out for the whole figure.",
+  });
+
   refs.visualCaption.textContent =
-    `Concept sketch for the recursive paper construction, starting from CAT^${recursiveBaseSize(state.t, state.recursiveBase)} ` +
-    `base-case seeds (set with the Base size slider below). Pairwise fusions repeat for ${levels} recursive ` +
-    `round${levels === 1 ? "" : "s"}, and each fusion uses ${state.t + 1} transversal ZZ checks.`;
+    `Recursive paper construction for CAT^${state.n} at t = ${state.t}: ${numLeaves} base CAT^${baseSize} ` +
+    `seed block${numLeaves === 1 ? "" : "s"} fuse up a binary tree over ${maxHeight} round${maxHeight === 1 ? "" : "s"}, ` +
+    `each fusion using ${state.t + 1} transversal ZZ checks. Set the seed size with the Base size slider below.`;
 }
 
 // Pull the headline metric (CNOT count or depth) for a method at a given (n, t).
