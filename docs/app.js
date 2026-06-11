@@ -766,9 +766,10 @@ function buildHighlights(models) {
 }
 
 function renderSummary(models) {
+  const impliedSuffix = isImpliedT() ? ` ${impliedTNote()}` : "";
   const available = models.filter((model) => model.available && model.metrics);
   if (!available.length) {
-    refs.stateSummary.textContent = `No methods are available at n = ${state.n}, t = ${state.t}.`;
+    refs.stateSummary.textContent = `No methods are available at n = ${state.n}, t = ${state.t}.${impliedSuffix}`;
     return;
   }
 
@@ -781,7 +782,7 @@ function renderSummary(models) {
       : "";
 
   refs.stateSummary.textContent =
-    `At n = ${state.n}, t = ${state.t}, ${bestCx.label} is the cheapest in CNOT count while ${bestDepth.label} is the shallowest construction.${extra}`;
+    `At n = ${state.n}, t = ${state.t}, ${bestCx.label} is the cheapest in CNOT count while ${bestDepth.label} is the shallowest construction.${extra}${impliedSuffix}`;
 }
 
 function cardHtml(model) {
@@ -4591,7 +4592,8 @@ function renderDetailInfo(model) {
 
 function renderDetail(model) {
   refs.detailTitle.textContent = model.label;
-  refs.detailSubtitle.textContent = `${model.kindLabel}. ${model.optimize}. ${model.paperHook}.`;
+  const impliedSuffix = isImpliedT() ? ` ${impliedTNote()}` : "";
+  refs.detailSubtitle.textContent = `${model.kindLabel}. ${model.optimize}. ${model.paperHook}.${impliedSuffix}`;
   renderDetailInfo(model);
 
   if (model.id === "spidercat") {
@@ -4759,7 +4761,11 @@ function renderDetail(model) {
 
 function render() {
   refs.nValue.textContent = `n = ${state.n}`;
-  refs.tValue.textContent = `t = ${state.t}`;
+  // Preserve the user's requested value on the slider; flag the effective t when
+  // the request was reduced into the implied region.
+  refs.tValue.textContent = isImpliedT()
+    ? `t = ${state.requestedT} → ${state.t}`
+    : `t = ${state.requestedT}`;
 
   const models = data.methods.order.map(buildMethodModel);
   buildHighlights(models);
@@ -4772,4 +4778,5 @@ function render() {
   renderMethodComparison();
 }
 
+syncEffectiveT();
 render();
