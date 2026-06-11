@@ -299,6 +299,47 @@ input[type="range"] {
   color: var(--muted);
 }
 
+/* ---------- Parameter callout ---------- */
+.param-callout {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 0.95rem 1.3rem;
+  border: 1px solid rgba(15, 157, 150, 0.35);
+  border-radius: 1.2rem;
+  background: linear-gradient(120deg, rgba(15, 157, 150, 0.1), rgba(31, 95, 208, 0.06));
+  box-shadow: var(--card-shadow);
+}
+
+.param-callout-badge {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 999px;
+  background: var(--teal);
+  color: #fff;
+  font-size: 1.3rem;
+  font-weight: 800;
+  font-style: italic;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  box-shadow: 0 6px 16px rgba(15, 157, 150, 0.35);
+}
+
+.param-callout p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+.param-callout strong {
+  color: var(--teal);
+  font-weight: 800;
+}
+
 /* ---------- Section headings ---------- */
 .section-heading {
   display: flex;

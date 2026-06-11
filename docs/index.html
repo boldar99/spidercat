@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>SpiderCat CAT State Demo</title>
-    <link rel="stylesheet" href="./styles.css?v=2">
+    <link rel="stylesheet" href="./styles.css?v=3">
   </head>
   <body>
     <div class="page-shell">
@@ -62,6 +62,15 @@
             <p id="stateSummary"></p>
           </div>
         </section>
+
+        <aside class="param-callout">
+          <span class="param-callout-badge">t</span>
+          <p>
+            <strong>t</strong> is the <strong>target fault weight</strong> &mdash; the circuit is
+            intended to be fault-tolerant against any fault pattern involving at most
+            <strong>t</strong> fault locations.
+          </p>
+        </aside>
 
         <section class="cards-section">
           <div class="section-heading">
@@ -139,7 +148,7 @@
       </footer>
     </div>
 
-    <script src="./data.js?v=2"></script>
-    <script src="./app.js?v=2"></script>
+    <script src="./data.js?v=3"></script>
+    <script src="./app.js?v=3"></script>
   </body>
 </html>
