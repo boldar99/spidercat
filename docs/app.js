@@ -905,11 +905,9 @@ function renderCards(models) {
     card.addEventListener("click", () => {
       state.selectedMethod = card.dataset.method;
       render();
-      // On mobile the detail view lives below the fold, so switching a
-      // construction changes nothing in view. Scroll it into sight.
-      if (window.matchMedia("(max-width: 760px)").matches) {
-        document.querySelector(".detail-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
+      // The detail view lives below the cards, so switching a construction
+      // changes nothing in view. Scroll it into sight on every selection.
+      document.querySelector(".detail-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
 }
