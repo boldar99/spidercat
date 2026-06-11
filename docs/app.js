@@ -24,6 +24,9 @@ const state = {
   requestedT: data.controls.defaultT,
   t: data.controls.defaultT,
   selectedMethod: "spidercat",
+  // User-chosen size of the recursive construction's base-case CAT seed blocks.
+  // The effective seed is max(this, t + 1) so each fusion stays transversal.
+  recursiveBase: 4,
   recursiveView: "schematic",
   shallowView: "schematic",
   spiderView: "graph",
@@ -160,11 +163,11 @@ function recursiveEstimate(n, t) {
 const RECURSIVE_BASE_SIZE = 4;
 
 // The seed/base CAT block must be large enough to host w = t + 1 transversal
-// ZZ-measurements per fusion, so its size is max(4, t + 1). For t <= 3 this is
-// the CAT^4 seed; for larger t the seed grows so each fusion stays transversal —
-// e.g. t = 4 uses a CAT^5 seed and a 5-FE decomposition (five ZZ-edges per fuse).
-function recursiveBaseSize(t) {
-  return Math.max(RECURSIVE_BASE_SIZE, Math.round(t) + 1);
+// ZZ-measurements per fusion, so the hard floor is t + 1. The user picks the seed
+// size (requestedBase); we clamp it up to that floor — e.g. at t = 4 the seed is
+// at least CAT^5, giving a 5-FE decomposition (five ZZ-edges per fusion).
+function recursiveBaseSize(t, requestedBase = RECURSIVE_BASE_SIZE) {
+  return Math.max(Math.round(t) + 1, Math.round(requestedBase));
 }
 
 function makeLeafBlocks(n, baseSize) {
@@ -216,14 +219,14 @@ function argMinDepth(depths, lo, hi) {
   return best;
 }
 
-function buildRecursiveConstruction(nRaw, tRaw) {
+function buildRecursiveConstruction(nRaw, tRaw, baseRaw = state.recursiveBase) {
   const n = Math.max(2, Math.round(nRaw));
   // FUSE-Nw fuses two blocks with w = t + 1 TRANSVERSAL ZZ-measurements, and
-  // transversality requires w <= block size. The seed block is sized to t + 1
-  // (recursiveBaseSize), so the fusion is always transversal and t is no longer
-  // clamped — t = 4 fuses with five ZZ-measurements over a CAT^5 seed.
+  // transversality requires w <= block size. The user-chosen seed size is clamped
+  // up to t + 1 (recursiveBaseSize) so the fusion is always transversal — e.g. a
+  // requested CAT^4 seed at t = 4 is raised to CAT^5 (a 5-FE decomposition).
   const t = Math.max(0, Math.round(tRaw));
-  const baseSize = recursiveBaseSize(t);
+  const baseSize = recursiveBaseSize(t, baseRaw);
 
   const leaves = makeLeafBlocks(n, baseSize);
   const root = buildFusionTree(leaves);
@@ -260,6 +263,7 @@ function buildRecursiveConstruction(nRaw, tRaw) {
   return {
     n,
     t,
+    baseSize,
     leaves,
     measurements,
     numFusions: internal.length,
@@ -270,11 +274,11 @@ function buildRecursiveConstruction(nRaw, tRaw) {
 }
 
 function recursiveStimText(construction, useFlags) {
-  const { n, t, measurements, leaves } = construction;
+  const { n, t, baseSize, measurements, leaves } = construction;
   const lines = [
     `# Recursive fault-tolerant CAT^${n} state preparation (t = ${t})`,
-    `# Generated from recursive_construction.py — CAT^4 base-case binary fusion tree`,
-    `# ${leaves.length} base CAT blocks (size <= 4) assumed already prepared`,
+    `# Generated from recursive_construction.py — CAT^${baseSize} base-case binary fusion tree`,
+    `# ${leaves.length} base CAT blocks (size <= ${baseSize}) assumed already prepared`,
     `# ${measurements.length} ZZ-measurements fuse them up the tree`,
   ];
   if (useFlags) {
@@ -1843,15 +1847,46 @@ function appendRecursiveExport() {
   const panel = document.createElement("div");
   panel.className = "export-panel";
 
+  const summaryText = (flags) =>
+    `Stim circuit: CAT^${construction.n}, t = ${construction.t}, base CAT^${construction.baseSize} — ` +
+    `${construction.totalZZ} ZZ-measurements across ${construction.levels} fusion levels` +
+    `${flags ? `, ${construction.totalZZ} flag qubits` : ""}.`;
+
   const summary = document.createElement("p");
   summary.className = "export-summary";
-  summary.textContent =
-    `Stim circuit: CAT^${construction.n}, t = ${construction.t} — ` +
-    `${construction.totalZZ} ZZ-measurements across ${construction.levels} fusion levels.`;
+  summary.textContent = summaryText(state.exportFlags);
   panel.appendChild(summary);
 
   const controls = document.createElement("div");
   controls.className = "export-controls";
+
+  // Base-case CAT size: the seed block the binary fusion tree starts from. The
+  // floor is t + 1 (transversality); commit on release so the live drag doesn't
+  // tear down this panel mid-gesture (render() rebuilds it).
+  const minBase = construction.t + 1;
+  const maxBase = Math.max(minBase, 16);
+  const baseLabel = document.createElement("label");
+  baseLabel.className = "export-base";
+  const baseText = document.createElement("span");
+  baseText.className = "export-base-label";
+  const baseValue = document.createElement("strong");
+  baseValue.textContent = `CAT^${construction.baseSize}`;
+  baseText.append("Base size ", baseValue);
+  const baseInput = document.createElement("input");
+  baseInput.type = "range";
+  baseInput.min = String(minBase);
+  baseInput.max = String(maxBase);
+  baseInput.step = "1";
+  baseInput.value = String(construction.baseSize);
+  baseInput.addEventListener("input", () => {
+    baseValue.textContent = `CAT^${baseInput.value}`;
+  });
+  baseInput.addEventListener("change", () => {
+    state.recursiveBase = Number(baseInput.value);
+    render();
+  });
+  baseLabel.append(baseText, baseInput);
+  controls.appendChild(baseLabel);
 
   const flagsLabel = document.createElement("label");
   flagsLabel.className = "export-flags";
@@ -1860,10 +1895,7 @@ function appendRecursiveExport() {
   flagsInput.checked = state.exportFlags;
   flagsInput.addEventListener("change", () => {
     state.exportFlags = flagsInput.checked;
-    summary.textContent =
-      `Stim circuit: CAT^${construction.n}, t = ${construction.t} — ` +
-      `${construction.totalZZ} ZZ-measurements across ${construction.levels} fusion levels` +
-      `${flagsInput.checked ? `, ${construction.totalZZ} flag qubits` : ""}.`;
+    summary.textContent = summaryText(flagsInput.checked);
   });
   const flagsText = document.createElement("span");
   flagsText.textContent = "Flag qubits (CNOT + MR)";
@@ -1871,7 +1903,7 @@ function appendRecursiveExport() {
   controls.appendChild(flagsLabel);
 
   const fileName = () =>
-    `recursive_cat_n${construction.n}_t${construction.t}${state.exportFlags ? "_flagged" : ""}.stim`;
+    `recursive_cat_n${construction.n}_t${construction.t}_base${construction.baseSize}${state.exportFlags ? "_flagged" : ""}.stim`;
 
   const downloadButton = document.createElement("button");
   downloadButton.type = "button";
@@ -2058,7 +2090,7 @@ function buildRecursiveZXSvg(construction) {
     );
   }
 
-  // CAT^4 base-case seed spiders: one Z-spider per leaf, fanning out (a claw)
+  // Base-case seed spiders: one Z-spider per leaf, fanning out (a claw)
   // to each qubit of its block — the paper's prepared seed CAT state.
   for (const leaf of construction.leaves) {
     const spiderY = leafSpiderY(leaf);
@@ -2935,7 +2967,9 @@ function renderRecursiveSchematic(model) {
 
   refs.visualHost.appendChild(svg);
   refs.visualCaption.textContent =
-    `Concept sketch for the recursive paper construction. Pairwise fusions repeat for ${levels} recursive round${levels === 1 ? "" : "s"}, and each fusion uses ${state.t + 1} transversal ZZ checks.`;
+    `Concept sketch for the recursive paper construction, starting from CAT^${recursiveBaseSize(state.t, state.recursiveBase)} ` +
+    `base-case seeds (set with the Base size slider below). Pairwise fusions repeat for ${levels} recursive ` +
+    `round${levels === 1 ? "" : "s"}, and each fusion uses ${state.t + 1} transversal ZZ checks.`;
 }
 
 // Pull the headline metric (CNOT count or depth) for a method at a given (n, t).
