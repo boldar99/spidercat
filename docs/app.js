@@ -2821,13 +2821,37 @@ function renderRecursiveSchematic(model) {
     svg.appendChild(subtitle);
   }
 
-  // Fusion connectors: each internal node fuses its two children with (t+1) ZZ
-  // checks. Children may sit several rows up (a block that waits its turn), so a
-  // connector can span more than one lane.
+  // The (t+1) ZZ checks of a fusion can't all run at once: in one CNOT layer each
+  // qubit takes part in at most one ZZ, so the parallel width is capped by the
+  // (smaller) child block size. Read the true per-layer split straight from the
+  // construction's measurement layers (a CAT^4 fusion → 4 + 4 + 3, first layer 4).
+  function fusionLayerCounts(node) {
+    const byLayer = new Map();
+    for (const m of construction.measurements) {
+      if (m.qL >= node.lo && m.qL < node.mid && m.qR >= node.mid && m.qR < node.hi) {
+        byLayer.set(m.layer, (byLayer.get(m.layer) || 0) + 1);
+      }
+    }
+    return [...byLayer.entries()].sort((a, b) => a[0] - b[0]).map(([, count]) => count);
+  }
+
+  function fusionLabelLines(node) {
+    const counts = fusionLayerCounts(node);
+    const total = counts.reduce((a, b) => a + b, 0) || state.t + 1;
+    if (counts.length <= 1) {
+      return [`${total} ZZ · 1 layer`];
+    }
+    const breakdown =
+      counts.length <= 6 ? counts.join(" + ") : `${counts.slice(0, 5).join(" + ")} + …`;
+    return [`${total} ZZ · ${counts.length} layers`, breakdown];
+  }
+
+  // Fusion connectors: each internal node fuses its two children. Children may sit
+  // several rows up (a block that waits its turn), so a connector can span lanes.
   internalNodes.forEach((node) => {
     const parentX = xOf(node._slot);
     const parentTop = yOf(node._h) - boxHeight / 2;
-    const junctionY = parentTop - 26;
+    const junctionY = parentTop - 48;
     [node.left, node.right].forEach((child) => {
       const childX = xOf(child._slot);
       const childBottom = yOf(child._h) + boxHeight / 2;
@@ -2846,15 +2870,24 @@ function renderRecursiveSchematic(model) {
     svg.appendChild(svgNode("circle", {
       cx: parentX, cy: junctionY, r: 4.5, fill: "var(--recursive)", stroke: "#fff", "stroke-width": 1.4,
     }));
-    const labelWidth = 94;
+    const lines = fusionLabelLines(node);
+    const longest = Math.max(...lines.map((s) => s.length));
+    const labelWidth = clamp(longest * 6 + 18, 96, 188);
+    const lineH = 14;
+    const labelHeight = lines.length * lineH + 9;
+    const labelTop = junctionY + 5;
     svg.appendChild(svgNode("rect", {
-      x: parentX - labelWidth / 2, y: junctionY + 5, width: labelWidth, height: 22, rx: 11,
+      x: parentX - labelWidth / 2, y: labelTop, width: labelWidth, height: labelHeight, rx: 11,
       fill: "rgba(255, 250, 241, 0.96)", stroke: "rgba(217, 93, 57, 0.2)", "stroke-width": 1,
     }));
     const label = svgNode("text", {
-      x: parentX, y: junctionY + 20, "font-size": 11.5, "font-weight": 700, "text-anchor": "middle", fill: "var(--recursive)",
+      x: parentX, y: labelTop + 15, "font-size": 11, "font-weight": 700, "text-anchor": "middle", fill: "var(--recursive)",
     });
-    label.textContent = `${state.t + 1} ZZ checks`;
+    lines.forEach((line, index) => {
+      const span = svgNode("tspan", { x: parentX, dy: index === 0 ? 0 : lineH });
+      span.textContent = line;
+      label.appendChild(span);
+    });
     svg.appendChild(label);
   });
 
@@ -2886,8 +2919,10 @@ function renderRecursiveSchematic(model) {
 
   refs.visualCaption.textContent =
     `Recursive paper construction for CAT^${state.n} at t = ${state.t}: ${numLeaves} base CAT^${baseSize} ` +
-    `seed block${numLeaves === 1 ? "" : "s"} fuse up a binary tree over ${maxHeight} round${maxHeight === 1 ? "" : "s"}, ` +
-    `each fusion using ${state.t + 1} transversal ZZ checks.`;
+    `seed block${numLeaves === 1 ? "" : "s"} fuse up a binary tree over ${maxHeight} round${maxHeight === 1 ? "" : "s"}. ` +
+    `Each fusion needs ${state.t + 1} ZZ checks, but only one ZZ per qubit fits in a CNOT layer, so they split ` +
+    `into layers capped by the smaller block size — e.g. a CAT^${baseSize} fusion runs ${baseSize} per layer ` +
+    `(${baseSize} + ${baseSize} + … = ${state.t + 1}).`;
 }
 
 // Pull the headline metric (CNOT count or depth) for a method at a given (n, t).
