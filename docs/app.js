@@ -69,16 +69,48 @@ const refs = {
   comparisonCaption: document.getElementById("comparisonCaption"),
 };
 
+// A point (n, t) is nontrivial when floor(n / 2) > t. If the requested t lies
+// in the implied region it can be reduced "for free" to the largest nontrivial
+// value, so the demo falls back to that circuit instead of failing to render.
+function effectiveTFor(n, t) {
+  const maxNontrivial = Math.floor(n / 2) - 1;
+  return Math.min(t, Math.max(1, maxNontrivial));
+}
+
+// Recompute the effective t from the current n and requested t. Call this
+// whenever either control changes before re-rendering.
+function syncEffectiveT() {
+  state.t = effectiveTFor(state.n, state.requestedT);
+}
+
+// True when the requested t was reduced to a smaller effective t for lookup.
+function isImpliedT() {
+  return state.t !== state.requestedT;
+}
+
+// Human-readable explanation shown wherever the requested and effective t differ.
+function impliedTNote() {
+  if (!isImpliedT()) {
+    return "";
+  }
+  return (
+    `Requested t = ${state.requestedT}. For n = ${state.n} this is in the implied region, ` +
+    `so the demo displays the t = ${state.t} circuit.`
+  );
+}
+
 refs.nRange.value = String(state.n);
-refs.tRange.value = String(state.t);
+refs.tRange.value = String(state.requestedT);
 
 refs.nRange.addEventListener("input", (event) => {
   state.n = Number(event.target.value);
+  syncEffectiveT();
   render();
 });
 
 refs.tRange.addEventListener("input", (event) => {
-  state.t = Number(event.target.value);
+  state.requestedT = Number(event.target.value);
+  syncEffectiveT();
   render();
 });
 
