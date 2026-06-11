@@ -150,16 +150,25 @@ function recursiveEstimate(n, t) {
 }
 
 // Port of experimental/recursive_construction.py, generalised to a binary fusion
-// tree whose leaves are CAT^4 base-case states (the paper's seed blocks), so any
-// target size n is representable. n is split into ceil(n / 4) contiguous leaf
-// blocks of size <= 4; a balanced tree fuses adjacent blocks, each internal node
-// using (t + 1) ZZ-measurements between the min-depth qubit on each side. This
+// tree whose leaves are CAT base-case seed states (the paper's seed blocks), so
+// any target size n is representable. The seed size is max(4, t + 1) so each fuse
+// can use (t + 1) transversal ZZ-measurements; n is split into contiguous leaf
+// blocks of that size, and a balanced tree fuses adjacent blocks, each internal
+// node measuring (t + 1) ZZ between the min-depth qubit on each side. This
 // reproduces the .py's min-depth parallelisation and matches it exactly when n is
-// a power-of-two multiple of 4. Returns the ZZ-measurements in the .py's order.
+// a power-of-two multiple of the seed size. Returns ZZ-measurements in .py order.
 const RECURSIVE_BASE_SIZE = 4;
 
-function makeLeafBlocks(n) {
-  const numLeaves = Math.max(1, Math.ceil(n / RECURSIVE_BASE_SIZE));
+// The seed/base CAT block must be large enough to host w = t + 1 transversal
+// ZZ-measurements per fusion, so its size is max(4, t + 1). For t <= 3 this is
+// the CAT^4 seed; for larger t the seed grows so each fusion stays transversal —
+// e.g. t = 4 uses a CAT^5 seed and a 5-FE decomposition (five ZZ-edges per fuse).
+function recursiveBaseSize(t) {
+  return Math.max(RECURSIVE_BASE_SIZE, Math.round(t) + 1);
+}
+
+function makeLeafBlocks(n, baseSize) {
+  const numLeaves = Math.max(1, Math.ceil(n / baseSize));
   const leaves = [];
   let lo = 0;
   for (let i = 0; i < numLeaves; i += 1) {
@@ -210,12 +219,13 @@ function argMinDepth(depths, lo, hi) {
 function buildRecursiveConstruction(nRaw, tRaw) {
   const n = Math.max(2, Math.round(nRaw));
   // FUSE-Nw fuses two blocks with w = t + 1 TRANSVERSAL ZZ-measurements, and
-  // transversality requires w <= block size. Since the smallest blocks are the
-  // CAT^4 base cases, t + 1 <= RECURSIVE_BASE_SIZE, i.e. t <= base size - 1.
-  // (This is the original .py's clamp on the seed-block size, n_seed = 4.)
-  const t = Math.max(0, Math.min(Math.round(tRaw), RECURSIVE_BASE_SIZE - 1));
+  // transversality requires w <= block size. The seed block is sized to t + 1
+  // (recursiveBaseSize), so the fusion is always transversal and t is no longer
+  // clamped — t = 4 fuses with five ZZ-measurements over a CAT^5 seed.
+  const t = Math.max(0, Math.round(tRaw));
+  const baseSize = recursiveBaseSize(t);
 
-  const leaves = makeLeafBlocks(n);
+  const leaves = makeLeafBlocks(n, baseSize);
   const root = buildFusionTree(leaves);
   const internal = [];
   collectInternalNodes(root, internal);
@@ -2367,12 +2377,8 @@ function renderRecursiveSimplified(model) {
     hint: "Each shaded vertical edge is one transversal ZZ-measurement linking the two wires it fuses; shades of a layer's colour tell its individual measurements apart. If it runs off-screen, drag the scrollbars to pan, or zoom out.",
   });
 
-  const clampedNote =
-    t !== Math.round(state.t)
-      ? ` (t capped at ${t}: transversal ZZ needs t + 1 <= the CAT^4 base size)`
-      : "";
   refs.visualCaption.textContent =
-    `Simplified scheme for the recursive CAT^${n} preparation at t = ${t}${clampedNote}. ` +
+    `Simplified scheme for the recursive CAT^${n} preparation at t = ${t}. ` +
     `The ${measurements.length} transversal ZZ-measurements are grouped into ${maxLayer} CNOT-depth ` +
     `layer${maxLayer === 1 ? "" : "s"}, one column band each. Within a band every ZZ-measurement is a ` +
     `separate vertical edge joining the two wires it fuses, drawn in its own shade of the layer's colour so ` +
