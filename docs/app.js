@@ -135,143 +135,123 @@ function formatPercent(value) {
   return `${(value * 100).toFixed(1)}%`;
 }
 
+// Metrics for the recursive construction, MEASURED from the unfuse decomposition
+// (buildUnfuseConstruction) so they describe the same circuit as the schematic, the
+// ZX diagram, and the .stim export — not the closed-form Theorem 3.1 estimate.
 function recursiveEstimate(n, t) {
-  const cnot = Math.max(0, Math.ceil(n * (1 + Math.log2(t + 1)) - 2 * (t + 1)));
-  const depth = Math.max(2, Math.ceil(2 * Math.log2(Math.max(t, 1)) + 2));
-  const ancillas = Math.ceil(n / 2);
+  const { metrics } = buildUnfuseConstruction(n, t);
   return {
-    numCx: cnot,
-    depth,
-    ancillas,
+    numCx: metrics.numCx,
+    depth: metrics.depth,
+    ancillas: metrics.ancillas,
     formulaLabel: data.paper.recursive.theorem,
-    note: "Estimator from Theorem 3.1.",
+    note: "Measured from the recursive_unfuse_FE decomposition: 2 CNOTs per transversal ZZ gadget plus base CAT^k seed prep.",
     available: true,
   };
 }
 
-// Port of experimental/recursive_construction.py, generalised to a binary fusion
-// tree whose leaves are CAT base-case seed states (the paper's seed blocks), so
-// any target size n is representable. The seed size is max(4, t + 1) so each fuse
-// can use (t + 1) transversal ZZ-measurements; n is split into contiguous leaf
-// blocks of that size, and a balanced tree fuses adjacent blocks, each internal
-// node measuring (t + 1) ZZ between the min-depth qubit on each side. This
-// reproduces the .py's min-depth parallelisation and matches it exactly when n is
-// a power-of-two multiple of the seed size. Returns ZZ-measurements in .py order.
-// Fixed base/seed CAT block size (the recursion's leaf size): n splits into
-// ceil(n / 4) CAT^4 base blocks. Each fusion still performs t + 1 ZZ-measurements,
-// reusing the block's qubits across rounds (see the round loop below).
-const RECURSIVE_BASE_SIZE = 4;
-
-function makeLeafBlocks(n, baseSize) {
-  const numLeaves = Math.max(1, Math.ceil(n / baseSize));
-  const leaves = [];
-  let lo = 0;
-  for (let i = 0; i < numLeaves; i += 1) {
-    const hi = Math.floor((n * (i + 1)) / numLeaves);
-    leaves.push({ lo, hi });
-    lo = hi;
-  }
-  return leaves;
-}
-
-function buildFusionTree(leaves) {
-  if (leaves.length === 1) {
-    return { leaf: true, lo: leaves[0].lo, hi: leaves[0].hi, height: 0 };
-  }
-  const mid = Math.ceil(leaves.length / 2);
-  const left = buildFusionTree(leaves.slice(0, mid));
-  const right = buildFusionTree(leaves.slice(mid));
-  return {
-    leaf: false,
-    lo: left.lo,
-    hi: right.hi,
-    mid: left.hi,
-    left,
-    right,
-    height: 1 + Math.max(left.height, right.height),
-  };
-}
-
-function collectInternalNodes(node, acc) {
-  if (node.leaf) {
-    return;
-  }
-  collectInternalNodes(node.left, acc);
-  collectInternalNodes(node.right, acc);
-  acc.push(node);
-}
-
-function argMinDepth(depths, lo, hi) {
-  let best = lo;
-  for (let q = lo + 1; q < hi; q += 1) {
-    if (depths[q] < depths[best]) {
-      best = q;
-    }
-  }
-  return best;
-}
-
-function buildRecursiveConstruction(nRaw, tRaw) {
+// Mirrors recursiveUnfuse (the ZX recursive_unfuse_FE port) so the schematic, the
+// .stim export, and the metrics all describe EXACTLY the same decomposition as the
+// ZX diagram: the n-leg Z-spider is recursively halved (size -> floor, ceil) down
+// to degree-3/4/5 base spiders (CAT^3 spider, CAT^4 square, CAT^5 pentagon), with
+// min(floor(size/2), t + 1) TRANSVERSAL ZZ gadgets per split — all parallel in one
+// CNOT layer. Output legs reused by fusions up the tree serialise, setting depth.
+function buildUnfuseConstruction(nRaw, tRaw) {
   const n = Math.max(2, Math.round(nRaw));
-  // FUSE-Nw fuses two sibling blocks with w = t + 1 ZZ-measurements, picking the
-  // min-depth qubit on each side per round (qubits are reused across rounds). The
-  // seed is the fixed CAT^4 base case; n splits into ceil(n / 4) base CAT blocks.
   const t = Math.max(0, Math.round(tRaw));
-  const baseSize = RECURSIVE_BASE_SIZE;
+  const w = t + 1;
 
-  const leaves = makeLeafBlocks(n, baseSize);
-  const root = buildFusionTree(leaves);
+  let idCounter = 0;
   const internal = [];
-  collectInternalNodes(root, internal);
-
-  const byHeight = new Map();
-  for (const node of internal) {
-    if (!byHeight.has(node.height)) {
-      byHeight.set(node.height, []);
+  function build(lo, hi) {
+    const size = hi - lo;
+    const node = { id: idCounter++, lo, hi, size, height: 0 };
+    if (size <= 5) {
+      node.leaf = true;
+      node.gadgets = 0;
+      node.shape = size <= 3 ? "spider" : size === 4 ? "square" : "pentagon";
+      return node;
     }
-    byHeight.get(node.height).push(node);
+    const mid = lo + Math.floor(size / 2);
+    node.leaf = false;
+    node.mid = mid;
+    node.left = build(lo, mid);
+    node.right = build(mid, hi);
+    node.height = 1 + Math.max(node.left.height, node.right.height);
+    node.gadgets = Math.min(mid - lo, w);
+    internal.push(node);
+    return node;
   }
+  const root = build(0, n);
 
+  // Each split's gadgets are transversal (distinct legs), so within a fusion they
+  // share a CNOT layer; a leg reused by fusions at several heights serialises.
+  // Process fusions bottom-up and track per-leg depth, like the ZX row layout.
   const depths = new Array(n).fill(0);
   const measurements = [];
   let maxLayer = 0;
+  const byHeight = new Map();
+  for (const node of internal) {
+    if (!byHeight.has(node.height)) byHeight.set(node.height, []);
+    byHeight.get(node.height).push(node);
+  }
   const heights = [...byHeight.keys()].sort((a, b) => a - b);
-  for (const height of heights) {
-    const group = byHeight.get(height).slice().sort((a, b) => a.lo - b.lo);
-    for (let round = 0; round <= t; round += 1) {
-      for (const node of group) {
-        const qL = argMinDepth(depths, node.lo, node.mid);
-        const qR = argMinDepth(depths, node.mid, node.hi);
+  for (const h of heights) {
+    for (const node of byHeight.get(h)) {
+      for (let i = 0; i < node.gadgets; i += 1) {
+        const qL = node.lo + i;
+        const qR = node.mid + i;
         const layer = Math.max(depths[qL], depths[qR]) + 1;
         depths[qL] = layer;
         depths[qR] = layer;
         maxLayer = Math.max(maxLayer, layer);
-        measurements.push({ qL, qR, level: height, round, layer });
+        measurements.push({ qL, qR, layer, node: node.id });
       }
     }
   }
 
+  const leaves = [];
+  (function collectLeaves(node) {
+    if (node.leaf) leaves.push(node);
+    else {
+      collectLeaves(node.left);
+      collectLeaves(node.right);
+    }
+  })(root);
+
+  // Metrics measured from the structure: each base CAT^k seed costs k - 1 CNOTs to
+  // prepare; each ZZ gadget is 2 CNOTs + 1 flag ancilla + 1 measurement.
+  const totalZZ = measurements.length;
+  const basePrepCx = leaves.reduce((sum, leaf) => sum + (leaf.size - 1), 0);
+  const maxLeaf = leaves.reduce((m, leaf) => Math.max(m, leaf.size), 2);
+  const numCx = basePrepCx + 2 * totalZZ;
+  const ancillas = totalZZ;
+  const depth = 2 * maxLayer + Math.max(1, Math.ceil(Math.log2(maxLeaf)));
+
   return {
     n,
     t,
-    baseSize,
-    leaves,
     root,
+    leaves,
     measurements,
     numFusions: internal.length,
-    totalZZ: measurements.length,
+    totalZZ,
     maxLayer,
     levels: heights.length,
+    metrics: { numCx, depth, ancillas },
   };
 }
 
 function recursiveStimText(construction, useFlags) {
-  const { n, t, baseSize, measurements, leaves } = construction;
+  const { n, t, measurements, leaves } = construction;
+  const leafSizes = leaves.map((leaf) => leaf.size).sort((a, b) => a - b);
+  const minLeaf = leafSizes[0];
+  const maxLeaf = leafSizes[leafSizes.length - 1];
   const lines = [
     `# Recursive fault-tolerant CAT^${n} state preparation (t = ${t})`,
-    `# Generated from recursive_construction.py — CAT^${baseSize} base-case binary fusion tree`,
-    `# ${leaves.length} base CAT blocks (size <= ${baseSize}) assumed already prepared`,
-    `# ${measurements.length} ZZ-measurements fuse them up the tree`,
+    `# Generated from recursive_unfuse_FE — recursive halving to degree-3/4/5 base spiders`,
+    `# ${leaves.length} base CAT blocks (size ${minLeaf}..${maxLeaf}) assumed already prepared`,
+    `# ${measurements.length} transversal ZZ-measurements fuse them up the tree`,
   ];
   if (useFlags) {
     const numFlags = measurements.length;
@@ -1834,7 +1814,7 @@ function prependViewToggle(options, current, onSelect) {
 }
 
 function appendRecursiveExport() {
-  const construction = buildRecursiveConstruction(state.n, state.t);
+  const construction = buildUnfuseConstruction(state.n, state.t);
 
   const panel = document.createElement("div");
   panel.className = "export-panel";
@@ -2254,7 +2234,7 @@ function zzShade(base, i, count) {
 // Built from the same fusion-tree port as the schematic.
 function renderRecursiveSimplified(model) {
   clearVisual();
-  const construction = buildRecursiveConstruction(state.n, state.t);
+  const construction = buildUnfuseConstruction(state.n, state.t);
   const { n, t, measurements, maxLayer } = construction;
 
   legendPills(
@@ -2583,8 +2563,8 @@ function recursiveZxStructure(nRaw, tRaw) {
     outputs.push(b);
   }
   // Tolerating t faults needs a (t + 1)-FE decomposition: each unfuse emits
-  // w = t + 1 ZZ-measurement gadgets (e.g. five at t = 4), matching the
-  // transversal fusion used in buildRecursiveConstruction.
+  // w = t + 1 ZZ-measurement gadgets (e.g. five at t = 4). buildUnfuseConstruction
+  // mirrors this same recursion to drive the schematic, export, and metrics.
   recursiveUnfuse(g, centre, t + 1);
 
   const ids = g.vertices();
@@ -2721,14 +2701,13 @@ function renderRecursiveSchematic(model) {
     { color: "rgba(20, 33, 61, 0.16)", label: "smaller CAT block" },
   ]);
 
-  const construction = buildRecursiveConstruction(state.n, state.t);
-  const { root, baseSize } = construction;
+  const construction = buildUnfuseConstruction(state.n, state.t);
+  const { root, leaves } = construction;
 
-  // Walk the ACTUAL fusion tree, tagging each node with a leaf-slot index (its x)
-  // and its height (the row it sits in). Leaves are height 0 at the top; the root
-  // is deepest and becomes the final output. Leaf count is ceil(n / baseSize), so
-  // unbalanced trees (counts that aren't powers of two) show the true block count
-  // per round — e.g. n = 20, base 4 gives 5 seeds, not a padded 8.
+  // Walk the unfuse tree (same recursive halving as the ZX diagram), tagging each
+  // node with a leaf-slot index (its x) and its height (the row it sits in). Leaves
+  // are the degree-3/4/5 base spiders at the top; the root is the final CAT_n at the
+  // bottom. The tree can be lopsided, so blocks that wait fuse in via longer edges.
   const allNodes = [];
   let leafCursor = 0;
   function place(node) {
@@ -2749,6 +2728,14 @@ function renderRecursiveSchematic(model) {
   const numLeaves = leafCursor;
   const maxHeight = root._h;
   const internalNodes = allNodes.filter((node) => !node.leaf);
+
+  // Summary of the base-spider sizes for the seed-row subtitle, e.g. "8× CAT^3, 3× CAT^5".
+  const sizeCounts = new Map();
+  leaves.forEach((leaf) => sizeCounts.set(leaf.size, (sizeCounts.get(leaf.size) || 0) + 1));
+  const seedSummary = [...sizeCounts.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([size, count]) => `${count}× CAT^${size}`)
+    .join(", ");
 
   const laneLeft = 192;
   const laneRight = 64;
@@ -2814,44 +2801,20 @@ function renderRecursiveSchematic(model) {
     const subtitle = svgNode("text", { x: 42, y: y + 12, "font-size": 11, fill: "var(--muted)" });
     subtitle.textContent =
       h === 0
-        ? `${numLeaves} base CAT^${baseSize} block${numLeaves === 1 ? "" : "s"}`
+        ? `${numLeaves} base block${numLeaves === 1 ? "" : "s"} (${seedSummary})`
         : isOutput
           ? "final fault-tolerant CAT state"
           : `${rowCounts[h]} merged CAT block${rowCounts[h] === 1 ? "" : "s"}`;
     svg.appendChild(subtitle);
   }
 
-  // The (t+1) ZZ checks of a fusion can't all run at once: in one CNOT layer each
-  // qubit takes part in at most one ZZ, so the parallel width is capped by the
-  // (smaller) child block size. Read the true per-layer split straight from the
-  // construction's measurement layers (a CAT^4 fusion → 4 + 4 + 3, first layer 4).
-  function fusionLayerCounts(node) {
-    const byLayer = new Map();
-    for (const m of construction.measurements) {
-      if (m.qL >= node.lo && m.qL < node.mid && m.qR >= node.mid && m.qR < node.hi) {
-        byLayer.set(m.layer, (byLayer.get(m.layer) || 0) + 1);
-      }
-    }
-    return [...byLayer.entries()].sort((a, b) => a[0] - b[0]).map(([, count]) => count);
-  }
-
-  function fusionLabelLines(node) {
-    const counts = fusionLayerCounts(node);
-    const total = counts.reduce((a, b) => a + b, 0) || state.t + 1;
-    if (counts.length <= 1) {
-      return [`${total} ZZ · 1 layer`];
-    }
-    const breakdown =
-      counts.length <= 6 ? counts.join(" + ") : `${counts.slice(0, 5).join(" + ")} + …`;
-    return [`${total} ZZ · ${counts.length} layers`, breakdown];
-  }
-
-  // Fusion connectors: each internal node fuses its two children. Children may sit
-  // several rows up (a block that waits its turn), so a connector can span lanes.
+  // Each split places min(floor(size/2), t+1) TRANSVERSAL ZZ gadgets (distinct legs),
+  // so they all run in one CNOT layer — matching the ZX diagram. The gadget count is
+  // capped by the smaller child block, e.g. fusing two CAT^4 → 4 ZZ in one layer.
   internalNodes.forEach((node) => {
     const parentX = xOf(node._slot);
     const parentTop = yOf(node._h) - boxHeight / 2;
-    const junctionY = parentTop - 48;
+    const junctionY = parentTop - 30;
     [node.left, node.right].forEach((child) => {
       const childX = xOf(child._slot);
       const childBottom = yOf(child._h) + boxHeight / 2;
@@ -2870,24 +2833,17 @@ function renderRecursiveSchematic(model) {
     svg.appendChild(svgNode("circle", {
       cx: parentX, cy: junctionY, r: 4.5, fill: "var(--recursive)", stroke: "#fff", "stroke-width": 1.4,
     }));
-    const lines = fusionLabelLines(node);
-    const longest = Math.max(...lines.map((s) => s.length));
-    const labelWidth = clamp(longest * 6 + 18, 96, 188);
-    const lineH = 14;
-    const labelHeight = lines.length * lineH + 9;
+    const labelText = `${node.gadgets} ZZ check${node.gadgets === 1 ? "" : "s"}`;
+    const labelWidth = clamp(labelText.length * 6.2 + 18, 92, 150);
     const labelTop = junctionY + 5;
     svg.appendChild(svgNode("rect", {
-      x: parentX - labelWidth / 2, y: labelTop, width: labelWidth, height: labelHeight, rx: 11,
+      x: parentX - labelWidth / 2, y: labelTop, width: labelWidth, height: 22, rx: 11,
       fill: "rgba(255, 250, 241, 0.96)", stroke: "rgba(217, 93, 57, 0.2)", "stroke-width": 1,
     }));
     const label = svgNode("text", {
       x: parentX, y: labelTop + 15, "font-size": 11, "font-weight": 700, "text-anchor": "middle", fill: "var(--recursive)",
     });
-    lines.forEach((line, index) => {
-      const span = svgNode("tspan", { x: parentX, dy: index === 0 ? 0 : lineH });
-      span.textContent = line;
-      label.appendChild(span);
-    });
+    label.textContent = labelText;
     svg.appendChild(label);
   });
 
@@ -2907,22 +2863,27 @@ function renderRecursiveSchematic(model) {
       stroke: isOutput ? "var(--recursive)" : "rgba(20, 33, 61, 0.18)",
       "stroke-width": isOutput ? 2.6 : 1.5,
     }));
-    appendBoxLabel(x, y + 2, isOutput ? ["final", `CAT_${state.n}`] : ["CAT", "sub-block"], isOutput);
+    const boxLines = isOutput
+      ? ["final", `CAT_${state.n}`]
+      : node.leaf
+        ? ["base seed", `CAT_${node.size}`]
+        : ["merged", `CAT_${node.size}`];
+    appendBoxLabel(x, y + 2, boxLines, isOutput);
   });
 
   renderZoomableSvg(svg, "recursive-schematic", {
     minScale: 0.3,
     maxScale: 3,
     naturalSize: { width, height },
-    hint: "Recursive fusion tree. If it runs off-screen, drag the scrollbars to pan, or zoom out for the whole figure.",
+    hint: "Recursive unfuse tree (same decomposition as the ZX diagram). If it runs off-screen, drag the scrollbars to pan, or zoom out for the whole figure.",
   });
 
   refs.visualCaption.textContent =
-    `Recursive paper construction for CAT^${state.n} at t = ${state.t}: ${numLeaves} base CAT^${baseSize} ` +
-    `seed block${numLeaves === 1 ? "" : "s"} fuse up a binary tree over ${maxHeight} round${maxHeight === 1 ? "" : "s"}. ` +
-    `Each fusion needs ${state.t + 1} ZZ checks, but only one ZZ per qubit fits in a CNOT layer, so they split ` +
-    `into layers capped by the smaller block size — e.g. a CAT^${baseSize} fusion runs ${baseSize} per layer ` +
-    `(${baseSize} + ${baseSize} + … = ${state.t + 1}).`;
+    `Recursive construction for CAT^${state.n} at t = ${state.t}, matching the ZX diagram's recursive_unfuse_FE: the ` +
+    `${state.n}-leg spider is recursively halved into ${numLeaves} base spider${numLeaves === 1 ? "" : "s"} ` +
+    `(${seedSummary}) over ${maxHeight} round${maxHeight === 1 ? "" : "s"}. Each split uses ` +
+    `min(⌊size/2⌋, ${state.t + 1}) transversal ZZ checks in a single CNOT layer — so fusing two CAT^4 blocks ` +
+    `runs exactly 4 ZZ checks.`;
 }
 
 // Pull the headline metric (CNOT count or depth) for a method at a given (n, t).
