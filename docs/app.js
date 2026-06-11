@@ -16,6 +16,12 @@ const KIND_LABELS = {
 
 const state = {
   n: data.controls.defaultN,
+  // `requestedT` is the raw slider value the user selected. `t` is the
+  // *effective* fault weight actually used to look up bundled circuits, graph
+  // data, metrics, captions, and exports. When the requested t lands in the
+  // "implied" region (t >= floor(n / 2)) it is reduced "for free" to the
+  // largest nontrivial value, so `t` may be smaller than `requestedT`.
+  requestedT: data.controls.defaultT,
   t: data.controls.defaultT,
   selectedMethod: "spidercat",
   recursiveView: "schematic",
@@ -866,6 +872,11 @@ function renderCards(models) {
     card.addEventListener("click", () => {
       state.selectedMethod = card.dataset.method;
       render();
+      // On mobile the detail view lives below the fold, so switching a
+      // construction changes nothing in view. Scroll it into sight.
+      if (window.matchMedia("(max-width: 760px)").matches) {
+        document.querySelector(".detail-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     });
   });
 }
