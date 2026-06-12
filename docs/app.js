@@ -266,7 +266,7 @@ function recursiveStimText(construction, useFlags) {
     }
   } else {
     for (const m of measurements) {
-      lines.push(`CZ ${m.qL} ${m.qR}`);
+      lines.push(`MZZ ${m.qL} ${m.qR}`);
     }
   }
   return `${lines.join("\n")}\n`;
