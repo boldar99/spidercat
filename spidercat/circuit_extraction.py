@@ -540,7 +540,7 @@ class CatStateExtractor:
                     secondaries = [c for c in children if c != primary]
                     return primary, secondaries
 
-        children.sort(key=lambda c: self.depths.get(c, 0), reverse=True)
+        children.sort(key=lambda c: self.depths.get(c, 0), reverse=False)
         primary = children[-1]
         secondaries = children[:-1]
         return primary, secondaries
