@@ -30,10 +30,10 @@ def compute_unitary_fault_set_1(cnots: list[tuple[int, int]], num_qubits: int, k
 
 def main():
     parser = argparse.ArgumentParser(description="Run lookahead SAT verification on a given QECC.")
-    parser.add_argument("--code", type=str, default="23_1_7", help="QECC code name (e.g., 17_1_5, 8_3_2, etc.)")
+    parser.add_argument("--code", type=str, default="31_1_7", help="QECC code name (e.g., 17_1_5, 8_3_2, etc.)")
     parser.add_argument("--basis", type=str, default="FAO", help="Basis or layout type (e.g. FAO)")
-    parser.add_argument("--max-col-ops", type=int, default=25, help="Maximum number of column operations (CNOTs)")
-    parser.add_argument("--top-n", type=int, default=10, help="Number of covers to evaluate in lookahead")
+    parser.add_argument("--max-col-ops", type=int, default=50, help="Maximum number of column operations (CNOTs)")
+    parser.add_argument("--top-n", type=int, default=50, help="Number of covers to evaluate in lookahead")
     parser.add_argument("--verbose", "-v", action="store_true", default=True, help="Print verbose progress and matrices")
     args = parser.parse_args()
 

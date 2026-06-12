@@ -1,13 +1,17 @@
 import numpy as np
 
-def fast_greedy_set_cover(coverage: np.ndarray, costs: np.ndarray) -> list[int]:
+def fast_greedy_set_cover(coverage: np.ndarray, costs: np.ndarray, initial_uncovered: np.ndarray = None) -> list[int]:
     """
     Vectorized greedy set cover algorithm.
     coverage: (num_candidates, num_faults) boolean array
     costs: (num_candidates,) array
     """
     num_candidates, num_faults = coverage.shape
-    uncovered = np.ones(num_faults, dtype=bool)
+    if initial_uncovered is None:
+        uncovered = np.ones(num_faults, dtype=bool)
+    else:
+        uncovered = initial_uncovered.copy()
+        
     selected_idx = []
     ratios = np.full(num_candidates, np.inf)
     
