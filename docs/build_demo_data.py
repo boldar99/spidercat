@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 # Write next to this script so regenerating updates the live demo bundle.
 DEMO_DIR = Path(__file__).resolve().parent
 COMPARISON_N_MIN = 8
-COMPARISON_N_MAX = 50
+COMPARISON_N_MAX = 100
 COMPARISON_T_MIN = 2
 COMPARISON_T_MAX = 7
 
