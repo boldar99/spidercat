@@ -134,25 +134,29 @@ def find_low_weight_verification_stabilizers(fault_sets: list[PureFaultSet], sta
             layers[num_errors] = covers[0]
     return layers
 
-def compute_next_unitary_fault_set(single_faults: PureFaultSet, last_faults: PureFaultSet, measured_stabs: list[np.ndarray], weight: int, H_filter: np.ndarray) -> PureFaultSet:
-    next_faults = product_fault_set(last_faults, single_faults)
-    double_last = product_fault_set(last_faults, last_faults)
+def _generate_raw_fault_sets(single_faults: PureFaultSet, t: int, H_filter: np.ndarray) -> list[PureFaultSet]:
+    """Generates the raw unfiltered unitary fault sets U_1, ..., U_t."""
+    fault_sets = []
     
-    combined_faults = np.concatenate((double_last.faults, next_faults.faults))
-    next_faults.faults = np.unique(combined_faults, axis=0)
+    current = single_faults.copy()
+    current.filter_by_weight_at_least(2, H_filter)
+    fault_sets.append(current)
     
-    if len(measured_stabs) > 0:
-        stabs_arr = np.array(measured_stabs, dtype=np.int8)
-        # We want to keep faults that are NOT detected by the measured stabilizers.
-        # A fault is undetected if it commutes with all measured stabilizers.
-        undetected_faults = next_faults.get_undetectable_faults(stabs_arr)
-        next_faults.faults = undetected_faults
+    for k in range(2, t + 1):
+        if len(fault_sets[-1]) == 0:
+            empty_fs = fault_sets[-1].copy()
+            fault_sets.append(empty_fs)
+            continue
+            
+        next_raw = product_fault_set(fault_sets[-1], single_faults)
+        # Include lower weight faults as well
+        next_raw.faults = np.concatenate((fault_sets[-1].faults, next_raw.faults))
+        next_raw.faults = np.unique(next_raw.faults, axis=0)
+        next_raw.remove_zero_rows()
+        next_raw.filter_by_weight_at_least(k + 1, H_filter)
+        fault_sets.append(next_raw)
         
-    next_faults.faults = np.concatenate((last_faults.faults, next_faults.faults))
-    next_faults.remove_zero_rows()
-    next_faults.remove_duplicates()
-    next_faults.filter_by_weight_at_least(weight, H_filter)
-    return next_faults
+    return fault_sets
 
 def find_lookahead_verification_stabilizers(
     single_faults: PureFaultSet,
@@ -160,35 +164,43 @@ def find_lookahead_verification_stabilizers(
     H_filter: np.ndarray,
     t: int,
     max_combinations: int = 4,
-    top_n: int = 25,
-    max_time_sec: int = 1,
+    top_n: int = 10,
+    max_time_sec: int = 60,
     verbose: bool = False
 ) -> list[list[np.ndarray]]:
     """
-    Finds verification stabilizers for t layers. At each layer, it evaluates the top N covers
-    and chooses the one that minimizes the size of the *next* layer's fault set.
+    Finds verification stabilizers for t layers using mathematical lookahead.
+    It minimizes the size of the next layer's raw fault set after filtering.
     """
     layers = []
+    accumulated_stabs = []
     
-    # Layer 1 baseline faults
-    current_faults = single_faults.copy()
-    current_faults.filter_by_weight_at_least(2, H_filter)
-    last_layer_faults = current_faults
+    # Precompute raw U_1, ..., U_t
+    raw_fault_sets = _generate_raw_fault_sets(single_faults, t, H_filter)
     
-    for layer_idx in range(1, t + 1):
-        if len(current_faults) == 0:
+    for layer_idx in range(t):
+        raw_current = raw_fault_sets[layer_idx]
+        
+        # Filter raw_current against all accumulated stabilizers so far
+        if accumulated_stabs:
+            current_stabs_arr = np.vstack(accumulated_stabs).astype(np.int8)
+            surviving_faults = raw_current.get_undetectable_faults(current_stabs_arr)
+        else:
+            surviving_faults = raw_current.faults
+            
+        if len(surviving_faults) == 0:
             layers.append([])
             continue
             
-        # 1. Get top N covers for current_faults
-        candidate_covers = _solve_top_n_weighted_set_covers(current_faults.faults, stabs, max_combinations, max_time_sec, top_n)
+        # Get top N covers for the surviving current faults
+        candidate_covers = _solve_top_n_weighted_set_covers(surviving_faults, stabs, max_combinations, max_time_sec, top_n)
         
         if not candidate_covers:
             layers.append([])
             continue
             
-        if layer_idx == t:
-            # For the last layer, lookahead doesn't matter, just take the minimum cost one (the first one)
+        if layer_idx == t - 1:
+            # Last layer: no lookahead needed, just take the minimum weight cover
             layers.append(candidate_covers[0])
             break
             
@@ -196,17 +208,26 @@ def find_lookahead_verification_stabilizers(
         min_next_fault_size = float('inf')
         
         if verbose:
-            print(f"  [Layer {layer_idx}] Evaluating {len(candidate_covers)} candidate covers:")
+            print(f"  [Layer {layer_idx + 1}] Evaluating {len(candidate_covers)} candidate covers:")
             
         for cover_idx, cover in enumerate(candidate_covers):
-            # 2. Simulate next fault set
-            weight_threshold = layer_idx + 2
-            next_fs = compute_next_unitary_fault_set(single_faults, current_faults, cover, weight_threshold, H_filter)
-            fs_size = len(next_fs)
+            # Evaluate how this cover (combined with previous) reduces U_{k+1}
+            test_stabs_list = accumulated_stabs + cover
+            test_stabs_arr = np.vstack(test_stabs_list).astype(np.int8)
+            
+            raw_next = raw_fault_sets[layer_idx + 1]
+            next_surviving = raw_next.get_undetectable_faults(test_stabs_arr)
+            fs_size = len(next_surviving)
             
             if verbose:
                 w_sum = sum(np.sum(s) for s in cover)
-                print(f"    - Cover {cover_idx} (Total Weight: {w_sum}): Next Fault Set Size = {fs_size}")
+                if fs_size > 0:
+                    f_weights = np.sum(next_surviving, axis=1)
+                    max_w = int(np.max(f_weights))
+                    counts = {w: int(np.sum(f_weights == w)) for w in range(1, max_w + 1) if np.sum(f_weights == w) > 0}
+                    print(f"    - Cover {cover_idx} (Total Weight: {w_sum}): Next Fault Set Size = {fs_size}, Fault Weights: {counts}")
+                else:
+                    print(f"    - Cover {cover_idx} (Total Weight: {w_sum}): Next Fault Set Size = 0")
             
             if fs_size < min_next_fault_size:
                 min_next_fault_size = fs_size
@@ -217,8 +238,6 @@ def find_lookahead_verification_stabilizers(
             print(f"  -> Selected Cover {best_idx} with Next Fault Set Size {min_next_fault_size}")
             
         layers.append(best_cover)
-        
-        # Advance to the next layer using the best cover
-        current_faults = compute_next_unitary_fault_set(single_faults, current_faults, best_cover, layer_idx + 2, H_filter)
+        accumulated_stabs.extend(best_cover)
         
     return layers

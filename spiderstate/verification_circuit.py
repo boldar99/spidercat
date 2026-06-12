@@ -4,9 +4,10 @@ import pprint
 import numpy as np
 from mqt.qecc.circuit_synthesis import CNOTCircuit
 from mqt.qecc.circuit_synthesis.faults import PureFaultSet
-from spiderstate.optimize_parity_matrix import optimize_fault_tolerant_matrix
+from spiderstate.optimize_parity_matrix import optimize_fault_tolerant_matrix, cnot_cost
 from spiderstate.utils import load_qecc
 from spiderstate.verification import find_lookahead_verification_stabilizers
+from spiderstate.cat_at_origin import cat_at_origin
 
 def compute_unitary_fault_set_1(cnots: list[tuple[int, int]], num_qubits: int, kind: str = "X"):
     circ = CNOTCircuit()
@@ -29,9 +30,9 @@ def compute_unitary_fault_set_1(cnots: list[tuple[int, int]], num_qubits: int, k
 
 def main():
     parser = argparse.ArgumentParser(description="Run lookahead SAT verification on a given QECC.")
-    parser.add_argument("--code", type=str, default="31_1_7", help="Name of the code (e.g. 17_1_5)")
+    parser.add_argument("--code", type=str, default="23_1_7", help="QECC code name (e.g., 17_1_5, 8_3_2, etc.)")
     parser.add_argument("--basis", type=str, default="FAO", help="Basis or layout type (e.g. FAO)")
-    parser.add_argument("--max-col-ops", type=int, default=5, help="Maximum number of column operations (CNOTs)")
+    parser.add_argument("--max-col-ops", type=int, default=25, help="Maximum number of column operations (CNOTs)")
     parser.add_argument("--top-n", type=int, default=10, help="Number of covers to evaluate in lookahead")
     parser.add_argument("--verbose", "-v", action="store_true", default=True, help="Print verbose progress and matrices")
     args = parser.parse_args()
@@ -46,7 +47,17 @@ def main():
     t = d // 2
 
     print(f"Optimizing parity matrix (max_col_ops={args.max_col_ops})...")
-    row_M, final_M, col_ops = optimize_fault_tolerant_matrix(H_x, t=t, max_col_ops=args.max_col_ops, max_basis_tries=10_000)
+    row_M, final_M, col_ops = optimize_fault_tolerant_matrix(H_x, t=t, max_col_ops=args.max_col_ops, H_x=H_x, H_z=H_z, max_basis_tries=10_000)
+    
+    print(f"\nRow optimized CNOT cost: {cnot_cost(row_M, t)}")
+    circ_row = cat_at_origin(row_M, d)
+    print(f"Row optimized total qubits: {circ_row.num_qubits}")
+
+    print(f"\nRow and col optimized CNOT cost: {cnot_cost(final_M, t)}")
+    circ_final = cat_at_origin(final_M, d)
+    for c, n in col_ops:
+        circ_final.append("CX", [c, n])
+    print(f"Row and col optimized total qubits: {circ_final.num_qubits}")
     
     if args.verbose:
         print("\nOriginal H_x matrix:")

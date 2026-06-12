@@ -7,6 +7,8 @@ import warnings
 import math
 
 from spiderstate.utils import load_qecc
+from spiderstate.verification import _generate_candidate_stabilizers
+from spiderstate.fast_verification import DynamicCoverageTracker
 
 
 # --- USER'S ORIGINAL COST FUNCTIONS ---
@@ -201,26 +203,40 @@ def simulated_annealing_phase2(base_M: np.ndarray, t: int, max_col_ops: int,
     return best_M, best_ops, best_cost
 
 
-# --- MAIN OPTIMIZATION PIPELINE ---
-def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, max_basis_tries: int = 5000):
+def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, H_x: np.ndarray = None, H_z: np.ndarray = None, max_basis_tries: int = 5000):
     """
     Returns:
     - matrix_after_row_ops
     - final_matrix_after_col_ops
     - col_ops_performed (list of tuples: (target, source))
-    - final_total_cost
     """
     r, c = M.shape
     best_row_op_cost, matrix_after_row_ops = row_optimize_matrix(M, t, max_basis_tries)
 
     # --- PHASE 2: Column Operations ---
     current_M = matrix_after_row_ops.copy()
-    current_base_cost = best_row_op_cost
+    current_F_X = np.eye(c, dtype=int)
+    current_F_Z = np.eye(c, dtype=int)
+
+    candidate_stabs_X = None
+    candidate_stabs_Z = None
+
+    if H_x is not None and H_z is not None:
+        candidate_stabs_X = _generate_candidate_stabilizers(H_x, 4)
+        candidate_stabs_Z = _generate_candidate_stabilizers(H_z, 4)
+        
+    def _cnot_cost_fn(s):
+        return cnot_cost(s, t)
+        
+    base_tracker = DynamicCoverageTracker(current_F_X, current_F_Z, candidate_stabs_X, candidate_stabs_Z, _cnot_cost_fn)
+
+    current_base_cost = cnot_cost(current_M, t) + base_tracker.evaluate_cost()
     col_ops_performed = []
 
     for op_num in range(max_col_ops):
         best_step_drop = 0
         best_step_M = None
+        best_step_tracker = None
         best_step_op = None
 
         for i in range(c):
@@ -232,15 +248,22 @@ def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, max_
                 test_M[:, i] = (test_M[:, i] + test_M[:, j]) % 2
 
                 if has_unique_ones_property(test_M):
-                    new_cost = cnot_cost(test_M, t)
+                    test_tracker = base_tracker.copy()
+                    
+                    # Apply CNOT to tracker (source=j, target=i)
+                    test_tracker.update_cnot(j, i)
+                    
+                    new_cost = cnot_cost(test_M, t) + op_num + test_tracker.evaluate_cost()
                     drop = current_base_cost - new_cost
-                    if drop > best_step_drop:
+                    if drop > 1e-5:
                         best_step_drop = drop
                         best_step_M = test_M
+                        best_step_tracker = test_tracker
                         best_step_op = (i, j)
 
-        if best_step_drop > 1:
+        if best_step_drop > 1e-5:
             current_M = best_step_M
+            base_tracker = best_step_tracker
             current_base_cost -= best_step_drop
             col_ops_performed.append(best_step_op[::-1])
         else:
@@ -253,7 +276,7 @@ def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, max_
 
 # Example Execution
 if __name__ == "__main__":
-    is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc("8_3_2", "MQT")
+    is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc("23_1_7", "MQT")
     t = d // 2
     H_x = H_z
 
