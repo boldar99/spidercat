@@ -1,0 +1,77 @@
+%! Author = boldi
+%! Date = 08/06/2026
+
+% Preamble
+\documentclass[11pt]{article}
+
+% Packages
+\usepackage{bookmark}
+\usepackage{xcolor}
+\hypersetup{colorlinks}
+
+\usepackage{amsmath}
+
+\usepackage{amsthm,thmtools}
+\theoremstyle{definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{definition}{Definition}
+
+\usepackage{stmaryrd}
+\SetSymbolFont{stmry}{bold}{U}{stmry}{m}{n}
+
+\usepackage{macros/tikzfig}
+\input{macros/floquet.tikzstyles}
+\input{macros/floquet.tikzdefs}
+
+% Document
+\begin{document}
+
+\subsection{Phase 1: Resource Characterization and Optimization of Bipartite Graph States}
+
+Our fault-tolerant state preparation pipeline begins by quantifying and optimizing the logical resources required to prepare a given state. Given an X or Z spider of degree $n$, we characterize the exact logical CNOT cost for its fault-tolerant preparation using the SpiderCat protocol, assuming a maximum tolerance of $t$ faults.
+
+The resource overhead is bounded by the required number of flag qubits. We define the density lower bound, $\delta(t)$, which governs the necessary graph density for fault tolerance:
+\begin{equation}
+\delta(t) = \frac{\lceil(t+3)/2\rceil \lfloor(t+3)/2\rfloor}{\lceil(t+3)/2\rceil \lfloor(t+3)/2\rfloor + \lceil(t-3)/2\rceil \lfloor(t+3)/2\rfloor + \lfloor(t-3)/2\rfloor \lceil(t+3)/2\rceil}
+\end{equation}
+Note that for $t=1$, we define $\delta(1) \to \infty$.
+
+Because a degree-$n$ spider conceptually represents a cat state, it is stabilized by a global parity operator (e.g., $X^{\otimes n}$ for a Z-spider). Consequently, any physical error of weight $w > n/2$ is logically equivalent to an error of weight $n - w$ via multiplication with the global stabilizer. Therefore, the maximum number of faults that strictly require correction is bounded, and we define the adjusted fault parameter:
+\begin{equation}
+t' = \min\left(t, \left\lfloor \frac{n}{2} \right\rfloor - 1\right)
+\end{equation}
+
+The preliminary number of edges required to achieve the necessary fault-tolerant density is $E_{\text{nec}} = \lceil n / \delta(t') \rceil$. The SpiderCat protocol specifically constructs a 3-regular graph. By the handshaking lemma, a 3-regular graph with $V$ vertices and $E$ edges must satisfy $3V = 2E$, which dictates that $E$ must be a multiple of three. Thus, the final edge count $E$ and vertex count $V$ are determined by:
+\begin{equation}
+E = 3 \left\lceil \frac{E_{\text{nec}}}{3} \right\rceil, \quad V = \frac{2E}{3}
+\end{equation}
+
+The minimum number of flag qubits required for a spider of degree $n$ is then calculated as:
+\begin{equation}
+f(n, t) = \max\left(0, \lceil E - V + 2 \rceil - 1\right)
+\end{equation}
+From this, the logical CNOT cost to synthesize a single isolated spider is bounded by the tree construction and the required flag connections:
+\begin{equation}
+C_{\text{spider}}(n, t) = n - 1 + 2f(n, t)
+\end{equation}
+
+\subsubsection*{Evaluating the State Preparation Circuit}
+A generic parity check matrix $M \in \mathbb{F}_2^{r \times c}$ does not inherently yield a bipartite ZX diagram suitable for direct protocol extraction. For the state preparation circuit to decompose cleanly, the corresponding ZX diagram must represent a bipartite graph state where each spider has a dedicated output.
+
+This architectural requirement dictates that $M$ must contain a full-rank identity submatrix, up to column permutation. By ensuring the matrix can be brought into this systematic form, we guarantee the ZX diagram is inherently bipartite, and the total CNOT cost of the extracted circuit becomes strictly additive over the constituent spiders.
+
+Let $w_c$ be the Hamming weight of column $c$, and $w_r$ be the Hamming weight of row $r$. The total logical CNOT cost is given by:
+\begin{equation}
+C_{\text{total}}(M, t) = \sum_{\substack{c=1 \\ w_c > 1}}^c 2f(w_c + 1, t) + \sum_{r=1}^r \left[ w_r - 1 + 2f(w_r, t) \right]
+\end{equation}
+\textit{(Note: The column evaluation utilizes $w_c + 1$ to account for the necessary edge connecting the phase gadget to the target qubit).}
+
+\subsubsection*{Row Optimization via Stochastic Basis Search}
+The CNOT cost $C_{\text{total}}$ is highly dependent on the Hamming weights of the chosen basis. To extract a circuit with minimal CNOT overhead, we must find an equivalent parity check matrix $M'$ that minimizes $C_{\text{total}}(M', t)$.
+
+Because finding the globally optimal basis over $\mathbb{F}_2$ is computationally prohibitive, Phase 1 employs a Monte Carlo optimization heuristic. We randomly sample subsets of $r$ columns from $M$ to form $r \times r$ submatrices. If a sampled submatrix $M_{\text{sub}}$ is non-singular, we compute the row-equivalent matrix $M_{\text{new}} = (M_{\text{sub}}^{-1} M) \pmod 2$.
+
+This transformation inherently maps the selected columns to the identity matrix $I_r$, guaranteeing the matrix assumes the required systematic form. We evaluate $C_{\text{total}}(M_{\text{new}}, t)$ for each valid basis generated and retain the matrix that yields the lowest total logical CNOT cost.
+\end{document}

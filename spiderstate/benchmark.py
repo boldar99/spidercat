@@ -92,7 +92,7 @@ def benchmark_CAO_state_prep(code: str, method: str, p=0.001, num_samples=100_00
 if __name__ == "__main__":
 
     # LER, AR, num_cx, num_flags, num_qubits, depth = benchmark_CAO_state_prep("95_1_7", "FAO")
-    methods = {"FAO": MQT_simp_QECCS}
+    methods = {"MQT": MQT_simp_QECCS}
     for method_name, code_iterator in methods.items():
         for code in code_iterator():
             [n, k, d] = code.split("_")

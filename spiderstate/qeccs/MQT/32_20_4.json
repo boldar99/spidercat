@@ -1,7 +1,0 @@
-{
-  "n": 32,
-  "k": 20,
-  "d": 4,
-  "is_self_dual": true,
-  "stabs": "+ XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n+ XXXXXXXXXXXXXXXX________________\n+ XXXXXXXX________XXXXXXXX________\n+ XXXX____XXXX____XXXX____XXXX____\n+ XX__XX__XX__XX__XX__XX__XX__XX__\n+ X_X_X_X_X_X_X_X_X_X_X_X_X_X_X_X_\n+ ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ\n+ ZZZZZZZZZZZZZZZZ________________\n+ ZZZZZZZZ________ZZZZZZZZ________\n+ ZZZZ____ZZZZ____ZZZZ____ZZZZ____\n+ ZZ__ZZ__ZZ__ZZ__ZZ__ZZ__ZZ__ZZ__\n+ Z_Z_Z_Z_Z_Z_Z_Z_Z_Z_Z_Z_Z_Z_Z_Z_\n+ Z_Z_____Z_Z_____________________\n+ _ZZ_____Z__Z____________________\n+ Z___Z___Z___Z___________________\n+ _Z__Z___Z____Z__________________\n+ __Z_Z___Z_____Z_________________\n+ ZZZ_Z___Z______Z________________\n+ Z_Z_____________Z_Z_____________\n+ _ZZ_____________Z__Z____________\n+ Z___Z___________Z___Z___________\n+ _Z__Z___________Z____Z__________\n+ __Z_Z___________Z_____Z_________\n+ ZZZ_Z___________Z______Z________\n+ Z_______Z_______Z_______Z_______\n+ _Z______Z_______Z________Z______\n+ __Z_____Z_______Z_________Z_____\n+ ZZZ_____Z_______Z__________Z____\n+ ____Z___Z_______Z___________Z___\n+ ZZ__Z___Z_______Z____________Z__\n+ Z_Z_Z___Z_______Z_____________Z_\n+ _ZZ_Z___Z_______Z______________Z"
-}

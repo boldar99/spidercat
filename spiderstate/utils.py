@@ -286,6 +286,8 @@ def MQT_QECCS():
 
 def MQT_simp_QECCS():
     yield from [
+        "7_1_3",
+        # "9_1_3_surface",
         "17_1_5",
         "19_1_5",
         "25_1_5",

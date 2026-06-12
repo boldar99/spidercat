@@ -87,6 +87,39 @@ def has_unique_ones_property(M: np.ndarray) -> bool:
     return len(found_rows) == r
 
 
+def row_optimize_matrix(M: np.ndarray, t: int, max_basis_tries: int = 1_000) -> np.ndarray:
+    r, c = M.shape
+
+    # --- PHASE 1: Row Operations (Find best basis) ---
+    best_row_op_M = None
+    best_row_op_cost = float('inf')
+
+    valid_bases = 0
+    attempts = 0
+
+    while valid_bases < max_basis_tries and attempts < max_basis_tries * 5:
+        attempts += 1
+        cols = random.sample(range(c), r)
+        submatrix = M[:, cols]
+
+        inv_sub = invert_mod2(submatrix)
+        if inv_sub is not None:
+            valid_bases += 1
+            M_new = (inv_sub @ M) % 2
+
+            if has_unique_ones_property(M_new):
+                cost = cnot_cost(M_new, t)
+                if cost < best_row_op_cost:
+                    best_row_op_cost = cost
+                    best_row_op_M = M_new.copy()
+
+    if best_row_op_M is None:
+        raise ValueError("Could not find a full-rank submatrix.")
+
+    matrix_after_row_ops = best_row_op_M.copy()
+    return best_row_op_cost, matrix_after_row_ops
+
+
 # --- SIMULATED ANNEALING FOR PHASE 2 ---
 def apply_ops(base_M: np.ndarray, ops: list) -> np.ndarray:
     """Applies a sequence of column operations to a matrix."""
@@ -218,43 +251,11 @@ def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, max_
     return matrix_after_row_ops, final_matrix_after_col_ops, col_ops_performed[::-1]
 
 
-def row_optimize_matrix(M: np.ndarray, t: int, max_basis_tries: int = 1_000) -> np.ndarray:
-    r, c = M.shape
-
-    # --- PHASE 1: Row Operations (Find best basis) ---
-    best_row_op_M = None
-    best_row_op_cost = float('inf')
-
-    valid_bases = 0
-    attempts = 0
-
-    while valid_bases < max_basis_tries and attempts < max_basis_tries * 5:
-        attempts += 1
-        cols = random.sample(range(c), r)
-        submatrix = M[:, cols]
-
-        inv_sub = invert_mod2(submatrix)
-        if inv_sub is not None:
-            valid_bases += 1
-            M_new = (inv_sub @ M) % 2
-
-            if has_unique_ones_property(M_new):
-                cost = cnot_cost(M_new, t)
-                if cost < best_row_op_cost:
-                    best_row_op_cost = cost
-                    best_row_op_M = M_new.copy()
-
-    if best_row_op_M is None:
-        raise ValueError("Could not find a full-rank submatrix.")
-
-    matrix_after_row_ops = best_row_op_M.copy()
-    return best_row_op_cost, matrix_after_row_ops
-
-
 # Example Execution
 if __name__ == "__main__":
-    is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc("20_2_6", "MQT")
+    is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc("8_3_2", "MQT")
     t = d // 2
+    H_x = H_z
 
     row_M, final_M, col_ops = optimize_fault_tolerant_matrix(H_x, t=t, max_col_ops=10, max_basis_tries=10_000)
     # row_M = pivot_optimize_parity_matrix(H_x, t=t, max_basis_tries=100_000)

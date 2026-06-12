@@ -73,6 +73,6 @@ def well_ordered_ft_cat_state_data(n, t) -> tuple[nx.Graph, nx.Graph, dict[int, 
     return G_alt, F_alt, roots, dependency_graph, edge[0][0] if len(edge) else e
 
 if __name__ == "__main__":
-    G_alt, F_alt, roots, dependency_graph, edge = well_ordered_ft_cat_state_data(10, 4)
+    G_alt, F_alt, roots, dependency_graph, edge = well_ordered_ft_cat_state_data(7, 3)
     draw_forest_on_graph(G_alt, F_alt, figsize=(7,7))
     display_digraph(dependency_graph, figsize=(9,5))
