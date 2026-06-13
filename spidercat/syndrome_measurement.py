@@ -19,7 +19,7 @@ def syndrome_measurement_circuit(qubits: Sequence[int], ancilla_start: int, t: i
         H.add_edge(v, w)
 
     matchings = match_forest_leaves_to_marked_edges(G, H, M)
-    extractor = CatStateExtractor(StimBuilder(), verbose=True)
+    extractor = CatStateExtractor(StimBuilder(), verbose=False)
     # Visualize without matchings so that unmatched marks are not covered
     G_exp_vis, F_exp_vis = expand_graph_and_forest(G, H, M, {path[-1]: matchings[path[-1]]}, expand_flags=False)
     for n in G_exp_vis.nodes:
@@ -55,6 +55,8 @@ def syndrome_measurement_circuit(qubits: Sequence[int], ancilla_start: int, t: i
         
         if new_targets:
             permuted_circuit.append(op.name, new_targets, op.gate_args_copy())
+
+    permuted_circuit.append("M" if basis == "X" else "MX", ancilla_start)
 
     return permuted_circuit
 
