@@ -30,10 +30,11 @@ def compute_unitary_fault_set_1(cnots: list[tuple[int, int]], num_qubits: int, k
 
 def main():
     parser = argparse.ArgumentParser(description="Run lookahead SAT verification on a given QECC.")
-    parser.add_argument("--code", type=str, default="31_1_7", help="QECC code name (e.g., 17_1_5, 8_3_2, etc.)")
-    parser.add_argument("--basis", type=str, default="FAO", help="Basis or layout type (e.g. FAO)")
+    parser.add_argument("--code", type=str, default="19_1_5", help="QECC code name (e.g., 17_1_5, 8_3_2, etc.)")
+    parser.add_argument("--basis", type=str, default="MQT", help="Basis or layout type (e.g. FAO)")
     parser.add_argument("--max-col-ops", type=int, default=50, help="Maximum number of column operations (CNOTs)")
     parser.add_argument("--top-n", type=int, default=50, help="Number of covers to evaluate in lookahead")
+    parser.add_argument("--state", type=str, choices=["0", "+"], default="0", help="Logical state to prepare ('0' or '+')")
     parser.add_argument("--verbose", "-v", action="store_true", default=True, help="Print verbose progress and matrices")
     args = parser.parse_args()
 
@@ -74,8 +75,18 @@ def main():
     single_faults_x = compute_unitary_fault_set_1(col_ops, num_qubits=H_x.shape[1], kind="X")
     single_faults_z = compute_unitary_fault_set_1(col_ops, num_qubits=H_x.shape[1], kind="Z")
     
-    stabs_x = np.concatenate((H_z, L_z))
-    stabs_z = np.concatenate((H_x, L_x))
+    if args.state == "0":
+        print("Configuring stabilizers for logical |0> state preparation...")
+        stabs_x = np.concatenate((H_z, L_z))
+        stabs_z = H_x
+        H_filter_x = H_x
+        H_filter_z = np.concatenate((H_z, L_z))
+    elif args.state == "+":
+        print("Configuring stabilizers for logical |+> state preparation...")
+        stabs_x = H_z
+        stabs_z = np.concatenate((H_x, L_x))
+        H_filter_x = np.concatenate((H_x, L_x))
+        H_filter_z = H_z
     
     print(f"\nRunning lookahead verification stabilizers search for t={t} layers (top_n={args.top_n})...")
     
@@ -83,7 +94,7 @@ def main():
     ver_x_stabs_layers = find_lookahead_verification_stabilizers(
         single_faults=single_faults_x,
         stabs=stabs_x,
-        H_filter=H_x,
+        H_filter=H_filter_x,
         t=t,
         top_n=args.top_n,
         verbose=args.verbose
@@ -101,7 +112,7 @@ def main():
     ver_z_stabs_layers = find_lookahead_verification_stabilizers(
         single_faults=single_faults_z,
         stabs=stabs_z,
-        H_filter=np.concatenate((H_z, L_z)),
+        H_filter=H_filter_z,
         t=t,
         top_n=args.top_n,
         verbose=args.verbose
