@@ -216,6 +216,7 @@ def cat_at_origin_with_verification(
         for stab in layer:
             qubits = np.where(stab)[0].tolist()
             meas_circ = syndrome_measurement_circuit(qubits=qubits, ancilla_start=ancilla_start, t=t, basis="X")
+            meas_circ.append("DETECTOR", stim.target_rec(-1))
             circ += meas_circ
             ancilla_start = meas_circ.num_qubits
     if verbose:
@@ -225,6 +226,7 @@ def cat_at_origin_with_verification(
         for stab in layer:
             qubits = np.where(stab)[0].tolist()
             meas_circ = syndrome_measurement_circuit(qubits=qubits, ancilla_start=ancilla_start, t=t, basis="Z")
+            meas_circ.append("DETECTOR", stim.target_rec(-1))
             circ += meas_circ
             ancilla_start = meas_circ.num_qubits
     return circ
