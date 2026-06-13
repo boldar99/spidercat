@@ -181,19 +181,27 @@ def expand_graph_and_forest(
         edges_to_add = [(path[i], path[i+1]) for i in range(len(path)-1)]
         G_new.add_edges_from(edges_to_add)
 
-        if is_forest_edge:
-            F_new.add_edges_from(edges_to_add)
-        else:
-            # CROSS-LINK LOGIC: Drop exactly one edge to form the gap
+        if is_mark:
             u_count = edge_to_matches.get(tuple(sorted(edge)), []).count(u)
-
-            # The gap is placed immediately after u's claimed domain.
-            # (If u_count > count, cap it to prevent out-of-bounds)
-            gap_idx = min(u_count, count)
-
-            for i, step_edge in enumerate(edges_to_add):
-                if i != gap_idx:
-                    F_new.add_edge(*step_edge)
+            v_count = edge_to_matches.get(tuple(sorted(edge)), []).count(v)
+            if is_forest_edge:
+                F_new.add_edges_from(edges_to_add)
+            elif not matchings:
+                pass
+            else:
+                u_edges = edges_to_add[:u_count]
+                v_edges = edges_to_add[len(edges_to_add) - v_count:] if v_count > 0 else []
+                F_new.add_edges_from(u_edges + v_edges)
+        else:
+            if is_forest_edge:
+                F_new.add_edges_from(edges_to_add)
+            else:
+                # CROSS-LINK LOGIC: Drop exactly one edge to form the gap
+                u_count = edge_to_matches.get(tuple(sorted(edge)), []).count(u)
+                gap_idx = min(u_count, count)
+                for i, step_edge in enumerate(edges_to_add):
+                    if i != gap_idx:
+                        F_new.add_edge(*step_edge)
 
     for edge, count in marked_edges.items(): expand_edge(edge, count, is_mark=True)
     for edge, count in flagged_edges.items(): expand_edge(edge, count, is_mark=False)
@@ -283,6 +291,7 @@ class CatStateExtractor:
         self.node_to_qubit = {}
         # Maps an edge to the flag qubit that it corresponds to
         self.edge_to_flag_qubit: dict[tuple[int, int], int] = {}
+        self.flag_spider_types: dict[int, str] = {}
         self.tree_to_qubits = defaultdict(set)
         self.node_to_tree = {}
         self.link_measurements = {}
@@ -329,7 +338,7 @@ class CatStateExtractor:
         self.branch_mark_values[node] = children_mark_value + mark_value
         return children_mark_value + mark_value
 
-    def extract(self, G, F, roots, dependency_graph: nx.DiGraph | None = None, primary_paths: dict[int, list[int]] | None = None):
+    def extract(self, G, F, roots, dependency_graph: nx.DiGraph | None = None, primary_paths: dict[int, list[int]] | None = None) -> stim.Circuit:
         if self.verbose: print("=== Starting Elegant Extraction (BFS) ===")
         roots = roots if isinstance(roots, dict) else {i: r for i, r in enumerate(roots)}
 
@@ -380,14 +389,14 @@ class CatStateExtractor:
                 elif is_flag_node:
                     self.take_role_of_flag(G_new, node, edge)
                 else:
-                    self.initialize_flag(G_new, node, child, edge)
+                    self.initialize_flag(G_new, F_new, node, child, edge)
 
             if is_flag_node:
                 assert not tree_children
                 continue
 
             if not tree_children:
-                assert is_mark
+                # assert is_mark
                 if self.verbose:
                     print(f"  Node {node} serves as a sink point for Q{current_qubit}")
                 continue
@@ -418,7 +427,7 @@ class CatStateExtractor:
             if (tree_id, primary, current_qubit) not in self.queue:
                 self.queue.append((tree_id, primary, current_qubit))
 
-    def initialize_flag(self, G, node: int, child, edge: tuple[int, int]):
+    def initialize_flag(self, G, F, node: int, child: int, edge: tuple[int, int]):
         current_qubit = self.node_to_qubit[node]
         spider_type = G.nodes[node].get("spider_type", "Z")
         tree_id = self.node_to_tree[node]
@@ -427,11 +436,38 @@ class CatStateExtractor:
         c, n = (current_qubit, flag_qubit) if spider_type == "Z" else (flag_qubit, current_qubit)
         self.builder.init_ancilla(flag_qubit, spider_type)
         self.builder.add_cnot(c, n)
-        self.edge_to_flag_qubit[edge] = flag_qubit
-        self.tree_to_qubits[tree_id].add(child)
-        self.node_to_tree[child] = tree_id
+        self.flag_spider_types[flag_qubit] = spider_type
+        
+        current = child
+        previous = node
+        
+        while current is not None and F.degree(current) == 0:
+            assert G.nodes[current].get("is_mark")
+            new_q = self._get_new_data_qubit()
+            mark_spider_type = G.nodes[current].get("spider_type", "Z")
+            
+            self.builder.init_ancilla(new_q, mark_spider_type)
+            c_mark, n_mark = (flag_qubit, new_q) if spider_type == "Z" else (new_q, flag_qubit)
+            self.builder.add_cnot(c_mark, n_mark)
+            
+            self.tree_to_qubits[tree_id].add(new_q)
+            self.node_to_tree[current] = tree_id
+            
+            if self.verbose:
+                print(f"  Uncovered Mark on {current}: Spawned CNOT Q{flag_qubit} -> Q{new_q}")
+                
+            neighbors = [n for n in G.neighbors(current) if n != previous]
+            if not neighbors:
+                break
+            previous = current
+            current = neighbors[0]
+            
+        final_edge = ed(previous, current)
+        self.edge_to_flag_qubit[final_edge] = flag_qubit
+        self.tree_to_qubits[tree_id].add(flag_qubit)
+        
         if self.verbose:
-            print(f"  New flag initialised ({node}, {child}): CNOT Q{c} -> Q{n}")
+            print(f"  New flag initialised {edge} -> ends at {final_edge}: CNOT Q{c} -> Q{n}")
 
     def process_branching(self, G, node: int, child: int):
         current_qubit = self.node_to_qubit[node]
@@ -487,7 +523,9 @@ class CatStateExtractor:
 
     def take_role_of_flag(self, G, node: int, edge: tuple[int, int]):
         current_qubit = self.node_to_qubit[node]
+        spider_type = G.nodes[node].get("spider_type", "Z")
         self.edge_to_flag_qubit[edge] = current_qubit
+        self.flag_spider_types[current_qubit] = spider_type
         self.data_flags.append(current_qubit)
         if self.verbose:
             print(f"  Node {node} assumes the role of a flag qubit for edge {edge} on Q{current_qubit}.")
@@ -495,16 +533,14 @@ class CatStateExtractor:
     def close_flag(self, G, current_node: int, other_node: int, edge: tuple[int, int]) -> None:
         current_qubit = self.node_to_qubit[current_node]
         flag_qubit = self.edge_to_flag_qubit[edge]
-        current_spider_type = G.nodes[current_node].get("spider_type", "Z")
-        other_spider_type = G.nodes[other_node].get("spider_type", "Z")
-        assert current_spider_type == other_spider_type
+        flag_spider_type = self.flag_spider_types[flag_qubit]
 
-        c, n = (current_qubit, flag_qubit) if current_spider_type == "Z" else (flag_qubit, current_qubit)
+        c, n = (current_qubit, flag_qubit) if flag_spider_type == "Z" else (flag_qubit, current_qubit)
         self.builder.add_cnot(c, n)
-        m_idx = self.builder.post_select(flag_qubit, current_spider_type)
+        m_idx = self.builder.post_select(flag_qubit, flag_spider_type)
         self.flag_measurements.append((current_node, other_node, m_idx))
         if self.verbose:
-            print(f"  Flag ({current_node}, {other_node}) finalised: CNOT Q{c} -> Q{n}; PostSelect_{current_spider_type} {flag_qubit}")
+            print(f"  Flag {edge} finalised: CNOT Q{c} -> Q{n}; PostSelect_{flag_spider_type} {flag_qubit}")
 
     def pop_next_from_queue(self) -> tuple[int, int, int]:
         if len(self.node_order) > 0:

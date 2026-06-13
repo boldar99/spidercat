@@ -1,17 +1,15 @@
-from typing import Iterable
+from typing import Literal, Sequence
 
-import networkx as nx
 import stim
 
-from spidercat.circuit_extraction import extract_circuit_rooted, CatStateExtractor, StimBuilder, expand_graph_and_forest
-from spidercat.draw import draw_qubit_lines_state, draw_spanning_forest_solution, draw_forest_on_graph
+from spidercat.circuit_extraction import CatStateExtractor, StimBuilder, expand_graph_and_forest
 from spidercat.path_cover import find_all_path_covers
 from spidercat.spanning_tree import match_forest_leaves_to_marked_edges
 from spidercat.utils import load_solution_triplet
 
 
-def syndrome_measurement_circuit(qubits: Iterable[int], t: int, num_measurement_ancillae = 1) -> stim.Circuit:
-    n = len(qubits)
+def syndrome_measurement_circuit(qubits: Sequence[int], ancilla_start: int, t: int, basis: Literal["X"] | Literal["Z"] = "Z") -> stim.Circuit:
+    n = len(qubits) + 1
     G, _, M, _ = load_solution_triplet(n, t, 1)
     paths = next(find_all_path_covers(G, 1))
     H = G.copy()
@@ -22,13 +20,48 @@ def syndrome_measurement_circuit(qubits: Iterable[int], t: int, num_measurement_
 
     matchings = match_forest_leaves_to_marked_edges(G, H, M)
     extractor = CatStateExtractor(StimBuilder(), verbose=True)
-    G_exp, F_exp = expand_graph_and_forest(G, H, M, matchings)
-    draw_forest_on_graph(G_exp, F_exp)
-    D = nx.DiGraph()
-    return extractor.extract(G_exp, F_exp, {0: path[0]})
+    # Visualize without matchings so that unmatched marks are not covered
+    G_exp_vis, F_exp_vis = expand_graph_and_forest(G, H, M, {path[-1]: matchings[path[-1]]}, expand_flags=False)
+    for n in G_exp_vis.nodes:
+        G_exp_vis.nodes[n]["spider_type"] = basis
+
+    # Extract the circuit using the unmatched graph
+    circ = extractor.extract(G_exp_vis, F_exp_vis, {0: path[0]})
+    
+    q_to_mapped = {}
+    q_to_mapped[0] = ancilla_start
+    for v in range(1, len(qubits) + 1):
+        q_to_mapped[v] = qubits[v - 1]
+
+    ancilla_idx = ancilla_start + 1
+    for q in range(circ.num_qubits):
+        if q not in q_to_mapped:
+            q_to_mapped[q] = ancilla_idx
+            ancilla_idx += 1
+
+    permuted_circuit = stim.Circuit()
+    data_qubits_set = set(qubits)
+
+    for op in circ:
+        new_targets = []
+        for t in op.targets_copy():
+            if t.is_qubit_target:
+                mapped_q = q_to_mapped[t.value]
+                if mapped_q in data_qubits_set and op.name in ["R", "RX", "H"]:
+                    continue
+                new_targets.append(mapped_q)
+            else:
+                new_targets.append(t)
+        
+        if new_targets:
+            permuted_circuit.append(op.name, new_targets, op.gate_args_copy())
+
+    return permuted_circuit
 
 
 if __name__ == '__main__':
-    circ = syndrome_measurement_circuit(qubits=range(7), t=3, num_measurement_ancillae=1)
-    circ.append("M", range(7))
+    N, t = 10, 4
+    circ = syndrome_measurement_circuit(qubits=range(N), ancilla_start=N, t=t, basis="X")
+    circ.append("M", range(N))
     print(circ.compile_sampler().sample(10))
+    print(circ.diagram())
