@@ -4,8 +4,28 @@ from itertools import combinations
 import numpy as np
 from mqt.qecc.circuit_synthesis.faults import PureFaultSet, product_fault_set
 from spiderstate.fast_verification import fast_greedy_set_cover
+from mqt.qecc.circuit_synthesis import CNOTCircuit
 
 logger = logging.getLogger(__name__)
+
+def compute_unitary_fault_set_1(cnots: list[tuple[int, int]], num_qubits: int, kind: str = "X"):
+    circ = CNOTCircuit()
+    seen = set()
+    for (c, n) in cnots:
+        if c not in seen:
+            seen.add(c)
+            circ.initialize_qubit(c, "X")
+        if n not in seen:
+            seen.add(n)
+            circ.initialize_qubit(n, "Z")
+    for rem in set(range(num_qubits)) - seen:
+        circ.initialize_qubit(rem, "Z")
+    circ.add_cnots(cnots)
+    single_faults = PureFaultSet.from_cnot_circuit(circ, kind=kind)
+    single_faults.remove_zero_rows()
+    single_faults.remove_duplicates()
+    return single_faults
+
 
 def _generate_candidate_stabilizers(stabs: np.ndarray, max_combinations: int) -> np.ndarray:
     k = stabs.shape[0]

@@ -8,6 +8,9 @@ from spiderstate.spider_leg_matcher import match_edges
 from spiderstate.utils import find_pivots_in_matrix
 from spiderstate.well_ordered_cat_state import well_ordered_ft_cat_state_data
 from spiderstate.optimize_parity_matrix import has_unique_ones_property, optimize_fault_tolerant_matrix, row_optimize_matrix
+from spidercat.syndrome_measurement import syndrome_measurement_circuit
+from spiderstate.verification import find_lookahead_verification_stabilizers, compute_unitary_fault_set_1
+
 
 
 def col_reduced_cat_at_origin(H: np.ndarray, d: int, max_col_ops: int = 0, max_basis_tries: int = 5000):
@@ -156,10 +159,73 @@ def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False) -> stim.Circuit:
     return circ
 
 
-if __name__ == "__main__":
-    H_x, d = np.array([
-        [1, 1, 1, 1, 0, 0, 0],
-        [0, 1, 1, 0, 1, 1, 0],
-        [0, 0, 1, 1, 0, 1, 1]
-    ]), 3
-    circ = cat_at_origin(H_x, d)
+def cat_at_origin_with_verification(
+    H_x: np.ndarray, H_z: np.ndarray, L_x: np.ndarray, L_z: np.ndarray, d: int,
+    state: str = "0", max_col_ops: int = 10, top_n: int = 50, max_basis_tries: int = 10_000, verbose: bool = False
+) -> stim.Circuit:
+    t = d // 2
+    if verbose:
+        print(f"Optimizing parity matrix (max_col_ops={max_col_ops})...")
+    row_M, final_M, col_ops = optimize_fault_tolerant_matrix(H_x, t=t, max_col_ops=max_col_ops, H_x=H_x, H_z=H_z, max_basis_tries=max_basis_tries)
+    circ = cat_at_origin(final_M, d)
+    for c, n in col_ops:
+        circ.append("CX", [c, n])
+    if verbose:
+        print("Computing initial single faults...")
+    single_faults_x = compute_unitary_fault_set_1(col_ops, num_qubits=H_x.shape[1], kind="X")
+    single_faults_z = compute_unitary_fault_set_1(col_ops, num_qubits=H_x.shape[1], kind="Z")
+    if state == "0":
+        if verbose: print("Configuring stabilizers for logical |0> state preparation...")
+        stabs_x = np.concatenate((H_z, L_z))
+        stabs_z = H_x
+        H_filter_x = H_x
+        H_filter_z = np.concatenate((H_z, L_z))
+    elif state == "+":
+        if verbose: print("Configuring stabilizers for logical |+> state preparation...")
+        stabs_x = H_z
+        stabs_z = np.concatenate((H_x, L_x))
+        H_filter_x = np.concatenate((H_x, L_x))
+        H_filter_z = H_z
+    else:
+        raise ValueError(f"Unknown state: {state}")
+    if verbose:
+        print(f"\nRunning lookahead verification stabilizers search for t={t} layers (top_n={top_n})...")
+        print("\n--- X Faults Verification ---")
+    ver_x_stabs_layers = find_lookahead_verification_stabilizers(
+        single_faults=single_faults_x,
+        stabs=stabs_x,
+        H_filter=H_filter_x,
+        t=t,
+        top_n=top_n,
+        verbose=verbose
+    )
+    if verbose:
+        print("\n--- Z Faults Verification ---")
+    ver_z_stabs_layers = find_lookahead_verification_stabilizers(
+        single_faults=single_faults_z,
+        stabs=stabs_z,
+        H_filter=H_filter_z,
+        t=t,
+        top_n=top_n,
+        verbose=verbose
+    )
+    ancilla_start = H_x.shape[1]
+    if verbose:
+        print("\nSynthesizing X fault verification circuits...")
+    for layer in ver_x_stabs_layers:
+        for stab in layer:
+            qubits = np.where(stab)[0].tolist()
+            meas_circ = syndrome_measurement_circuit(qubits=qubits, ancilla_start=ancilla_start, t=t, basis="X")
+            circ += meas_circ
+            ancilla_start = meas_circ.num_qubits
+    if verbose:
+        print("\nSynthesizing Z fault verification circuits...")
+    ancilla_start = H_x.shape[1]
+    for layer in ver_z_stabs_layers:
+        for stab in layer:
+            qubits = np.where(stab)[0].tolist()
+            meas_circ = syndrome_measurement_circuit(qubits=qubits, ancilla_start=ancilla_start, t=t, basis="Z")
+            circ += meas_circ
+            ancilla_start = meas_circ.num_qubits
+    return circ
+
