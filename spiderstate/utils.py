@@ -36,7 +36,7 @@ def layered_ops_to_noisy_stim_circuit(layered_ops: list[list[tuple[str, list[int
                 circuit.append("X_ERROR", targets, p_init)
             elif op_name in TWO_QUBIT_GATES:
                 circuit.append("DEPOLARIZE2", targets, p_2)
-                if mem_error_after_every_cnot:
+                if mem_error_after_every_cnot and p_mem != 0:
                     circuit.append("DEPOLARIZE1", set(range(num_qubits)) - set(targets), p_mem)
 
             elif op_name in SPECIAL_GATES:
@@ -136,7 +136,7 @@ def make_stim_circ_noisy(circ: stim.Circuit, p: float) -> stim.Circuit:
     layered_ops = _layer_circuit_ops(operations, circ.num_qubits)
     # final_ops, num_sim_qubits = apply_qubit_reuse(layered_ops)
     noisy_circ = layered_ops_to_noisy_stim_circuit(layered_ops + [detectors], circ.num_qubits, 0, p, 2 / 3 * p,
-                                                   2 / 3 * p, p / 100, mem_error_after_every_cnot=True)
+                                                   2 / 3 * p, 0, mem_error_after_every_cnot=True)
     return noisy_circ
 
 

@@ -1,277 +1,324 @@
-import stim
+from typing import Union, List, Tuple, FrozenSet
+
+import mip
 import numpy as np
-from itertools import combinations
-import math
+import stim
+import re
+
+from spiderstate.utils import _expand_stim_operation_list
 
 
-def insert_noise(circ: stim.Circuit, p: float = 0.001, perfect_verification: bool = False) -> stim.Circuit:
-    noisy = stim.Circuit()
-    in_verification = False
-    for inst in circ:
-        if inst.name == "SHIFT_COORDS" and list(inst.gate_args_copy()) == [999.0]:
-            in_verification = True
-            noisy.append(inst)
-            continue
+# ==============================================================================
+# PHASE 1: Circuit Evaluation Setup
+# ==============================================================================
+def append_ideal_measurements(
+    noisy_prep_circ: stim.Circuit,
+    H_check: np.ndarray,
+    L_matrix: np.ndarray,
+    basis_char: str
+) -> stim.Circuit:
+    """Appends perfect ideal MPP checks and Logical observables to the circuit."""
+    eval_circ = noisy_prep_circ.copy()
 
-        if inst.name in ["DETECTOR", "OBSERVABLE_INCLUDE", "TICK", "QUBIT_COORDS", "SHIFT_COORDS"]:
-            noisy.append(inst)
-            continue
+    # Append code-space checks
+    for row in H_check:
+        mpp_targets = []
+        for i, val in enumerate(row):
+            if val:
+                mpp_targets.append(stim.target_x(i) if basis_char == 'X' else stim.target_z(i))
+                mpp_targets.append(stim.target_combiner())
+        if mpp_targets:
+            mpp_targets.pop()
+            eval_circ.append("MPP", mpp_targets)
+            eval_circ.append("DETECTOR", [stim.target_rec(-1)])
 
-        noisy.append(inst)
+    # Append logicals
+    if L_matrix is not None and L_matrix.size > 0:
+        for m, L_row in enumerate(L_matrix):
+            stim_obs = []
+            for i, val in enumerate(L_row):
+                if val:
+                    stim_obs.append(stim.target_x(i) if basis_char == 'X' else stim.target_z(i))
+            eval_circ.append("OBSERVABLE_INCLUDE", stim_obs, m)
 
-        if perfect_verification and in_verification:
-            if inst.name in ["M", "MX"]:
-                noisy.append("X_ERROR", inst.targets_copy(), p)
-            continue
-
-        if inst.name in ["H", "R", "RX", "X", "Z"]:
-            noisy.append("DEPOLARIZE1", inst.targets_copy(), p)
-        elif inst.name in ["CX", "CZ"]:
-            noisy.append("DEPOLARIZE2", inst.targets_copy(), p)
-        elif inst.name in ["M", "MX"]:
-            noisy.append("X_ERROR", inst.targets_copy(), p)
-
-    return noisy
-
-
-def get_valid_syndromes(H_check: np.ndarray, L_check: np.ndarray | None, t: int):
-    valid_syndromes = set()
-    num_qubits = H_check.shape[1]
-
-    for k in range(t + 1):
-        for err_locs in combinations(range(num_qubits), k):
-            err = np.zeros(num_qubits, dtype=int)
-            err[list(err_locs)] = 1
-
-            syn = tuple((H_check @ err) % 2)
-            if L_check is not None:
-                l_val = (L_check @ err) % 2
-                valid_syndromes.add((syn, tuple(int(x) for x in l_val)))
-            else:
-                valid_syndromes.add(syn)
-
-    return valid_syndromes
+    return eval_circ
 
 
-def verify_ft_exhaustive_basis(
+def extract_unique_fault_mechanisms(
+    eval_circ: stim.Circuit
+) -> List[FrozenSet[Tuple[str, int]]]:
+    """Flattens circuit, extracts DEM, and returns a list of unique fault target combinations."""
+    flat_circ = eval_circ.flattened()
+    dem = flat_circ.detector_error_model(decompose_errors=False)
+
+    fault_mechanisms = set()
+    for instruction in dem:
+        if instruction.type == "error":
+            targets = []
+            for tgt in instruction.targets_copy():
+                if tgt.is_relative_detector_id():
+                    targets.append(("D", tgt.val))
+                elif tgt.is_logical_observable_id():
+                    targets.append(("L", tgt.val))
+            if targets:
+                fault_mechanisms.add(frozenset(targets))
+
+    return list(fault_mechanisms)
+
+
+# ==============================================================================
+# PHASE 2: The Mathematical Engine
+# ==============================================================================
+def solve_ftsp_ilp(
+    unique_mechanisms: List[FrozenSet[Tuple[str, int]]],
+    n_data_qubits: int,
+    num_internal_detectors: int,
+    H_check: np.ndarray,
+    L_matrix: np.ndarray,
+    d: int,
+    t: int
+) -> Tuple[mip.OptimizationStatus, List[mip.Var], List[mip.Var]]:
+    """Builds and solves the exact GF(2) parity requirements for FTSP failure."""
+    model = mip.Model(sense=mip.MINIMIZE, solver_name=mip.CBC)
+    model.verbose = 0
+
+    num_e_init = len(unique_mechanisms)
+    num_final_stabilizers = H_check.shape[0]
+    num_logicals = L_matrix.shape[0] if L_matrix is not None else 0
+
+    x = [model.add_var(var_type=mip.BINARY, name=f"x_{i}") for i in range(num_e_init)]
+    y = [model.add_var(var_type=mip.BINARY, name=f"y_{j}") for j in range(n_data_qubits)]
+
+    D_triggers = {k: [] for k in range(num_internal_detectors + num_final_stabilizers)}
+    L_triggers = {m: [] for m in range(num_logicals)}
+
+    for i, mech in enumerate(unique_mechanisms):
+        for t_type, t_val in mech:
+            if t_type == "D":
+                D_triggers[t_val].append(x[i])
+            elif t_type == "L":
+                L_triggers[t_val].append(x[i])
+
+    # A. Internal Flags Parity (Must be 0)
+    for k in range(num_internal_detectors):
+        if D_triggers[k]:
+            q = model.add_var(var_type=mip.INTEGER, lb=0)
+            model += mip.xsum(D_triggers[k]) - 2 * q == 0
+
+    # B. Final Stabilizers Parity (Must be 0)
+    for r in range(num_final_stabilizers):
+        k = num_internal_detectors + r
+        terms = D_triggers[k].copy()
+        for j in range(n_data_qubits):
+            if H_check[r, j]: terms.append(y[j])
+        if terms:
+            q = model.add_var(var_type=mip.INTEGER, lb=0)
+            model += mip.xsum(terms) - 2 * q == 0
+
+    # C. Logical Observable Parity (At least one must flip to 1)
+    logical_flip_vars = []
+    for m in range(num_logicals):
+        terms = L_triggers[m].copy()
+        for j in range(n_data_qubits):
+            if L_matrix[m, j]: terms.append(y[j])
+        if terms:
+            l_m = model.add_var(var_type=mip.BINARY, name=f"l_{m}")
+            q = model.add_var(var_type=mip.INTEGER, lb=0)
+            model += mip.xsum(terms) - 2 * q - l_m == 0
+            logical_flip_vars.append(l_m)
+
+    if logical_flip_vars:
+        model += mip.xsum(logical_flip_vars) >= 1
+    else:
+        # It is structurally impossible to flip the logicals
+        return None, [], []
+
+    # D. FTSP Thresholds
+    model += mip.xsum(x) <= t
+    model += mip.xsum(x) + mip.xsum(y) <= d - 1
+
+    model.objective = 0
+    status = model.optimize()
+    return status, x, y
+
+
+# ==============================================================================
+# PHASE 3: Extraction & Rebuild (Strict Native Typing)
+# ==============================================================================
+def extract_deterministic_failure(
+    prep_circ: stim.Circuit,
+    flat_eval_circ: stim.Circuit,
+    failed_mechs: List[FrozenSet[Tuple[str, int]]],
+    failed_y_indices: List[int],
+    basis_char: str
+) -> stim.Circuit:
+    """
+    Rebuilds the failed circuit by natively interacting with Stim's
+    stack_frames and GateTargetWithCoords objects.
+    """
+    # 1. Build the DEM filter mask for E_init
+    dem_filter = stim.DetectorErrorModel()
+    for mech in failed_mechs:
+        targets = []
+        for t_type, t_val in sorted(mech):
+            if t_type == "D":
+                targets.append(stim.target_relative_detector_id(t_val))
+            elif t_type == "L":
+                targets.append(stim.target_logical_observable_id(t_val))
+        dem_filter.append('error', [1.0], targets)
+
+    explanations = flat_eval_circ.explain_detector_error_model_errors(
+        dem_filter=dem_filter,
+        reduce_to_one_representative_error=True
+    )
+
+    # 2. Extract E_init faults natively from the stack frames
+    faults_to_inject = []
+    for exp in explanations:
+        loc = exp.circuit_error_locations[0]
+
+        # Native extraction of the absolute flat instruction index
+        ins_offset = loc.stack_frames[0].instruction_offset
+
+        paulis = []
+        for p in loc.flipped_pauli_product:
+            # Unwrap GateTargetWithCoords if necessary
+            target = p.gate_target if hasattr(p, 'gate_target') else p
+
+            if target.is_x_target:
+                paulis.append(('X', target.value))
+            elif target.is_y_target:
+                paulis.append(('Y', target.value))
+            elif target.is_z_target:
+                paulis.append(('Z', target.value))
+
+        faults_to_inject.append({
+            'instruction_offset': ins_offset,
+            'paulis': paulis,
+            'injected': False
+        })
+
+    # 3. Extract your internal flattened operations list
+    from spiderstate.utils import _expand_stim_operation_list
+    raw_ops = [(op, targets) for (op, targets, params) in prep_circ.flattened_operations() if op != "DETECTOR"]
+    flat_operations = _expand_stim_operation_list(raw_ops)
+
+    failed_circ = stim.Circuit()
+
+    # 4. Rebuild the circuit using parsed absolute instruction indices
+    for idx, (op_name, targets) in enumerate(flat_operations):
+        # Inject the fault right BEFORE the flat operation that caused it
+        for fault in faults_to_inject:
+            if not fault['injected'] and fault['instruction_offset'] == idx:
+                for p_type, p_val in fault['paulis']:
+                    failed_circ.append(p_type, [p_val])
+                fault['injected'] = True
+
+        failed_circ.append(op_name, targets)
+
+    # 5. Fallback for any trailing initialization faults
+    for fault in faults_to_inject:
+        if not fault['injected']:
+            for p_type, p_val in fault['paulis']:
+                failed_circ.append(p_type, [p_val])
+            fault['injected'] = True
+
+    # 6. Inject E_data completion (Virtual Logical Faults)
+    if failed_y_indices:
+        failed_circ.append("TICK")  # Isolation barrier
+        y_pauli = 'X' if basis_char == 'Z' else 'Z'
+        for q in failed_y_indices:
+            failed_circ.append(y_pauli, [q])
+
+    return failed_circ
+
+
+# ==============================================================================
+# ORCHESTRATOR
+# ==============================================================================
+def verify_ftsp_ilp(
     prep_circ: stim.Circuit,
     H_check: np.ndarray,
-    L_check: np.ndarray | None,
+    L_op: np.ndarray,
+    d: int,
     t: int,
-    basis: str,
-    verbose: bool = False,
-    perfect_verification: bool = False
-) -> bool:
-    data_qubits = list(range(H_check.shape[1]))
-
-    valid_syndromes = get_valid_syndromes(H_check, L_check, t)
-    num_flags = prep_circ.num_detectors
-
-    circ = prep_circ.copy()
-    if basis == "X":
-        for q in data_qubits:
-            circ.append("H", q)
-    circ.append("M", data_qubits)
-
-    for row in H_check:
-        targets = [stim.target_rec(i - len(data_qubits)) for i, val in enumerate(row) if val]
-        circ.append("DETECTOR", targets)
-
-    if L_check is not None:
-        for o_idx, row in enumerate(L_check):
-            targets = [stim.target_rec(i - len(data_qubits)) for i, val in enumerate(row) if val]
-            circ.append("OBSERVABLE_INCLUDE", targets, o_idx)
-
-    noisy = insert_noise(circ, perfect_verification=perfect_verification)
-    dem = noisy.detector_error_model(decompose_errors=False)
-
-    mechanisms = []
-    for inst in dem:
-        if inst.type == "error":
-            dets = []
-            obs = []
-            for tgt in inst.targets_copy():
-                if tgt.is_relative_detector_id():
-                    dets.append(tgt.val)
-                elif tgt.is_logical_observable_id():
-                    obs.append(tgt.val)
-            mechanisms.append((dets, obs))
-
-    num_checks = H_check.shape[0]
-
-    if verbose:
-        print(f"Checking {len(mechanisms)} fault mechanisms up to {t} faults for {basis} basis...")
-
-    for k in range(1, t + 1):
-        for comb in combinations(mechanisms, k):
-            all_dets = set()
-            all_obs = set()
-            for dets, obs in comb:
-                for d in dets:
-                    if d in all_dets:
-                        all_dets.remove(d)
-                    else:
-                        all_dets.add(d)
-                for o in obs:
-                    if o in all_obs:
-                        all_obs.remove(o)
-                    else:
-                        all_obs.add(o)
-
-            flags_triggered = any(d < num_flags for d in all_dets)
-            if flags_triggered:
-                continue
-
-            syn = tuple(1 if d in all_dets else 0 for d in range(num_flags, num_flags + num_checks))
-            if L_check is not None:
-                l_val = tuple(1 if o in all_obs else 0 for o in range(L_check.shape[0]))
-                if (syn, l_val) not in valid_syndromes:
-                    print(f"[{basis} Basis] FT FAILED! Fault comb length: {k}")
-                    print(f"Produced syndrome: {syn}, L: {l_val}")
-                    print(f"Fault combination: {comb}")
-                    return False
-            else:
-                if syn not in valid_syndromes:
-                    print(f"[{basis} Basis] FT FAILED! Fault comb length: {k}")
-                    print(f"Produced syndrome: {syn}")
-                    print(f"Fault combination: {comb}")
-                    return False
-
-    if verbose:
-        print(f"[{basis} Basis] FT SUCCESS!")
-    return True
-
-
-def verify_ft_exhaustive(
-    prep_circ: stim.Circuit,
-    H_x: np.ndarray,
-    H_z: np.ndarray,
-    L_x: np.ndarray,
-    L_z: np.ndarray,
-    t: int,
-    state: str = "0",
-    verbose: bool = False,
-    perfect_verification: bool = False
-) -> bool:
-    """
-    Verifies state preparation circuit fault tolerance up to t faults exhaustively.
-    """
-    if verbose:
-        print(f"Starting exhaustive FT verification for state |{state}> up to t={t} faults.")
-        if perfect_verification:
-            print("Running in perfect verification mode (only M errors).")
-
-    if state == "0":
-        # Check Z-basis (detects X faults)
-        ft_x = verify_ft_exhaustive_basis(prep_circ, H_z, L_z, t, "Z", verbose, perfect_verification)
-        # Check X-basis (detects Z faults)
-        ft_z = verify_ft_exhaustive_basis(prep_circ, H_x, None, t, "X", verbose, perfect_verification)
-
-    elif state == "+":
-        # Check Z-basis (detects X faults)
-        ft_x = verify_ft_exhaustive_basis(prep_circ, H_z, None, t, "Z", verbose, perfect_verification)
-        # Check X-basis (detects Z faults)
-        ft_z = verify_ft_exhaustive_basis(prep_circ, H_x, L_x, t, "X", verbose, perfect_verification)
-
-    else:
-        raise ValueError("State must be '0' or '+'")
-
-    return ft_x and ft_z
-
-
-def verify_ft_stim(
-    prep_circ: stim.Circuit,
-    H_x: np.ndarray,
-    H_z: np.ndarray,
-    L_x: np.ndarray,
-    L_z: np.ndarray,
-    t: int,
-    state: str = "0",
+    basis_char: str = "Z",
     verbose: bool = False
-) -> bool:
+) -> Union[bool, stim.Circuit]:
     """
-    Verifies state preparation circuit fault tolerance using stim's internal DEM search.
-    This method only supports finding shortest undetectable logical errors for bases
-    with an observable. For checking distance, this relies on search_for_undetectable_logical_errors.
+    Main entry point. Coordinates preparation, exact ILP math, and error extraction.
     """
     if verbose:
-        print(f"Starting stim heuristic FT verification for state |{state}> up to t={t} faults.")
+        print(f"\nStarting Exact ILP Verification for {basis_char}-basis (d={d}, t={t}).")
 
-    data_qubits = list(range(H_x.shape[1]))
+    from spiderstate.utils import make_stim_circ_noisy
+    noisy_prep = make_stim_circ_noisy(prep_circ.copy(), p=0.001)
 
-    def check_basis(H_check, L_check, basis):
-        circ = prep_circ.copy()
-        if basis == "X":
-            for q in data_qubits:
-                circ.append("H", q)
-        circ.append("M", data_qubits)
-        for row in H_check:
-            targets = [stim.target_rec(i - len(data_qubits)) for i, val in enumerate(row) if val]
-            circ.append("DETECTOR", targets)
+    n_data_qubits = H_check.shape[1]
+    num_internal_detectors = noisy_prep.num_detectors
 
-        if L_check is not None:
-            for o_idx, row in enumerate(L_check):
-                targets = [stim.target_rec(i - len(data_qubits)) for i, val in enumerate(row) if val]
-                circ.append("OBSERVABLE_INCLUDE", targets, o_idx)
-        else:
-            # stim DEM requires an observable to define a logical error.
-            # Without it, we cannot use search_for_undetectable_logical_errors.
-            if verbose:
-                print(f"[{basis} Basis] Skipping stim heuristic check (no logical observable).")
-            return True
+    L_matrix = np.atleast_2d(L_op) if L_op is not None else None
 
-        noisy = insert_noise(circ)
+    # Step 1: Prep and Flatten
+    eval_circ = append_ideal_measurements(noisy_prep, H_check, L_matrix, basis_char)
+    unique_mechanisms = extract_unique_fault_mechanisms(eval_circ)
 
-        errs = noisy.search_for_undetectable_logical_errors(
-            dont_explore_detection_event_sets_with_size_above=10,
-            dont_explore_edges_with_degree_above=10,
-            dont_explore_edges_increasing_symptom_degree=False,
-        )
-
-        min_weight = len(errs) if errs else float('inf')
-        if verbose:
-            print(f"[{basis} Basis] Shortest undetectable logical error weight: {min_weight}")
-
-        # But this doesn't check if the resulting syndrome is uncorrectable if it triggers final detectors!
-        # stim's search_for_undetectable_logical_errors ASSUMES ideal decoding is not present.
-        # It ONLY checks errors that trigger NO detectors. This makes it strictly less powerful
-        # than the exhaustive method for state prep verification.
-
-        if min_weight <= t:
-            return False
+    if L_matrix is None or L_matrix.size == 0:
+        if verbose: print(f"  [{basis_char} Basis] No logical observable. Skipping.")
         return True
 
-    if state == "0":
-        ft_x = check_basis(H_z, L_z, "Z")
-        ft_z = check_basis(H_x, None, "X")
-    elif state == "+":
-        ft_x = check_basis(H_z, None, "Z")
-        ft_z = check_basis(H_x, L_x, "X")
-    else:
-        raise ValueError("State must be '0' or '+'")
+    # Step 2: Solve the Math
+    status, x_vars, y_vars = solve_ftsp_ilp(
+        unique_mechanisms, n_data_qubits, num_internal_detectors,
+        H_check, L_matrix, d, t
+    )
 
-    return ft_x and ft_z
+    # Step 3: Extract the Verdict
+    if status == mip.OptimizationStatus.OPTIMAL:
+        w_init = sum(1 for var in x_vars if var.x >= 0.9)
+        w_data = sum(1 for var in y_vars if var.x >= 0.9)
+
+        if verbose:
+            print(f"    [FAIL] Catastrophic cascade found!")
+            print(f"    W(E_init)={w_init} faults bypassed flags to require only W(E_data)={w_data} to fail.")
+            print("    Extracting unified failure circuit (Prep Faults + Data Faults)...")
+
+        # Extract failed mechanisms and indices
+        failed_mechs = [unique_mechanisms[i] for i, var in enumerate(x_vars) if var.x >= 0.9]
+        failed_y_indices = [j for j, var in enumerate(y_vars) if var.x >= 0.9]
+
+        # Pass E_data indices and basis to extraction function
+        failed_circ = extract_deterministic_failure(
+            prep_circ,
+            eval_circ.flattened(),
+            failed_mechs,
+            failed_y_indices,
+            basis_char
+        )
+        return failed_circ
+
+    elif status is None:
+        if verbose: print(f"    [PASS] Structurally impossible to flip Logical.")
+        return True
+    else:
+        if verbose: print(f"    [PASS] UNSAT. The state preparation is strictly Fault-Tolerant.")
+        return True
 
 
 if __name__ == "__main__":
-    from spiderstate.utils import load_qecc
+    from spiderstate.utils import load_qecc, make_stim_circ_noisy
     from spiderstate.cat_at_origin import cat_at_origin_with_verification
-    import sys
 
-    is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc("15_7_3", "MQT")
+    code = "17_1_5"
+    is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code, "MQT")
     t = (d - 1) // 2
 
-    print(f"Generating circuit for 17_1_5 (d={d}, t={t})...")
+    print(f"Generating circuit for {code} (d={d}, t={t})...")
     circ = cat_at_origin_with_verification(
         H_x=H_x, H_z=H_z, L_x=L_x, L_z=L_z, d=d,
-        state="0", max_col_ops=10, top_n=50, verbose=False
+        state="0", max_col_ops=0, top_n=50, verbose=False
     )
 
-    print("\nRunning Exhaustive FT Verification...")
-    res_ex = verify_ft_exhaustive(circ, H_x, H_z, L_x, L_z, t, state="0", verbose=True)
-    print("Exhaustive Result:", res_ex)
-
-    print("\nRunning Stim Heuristic FT Verification...")
-    res_stim = verify_ft_stim(circ, H_x, H_z, L_x, L_z, t, state="0", verbose=True)
-    print("Stim Heuristic Result:", res_stim)
-
+    print("\nRunning Fast DEM/SAT FT Verification...")
+    res_exhaustive = verify_ftsp_ilp(circ, H_x, L_x, d, t, verbose=True)
+    print("Verification Result:", res_exhaustive)
