@@ -5,7 +5,9 @@ import numpy as np
 import stim
 import re
 
-from spiderstate.utils import _expand_stim_operation_list
+from spiderstate.utils import SPECIAL_GATES
+
+
 
 
 # ==============================================================================
@@ -143,18 +145,19 @@ def solve_ftsp_ilp(
 
 
 # ==============================================================================
-# PHASE 3: Extraction & Rebuild (Strict Native Typing)
+# PHASE 3: Extraction & Rebuild (Direct Noisy Index Mapping)
 # ==============================================================================
 def extract_deterministic_failure(
-    prep_circ: stim.Circuit,
+    flat_noisy_prep: stim.Circuit,
     flat_eval_circ: stim.Circuit,
     failed_mechs: List[FrozenSet[Tuple[str, int]]],
     failed_y_indices: List[int],
     basis_char: str
 ) -> stim.Circuit:
     """
-    Rebuilds the failed circuit by natively interacting with Stim's
-    stack_frames and GateTargetWithCoords objects.
+    Rebuilds the failed circuit by iterating through the flattened noisy circuit,
+    swapping probabilistic noise channels for deterministic Pauli faults at the
+    exact matched instruction index.
     """
     # 1. Build the DEM filter mask for E_init
     dem_filter = stim.DetectorErrorModel()
@@ -171,20 +174,18 @@ def extract_deterministic_failure(
         dem_filter=dem_filter,
         reduce_to_one_representative_error=True
     )
+    print(explanations)
+    print(flat_noisy_prep)
 
-    # 2. Extract E_init faults natively from the stack frames
+    # 2. Extract E_init faults
     faults_to_inject = []
     for exp in explanations:
         loc = exp.circuit_error_locations[0]
-
-        # Native extraction of the absolute flat instruction index
         ins_offset = loc.stack_frames[0].instruction_offset
 
         paulis = []
         for p in loc.flipped_pauli_product:
-            # Unwrap GateTargetWithCoords if necessary
             target = p.gate_target if hasattr(p, 'gate_target') else p
-
             if target.is_x_target:
                 paulis.append(('X', target.value))
             elif target.is_y_target:
@@ -198,32 +199,41 @@ def extract_deterministic_failure(
             'injected': False
         })
 
-    # 3. Extract your internal flattened operations list
-    from spiderstate.utils import _expand_stim_operation_list
-    raw_ops = [(op, targets) for (op, targets, params) in prep_circ.flattened_operations() if op != "DETECTOR"]
-    flat_operations = _expand_stim_operation_list(raw_ops)
-
+    # 3. Iterate through the noisy circuit to rebuild the deterministic one
     failed_circ = stim.Circuit()
 
-    # 4. Rebuild the circuit using parsed absolute instruction indices
-    for idx, (op_name, targets) in enumerate(flat_operations):
-        # Inject the fault right BEFORE the flat operation that caused it
+    for idx, inst in enumerate(flat_noisy_prep):
+        # Inject the deterministic fault at the exact noisy index match
         for fault in faults_to_inject:
             if not fault['injected'] and fault['instruction_offset'] == idx:
                 for p_type, p_val in fault['paulis']:
                     failed_circ.append(p_type, [p_val])
                 fault['injected'] = True
 
-        failed_circ.append(op_name, targets)
+        # We explicitly keep TICKs to preserve time slices
+        if inst.name == "TICK":
+            failed_circ.append(inst)
+            continue
 
-    # 5. Fallback for any trailing initialization faults
+        # Strip out special gates (DETECTOR, OBSERVABLE_INCLUDE, etc.)
+        if inst.name in SPECIAL_GATES:
+            continue
+
+        # Strip out the background noise channels
+        if "ERROR" in inst.name or "DEPOLARIZE" in inst.name:
+            continue
+
+        # Append the standard quantum gate
+        failed_circ.append(inst)
+
+    # 4. Fallback (safety net)
     for fault in faults_to_inject:
         if not fault['injected']:
             for p_type, p_val in fault['paulis']:
                 failed_circ.append(p_type, [p_val])
             fault['injected'] = True
 
-    # 6. Inject E_data completion (Virtual Logical Faults)
+    # 5. Inject E_data completion (Virtual Logical Faults)
     if failed_y_indices:
         failed_circ.append("TICK")  # Isolation barrier
         y_pauli = 'X' if basis_char == 'Z' else 'Z'
@@ -316,7 +326,7 @@ if __name__ == "__main__":
     print(f"Generating circuit for {code} (d={d}, t={t})...")
     circ = cat_at_origin_with_verification(
         H_x=H_x, H_z=H_z, L_x=L_x, L_z=L_z, d=d,
-        state="0", max_col_ops=0, top_n=50, verbose=False
+        state="0", max_col_ops=50, top_n=50, verbose=False
     )
 
     print("\nRunning Fast DEM/SAT FT Verification...")
