@@ -168,8 +168,10 @@ def cat_at_origin_with_verification(
         print(f"Optimizing parity matrix (max_col_ops={max_col_ops})...")
     row_M, final_M, col_ops = optimize_fault_tolerant_matrix(H_x, t=t, max_col_ops=max_col_ops, H_x=H_x, H_z=H_z, max_basis_tries=max_basis_tries)
     circ = cat_at_origin(final_M, d)
+    circ.append("TICK", [])
     for c, n in col_ops:
         circ.append("CX", [c, n])
+    circ.append("TICK", [])
     if verbose:
         print("Computing initial single faults...")
     single_faults_x = compute_unitary_fault_set_1(col_ops, num_qubits=H_x.shape[1], kind="X")
@@ -215,7 +217,7 @@ def cat_at_origin_with_verification(
     for layer in ver_x_stabs_layers:
         for stab in layer:
             qubits = np.where(stab)[0].tolist()
-            meas_circ = syndrome_measurement_circuit(qubits=qubits, ancilla_start=ancilla_start, t=t, basis="X")
+            meas_circ = syndrome_measurement_circuit(qubits=qubits, ancilla_start=ancilla_start, t=t, basis="Z")
             meas_circ.append("DETECTOR", stim.target_rec(-1))
             circ += meas_circ
             ancilla_start = meas_circ.num_qubits
@@ -225,9 +227,8 @@ def cat_at_origin_with_verification(
     for layer in ver_z_stabs_layers:
         for stab in layer:
             qubits = np.where(stab)[0].tolist()
-            meas_circ = syndrome_measurement_circuit(qubits=qubits, ancilla_start=ancilla_start, t=t, basis="Z")
+            meas_circ = syndrome_measurement_circuit(qubits=qubits, ancilla_start=ancilla_start, t=t, basis="X")
             meas_circ.append("DETECTOR", stim.target_rec(-1))
             circ += meas_circ
             ancilla_start = meas_circ.num_qubits
     return circ
-

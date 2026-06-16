@@ -19,29 +19,32 @@ def append_ideal_measurements(
     L_matrix: np.ndarray,
     basis_char: str
 ) -> stim.Circuit:
-    """Appends perfect ideal MPP checks and Logical observables to the circuit."""
+    """Appends ideal transversal measurements, detectors, and logical observables to the circuit."""
     eval_circ = noisy_prep_circ.copy()
-
-    # Append code-space checks
+    
+    num_data_qubits = H_check.shape[1]
+    
+    # Transversally measure all data qubits
+    eval_circ.append("MX" if basis_char == 'X' else "M", range(num_data_qubits))
+    
+    # Append code-space checks as detectors
     for row in H_check:
-        mpp_targets = []
+        detector_targets = []
         for i, val in enumerate(row):
             if val:
-                mpp_targets.append(stim.target_x(i) if basis_char == 'X' else stim.target_z(i))
-                mpp_targets.append(stim.target_combiner())
-        if mpp_targets:
-            mpp_targets.pop()
-            eval_circ.append("MPP", mpp_targets)
-            eval_circ.append("DETECTOR", [stim.target_rec(-1)])
+                detector_targets.append(stim.target_rec(-num_data_qubits + i))
+        if detector_targets:
+            eval_circ.append("DETECTOR", detector_targets)
 
-    # Append logicals
+    # Append logical observables
     if L_matrix is not None and L_matrix.size > 0:
         for m, L_row in enumerate(L_matrix):
-            stim_obs = []
+            obs_targets = []
             for i, val in enumerate(L_row):
                 if val:
-                    stim_obs.append(stim.target_x(i) if basis_char == 'X' else stim.target_z(i))
-            eval_circ.append("OBSERVABLE_INCLUDE", stim_obs, m)
+                    obs_targets.append(stim.target_rec(-num_data_qubits + i))
+            if obs_targets:
+                eval_circ.append("OBSERVABLE_INCLUDE", obs_targets, m)
 
     return eval_circ
 
@@ -174,8 +177,6 @@ def extract_deterministic_failure(
         dem_filter=dem_filter,
         reduce_to_one_representative_error=True
     )
-    print(explanations)
-    print(flat_noisy_prep)
 
     # 2. Extract E_init faults
     faults_to_inject = []
@@ -319,7 +320,7 @@ if __name__ == "__main__":
     from spiderstate.utils import load_qecc, make_stim_circ_noisy
     from spiderstate.cat_at_origin import cat_at_origin_with_verification
 
-    code = "17_1_5"
+    code = "20_2_6"
     is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code, "MQT")
     t = (d - 1) // 2
 

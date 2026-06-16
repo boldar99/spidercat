@@ -56,6 +56,7 @@ def G_F_n_6() -> tuple[nx.Graph, nx.Graph, int]:
 
 def syndrome_measurement_circuit(qubits: Sequence[int], ancilla_start: int, t: int, basis: Literal["X"] | Literal["Z"] = "Z") -> stim.Circuit:
     n = len(qubits) + 1
+    other_basis = "X" if basis == "Z" else "Z"
 
     if n <= 4:
         G_exp_vis, F_exp_vis, root = G_F_alt_for_t_0(n)
@@ -81,7 +82,7 @@ def syndrome_measurement_circuit(qubits: Sequence[int], ancilla_start: int, t: i
         roots = {0: path[0]}
 
     for n in G_exp_vis.nodes:
-        G_exp_vis.nodes[n]["spider_type"] = basis
+        G_exp_vis.nodes[n]["spider_type"] = other_basis
 
     # draw_forest_on_graph(G_exp_vis, F_exp_vis)
     # Extract the circuit using the unmatched graph
@@ -116,7 +117,7 @@ def syndrome_measurement_circuit(qubits: Sequence[int], ancilla_start: int, t: i
         if new_targets:
             permuted_circuit.append(op.name, new_targets, op.gate_args_copy())
 
-    permuted_circuit.append("M" if basis == "X" else "MX", ancilla_start)
+    permuted_circuit.append("M" if basis == "Z" else "MX", ancilla_start)
 
     return permuted_circuit
 
