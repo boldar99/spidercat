@@ -27,6 +27,28 @@ def compute_unitary_fault_set_1(cnots: list[tuple[int, int]], num_qubits: int, k
     return single_faults
 
 
+def compute_bare_injected_faults(stabs_layers: list[list[np.ndarray]], num_qubits: int) -> PureFaultSet:
+    injected_faults = []
+    for layer in stabs_layers:
+        for stab in layer:
+            qubits = np.where(stab)[0].tolist()
+            # For a bare SE circuit, a fault on the ancilla propagates to a suffix of the data qubits
+            # The suffixes correspond to the faults injected between the sequential CNOTs
+            for k in range(len(qubits)):
+                f = np.zeros(num_qubits, dtype=np.int8)
+                f[qubits[k:]] = 1
+                injected_faults.append(f)
+                
+    if injected_faults:
+        fs = PureFaultSet.from_fault_array(np.array(injected_faults, dtype=np.int8))
+    else:
+        fs = PureFaultSet.from_fault_array(np.zeros((0, num_qubits), dtype=np.int8))
+        
+    fs.remove_zero_rows()
+    fs.remove_duplicates()
+    return fs
+
+
 def _generate_candidate_stabilizers(stabs: np.ndarray, max_combinations: int) -> np.ndarray:
     k = stabs.shape[0]
     candidate_stabs = []
@@ -79,19 +101,23 @@ def _greedy_set_cover(coverage: np.ndarray, weights: np.ndarray, candidate_stabs
         
     return [candidate_stabs[i] for i in selected_idx]
 
-def _solve_top_n_weighted_set_covers(faults: np.ndarray, stabs: np.ndarray, t: int, max_combinations: int, max_time_sec: int, top_n: int = 5) -> list[list[np.ndarray]]:
+def _solve_top_n_weighted_set_covers(
+    faults: np.ndarray, stabs: np.ndarray, t: int, max_combinations: int, max_time_sec: int, top_n: int, target_coverage: np.ndarray | int = 1
+) -> list[list[np.ndarray]]:
     faults = faults[np.any(faults, axis=1)]
     if len(faults) == 0:
         return [[]]
         
     candidate_stabs = _generate_candidate_stabilizers(stabs, max_combinations)
-    if len(candidate_stabs) == 0:
+    if candidate_stabs.shape[0] == 0:
         return []
         
-    coverage = ((candidate_stabs @ faults.T) % 2).astype(bool)
     weights = np.sum(candidate_stabs, axis=1)
+    
     from spiderstate.optimize_parity_matrix import cnot_cost
     costs = np.array([cnot_cost(np.ones((1, w), dtype=int), t) for w in weights])
+    
+    coverage = ((candidate_stabs @ faults.T) % 2).astype(bool)
     
     num_candidates = candidate_stabs.shape[0]
     
@@ -101,7 +127,11 @@ def _solve_top_n_weighted_set_covers(faults: np.ndarray, stabs: np.ndarray, t: i
     if valid_cov.shape[1] == 0:
         return []
 
-    uncovered_start = np.ones(valid_cov.shape[1], dtype=bool)
+    if isinstance(target_coverage, int):
+        uncovered_start = np.full(valid_cov.shape[1], target_coverage, dtype=int)
+    else:
+        uncovered_start = target_coverage[coverable].astype(int)
+        
     covered_counts = np.sum(valid_cov, axis=1)
     valid = covered_counts > 0
     if not valid.any():
@@ -120,11 +150,13 @@ def _solve_top_n_weighted_set_covers(faults: np.ndarray, stabs: np.ndarray, t: i
             break
             
         uncovered = uncovered_start.copy()
-        uncovered &= ~valid_cov[start_idx]
+        uncovered[valid_cov[start_idx]] -= 1
         
         selected_idx = [start_idx]
-        if uncovered.any():
+        if np.any(uncovered > 0):
+            from spiderstate.fast_verification import fast_greedy_set_cover
             rest_idx = fast_greedy_set_cover(valid_cov, costs, uncovered)
+
             selected_idx.extend(rest_idx)
             
         selected_idx.sort()
@@ -138,6 +170,22 @@ def _solve_top_n_weighted_set_covers(faults: np.ndarray, stabs: np.ndarray, t: i
             break
             
     return unique_covers
+
+def compute_effective_weights(faults: np.ndarray, stabs: np.ndarray) -> np.ndarray:
+    current_faults = faults.copy()
+    weights = np.sum(current_faults, axis=1)
+    improved = True
+    while improved:
+        improved = False
+        for stab in stabs:
+            candidate = (current_faults + stab) % 2
+            cand_weights = np.sum(candidate, axis=1)
+            mask = cand_weights < weights
+            if np.any(mask):
+                current_faults[mask] = candidate[mask]
+                weights[mask] = cand_weights[mask]
+                improved = True
+    return weights
 
 def find_low_weight_verification_stabilizers(fault_sets: list[PureFaultSet], stabs: np.ndarray, max_combinations: int = 4, max_time_sec: int = 60) -> list[list[np.ndarray]]:
     logger.info("Finding low-weight verification stabilizers using Z3 ILP")
@@ -192,14 +240,14 @@ def find_lookahead_verification_stabilizers(
     Finds verification stabilizers for t layers using mathematical lookahead.
     It minimizes the size of the next layer's raw fault set after filtering.
     """
-    # beam state: (realized_cost, layers, accumulated_stabs)
-    beam = [(0, [], [])]
+    from spiderstate.optimize_parity_matrix import cnot_cost
     
     candidate_stabs = _generate_candidate_stabilizers(stabs, max_combinations)
-    from spiderstate.optimize_parity_matrix import cnot_cost
     costs = np.array([cnot_cost(np.ones((1, w), dtype=int), t) for w in np.sum(candidate_stabs, axis=1)])
     
     raw_fault_sets = _generate_raw_fault_sets(single_faults, t, H_filter)
+    
+    beam = [(0.0, [], [])]
     
     for layer_idx in range(t):
         raw_current = raw_fault_sets[layer_idx]
@@ -219,7 +267,13 @@ def find_lookahead_verification_stabilizers(
                 next_beam_candidates.append((realized_cost, realized_cost, layers + [[]], accumulated_stabs))
                 continue
                 
-            candidate_covers = _solve_top_n_weighted_set_covers(surviving_faults, stabs, t, max_combinations, max_time_sec, top_n)
+            # Compute dynamic target coverage
+            W_eff = compute_effective_weights(surviving_faults, H_filter)
+            # layer_idx = number of faults - 1. So f_count = layer_idx + 1.
+            f_count = layer_idx + 1
+            target_coverage = np.clip(W_eff - f_count, 1, t)
+                
+            candidate_covers = _solve_top_n_weighted_set_covers(surviving_faults, stabs, t, max_combinations, max_time_sec, top_n, target_coverage=target_coverage)
             
             if not candidate_covers:
                 next_beam_candidates.append((realized_cost, realized_cost, layers + [[]], accumulated_stabs))

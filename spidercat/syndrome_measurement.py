@@ -106,6 +106,24 @@ def syndrome_measurement_circuit(qubits: Sequence[int], ancilla_start: int, t: i
 
     return permuted_circuit
 
+def bare_se_circuit(qubits: Sequence[int], ancilla: int, basis: Literal["X", "Z"] = "Z") -> stim.Circuit:
+    circ = stim.Circuit()
+    circ.append("R", [ancilla])
+    
+    if basis == "X":
+        circ.append("H", [ancilla])
+        for q in qubits:
+            circ.append("CX", [ancilla, q])
+        circ.append("H", [ancilla])
+    else:
+        for q in qubits:
+            circ.append("CX", [q, ancilla])
+            
+    circ.append("M", [ancilla])
+    circ.append("DETECTOR", stim.target_rec(-1))
+    
+    return circ
+
 
 def permute_circ(circ: stim.Circuit, q_to_mapped: dict[int, int], qubits: Sequence[int]) -> stim.Circuit:
     permuted_circuit = stim.Circuit()

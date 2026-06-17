@@ -1,6 +1,6 @@
 import numpy as np
 
-def fast_greedy_set_cover(coverage: np.ndarray, costs: np.ndarray, initial_uncovered: np.ndarray = None) -> list[int]:
+def fast_greedy_set_cover(coverage: np.ndarray, costs: np.ndarray, initial_uncovered: np.ndarray = None, target_coverage: int = 1) -> list[int]:
     """
     Vectorized greedy set cover algorithm.
     coverage: (num_candidates, num_faults) boolean array
@@ -8,16 +8,17 @@ def fast_greedy_set_cover(coverage: np.ndarray, costs: np.ndarray, initial_uncov
     """
     num_candidates, num_faults = coverage.shape
     if initial_uncovered is None:
-        uncovered = np.ones(num_faults, dtype=bool)
+        remaining_coverage = np.full(num_faults, target_coverage, dtype=int)
     else:
-        uncovered = initial_uncovered.copy()
+        remaining_coverage = initial_uncovered.astype(int)
         
     selected_idx = []
     ratios = np.full(num_candidates, np.inf)
     
-    while uncovered.any():
+    while np.any(remaining_coverage > 0):
         # Count newly covered faults for each candidate
-        covered_counts = np.sum(coverage[:, uncovered], axis=1)
+        active_faults = remaining_coverage > 0
+        covered_counts = np.sum(coverage[:, active_faults], axis=1)
         
         valid = covered_counts > 0
         if not valid.any():
@@ -29,8 +30,8 @@ def fast_greedy_set_cover(coverage: np.ndarray, costs: np.ndarray, initial_uncov
         best_idx = np.argmin(ratios)
         selected_idx.append(best_idx)
         
-        # Update uncovered
-        uncovered &= ~coverage[best_idx]
+        # Update remaining_coverage
+        remaining_coverage[coverage[best_idx]] -= 1
         
     return selected_idx
 

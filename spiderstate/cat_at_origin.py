@@ -8,8 +8,9 @@ from spiderstate.spider_leg_matcher import match_edges
 from spiderstate.utils import find_pivots_in_matrix, load_qecc, count_operations
 from spiderstate.well_ordered_cat_state import well_ordered_ft_cat_state_data
 from spiderstate.optimize_parity_matrix import has_unique_ones_property, optimize_fault_tolerant_matrix, row_optimize_matrix
-from spidercat.syndrome_measurement import fao_se_circuit
-from spiderstate.verification import find_lookahead_verification_stabilizers, compute_unitary_fault_set_1
+from spidercat.syndrome_measurement import fao_se_circuit, bare_se_circuit
+from spiderstate.verification import find_lookahead_verification_stabilizers, compute_unitary_fault_set_1, compute_bare_injected_faults
+from typing import Literal
 
 
 
@@ -161,7 +162,8 @@ def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False) -> stim.Circuit:
 
 def cat_at_origin_with_verification(
     H_x: np.ndarray, H_z: np.ndarray, L_x: np.ndarray, L_z: np.ndarray, d: int,
-    state: str = "0", max_col_ops: int = 10, top_n: int = 50, max_basis_tries: int = 10_000, verbose: bool = False
+    state: str = "0", max_col_ops: int = 100, top_n: int = 50, max_basis_tries: int = 10_000,
+    first_layer: Literal["X", "Z", "none"] = "none", verbose: bool = False
 ) -> stim.Circuit:
     t = d // 2
     
@@ -193,51 +195,91 @@ def cat_at_origin_with_verification(
     for c, n in col_ops:
         circ.append("CX", [c, n])
     circ.append("TICK", [])
+    
     if verbose:
         print("Computing initial single faults...")
     single_faults_x = compute_unitary_fault_set_1(col_ops, num_qubits=H_x.shape[1], kind="X")
     single_faults_z = compute_unitary_fault_set_1(col_ops, num_qubits=H_x.shape[1], kind="Z")
+    
     if verbose:
-        print(f"\nRunning lookahead verification stabilizers search for t={t} layers (top_n={top_n})...")
-        print("\n--- X Faults Verification ---")
-    ver_x_stabs_layers = find_lookahead_verification_stabilizers(
-        single_faults=single_faults_x,
-        stabs=stabs_x,
-        H_filter=H_filter_x,
-        t=t,
-        top_n=top_n,
-        verbose=verbose
-    )
-    if verbose:
-        print("\n--- Z Faults Verification ---")
-    ver_z_stabs_layers = find_lookahead_verification_stabilizers(
-        single_faults=single_faults_z,
-        stabs=stabs_z,
-        H_filter=H_filter_z,
-        t=t,
-        top_n=top_n,
-        verbose=verbose
-    )
-    ancilla_start = H_x.shape[1]
-    if verbose:
-        print("\nSynthesizing X fault verification circuits...")
-    for layer in ver_x_stabs_layers:
-        for stab in layer:
-            qubits = np.where(stab)[0].tolist()
-            meas_circ = fao_se_circuit(qubits=qubits, ancilla_start=ancilla_start, t=t, basis="Z")
-            meas_circ.append("DETECTOR", stim.target_rec(-1))
-            circ += meas_circ
-            ancilla_start = meas_circ.num_qubits
-    if verbose:
-        print("\nSynthesizing Z fault verification circuits...")
-    ancilla_start = H_x.shape[1]
-    for layer in ver_z_stabs_layers:
-        for stab in layer:
-            qubits = np.where(stab)[0].tolist()
-            meas_circ = fao_se_circuit(qubits=qubits, ancilla_start=ancilla_start, t=t, basis="X")
-            meas_circ.append("DETECTOR", stim.target_rec(-1))
-            circ += meas_circ
-            ancilla_start = meas_circ.num_qubits
+        print(f"\nRunning verification stabilizers search for t={t} layers (top_n={top_n}, first_layer={first_layer})...")
+
+    ver_x_stabs_layers = []
+    ver_z_stabs_layers = []
+    
+    if first_layer == "X":
+        if verbose: print("\n--- X Faults Verification (Non-FT) ---")
+        ver_x_stabs_layers = find_lookahead_verification_stabilizers(
+            single_faults=single_faults_x, stabs=stabs_x, H_filter=H_filter_x, t=t, top_n=top_n, verbose=verbose
+        )
+        injected_z = compute_bare_injected_faults(ver_x_stabs_layers, H_x.shape[1])
+        single_faults_z.add_faults(injected_z.faults)
+        single_faults_z.remove_duplicates()
+        if verbose: print(f"Injected {len(injected_z.faults)} Z faults into Z-verification pool.")
+        if verbose: print("\n--- Z Faults Verification (FT) ---")
+        ver_z_stabs_layers = find_lookahead_verification_stabilizers(
+            single_faults=single_faults_z, stabs=stabs_z, H_filter=H_filter_z, t=t, top_n=top_n, verbose=verbose
+        )
+    elif first_layer == "Z":
+        if verbose: print("\n--- Z Faults Verification (Non-FT) ---")
+        ver_z_stabs_layers = find_lookahead_verification_stabilizers(
+            single_faults=single_faults_z, stabs=stabs_z, H_filter=H_filter_z, t=t, top_n=top_n, verbose=verbose
+        )
+        injected_x = compute_bare_injected_faults(ver_z_stabs_layers, H_x.shape[1])
+        single_faults_x.add_faults(injected_x.faults)
+        single_faults_x.remove_duplicates()
+        if verbose: print(f"Injected {len(injected_x.faults)} X faults into X-verification pool.")
+        if verbose: print("\n--- X Faults Verification (FT) ---")
+        ver_x_stabs_layers = find_lookahead_verification_stabilizers(
+            single_faults=single_faults_x, stabs=stabs_x, H_filter=H_filter_x, t=t, top_n=top_n, verbose=verbose
+        )
+    else:
+        if verbose: print("\n--- X Faults Verification (FT) ---")
+        ver_x_stabs_layers = find_lookahead_verification_stabilizers(
+            single_faults=single_faults_x, stabs=stabs_x, H_filter=H_filter_x, t=t, top_n=top_n, verbose=verbose
+        )
+        if verbose: print("\n--- Z Faults Verification (FT) ---")
+        ver_z_stabs_layers = find_lookahead_verification_stabilizers(
+            single_faults=single_faults_z, stabs=stabs_z, H_filter=H_filter_z, t=t, top_n=top_n, verbose=verbose
+        )
+
+    def synthesize_X_layer():
+        nonlocal circ
+        ancilla_start = H_x.shape[1]
+        if verbose: print("\nSynthesizing X fault verification circuits...")
+        for layer in ver_x_stabs_layers:
+            for stab in layer:
+                qubits = np.where(stab)[0].tolist()
+                if first_layer == "X":
+                    meas_circ = bare_se_circuit(qubits=qubits, ancilla=ancilla_start, basis="Z")
+                else:
+                    meas_circ = fao_se_circuit(qubits=qubits, ancilla_start=ancilla_start, t=t, basis="Z")
+                    meas_circ.append("DETECTOR", stim.target_rec(-1))
+                circ += meas_circ
+                ancilla_start = meas_circ.num_qubits
+
+    def synthesize_Z_layer():
+        nonlocal circ
+        ancilla_start = H_x.shape[1]
+        if verbose: print("\nSynthesizing Z fault verification circuits...")
+        for layer in ver_z_stabs_layers:
+            for stab in layer:
+                qubits = np.where(stab)[0].tolist()
+                if first_layer == "Z":
+                    meas_circ = bare_se_circuit(qubits=qubits, ancilla=ancilla_start, basis="X")
+                else:
+                    meas_circ = fao_se_circuit(qubits=qubits, ancilla_start=ancilla_start, t=t, basis="X")
+                    meas_circ.append("DETECTOR", stim.target_rec(-1))
+                circ += meas_circ
+                ancilla_start = meas_circ.num_qubits
+
+    if first_layer == "Z":
+        synthesize_Z_layer()
+        synthesize_X_layer()
+    else:
+        synthesize_X_layer()
+        synthesize_Z_layer()
+        
     return circ
 
 

@@ -5,7 +5,7 @@ import numpy as np
 import stim
 import re
 
-from spiderstate.utils import SPECIAL_GATES, count_operations
+from spiderstate.utils import SPECIAL_GATES, count_operations, NOISE_GATES
 
 
 # ==============================================================================
@@ -177,7 +177,7 @@ def extract_deterministic_failure(
     )
 
     # 2. Extract E_init faults
-    faults_to_inject = []
+    faults_to_inject = {}
     for exp in explanations:
         loc = exp.circuit_error_locations[0]
         ins_offset = loc.stack_frames[0].instruction_offset
@@ -192,45 +192,25 @@ def extract_deterministic_failure(
             elif target.is_z_target:
                 paulis.append(('Z', target.value))
 
-        faults_to_inject.append({
-            'instruction_offset': ins_offset,
-            'paulis': paulis,
-            'injected': False
-        })
+        faults_to_inject[ins_offset] = paulis
 
     # 3. Iterate through the noisy circuit to rebuild the deterministic one
     failed_circ = stim.Circuit()
 
-    for idx, inst in enumerate(flat_noisy_prep):
+    for idx, inst in enumerate(flat_eval_circ):
         # Inject the deterministic fault at the exact noisy index match
-        for fault in faults_to_inject:
-            if not fault['injected'] and fault['instruction_offset'] == idx:
-                for p_type, p_val in fault['paulis']:
-                    failed_circ.append(p_type, [p_val])
-                fault['injected'] = True
-
-        # We explicitly keep TICKs to preserve time slices
-        if inst.name == "TICK":
-            failed_circ.append(inst)
+        if idx in faults_to_inject:
+            for p_type, p_val in faults_to_inject[idx]:
+                failed_circ.append(p_type, [p_val])
+            del faults_to_inject[idx]
             continue
 
-        # Strip out special gates (DETECTOR, OBSERVABLE_INCLUDE, etc.)
-        if inst.name in SPECIAL_GATES:
+        if inst.name in NOISE_GATES:
             continue
 
-        # Strip out the background noise channels
-        if "ERROR" in inst.name or "DEPOLARIZE" in inst.name:
-            continue
-
-        # Append the standard quantum gate
         failed_circ.append(inst)
 
-    # 4. Fallback (safety net)
-    for fault in faults_to_inject:
-        if not fault['injected']:
-            for p_type, p_val in fault['paulis']:
-                failed_circ.append(p_type, [p_val])
-            fault['injected'] = True
+    # assert len(faults_to_inject) == 0
 
     # 5. Inject E_data completion (Virtual Logical Faults)
     if failed_y_indices:
@@ -316,7 +296,7 @@ def verify_ftsp_ilp(
 
 if __name__ == "__main__":
     import random
-    random.seed(42)
+    # random.seed(40)
 
     from spiderstate.utils import load_qecc, make_stim_circ_noisy
     from spiderstate.cat_at_origin import cat_at_origin_with_verification
@@ -327,8 +307,13 @@ if __name__ == "__main__":
 
     print(f"Generating circuit for {code} (d={d}, t={t})...")
     circ = cat_at_origin_with_verification(
-        H_x=H_x, H_z=H_z, L_x=L_x, L_z=L_z, d=d, state="0", verbose=True
+        H_x=H_x, H_z=H_z, L_x=L_x, L_z=L_z, d=d, state="0", verbose=True, first_layer="X", max_col_ops=100
     )
+
+    print()
+    print(circ)
+    print()
+
     num_cx, num_meas = count_operations(circ)
     print(f"  [{code}] circuit generated!\n"
           f"  #CX: {num_cx}, #Meas: {num_meas}, Total: {num_cx + num_meas}")
@@ -336,5 +321,3 @@ if __name__ == "__main__":
     print("\nRunning Fast DEM/SAT FT Verification...")
     res_exhaustive = verify_ftsp_ilp(circ, H_z, np.atleast_2d(L_z), d, t, verbose=True)
     print("Verification Result:", res_exhaustive is True)
-    # if res_exhaustive is True:
-    #     print(circ)

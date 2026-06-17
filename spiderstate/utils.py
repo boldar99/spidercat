@@ -14,6 +14,7 @@ X_MEASUREMENTS = {"MX"}
 Z_INITIALIZATIONS = {"MR", "R"}
 X_INITIALIZATIONS = {"RX"}
 SPECIAL_GATES = {"DETECTOR", "OBSERVABLE_INCLUDE", "SHIFT_COORDS", "QUBIT_COORDS", "TICK"}
+NOISE_GATES = {"X_ERROR", "Z_ERROR", "DEPOLARIZE1", "DEPOLARIZE2"}
 
 
 def layered_ops_to_noisy_stim_circuit(layered_ops: list[list[tuple]], num_qubits: int, p_1: float, p_2: float, p_init: float, p_meas: float, p_mem: float, mem_error_after_every_cnot=False) -> stim.Circuit:
