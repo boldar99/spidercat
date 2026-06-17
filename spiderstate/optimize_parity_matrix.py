@@ -56,6 +56,18 @@ def cnot_cost(M: np.ndarray, t: int) -> int:
     return cost
 
 
+def ancilla_cost(M: np.ndarray, t: int) -> int:
+    row_sums = np.sum(M, axis=1)
+    column_sums = np.sum(M, axis=0)
+    cost = 0
+    for n in column_sums:
+        if n > 1:
+            cost += minimum_number_of_flags(n + 1, t)
+    for n in row_sums:
+        cost += minimum_number_of_flags(n, t)
+    return cost
+
+
 # --- OPTIMIZATION FUNCTIONS ---
 
 def invert_mod2(matrix: np.ndarray) -> np.ndarray:
@@ -203,12 +215,13 @@ def simulated_annealing_phase2(base_M: np.ndarray, t: int, max_col_ops: int,
     return best_M, best_ops, best_cost
 
 
-def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, H_x: np.ndarray = None, H_z: np.ndarray = None, max_basis_tries: int = 5000):
+def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, H_x: np.ndarray = None, H_z: np.ndarray = None, max_basis_tries: int = 5000, return_portfolio: bool = False, beam_width: int = 5, portfolio_size: int = 20, stabs_X: np.ndarray = None, stabs_Z: np.ndarray = None, H_filter_X: np.ndarray = None, H_filter_Z: np.ndarray = None):
     """
     Returns:
     - matrix_after_row_ops
     - final_matrix_after_col_ops
     - col_ops_performed (list of tuples: (target, source))
+    If return_portfolio is True, returns (matrix_after_row_ops, portfolio) where portfolio is a list of (M, col_ops)
     """
     r, c = M.shape
     best_row_op_cost, matrix_after_row_ops = row_optimize_matrix(M, t, max_basis_tries)
@@ -221,66 +234,79 @@ def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, H_x:
     candidate_stabs_X = None
     candidate_stabs_Z = None
 
-    if H_x is not None and H_z is not None:
-        candidate_stabs_X = _generate_candidate_stabilizers(H_x, 4)
-        candidate_stabs_Z = _generate_candidate_stabilizers(H_z, 4)
+    if stabs_X is None and H_x is not None:
+        stabs_X = H_x
+    if stabs_Z is None and H_z is not None:
+        stabs_Z = H_z
+
+    if stabs_X is not None and stabs_Z is not None:
+        candidate_stabs_X = _generate_candidate_stabilizers(stabs_X, 4)
+        candidate_stabs_Z = _generate_candidate_stabilizers(stabs_Z, 4)
         
     def _cnot_cost_fn(s):
         return cnot_cost(s, t)
         
-    base_tracker = DynamicCoverageTracker(current_F_X, current_F_Z, candidate_stabs_X, candidate_stabs_Z, _cnot_cost_fn)
+    base_tracker = DynamicCoverageTracker(
+        current_F_X, current_F_Z, 
+        candidate_stabs_X, candidate_stabs_Z, 
+        _cnot_cost_fn,
+        H_filter_X=H_filter_X,
+        H_filter_Z=H_filter_Z
+    )
 
-    current_base_cost = cnot_cost(current_M, t) + base_tracker.evaluate_cost()
-    col_ops_performed = []
-
+    current_M = matrix_after_row_ops.copy()
+    initial_score = cnot_cost(current_M, t) + base_tracker.evaluate_cost()
+    beam = [(initial_score, current_M, base_tracker, [])]
+    global_best = beam[0]
+    
+    all_candidates = [(initial_score, current_M, [])]
+    
     for op_num in range(max_col_ops):
-        best_step_drop = 0
-        best_step_M = None
-        best_step_tracker = None
-        best_step_op = None
+        next_beam = []
+        for score, curr_M, curr_tracker, curr_ops in beam:
+            if ancilla_cost(curr_M, t) == 0:
+                # Reached the end: 0 ancillas needed!
+                return matrix_after_row_ops, curr_M, curr_ops[::-1]
+                
+            for i in range(c):
+                for j in range(c):
+                    if i == j:
+                        continue
+                    test_M = curr_M.copy()
+                    test_M[:, i] = (test_M[:, i] + test_M[:, j]) % 2
 
-        for i in range(c):
-            for j in range(c):
-                if i == j:
-                    continue
-
-                test_M = current_M.copy()
-                test_M[:, i] = (test_M[:, i] + test_M[:, j]) % 2
-
-                if has_unique_ones_property(test_M):
-                    test_tracker = base_tracker.copy()
-                    
-                    # Apply CNOT to tracker (source=j, target=i)
-                    test_tracker.update_cnot(j, i)
-                    
-                    new_cost = cnot_cost(test_M, t) + op_num + test_tracker.evaluate_cost()
-                    drop = current_base_cost - new_cost
-                    if drop > 1e-5:
-                        best_step_drop = drop
-                        best_step_M = test_M
-                        best_step_tracker = test_tracker
-                        best_step_op = (i, j)
-
-        if best_step_drop > 1e-5:
-            current_M = best_step_M
-            base_tracker = best_step_tracker
-            current_base_cost -= best_step_drop
-            col_ops_performed.append(best_step_op[::-1])
-        else:
+                    if has_unique_ones_property(test_M):
+                        test_tracker = curr_tracker.copy()
+                        test_tracker.update_cnot(j, i)
+                        heur = cnot_cost(test_M, t) + op_num + test_tracker.evaluate_cost()
+                        next_beam.append((heur, test_M, test_tracker, curr_ops + [(j, i)]))
+        
+        if not next_beam:
             break
+            
+        next_beam.sort(key=lambda x: x[0])
+        seen = set()
+        beam = []
+        for cand in next_beam:
+            if cand[0] < global_best[0]:
+                global_best = cand
+            m_tup = tuple(cand[1].flatten())
+            if m_tup not in seen:
+                seen.add(m_tup)
+                beam.append(cand)
+            if len(beam) >= beam_width:
+                break
 
-    final_matrix_after_col_ops = current_M
-
-    return matrix_after_row_ops, final_matrix_after_col_ops, col_ops_performed[::-1]
+    best_score, best_M, best_tracker, best_ops = global_best
+    return matrix_after_row_ops, best_M, best_ops[::-1]
 
 
 # Example Execution
 if __name__ == "__main__":
-    is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc("23_1_7", "MQT")
+    is_self_dual, H_z, H_x, L_x, L_z, d = load_qecc("12_2_4")
     t = d // 2
-    H_x = H_z
 
-    row_M, final_M, col_ops = optimize_fault_tolerant_matrix(H_x, t=t, max_col_ops=10, max_basis_tries=10_000)
+    row_M, final_M, col_ops = optimize_fault_tolerant_matrix(H_x, t=t, max_col_ops=0, max_basis_tries=10_000)
     # row_M = pivot_optimize_parity_matrix(H_x, t=t, max_basis_tries=100_000)
 
 

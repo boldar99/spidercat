@@ -79,10 +79,10 @@ def _greedy_set_cover(coverage: np.ndarray, weights: np.ndarray, candidate_stabs
         
     return [candidate_stabs[i] for i in selected_idx]
 
-def _solve_top_n_weighted_set_covers(faults: np.ndarray, stabs: np.ndarray, max_combinations: int, max_time_sec: int, top_n: int = 5) -> list[list[np.ndarray]]:
+def _solve_top_n_weighted_set_covers(faults: np.ndarray, stabs: np.ndarray, t: int, max_combinations: int, max_time_sec: int, top_n: int = 5) -> list[list[np.ndarray]]:
     faults = faults[np.any(faults, axis=1)]
     if len(faults) == 0:
-        return []
+        return [[]]
         
     candidate_stabs = _generate_candidate_stabilizers(stabs, max_combinations)
     if len(candidate_stabs) == 0:
@@ -90,7 +90,8 @@ def _solve_top_n_weighted_set_covers(faults: np.ndarray, stabs: np.ndarray, max_
         
     coverage = ((candidate_stabs @ faults.T) % 2).astype(bool)
     weights = np.sum(candidate_stabs, axis=1)
-    costs = weights * 10 + 1
+    from spiderstate.optimize_parity_matrix import cnot_cost
+    costs = np.array([cnot_cost(np.ones((1, w), dtype=int), t) for w in weights])
     
     num_candidates = candidate_stabs.shape[0]
     
@@ -147,7 +148,7 @@ def find_low_weight_verification_stabilizers(fault_sets: list[PureFaultSet], sta
         if len(faults_obj) == 0:
             layers[num_errors] = []
             continue
-        covers = _solve_top_n_weighted_set_covers(faults_obj.faults, stabs, max_combinations, max_time_sec, top_n=1)
+        covers = _solve_top_n_weighted_set_covers(faults_obj.faults, stabs, n_layers, max_combinations, max_time_sec, top_n=1)
         if covers:
             layers[num_errors] = covers[0]
     return layers
@@ -195,7 +196,8 @@ def find_lookahead_verification_stabilizers(
     beam = [(0, [], [])]
     
     candidate_stabs = _generate_candidate_stabilizers(stabs, max_combinations)
-    costs = np.sum(candidate_stabs, axis=1) * 10 + 1
+    from spiderstate.optimize_parity_matrix import cnot_cost
+    costs = np.array([cnot_cost(np.ones((1, w), dtype=int), t) for w in np.sum(candidate_stabs, axis=1)])
     
     raw_fault_sets = _generate_raw_fault_sets(single_faults, t, H_filter)
     
@@ -217,7 +219,7 @@ def find_lookahead_verification_stabilizers(
                 next_beam_candidates.append((realized_cost, realized_cost, layers + [[]], accumulated_stabs))
                 continue
                 
-            candidate_covers = _solve_top_n_weighted_set_covers(surviving_faults, stabs, max_combinations, max_time_sec, top_n)
+            candidate_covers = _solve_top_n_weighted_set_covers(surviving_faults, stabs, t, max_combinations, max_time_sec, top_n)
             
             if not candidate_covers:
                 next_beam_candidates.append((realized_cost, realized_cost, layers + [[]], accumulated_stabs))
@@ -226,7 +228,7 @@ def find_lookahead_verification_stabilizers(
             if layer_idx == t - 1:
                 # Last layer: no lookahead needed
                 best_last = candidate_covers[0]
-                best_last_score = sum(np.sum(s) * 10 + 1 for s in best_last)
+                best_last_score = sum(cnot_cost(np.ones((1, np.sum(s)), dtype=int), t) for s in best_last)
                 final_cost = realized_cost + best_last_score
                 next_beam_candidates.append((final_cost, final_cost, layers + [best_last], accumulated_stabs + best_last))
                 continue
@@ -250,7 +252,7 @@ def find_lookahead_verification_stabilizers(
                     uncoverable = fs_size - valid_cov.shape[1]
                     next_cost += uncoverable * 1000
                     
-                cover_cost = sum(np.sum(s) * 10 + 1 for s in cover)
+                cover_cost = sum(cnot_cost(np.ones((1, np.sum(s)), dtype=int), t) for s in cover)
                 new_realized_cost = realized_cost + cover_cost
                 lookahead_score = new_realized_cost + next_cost
                 

@@ -5,7 +5,7 @@ import stim
 from spidercat.circuit_extraction import CatStateExtractor, StimBuilder
 from spidercat.draw import draw_forest_on_graph, display_digraph
 from spiderstate.spider_leg_matcher import match_edges
-from spiderstate.utils import find_pivots_in_matrix
+from spiderstate.utils import find_pivots_in_matrix, load_qecc, count_operations
 from spiderstate.well_ordered_cat_state import well_ordered_ft_cat_state_data
 from spiderstate.optimize_parity_matrix import has_unique_ones_property, optimize_fault_tolerant_matrix, row_optimize_matrix
 from spidercat.syndrome_measurement import fao_se_circuit
@@ -34,7 +34,7 @@ def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False) -> stim.Circuit:
         raise ValueError(f"H is not representing a bipartite graph state.")
 
     N = H.shape[1]
-    t = (d - 1) // 2
+    t = d // 2
 
     pivots, rows_without_pivots = find_pivots_in_matrix(H)
     pivots_perm = [row for row, col in sorted(pivots.items(), key=lambda item: item[1])]
@@ -164,18 +164,7 @@ def cat_at_origin_with_verification(
     state: str = "0", max_col_ops: int = 10, top_n: int = 50, max_basis_tries: int = 10_000, verbose: bool = False
 ) -> stim.Circuit:
     t = d // 2
-    if verbose:
-        print(f"Optimizing parity matrix (max_col_ops={max_col_ops})...")
-    row_M, final_M, col_ops = optimize_fault_tolerant_matrix(H_x, t=t, max_col_ops=max_col_ops, H_x=H_x, H_z=H_z, max_basis_tries=max_basis_tries)
-    circ = cat_at_origin(final_M, d)
-    circ.append("TICK", [])
-    for c, n in col_ops:
-        circ.append("CX", [c, n])
-    circ.append("TICK", [])
-    if verbose:
-        print("Computing initial single faults...")
-    single_faults_x = compute_unitary_fault_set_1(col_ops, num_qubits=H_x.shape[1], kind="X")
-    single_faults_z = compute_unitary_fault_set_1(col_ops, num_qubits=H_x.shape[1], kind="Z")
+    
     if state == "0":
         if verbose: print("Configuring stabilizers for logical |0> state preparation...")
         stabs_x = np.concatenate((H_z, L_z))
@@ -190,6 +179,24 @@ def cat_at_origin_with_verification(
         H_filter_z = H_z
     else:
         raise ValueError(f"Unknown state: {state}")
+        
+    if verbose:
+        print(f"Optimizing parity matrix (max_col_ops={max_col_ops})...")
+        
+    row_M, final_M, col_ops = optimize_fault_tolerant_matrix(
+        H_x, t=t, max_col_ops=max_col_ops, H_x=H_x, H_z=H_z, max_basis_tries=max_basis_tries,
+        stabs_X=stabs_x, stabs_Z=stabs_z, H_filter_X=H_filter_x, H_filter_Z=H_filter_z
+    )
+    
+    circ = cat_at_origin(final_M, d)
+    circ.append("TICK", [])
+    for c, n in col_ops:
+        circ.append("CX", [c, n])
+    circ.append("TICK", [])
+    if verbose:
+        print("Computing initial single faults...")
+    single_faults_x = compute_unitary_fault_set_1(col_ops, num_qubits=H_x.shape[1], kind="X")
+    single_faults_z = compute_unitary_fault_set_1(col_ops, num_qubits=H_x.shape[1], kind="Z")
     if verbose:
         print(f"\nRunning lookahead verification stabilizers search for t={t} layers (top_n={top_n})...")
         print("\n--- X Faults Verification ---")
@@ -232,3 +239,22 @@ def cat_at_origin_with_verification(
             circ += meas_circ
             ancilla_start = meas_circ.num_qubits
     return circ
+
+
+if __name__ == "__main__":
+    code = "12_2_4"
+    max_col_ops = 100
+
+    print(f"Loading QECC: {code}")
+    is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code)
+
+    final_circ = cat_at_origin_with_verification(
+        H_x=H_x, H_z=H_z, L_x=L_x, L_z=L_z, d=d,
+        max_col_ops=max_col_ops, verbose=True
+    )
+
+    print("\n--- Final Fault Tolerant Verification Circuit ---")
+    print(f"Total Qubits: {final_circ.num_qubits}")
+    print(f"Num CX: {count_operations(final_circ)[0]}")
+    print(f"Total instructions: {sum(count_operations(final_circ))}")
+

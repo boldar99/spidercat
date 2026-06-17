@@ -35,7 +35,7 @@ def fast_greedy_set_cover(coverage: np.ndarray, costs: np.ndarray, initial_uncov
     return selected_idx
 
 class DynamicCoverageTracker:
-    def __init__(self, F_X: np.ndarray, F_Z: np.ndarray, candidate_stabs_X: np.ndarray, candidate_stabs_Z: np.ndarray, cnot_cost_fn):
+    def __init__(self, F_X: np.ndarray, F_Z: np.ndarray, candidate_stabs_X: np.ndarray, candidate_stabs_Z: np.ndarray, cnot_cost_fn, H_filter_X: np.ndarray = None, H_filter_Z: np.ndarray = None):
         self.F_X = F_X.copy()
         self.F_Z = F_Z.copy()
         self.c = F_X.shape[1]
@@ -43,6 +43,8 @@ class DynamicCoverageTracker:
         self.candidate_stabs_X = candidate_stabs_X
         self.candidate_stabs_Z = candidate_stabs_Z
         self.cnot_cost_fn = cnot_cost_fn
+        self.H_filter_X = H_filter_X
+        self.H_filter_Z = H_filter_Z
         
         self.has_X_cands = candidate_stabs_X is not None and len(candidate_stabs_X) > 0
         self.has_Z_cands = candidate_stabs_Z is not None and len(candidate_stabs_Z) > 0
@@ -70,6 +72,8 @@ class DynamicCoverageTracker:
         new_obj.candidate_stabs_X = self.candidate_stabs_X
         new_obj.candidate_stabs_Z = self.candidate_stabs_Z
         new_obj.cnot_cost_fn = self.cnot_cost_fn
+        new_obj.H_filter_X = self.H_filter_X
+        new_obj.H_filter_Z = self.H_filter_Z
         new_obj.has_X_cands = self.has_X_cands
         new_obj.has_Z_cands = self.has_Z_cands
         
@@ -131,22 +135,38 @@ class DynamicCoverageTracker:
         verif_cost = 0
         
         if self.has_Z_cands:
-            faults_active_X = np.any(self.F_X, axis=1)
+            if self.H_filter_X is not None:
+                syndromes = (self.F_X @ self.H_filter_X.T) % 2
+                faults_active_X = np.sum(syndromes, axis=1) >= 2
+            else:
+                faults_active_X = np.any(self.F_X, axis=1)
+                
             valid_cov = self.coverage_X[:, faults_active_X]
             
             coverable = np.any(valid_cov, axis=0)
             valid_cov = valid_cov[:, coverable]
+            
+            uncoverable = np.sum(~coverable)
+            verif_cost += uncoverable * 1000
             
             if valid_cov.shape[1] > 0:
                 chosen_idx = fast_greedy_set_cover(valid_cov, self.costs_Z)
                 verif_cost += np.sum(self.costs_Z[chosen_idx])
                 
         if self.has_X_cands:
-            faults_active_Z = np.any(self.F_Z, axis=1)
+            if self.H_filter_Z is not None:
+                syndromes = (self.F_Z @ self.H_filter_Z.T) % 2
+                faults_active_Z = np.sum(syndromes, axis=1) >= 2
+            else:
+                faults_active_Z = np.any(self.F_Z, axis=1)
+                
             valid_cov = self.coverage_Z[:, faults_active_Z]
             
             coverable = np.any(valid_cov, axis=0)
             valid_cov = valid_cov[:, coverable]
+            
+            uncoverable = np.sum(~coverable)
+            verif_cost += uncoverable * 1000
             
             if valid_cov.shape[1] > 0:
                 chosen_idx = fast_greedy_set_cover(valid_cov, self.costs_X)
