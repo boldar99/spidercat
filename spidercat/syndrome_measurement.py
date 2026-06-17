@@ -7,7 +7,7 @@ from spidercat.circuit_extraction import CatStateExtractor, StimBuilder, expand_
 from spidercat.draw import draw_forest_on_graph
 from spidercat.path_cover import find_all_path_covers
 from spidercat.spanning_tree import match_forest_leaves_to_marked_edges
-from spidercat.utils import load_solution_triplet
+from spidercat.utils import load_solution_triplet, get_project_root, qasm_to_stim
 
 
 def G_F_alt_for_t_0(N) -> tuple[nx.Graph, nx.Graph, int]:
@@ -100,6 +100,14 @@ def syndrome_measurement_circuit(qubits: Sequence[int], ancilla_start: int, t: i
             q_to_mapped[q] = ancilla_idx
             ancilla_idx += 1
 
+    permuted_circuit = permute_circ(circ, q_to_mapped, qubits)
+
+    permuted_circuit.append("M" if basis == "Z" else "MX", ancilla_start)
+
+    return permuted_circuit
+
+
+def permute_circ(circ: stim.Circuit, q_to_mapped: dict[int, int], qubits: Sequence[int]) -> stim.Circuit:
     permuted_circuit = stim.Circuit()
     data_qubits_set = set(qubits)
 
@@ -113,18 +121,43 @@ def syndrome_measurement_circuit(qubits: Sequence[int], ancilla_start: int, t: i
                 new_targets.append(mapped_q)
             else:
                 new_targets.append(t)
-        
+
         if new_targets:
             permuted_circuit.append(op.name, new_targets, op.gate_args_copy())
-
-    permuted_circuit.append("M" if basis == "Z" else "MX", ancilla_start)
-
     return permuted_circuit
 
 
+def fao_se_circuit(qubits: Sequence[int], ancilla_start: int, t: int, basis: Literal["X"] | Literal["Z"] = "Z") -> stim.Circuit:
+    n = len(qubits)
+
+    file = get_project_root().joinpath("flag_at_origin_circuits", f"d{2 * t + 1}-q{n + 1}-GHZ.qasm")
+    qasm_str = file.read_text()
+
+    fao_circ = qasm_to_stim(qasm_str)
+
+    q_to_mapped = {}
+    num_ancilla = fao_circ.num_qubits - n
+    for q in range(num_ancilla - 1):
+        q_to_mapped[q] = ancilla_start + q + 1
+    q_to_mapped[num_ancilla - 1] = ancilla_start
+    for q in range(n):
+        q_to_mapped[num_ancilla + q] = qubits[q]
+
+    permuted_circuit = permute_circ(fao_circ, q_to_mapped, qubits)
+    permuted_circuit.insert(0, stim.CircuitInstruction("R", range(ancilla_start, permuted_circuit.num_qubits)))
+    permuted_circuit.append("M", range(ancilla_start + 1, permuted_circuit.num_qubits))
+    for q in range(permuted_circuit.num_qubits - ancilla_start - 1):
+        permuted_circuit.append("DETECTOR", stim.target_rec(-q - 1))
+    permuted_circuit.append("MX", [ancilla_start])
+    if basis == "Z":
+        permuted_circuit.insert(0, stim.CircuitInstruction("H", qubits))
+        permuted_circuit.append(stim.CircuitInstruction("H", qubits))
+
+    return permuted_circuit
+
 if __name__ == '__main__':
     N, t = 6, 5
-    circ = syndrome_measurement_circuit(qubits=range(N), ancilla_start=N, t=t, basis="X")
+    circ = fao_se_circuit(qubits=[3, 6, 7, 10, 11, 12], ancilla_start=21, t=t, basis="X")
     # circ.append("M", range(N))
     print(circ.compile_sampler().sample(10))
     print(circ.diagram())

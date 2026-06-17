@@ -317,10 +317,13 @@ def verify_ftsp_ilp(
 
 
 if __name__ == "__main__":
+    import random
+    random.seed(42)
+
     from spiderstate.utils import load_qecc, make_stim_circ_noisy
     from spiderstate.cat_at_origin import cat_at_origin_with_verification
 
-    code = "20_2_6"
+    code = "19_1_5"
     is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code, "MQT")
     t = (d - 1) // 2
 
