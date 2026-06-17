@@ -46,6 +46,16 @@ class DynamicCoverageTracker:
         self.H_filter_X = H_filter_X
         self.H_filter_Z = H_filter_Z
         
+        if self.H_filter_X is not None:
+            self.S_X = (self.F_X @ self.H_filter_X.T) % 2
+        else:
+            self.S_X = None
+            
+        if self.H_filter_Z is not None:
+            self.S_Z = (self.F_Z @ self.H_filter_Z.T) % 2
+        else:
+            self.S_Z = None
+        
         self.has_X_cands = candidate_stabs_X is not None and len(candidate_stabs_X) > 0
         self.has_Z_cands = candidate_stabs_Z is not None and len(candidate_stabs_Z) > 0
         
@@ -74,6 +84,17 @@ class DynamicCoverageTracker:
         new_obj.cnot_cost_fn = self.cnot_cost_fn
         new_obj.H_filter_X = self.H_filter_X
         new_obj.H_filter_Z = self.H_filter_Z
+        
+        if self.S_X is not None:
+            new_obj.S_X = self.S_X.copy()
+        else:
+            new_obj.S_X = None
+            
+        if self.S_Z is not None:
+            new_obj.S_Z = self.S_Z.copy()
+        else:
+            new_obj.S_Z = None
+            
         new_obj.has_X_cands = self.has_X_cands
         new_obj.has_Z_cands = self.has_Z_cands
         
@@ -106,7 +127,16 @@ class DynamicCoverageTracker:
             self.coverage_Z ^= np.outer(active_candidates_X, active_faults_Z)
             
         # 2. Propagate existing faults
+        if self.H_filter_X is not None:
+            active_X = self.F_X[:, source] == 1
+            self.S_X[active_X] ^= self.H_filter_X[:, target]
+            
         self.F_X[:, target] ^= self.F_X[:, source]
+        
+        if self.H_filter_Z is not None:
+            active_Z = self.F_Z[:, target] == 1
+            self.S_Z[active_Z] ^= self.H_filter_Z[:, source]
+            
         self.F_Z[:, source] ^= self.F_Z[:, target]
         
         # 3. Inject new faults
@@ -115,12 +145,18 @@ class DynamicCoverageTracker:
         new_x[1, target] = 1
         new_x[2, source] = 1; new_x[2, target] = 1
         self.F_X = np.vstack((self.F_X, new_x))
+        if self.H_filter_X is not None:
+            new_s_x = (new_x @ self.H_filter_X.T) % 2
+            self.S_X = np.vstack((self.S_X, new_s_x))
         
         new_z = np.zeros((3, self.c), dtype=int)
         new_z[0, source] = 1
         new_z[1, target] = 1
         new_z[2, source] = 1; new_z[2, target] = 1
         self.F_Z = np.vstack((self.F_Z, new_z))
+        if self.H_filter_Z is not None:
+            new_s_z = (new_z @ self.H_filter_Z.T) % 2
+            self.S_Z = np.vstack((self.S_Z, new_s_z))
         
         # 4. Coverage for new faults
         if self.has_Z_cands:
@@ -136,8 +172,7 @@ class DynamicCoverageTracker:
         
         if self.has_Z_cands:
             if self.H_filter_X is not None:
-                syndromes = (self.F_X @ self.H_filter_X.T) % 2
-                faults_active_X = np.sum(syndromes, axis=1) >= 2
+                faults_active_X = np.sum(self.S_X, axis=1) >= 2
             else:
                 faults_active_X = np.any(self.F_X, axis=1)
                 
@@ -155,8 +190,7 @@ class DynamicCoverageTracker:
                 
         if self.has_X_cands:
             if self.H_filter_Z is not None:
-                syndromes = (self.F_Z @ self.H_filter_Z.T) % 2
-                faults_active_Z = np.sum(syndromes, axis=1) >= 2
+                faults_active_Z = np.sum(self.S_Z, axis=1) >= 2
             else:
                 faults_active_Z = np.any(self.F_Z, axis=1)
                 

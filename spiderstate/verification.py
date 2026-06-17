@@ -31,7 +31,7 @@ def _generate_candidate_stabilizers(stabs: np.ndarray, max_combinations: int) ->
     k = stabs.shape[0]
     candidate_stabs = []
     
-    if k <= 12:
+    if k <= 8:
         for i in range(1, 1 << k):
             comb = [j for j in range(k) if (i >> j) & 1]
             s = np.bitwise_xor.reduce(stabs[comb], axis=0)

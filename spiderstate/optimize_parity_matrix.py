@@ -240,8 +240,8 @@ def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, H_x:
         stabs_Z = H_z
 
     if stabs_X is not None and stabs_Z is not None:
-        candidate_stabs_X = _generate_candidate_stabilizers(stabs_X, 4)
-        candidate_stabs_Z = _generate_candidate_stabilizers(stabs_Z, 4)
+        candidate_stabs_X = _generate_candidate_stabilizers(stabs_X, 3)
+        candidate_stabs_Z = _generate_candidate_stabilizers(stabs_Z, 3)
         
     def _cnot_cost_fn(s):
         return cnot_cost(s, t)
