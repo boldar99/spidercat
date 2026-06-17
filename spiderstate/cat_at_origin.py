@@ -227,11 +227,8 @@ def cat_at_origin_with_verification(
     for layer in ver_z_stabs_layers:
         for stab in layer:
             qubits = np.where(stab)[0].tolist()
-            print(qubits, ancilla_start)
             meas_circ = fao_se_circuit(qubits=qubits, ancilla_start=ancilla_start, t=t, basis="X")
             meas_circ.append("DETECTOR", stim.target_rec(-1))
-            print(circ)
-            print()
             circ += meas_circ
             ancilla_start = meas_circ.num_qubits
     return circ

@@ -255,12 +255,15 @@ def get_project_root() -> Path:
     return Path(__file__).parent
 
 
-def load_qecc(code: str, method="FAO"):
+def load_qecc(code: str):
     root = get_project_root()
-    method = {
-        "fao": "FAO",
-        "mqt": "MQT",
-    }.get(method, method)
+    code_file = f"{code}.json"
+    for lib in os.listdir(root.joinpath("qeccs")):
+        if code_file in os.listdir(root.joinpath("qeccs", lib)):
+            method = lib
+            break
+    else:
+        raise FileNotFoundError(code)
 
     file = root.joinpath("qeccs", method, f"{code}.json")
 
@@ -312,6 +315,24 @@ def MQT_simp_QECCS():
         "31_1_7",
         "39_1_7"
     ]
+
+
+def count_operations(circ: stim.Circuit) -> tuple[int, int]:
+    """
+    Given a stim circuit, counts the number of operations.
+    Returns:
+        (num_two_qubit_ops, num_measurements)
+    """
+    operations = list(circ.flattened_operations())
+    
+    num_two_qubit_ops = 0
+    num_measurements = circ.num_measurements
+    
+    for op_name, targets, params in operations:
+        if op_name in TWO_QUBIT_GATES:
+            num_two_qubit_ops += len(targets) // 2
+            
+    return num_two_qubit_ops, num_measurements
 
 
 if __name__ == "__main__":
