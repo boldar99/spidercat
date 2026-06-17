@@ -328,14 +328,14 @@ if __name__ == "__main__":
     print(f"Generating circuit for {code} (d={d}, t={t})...")
     circ = cat_at_origin_with_verification(
         H_x=H_x, H_z=H_z, L_x=L_x, L_z=L_z, d=d,
-        state="0", max_col_ops=0, top_n=50, verbose=False
+        state="0", max_col_ops=1000, top_n=50, verbose=False
     )
     num_cx, num_meas = count_operations(circ)
     print(f"  [{code}] circuit generated!\n"
           f"  #CX: {num_cx}, #Meas: {num_meas}, Total: {num_cx + num_meas}")
 
     print("\nRunning Fast DEM/SAT FT Verification...")
-    res_exhaustive = verify_ftsp_ilp(circ, H_x, L_x, d, t, verbose=True)
+    res_exhaustive = verify_ftsp_ilp(circ, H_z, np.atleast_2d(L_z), d, t, verbose=True)
     print("Verification Result:", res_exhaustive is True)
     # if res_exhaustive is True:
     #     print(circ)
