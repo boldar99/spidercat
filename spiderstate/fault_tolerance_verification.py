@@ -1,15 +1,15 @@
+import itertools
 from typing import Union, List, Tuple, FrozenSet
 
 import mip
 import numpy as np
 import stim
-import re
 
-from spiderstate.utils import SPECIAL_GATES, count_operations, NOISE_GATES
+from spiderstate.utils import count_operations, NOISE_GATES, get_project_root
 
 
 # ==============================================================================
-# PHASE 1: Circuit Evaluation Setup
+# PHASE 1: Circuit Evaluation Setup & Utilities
 # ==============================================================================
 def append_ideal_measurements(
     noisy_prep_circ: stim.Circuit,
@@ -19,12 +19,12 @@ def append_ideal_measurements(
 ) -> stim.Circuit:
     """Appends ideal transversal measurements, detectors, and logical observables to the circuit."""
     eval_circ = noisy_prep_circ.copy()
-    
+
     num_data_qubits = H_check.shape[1]
-    
+
     # Transversally measure all data qubits
     eval_circ.append("MX" if basis_char == 'X' else "M", range(num_data_qubits))
-    
+
     # Append code-space checks as detectors
     for row in H_check:
         detector_targets = []
@@ -44,6 +44,22 @@ def append_ideal_measurements(
             if obs_targets:
                 eval_circ.append("OBSERVABLE_INCLUDE", obs_targets, m)
 
+    return eval_circ
+
+
+def build_primary_eval_circ(
+    noisy_prep_circ: stim.Circuit,
+    H_check: np.ndarray,
+    L_matrix: np.ndarray,
+    basis_char: str
+) -> stim.Circuit:
+    """Builds the native FTSP evaluation circuit for the primary basis."""
+    eval_circ = append_ideal_measurements(
+        noisy_prep_circ=noisy_prep_circ,
+        H_check=H_check,
+        L_matrix=L_matrix,
+        basis_char=basis_char
+    )
     return eval_circ
 
 
@@ -92,8 +108,8 @@ def solve_ftsp_ilp(
     x = [model.add_var(var_type=mip.BINARY, name=f"x_{i}") for i in range(num_e_init)]
     y = [model.add_var(var_type=mip.BINARY, name=f"y_{j}") for j in range(n_data_qubits)]
 
-    D_triggers = {k: [] for k in range(num_internal_detectors + num_final_stabilizers)}
-    L_triggers = {m: [] for m in range(num_logicals)}
+    D_triggers: dict[int, list] = {k: [] for k in range(num_internal_detectors + num_final_stabilizers)}
+    L_triggers: dict[int, list] = {m: [] for m in range(num_logicals)}
 
     for i, mech in enumerate(unique_mechanisms):
         for t_type, t_val in mech:
@@ -149,7 +165,6 @@ def solve_ftsp_ilp(
 # PHASE 3: Extraction & Rebuild (Direct Noisy Index Mapping)
 # ==============================================================================
 def extract_deterministic_failure(
-    flat_noisy_prep: stim.Circuit,
     flat_eval_circ: stim.Circuit,
     failed_mechs: List[FrozenSet[Tuple[str, int]]],
     failed_y_indices: List[int],
@@ -223,22 +238,96 @@ def extract_deterministic_failure(
 
 
 # ==============================================================================
+# COMBINATORICAL Z FAULT VERIFIER
+# ==============================================================================
+def precompute_conjugate_syndromes(H_check: np.ndarray, t: int) -> dict:
+    """Precomputes the minimum weight data error required to satisfy a given syndrome."""
+    valid_syndromes: dict[int, int] = {}
+    n_qubits = H_check.shape[1]
+
+    for w in range(t + 1):
+        for combo in itertools.combinations(range(n_qubits), w):
+            err = np.zeros(n_qubits, dtype=int)
+            if w > 0:
+                err[list(combo)] = 1
+
+            # Convert binary array syndrome to a fast integer bitmask
+            syn_array = (H_check @ err) % 2
+            syn_int = sum(int(val) << i for i, val in enumerate(syn_array))
+
+            if syn_int not in valid_syndromes or valid_syndromes[syn_int] > w:
+                valid_syndromes[syn_int] = w
+
+    return valid_syndromes
+
+
+def solve_ftsp_combinatorial_fast(
+    unique_mechanisms: List[FrozenSet[Tuple[str, int]]],
+    num_internal_detectors: int,
+    num_final_stabilizers: int,
+    H_check: np.ndarray,
+    t: int
+) -> Union[bool, List[FrozenSet[Tuple[str, int]]]]:
+    """Evaluates the conjugate basis using a Bitwise Breadth-First Search (BFS)."""
+    valid_syndromes = precompute_conjugate_syndromes(H_check, t)
+
+    # Convert DEM mechanisms into fast integer bitmasks
+    mech_masks = []
+    for mech in unique_mechanisms:
+        int_mask = 0
+        ext_mask = 0
+        for t_type, t_val in mech:
+            if t_type == "D":
+                if t_val < num_internal_detectors:
+                    int_mask ^= (1 << t_val)
+                else:
+                    ext_mask ^= (1 << (t_val - num_internal_detectors))
+        mech_masks.append((int_mask, ext_mask, mech))
+
+    # BFS State Tracker: {(internal_mask, external_mask): [path_of_mechanisms]}
+    reachable_states = {(0, 0): []}
+
+    for k in range(1, t + 1):
+        next_states = {}
+
+        for (curr_int, curr_ext), path in reachable_states.items():
+            for m_int, m_ext, mech in mech_masks:
+                new_int = curr_int ^ m_int
+                new_ext = curr_ext ^ m_ext
+                state_key = (new_int, new_ext)
+
+                # Prune degenerate physical faults that produce the same syndrome
+                if state_key in reachable_states or state_key in next_states:
+                    continue
+
+                new_path = path + [mech]
+                next_states[state_key] = new_path
+
+                # Check FTSP Bounds
+                if new_int == 0:  # Evades FTSP internal flags
+                    if new_ext not in valid_syndromes or valid_syndromes[new_ext] > k:
+                        return new_path  # Return the catastrophic cascade
+
+        reachable_states.update(next_states)
+
+    return True
+
+
+# ==============================================================================
 # ORCHESTRATOR
 # ==============================================================================
-def verify_ftsp_ilp(
+def verify_ftsp_primary_ilp(
     prep_circ: stim.Circuit,
     H_check: np.ndarray,
     L_op: np.ndarray,
     d: int,
     t: int,
-    basis_char: str = "Z",
+    basis_char: str,
     verbose: bool = False
 ) -> Union[bool, stim.Circuit]:
-    """
-    Main entry point. Coordinates preparation, exact ILP math, and error extraction.
-    """
+    """Verifies the primary FTSP error basis."""
     if verbose:
-        print(f"\nStarting Exact ILP Verification for {basis_char}-basis (d={d}, t={t}).")
+        print(f"\n  [Primary] Evaluating {basis_char}-basis (d={d}, t={t})...")
 
     from spiderstate.utils import make_stim_circ_noisy
     noisy_prep = make_stim_circ_noisy(prep_circ.copy(), p=0.001)
@@ -249,12 +338,10 @@ def verify_ftsp_ilp(
     L_matrix = np.atleast_2d(L_op) if L_op is not None else None
 
     # Step 1: Prep and Flatten
-    eval_circ = append_ideal_measurements(noisy_prep, H_check, L_matrix, basis_char)
-    unique_mechanisms = extract_unique_fault_mechanisms(eval_circ)
+    eval_circ = build_primary_eval_circ(noisy_prep, H_check, L_matrix, basis_char)
+    flat_eval_circ = eval_circ.flattened()
 
-    if L_matrix is None or L_matrix.size == 0:
-        if verbose: print(f"  [{basis_char} Basis] No logical observable. Skipping.")
-        return True
+    unique_mechanisms = extract_unique_fault_mechanisms(flat_eval_circ)
 
     # Step 2: Solve the Math
     status, x_vars, y_vars = solve_ftsp_ilp(
@@ -277,47 +364,108 @@ def verify_ftsp_ilp(
         failed_y_indices = [j for j, var in enumerate(y_vars) if var.x >= 0.9]
 
         # Pass E_data indices and basis to extraction function
-        failed_circ = extract_deterministic_failure(
-            prep_circ,
-            eval_circ.flattened(),
+        return extract_deterministic_failure(
+            flat_eval_circ,
             failed_mechs,
             failed_y_indices,
             basis_char
         )
-        return failed_circ
-
-    elif status is None:
-        if verbose: print(f"    [PASS] Structurally impossible to flip Logical.")
-        return True
     else:
-        if verbose: print(f"    [PASS] UNSAT. The state preparation is strictly Fault-Tolerant.")
+        if verbose:
+            print(f"    [PASS] UNSAT. The state preparation is strictly Fault-Tolerant.")
         return True
+
+
+def verify_ftsp_conjugate_exact(
+    prep_circ: stim.Circuit,
+    H_check: np.ndarray,
+    t: int,
+    basis_char: str,
+    verbose: bool = False
+) -> Union[bool, stim.Circuit]:
+    """Verifies the conjugate FTSP error basis using the Fast Combinatorial Tracker."""
+    if verbose:
+        print(f"\n  [Conjugate] Evaluating {basis_char}-basis via Combinatorics (t={t})...")
+
+    from spiderstate.utils import make_stim_circ_noisy
+    noisy_prep = make_stim_circ_noisy(prep_circ.copy(), p=0.001)
+
+    num_internal_detectors = noisy_prep.num_detectors
+    num_final_stabilizers = H_check.shape[0]
+
+    # Conjugate tracking does not use L_matrix; we track pure syndrome mass
+    eval_circ = append_ideal_measurements(noisy_prep, H_check, None, basis_char)
+    flat_eval_circ = eval_circ.flattened()
+
+    unique_mechanisms = extract_unique_fault_mechanisms(flat_eval_circ)
+
+    result = solve_ftsp_combinatorial_fast(
+        unique_mechanisms, num_internal_detectors, num_final_stabilizers, H_check, t
+    )
+
+    if isinstance(result, list):
+        if verbose:
+            print(f"    [FAIL] Bad Conjugate Cascade Detected!")
+            print("    Extracting deterministic failure circuit...")
+
+        # Reuse the flawless extraction function (y_indices empty since ILP wasn't used)
+        return extract_deterministic_failure(flat_eval_circ, result, [], basis_char)
+
+    if verbose:
+        print(f"    [PASS] No uncorrectable conjugate cascades found.")
+    return True
+
+
+def verify_ftsp(
+    prep_circ: stim.Circuit,
+    H_primary: np.ndarray,
+    L_primary: np.ndarray,
+    H_conjugate: np.ndarray,
+    L_conjugate: np.ndarray,
+    d: int,
+    t: int,
+    primary_basis: str = "Z",
+    conjugate_basis: str = "X",
+    verbose: bool = False
+) -> bool:
+    """Comprehensive FT Verification mapping both primary and conjugate error channels."""
+    res_primary = verify_ftsp_primary_ilp(
+        prep_circ, H_primary, L_primary, d, t, basis_char=primary_basis, verbose=verbose
+    )
+
+    res_conjugate = verify_ftsp_conjugate_exact(
+        prep_circ, H_conjugate, t, basis_char=conjugate_basis, verbose=verbose
+    )
+
+    return (res_primary is True) and (res_conjugate is True)
 
 
 if __name__ == "__main__":
-    import random
-    # random.seed(40)
+    from spiderstate.utils import load_qecc
 
-    from spiderstate.utils import load_qecc, make_stim_circ_noisy
-    from spiderstate.cat_at_origin import cat_at_origin_with_verification
-
-    code = "17_1_5"
+    code = "12_2_4"
     is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code)
     t = d // 2
 
     print(f"Generating circuit for {code} (d={d}, t={t})...")
-    circ = cat_at_origin_with_verification(
-        H_x=H_x, H_z=H_z, L_x=L_x, L_z=L_z, d=d, state="0", verbose=True, first_layer="X", max_col_ops=100
-    )
-
-    print()
-    print(circ)
-    print()
+    # circ = cat_at_origin_with_verification(
+    #     H_x=H_x, H_z=H_z, L_x=L_x, L_z=L_z, d=d, state="0", verbose=True, first_layer="X", max_col_ops=0
+    # )
+    circ = stim.Circuit(get_project_root().joinpath("good_circuits", f"{code}.stim").read_text())
 
     num_cx, num_meas = count_operations(circ)
     print(f"  [{code}] circuit generated!\n"
           f"  #CX: {num_cx}, #Meas: {num_meas}, Total: {num_cx + num_meas}")
 
-    print("\nRunning Fast DEM/SAT FT Verification...")
-    res_exhaustive = verify_ftsp_ilp(circ, H_z, np.atleast_2d(L_z), d, t, verbose=True)
-    print("Verification Result:", res_exhaustive is True)
+    print("\nRunning Comprehensive ExRec/SAT FT Verification...")
+
+    is_ft = verify_ftsp(
+        prep_circ=circ,
+        H_primary=H_z, L_primary=np.atleast_2d(L_z),
+        H_conjugate=H_x, L_conjugate=np.atleast_2d(L_x),
+        d=d, t=t,
+        primary_basis="Z", conjugate_basis="X",
+        verbose=True
+    )
+
+    print("\nFinal Verification Result:", is_ft)
