@@ -5,6 +5,7 @@ import numpy as np
 from mqt.qecc.circuit_synthesis.faults import PureFaultSet, product_fault_set
 from spiderstate.fast_verification import fast_greedy_set_cover
 from mqt.qecc.circuit_synthesis import CNOTCircuit
+from spidercat.syndrome_measurement import cnot_cost
 
 logger = logging.getLogger(__name__)
 
@@ -113,9 +114,8 @@ def _solve_top_n_weighted_set_covers(
         return []
         
     weights = np.sum(candidate_stabs, axis=1)
-    
-    from spiderstate.optimize_parity_matrix import cnot_cost
-    costs = np.array([cnot_cost(np.ones((1, w), dtype=int), t) for w in weights])
+
+    costs = np.array([cnot_cost(w, t) for w in weights])
     
     coverage = ((candidate_stabs @ faults.T) % 2).astype(bool)
     
@@ -240,10 +240,8 @@ def find_lookahead_verification_stabilizers(
     Finds verification stabilizers for t layers using mathematical lookahead.
     It minimizes the size of the next layer's raw fault set after filtering.
     """
-    from spiderstate.optimize_parity_matrix import cnot_cost
-    
     candidate_stabs = _generate_candidate_stabilizers(stabs, max_combinations)
-    costs = np.array([cnot_cost(np.ones((1, w), dtype=int), t) for w in np.sum(candidate_stabs, axis=1)])
+    costs = np.array([cnot_cost(w, t) for w in np.sum(candidate_stabs, axis=1)])
     
     raw_fault_sets = _generate_raw_fault_sets(single_faults, t, H_filter)
     
@@ -259,6 +257,7 @@ def find_lookahead_verification_stabilizers(
         for state_idx, (realized_cost, layers, accumulated_stabs) in enumerate(beam):
             if accumulated_stabs:
                 current_stabs_arr = np.vstack(accumulated_stabs).astype(np.int8)
+                ## TODO: This is the wrong bit
                 surviving_faults = raw_current.get_undetectable_faults(current_stabs_arr)
             else:
                 surviving_faults = raw_current.faults
@@ -282,7 +281,7 @@ def find_lookahead_verification_stabilizers(
             if layer_idx == t - 1:
                 # Last layer: no lookahead needed
                 best_last = candidate_covers[0]
-                best_last_score = sum(cnot_cost(np.ones((1, np.sum(s)), dtype=int), t) for s in best_last)
+                best_last_score = sum(cnot_cost(w, t) for w in np.sum(best_last, axis=1))
                 final_cost = realized_cost + best_last_score
                 next_beam_candidates.append((final_cost, final_cost, layers + [best_last], accumulated_stabs + best_last))
                 continue
@@ -306,7 +305,7 @@ def find_lookahead_verification_stabilizers(
                     uncoverable = fs_size - valid_cov.shape[1]
                     next_cost += uncoverable * 1000
                     
-                cover_cost = sum(cnot_cost(np.ones((1, np.sum(s)), dtype=int), t) for s in cover)
+                cover_cost = sum(cnot_cost(w, t) for w in np.sum(cover, axis=1))
                 new_realized_cost = realized_cost + cover_cost
                 lookahead_score = new_realized_cost + next_cost
                 
@@ -335,5 +334,27 @@ def find_lookahead_verification_stabilizers(
         
         if verbose:
             print(f"  -> Kept top {len(beam)} states. Best Lookahead Score: {next_beam_candidates[0][1] if layer_idx < t - 1 else beam[0][0]}")
-            
+
+    print(f"  [Chosen Stabilizers]")
+    for i, layer in enumerate(beam[0][1]):
+        print(f"    -> Layer {i + 1}: {["".join(map(str, stab.tolist())) for stab in layer]}")
+
     return beam[0][1]
+
+def compute_bare_injected_faults(layers: list[list[np.ndarray]], num_qubits: int) -> PureFaultSet:
+    from spiderstate.cat_at_origin import bare_se_circuit
+    faults = []
+    for layer in layers:
+        for stab in layer:
+            qubits = np.where(stab)[0].tolist()
+            # SE circuit has CNOTs from ancilla to qubits
+            for j in range(1, len(qubits)):
+                err = np.zeros(num_qubits, dtype=np.int8)
+                err[qubits[j:]] = 1
+                faults.append(err)
+    fs = PureFaultSet(num_qubits)
+    if not faults:
+        return fs
+    faults_arr = np.array(faults, dtype=np.int8)
+    fs.faults = np.unique(faults_arr, axis=0)
+    return fs

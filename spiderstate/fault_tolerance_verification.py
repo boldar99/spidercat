@@ -5,6 +5,8 @@ import mip
 import numpy as np
 import stim
 
+from spiderstate.cat_at_origin import cat_at_origin_with_verification
+from spiderstate.stim_utils import get_circuit_depth
 from spiderstate.utils import count_operations, NOISE_GATES, get_project_root
 
 
@@ -364,12 +366,16 @@ def verify_ftsp_primary_ilp(
         failed_y_indices = [j for j, var in enumerate(y_vars) if var.x >= 0.9]
 
         # Pass E_data indices and basis to extraction function
-        return extract_deterministic_failure(
+        fault_example = extract_deterministic_failure(
             flat_eval_circ,
             failed_mechs,
             failed_y_indices,
             basis_char
         )
+        # if verbose:
+        #     print(fault_example)
+
+        return fault_example
     else:
         if verbose:
             print(f"    [PASS] UNSAT. The state preparation is strictly Fault-Tolerant.")
@@ -408,8 +414,11 @@ def verify_ftsp_conjugate_exact(
             print(f"    [FAIL] Bad Conjugate Cascade Detected!")
             print("    Extracting deterministic failure circuit...")
 
-        # Reuse the flawless extraction function (y_indices empty since ILP wasn't used)
-        return extract_deterministic_failure(flat_eval_circ, result, [], basis_char)
+        fault_example = extract_deterministic_failure(flat_eval_circ, result, [], basis_char)
+        # if verbose:
+        #     print(fault_example)
+
+        return fault_example
 
     if verbose:
         print(f"    [PASS] No uncorrectable conjugate cascades found.")
@@ -432,30 +441,37 @@ def verify_ftsp(
     res_primary = verify_ftsp_primary_ilp(
         prep_circ, H_primary, L_primary, d, t, basis_char=primary_basis, verbose=verbose
     )
+    if res_primary is not True:
+        return res_primary
 
     res_conjugate = verify_ftsp_conjugate_exact(
         prep_circ, H_conjugate, t, basis_char=conjugate_basis, verbose=verbose
     )
+    if res_conjugate is not True:
+        return res_conjugate
 
-    return (res_primary is True) and (res_conjugate is True)
+    return True
 
 
 if __name__ == "__main__":
     from spiderstate.utils import load_qecc
+    import random
+    random.seed(35)
 
-    code = "12_2_4"
+    code = "17_1_5"
     is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code)
     t = d // 2
 
     print(f"Generating circuit for {code} (d={d}, t={t})...")
-    # circ = cat_at_origin_with_verification(
-    #     H_x=H_x, H_z=H_z, L_x=L_x, L_z=L_z, d=d, state="0", verbose=True, first_layer="X", max_col_ops=0
-    # )
-    circ = stim.Circuit(get_project_root().joinpath("good_circuits", f"{code}.stim").read_text())
+    circ = cat_at_origin_with_verification(
+        H_x=H_x, H_z=H_z, L_x=L_x, L_z=L_z, d=d, state="0", verbose=True, first_layer="Z", max_col_ops=10
+    )
+    # circ = stim.Circuit(get_project_root().joinpath("good_circuits", f"{code}.stim").read_text())
 
     num_cx, num_meas = count_operations(circ)
     print(f"  [{code}] circuit generated!\n"
-          f"  #CX: {num_cx}, #Meas: {num_meas}, Total: {num_cx + num_meas}")
+          f"  #CX: {num_cx}, #Meas: {num_meas}, Total: {num_cx + num_meas}\n"
+          f"  Depth: {get_circuit_depth(circ)}")
 
     print("\nRunning Comprehensive ExRec/SAT FT Verification...")
 

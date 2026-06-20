@@ -1,4 +1,5 @@
 import numpy as np
+from spidercat.syndrome_measurement import cnot_cost as se_cnot_cost
 
 def fast_greedy_set_cover(coverage: np.ndarray, costs: np.ndarray, initial_uncovered: np.ndarray = None, target_coverage: int = 1) -> list[int]:
     """
@@ -36,14 +37,14 @@ def fast_greedy_set_cover(coverage: np.ndarray, costs: np.ndarray, initial_uncov
     return selected_idx
 
 class DynamicCoverageTracker:
-    def __init__(self, F_X: np.ndarray, F_Z: np.ndarray, candidate_stabs_X: np.ndarray, candidate_stabs_Z: np.ndarray, cnot_cost_fn, H_filter_X: np.ndarray = None, H_filter_Z: np.ndarray = None):
+    def __init__(self, t: int, F_X: np.ndarray, F_Z: np.ndarray, candidate_stabs_X: np.ndarray, candidate_stabs_Z: np.ndarray, H_filter_X: np.ndarray = None, H_filter_Z: np.ndarray = None):
         self.F_X = F_X.copy()
         self.F_Z = F_Z.copy()
         self.c = F_X.shape[1]
+        self.t = t
         
         self.candidate_stabs_X = candidate_stabs_X
         self.candidate_stabs_Z = candidate_stabs_Z
-        self.cnot_cost_fn = cnot_cost_fn
         self.H_filter_X = H_filter_X
         self.H_filter_Z = H_filter_Z
         
@@ -62,14 +63,14 @@ class DynamicCoverageTracker:
         
         if self.has_X_cands:
             self.weights_X = np.sum(candidate_stabs_X, axis=1)
-            self.costs_X = np.array([self.cnot_cost_fn(np.ones((1, w), dtype=int)) + 1 for w in self.weights_X])
+            self.costs_X = np.array([se_cnot_cost(w, self.t) for w in self.weights_X])
             self.coverage_Z = ((candidate_stabs_X @ self.F_Z.T) % 2).astype(bool)
         else:
             self.coverage_Z = None
             
         if self.has_Z_cands:
             self.weights_Z = np.sum(candidate_stabs_Z, axis=1)
-            self.costs_Z = np.array([self.cnot_cost_fn(np.ones((1, w), dtype=int)) + 1 for w in self.weights_Z])
+            self.costs_Z = np.array([se_cnot_cost(w, self.t) for w in self.weights_Z])
             self.coverage_X = ((candidate_stabs_Z @ self.F_X.T) % 2).astype(bool)
         else:
             self.coverage_X = None
@@ -82,7 +83,6 @@ class DynamicCoverageTracker:
         
         new_obj.candidate_stabs_X = self.candidate_stabs_X
         new_obj.candidate_stabs_Z = self.candidate_stabs_Z
-        new_obj.cnot_cost_fn = self.cnot_cost_fn
         new_obj.H_filter_X = self.H_filter_X
         new_obj.H_filter_Z = self.H_filter_Z
         

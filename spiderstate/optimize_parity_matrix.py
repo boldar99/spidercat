@@ -243,15 +243,12 @@ def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, H_x:
         candidate_stabs_X = _generate_candidate_stabilizers(stabs_X, 3)
         candidate_stabs_Z = _generate_candidate_stabilizers(stabs_Z, 3)
         
-    def _cnot_cost_fn(s):
-        return cnot_cost(s, t)
-        
     base_tracker = DynamicCoverageTracker(
+        t,
         current_F_X, current_F_Z, 
         candidate_stabs_X, candidate_stabs_Z, 
-        _cnot_cost_fn,
         H_filter_X=H_filter_X,
-        H_filter_Z=H_filter_Z
+        H_filter_Z=H_filter_Z,
     )
 
     current_M = matrix_after_row_ops.copy()

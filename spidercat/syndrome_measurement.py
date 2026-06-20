@@ -5,6 +5,7 @@ import stim
 
 from spidercat.circuit_extraction import CatStateExtractor, StimBuilder, expand_graph_and_forest
 from spidercat.draw import draw_forest_on_graph
+from spidercat.generate import minimum_number_of_flags
 from spidercat.path_cover import find_all_path_covers
 from spidercat.spanning_tree import match_forest_leaves_to_marked_edges
 from spidercat.utils import load_solution_triplet, get_project_root, qasm_to_stim
@@ -172,6 +173,11 @@ def fao_se_circuit(qubits: Sequence[int], ancilla_start: int, t: int, basis: Lit
         permuted_circuit.append(stim.CircuitInstruction("H", qubits))
 
     return permuted_circuit
+
+
+def cnot_cost(n, t) -> int:
+    return n + 2 * minimum_number_of_flags(n, t)
+
 
 if __name__ == '__main__':
     N, t = 6, 5
