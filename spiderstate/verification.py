@@ -2,7 +2,7 @@ import logging
 from itertools import combinations
 
 import numpy as np
-from mqt.qecc.circuit_synthesis.faults import PureFaultSet, product_fault_set
+from mqt.qecc.circuit_synthesis.faults import product_fault_set, PureFaultSet
 from spiderstate.fast_verification import fast_greedy_set_cover
 from mqt.qecc.circuit_synthesis import CNOTCircuit
 from spidercat.syndrome_measurement import cnot_cost
@@ -23,7 +23,6 @@ def compute_unitary_fault_set_1(cnots: list[tuple[int, int]], num_qubits: int, k
         circ.initialize_qubit(rem, "Z")
     circ.add_cnots(cnots)
     single_faults = PureFaultSet.from_cnot_circuit(circ, kind=kind)
-    print("FS:", single_faults)
     single_faults.remove_zero_rows()
     single_faults.remove_duplicates()
     return single_faults
@@ -167,19 +166,28 @@ def _solve_top_n_weighted_set_covers(
     return unique_covers
 
 def compute_effective_weights(faults: np.ndarray, stabs: np.ndarray) -> np.ndarray:
-    current_faults = faults.copy()
-    weights = np.sum(current_faults, axis=1)
-    improved = True
-    while improved:
-        improved = False
-        for stab in stabs:
-            candidate = (current_faults + stab) % 2
-            cand_weights = np.sum(candidate, axis=1)
-            mask = cand_weights < weights
-            if np.any(mask):
-                current_faults[mask] = candidate[mask]
-                weights[mask] = cand_weights[mask]
-                improved = True
+    k = stabs.shape[0]
+    if k == 0:
+        return np.sum(faults, axis=1)
+        
+    all_stabs = []
+    for i in range(1 << k):
+        comb = [j for j in range(k) if (i >> j) & 1]
+        if comb:
+            s = np.bitwise_xor.reduce(stabs[comb], axis=0)
+        else:
+            s = np.zeros(stabs.shape[1], dtype=np.int8)
+        all_stabs.append(s)
+    all_stabs = np.array(all_stabs, dtype=np.int8)
+    
+    batch_size = 2000
+    weights = np.zeros(len(faults), dtype=int)
+    for i in range(0, len(faults), batch_size):
+        batch = faults[i:i+batch_size]
+        candidate = (batch[:, None, :] + all_stabs[None, :, :]) % 2
+        cand_weights = np.sum(candidate, axis=2)
+        weights[i:i+batch_size] = np.min(cand_weights, axis=1)
+        
     return weights
 
 def find_low_weight_verification_stabilizers(fault_sets: list[PureFaultSet], stabs: np.ndarray, max_combinations: int = 4, max_time_sec: int = 60) -> list[list[np.ndarray]]:
@@ -211,7 +219,7 @@ def _generate_raw_fault_sets(single_faults: PureFaultSet, t: int, H_filter: np.n
             continue
             
         next_raw = product_fault_set(fault_sets[-1], single_faults)
-        next_raw.faults = np.concatenate((fault_sets[-1].faults, next_raw.faults)) # Measurement errors?
+
         next_raw.faults = np.unique(next_raw.faults, axis=0)
         next_raw.remove_zero_rows()
         next_raw.filter_by_weight_at_least(k + 1, H_filter)
@@ -232,50 +240,66 @@ def find_lookahead_verification_stabilizers(
 ) -> list[list[np.ndarray]]:
     """
     Finds verification stabilizers for t layers using mathematical lookahead.
-    It minimizes the size of the next layer's raw fault set after filtering.
+    Tracks exact fault detections across layers using a 2D signature matrix.
     """
     candidate_stabs = _generate_candidate_stabilizers(stabs, max_combinations)
     costs = np.array([cnot_cost(w, t) for w in np.sum(candidate_stabs, axis=1)])
     
     raw_fault_sets = _generate_raw_fault_sets(single_faults, t, H_filter)
-    for fs in raw_fault_sets:
-        print(fs)
     
-    beam = [(0.0, [], [])]
+    # Precompute target coverage for each R_k pool
+    targets = []
+    for layer_idx, fs in enumerate(raw_fault_sets):
+        if len(fs.faults) == 0:
+            targets.append(np.array([]))
+            continue
+        W_eff = compute_effective_weights(fs.faults, H_filter)
+        f_count = layer_idx + 1
+        target_coverage = np.minimum(W_eff - f_count, t - f_count + 1)
+        targets.append(target_coverage)
+    
+    # beam state: (realized_cost, layers, accumulated_stabs, detection_counts)
+    # detection_counts is a list of 2D arrays, one for each R_k
+    initial_detections = [np.zeros((len(fs.faults), 0), dtype=np.int8) for fs in raw_fault_sets]
+    beam = [(0.0, [], [], initial_detections)]
     
     for layer_idx in range(t):
         raw_current = raw_fault_sets[layer_idx]
+        target_current = targets[layer_idx]
+        
         next_beam_candidates = []
         
         if verbose:
             print(f"  [Layer {layer_idx + 1}] Expanding beam of size {len(beam)}:")
             
-        for state_idx, (realized_cost, layers, accumulated_stabs) in enumerate(beam):
-            if accumulated_stabs:
-                current_stabs_arr = np.vstack(accumulated_stabs).astype(np.int8)
-                ## TODO: This is the wrong bit
-                surviving_faults = raw_current.get_undetectable_faults(current_stabs_arr)
-            else:
-                surviving_faults = raw_current.faults
-                
-            if len(surviving_faults) == 0:
-                next_beam_candidates.append((realized_cost, realized_cost, layers + [[]], accumulated_stabs))
+        for state_idx, (realized_cost, layers, accumulated_stabs, det_counts) in enumerate(beam):
+            det_current = det_counts[layer_idx]
+            
+            if len(raw_current.faults) == 0:
+                next_beam_candidates.append((realized_cost, realized_cost, layers + [[]], accumulated_stabs, det_counts))
                 continue
                 
-            # Compute dynamic target coverage
-            W_eff = compute_effective_weights(surviving_faults, H_filter)
-            f_count = layer_idx + 1
-            target_coverage = np.clip(W_eff - f_count, 1, t)
+            total_detections = np.sum(det_current, axis=1)
+            unsatisfied_mask = total_detections < target_current
+            surviving_faults = raw_current.faults[unsatisfied_mask]
+            
+            if len(surviving_faults) == 0:
+                next_beam_candidates.append((realized_cost, realized_cost, layers + [[]], accumulated_stabs, det_counts))
+                continue
+                
+            threat_targets = target_current[unsatisfied_mask] - total_detections[unsatisfied_mask]
             
             cov_matrix = ((candidate_stabs @ surviving_faults.T) % 2).astype(bool)
             num_uncoverable = np.sum(~np.any(cov_matrix, axis=0))
             realized_cost += num_uncoverable * 1000
                 
-            candidate_covers = _solve_top_n_weighted_set_covers(surviving_faults, stabs, t, max_combinations, max_time_sec, top_n, target_coverage=target_coverage)
+            candidate_covers = _solve_top_n_weighted_set_covers(
+                surviving_faults, stabs, t, max_combinations, max_time_sec, top_n, target_coverage=threat_targets
+            )
             
             if not candidate_covers:
                 penalty = 1000 * len(surviving_faults)
-                next_beam_candidates.append((realized_cost + penalty, realized_cost + penalty, layers + [[]], accumulated_stabs))
+                next_beam_candidates.append((realized_cost + penalty, realized_cost + penalty, layers + [[]], accumulated_stabs, det_counts))
                 continue
                 
             if layer_idx == t - 1:
@@ -283,15 +307,37 @@ def find_lookahead_verification_stabilizers(
                 best_last = candidate_covers[0]
                 best_last_score = sum(cnot_cost(w, t) for w in np.sum(best_last, axis=1))
                 final_cost = realized_cost + best_last_score
-                next_beam_candidates.append((final_cost, final_cost, layers + [best_last], accumulated_stabs + best_last))
+                
+                # Update detections
+                layer_matrix = np.vstack(best_last).astype(np.int8)
+                new_det_counts = []
+                for k, det in enumerate(det_counts):
+                    new_sigs = ((layer_matrix @ raw_fault_sets[k].faults.T) % 2).T.astype(np.int8)
+                    new_det_counts.append(np.hstack((det, new_sigs)))
+                
+                next_beam_candidates.append((final_cost, final_cost, layers + [best_last], accumulated_stabs + best_last, new_det_counts))
                 continue
                 
             for cover_idx, cover in enumerate(candidate_covers):
-                test_stabs_list = accumulated_stabs + cover
-                test_stabs_arr = np.vstack(test_stabs_list).astype(np.int8)
+                cover_matrix = np.vstack(cover).astype(np.int8)
                 
+                new_det_counts = []
+                for k, det in enumerate(det_counts):
+                    new_sigs = ((cover_matrix @ raw_fault_sets[k].faults.T) % 2).T.astype(np.int8)
+                    new_det_counts.append(np.hstack((det, new_sigs)))
+                
+                # Lookahead scoring
                 raw_next = raw_fault_sets[layer_idx + 1]
-                next_surviving = raw_next.get_undetectable_faults(test_stabs_arr)
+                target_next = targets[layer_idx + 1]
+                
+                if len(raw_next.faults) > 0:
+                    det_next = new_det_counts[layer_idx + 1]
+                    total_next = np.sum(det_next, axis=1)
+                    unsat_next_mask = total_next < target_next
+                    next_surviving = raw_next.faults[unsat_next_mask]
+                else:
+                    next_surviving = np.zeros((0, raw_next.num_qubits), dtype=np.int8)
+                
                 fs_size = len(next_surviving)
                 
                 next_cost = 0
@@ -317,7 +363,7 @@ def find_lookahead_verification_stabilizers(
                 new_realized_cost = realized_cost + cover_cost
                 lookahead_score = new_realized_cost + next_cost
                 
-                next_beam_candidates.append((new_realized_cost, lookahead_score, layers + [cover], accumulated_stabs + cover))
+                next_beam_candidates.append((new_realized_cost, lookahead_score, layers + [cover], accumulated_stabs + cover, new_det_counts))
                 
         # Sort candidates by lookahead_score
         next_beam_candidates.sort(key=lambda x: x[1])
@@ -325,7 +371,7 @@ def find_lookahead_verification_stabilizers(
         # Deduplicate and form new beam
         unique_beam = []
         seen_sigs = set()
-        for r_cost, l_score, lyrs, acc_stabs in next_beam_candidates:
+        for r_cost, l_score, lyrs, acc_stabs, det_counts in next_beam_candidates:
             if not acc_stabs:
                 sig = ()
             else:
@@ -334,7 +380,7 @@ def find_lookahead_verification_stabilizers(
                 
             if sig not in seen_sigs:
                 seen_sigs.add(sig)
-                unique_beam.append((r_cost, lyrs, acc_stabs))
+                unique_beam.append((r_cost, lyrs, acc_stabs, det_counts))
                 if len(unique_beam) >= beam_width:
                     break
                     
@@ -343,19 +389,103 @@ def find_lookahead_verification_stabilizers(
         if verbose:
             print(f"  -> Kept top {len(beam)} states. Best Lookahead Score: {next_beam_candidates[0][1] if layer_idx < t - 1 else beam[0][0]}")
 
-    print(f"  [Chosen Stabilizers]")
-    for i, layer in enumerate(beam[0][1]):
-        print(f"    -> Layer {i + 1}: {["".join(map(str, stab.tolist())) for stab in layer]}")
-
-    return beam[0][1]
-
-def compute_bare_injected_faults(layers: list[list[np.ndarray]], num_qubits: int) -> PureFaultSet:
-    from spiderstate.cnot_scheduler import schedule_layer_cnots
-    faults = []
-    for layer in layers:
-        stabs_qubits = [np.where(stab)[0].tolist() for stab in layer]
-        ticks = schedule_layer_cnots(stabs_qubits)
+    # STRICT PRUNING
+    valid_beam = []
+    from spiderstate.cnot_scheduler import DangerousFault, schedule_all_verification_layers
+    num_qubits = raw_fault_sets[0].num_qubits if raw_fault_sets else 0
+    I_N = np.eye(num_qubits, dtype=np.int8)
+    
+    for cand in beam:
+        det_counts = cand[3]
+        chosen_layers = cand[1]
         
+        is_valid = True
+        for layer_idx, target_coverage in enumerate(targets):
+            if len(target_coverage) == 0: continue
+            total_det = np.sum(det_counts[layer_idx], axis=1)
+            if np.any(total_det < target_coverage):
+                is_valid = False
+                break
+        if not is_valid:
+            continue
+            
+        dangerous_faults = []
+        for layer_idx, fs in enumerate(raw_fault_sets):
+            k = layer_idx + 1
+            target_coverage = targets[layer_idx]
+            if len(target_coverage) == 0:
+                continue
+                
+            E_oplus_q_flat = (fs.faults[:, None, :] + I_N[None, :, :]) % 2
+            E_oplus_q_flat = E_oplus_q_flat.reshape(-1, num_qubits)
+            W_eff_flat = compute_effective_weights(E_oplus_q_flat, H_filter)
+            W_eff_matrix = W_eff_flat.reshape(len(fs.faults), num_qubits)
+            T_E_q_matrix = np.minimum(W_eff_matrix - (k + 1), t - (k + 1) + 1)
+            
+            for i, f in enumerate(fs.faults):
+                T_E = target_coverage[i]
+                if T_E <= 0:
+                    continue
+                    
+                D_E = set()
+                col_idx = 0
+                for l_idx, layer in enumerate(chosen_layers):
+                    for s_idx in range(len(layer)):
+                        if det_counts[layer_idx][i, col_idx] == 1:
+                            D_E.add((l_idx, s_idx))
+                        col_idx += 1
+                        
+                if len(D_E) > 0:
+                    T_E_q = {q: T_E_q_matrix[i, q] for q in range(num_qubits)}
+                    dangerous_faults.append(DangerousFault(frozenset(D_E), T_E_q))
+                    
+        df_dict = {}
+        for df in dangerous_faults:
+            if df.D_E not in df_dict:
+                df_dict[df.D_E] = df.T_E_q.copy()
+            else:
+                for q in df_dict[df.D_E]:
+                    df_dict[df.D_E][q] = max(df_dict[df.D_E][q], df.T_E_q[q])
+                    
+        unique_dfs = [DangerousFault(D_E, T_E_q) for D_E, T_E_q in df_dict.items()]
+        
+        layers_qubits = []
+        for layer in chosen_layers:
+            stabs_qubits = []
+            for stab in layer:
+                stabs_qubits.append(np.nonzero(stab)[0].tolist())
+            layers_qubits.append(stabs_qubits)
+            
+        try:
+            ticks, violations = schedule_all_verification_layers(layers_qubits, unique_dfs)
+            valid_beam.append({
+                "cand": cand,
+                "chosen_layers": chosen_layers,
+                "det_counts": det_counts,
+                "unique_dfs": unique_dfs,
+                "ticks": ticks,
+                "violations": violations
+            })
+        except RuntimeError:
+            pass # Failed to schedule, try next state
+            
+    if not valid_beam:
+        raise RuntimeError("Strict Pruning: No states in the beam satisfied the target coverage AND could be scheduled safely! Try increasing max_combinations or top_n.")
+        
+    # Sort valid beam by number of violations (minimize), then by lookahead score (maximize, negative because we sort ascending)
+    valid_beam.sort(key=lambda x: (len(x["violations"]), -x["cand"][0]))
+    best_state = valid_beam[0]
+    
+    if verbose:
+        print(f"  [Chosen Stabilizers] (Violations: {len(best_state['violations'])})")
+        for i, layer in enumerate(best_state["chosen_layers"]):
+            print(f"    -> Layer {i + 1}: {[''.join(map(str, stab.tolist())) for stab in layer]}")
+            
+    return best_state["chosen_layers"], best_state["unique_dfs"], best_state["ticks"], best_state["violations"]
+
+def compute_bare_injected_faults(layers: list[list[np.ndarray]], ticks_layers: list[list[list[tuple[int, int]]]], num_qubits: int) -> PureFaultSet:
+    faults = []
+    for layer, ticks in zip(layers, ticks_layers):
         # Build the ordered list of data qubits for each stabilizer
         ordered_qubits_by_stab = [[] for _ in range(len(layer))]
         for tick_ops in ticks:

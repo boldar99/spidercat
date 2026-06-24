@@ -1,14 +1,16 @@
 import stim
-from spiderstate.cnot_scheduler import schedule_layer_cnots
 
-def synthesize_and_merge_layer(stabs_qubits: list[list[int]], t: int, ancilla_start: int, basis: str) -> tuple[stim.Circuit, int]:
+def synthesize_and_merge_layer(stabs_qubits: list[list[int]], ticks: list[list[tuple[int, int]]], t: int, ancilla_start: int, basis: str, layer_violations: list[dict] = None) -> tuple[stim.Circuit, int]:
     from spidercat.syndrome_measurement import bare_se_circuit, fao_se_circuit
     
+    if layer_violations is None:
+        layer_violations = []
+        
     if not stabs_qubits:
         return stim.Circuit(), ancilla_start
 
     # 1. Schedule data CNOTs
-    ticks = schedule_layer_cnots(stabs_qubits)
+    # ticks is passed as argument
     
     # 2. Determine ordered qubits for each stabilizer
     ordered_qubits = [[] for _ in range(len(stabs_qubits))]
@@ -113,8 +115,33 @@ def synthesize_and_merge_layer(stabs_qubits: list[list[int]], t: int, ancilla_st
         merged.append("H", sorted(list(data_qubits_needing_h)))
         merged.append("TICK")
         
+    # --- FLAG INJECTION START ---
+    # We will surround ALL CNOTs on violating qubits in this layer.
+    violating_qubits = set(v["q"] for v in layer_violations)
+    flags_to_insert = []
+    for q in sorted(list(violating_qubits)):
+        f_qubit = current_ancilla
+        current_ancilla += 1
+        flags_to_insert.append((q, f_qubit))
+        
+    if flags_to_insert:
+        if basis == 'Z':
+            merged.append("R", [f for _, f in flags_to_insert])
+            merged.append("TICK")
+            for q, f in flags_to_insert:
+                merged.append("CX", [q, f])
+            merged.append("TICK")
+        else:
+            merged.append("RX", [f for _, f in flags_to_insert])
+            merged.append("TICK")
+            for q, f in flags_to_insert:
+                merged.append("CX", [f, q])
+            merged.append("TICK")
+    # --- FLAG INJECTION END ---
+        
     for tick_ops in ticks:
         tick_targets = []
+        
         for stab_idx, q in tick_ops:
             inst_tuple = current_insts[stab_idx]
             if inst_tuple is None or not is_data_cx(inst_tuple, stab_idx):
@@ -136,6 +163,24 @@ def synthesize_and_merge_layer(stabs_qubits: list[list[int]], t: int, ancilla_st
         for stab_idx, _ in tick_ops:
             advance_until_data_cx(stab_idx)
             
+    # --- FLAG EXTRACTION START ---
+    if flags_to_insert:
+        if basis == 'Z':
+            for q, f in flags_to_insert:
+                merged.append("CX", [q, f])
+            merged.append("TICK")
+            merged.append("M", [f for _, f in flags_to_insert])
+        else:
+            for q, f in flags_to_insert:
+                merged.append("CX", [f, q])
+            merged.append("TICK")
+            merged.append("MX", [f for _, f in flags_to_insert])
+        
+        for _ in flags_to_insert:
+            merged.append("DETECTOR", [stim.target_rec(-1)])
+        merged.append("TICK")
+    # --- FLAG EXTRACTION END ---
+        
     if data_qubits_needing_h:
         merged.append("H", sorted(list(data_qubits_needing_h)))
         merged.append("TICK")

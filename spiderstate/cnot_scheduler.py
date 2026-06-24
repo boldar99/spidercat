@@ -1,101 +1,124 @@
 import z3
 import functools
+from dataclasses import dataclass
 
-@functools.lru_cache(maxsize=1024)
-def _schedule_layer_cnots_cached(stabs_qubits_tuple: tuple[tuple[int, ...], ...]) -> list[list[tuple[int, int]]]:
-    stabs_qubits = [list(q) for q in stabs_qubits_tuple]
-    
-    # Quick fast-path for empty or single stabilizer
-    if not stabs_qubits:
-        return []
-    if len(stabs_qubits) == 1:
-        return [[(0, q)] for q in stabs_qubits[0]]
+@dataclass
+class DangerousFault:
+    D_E: frozenset[tuple[int, int]]
+    T_E_q: dict[int, int]
 
-    opt = z3.Optimize()
+def schedule_all_verification_layers(
+    layers: list[list[list[int]]], 
+    dangerous_faults: list[DangerousFault]
+) -> list[list[list[tuple[int, int]]]]:
+    all_scheduled_layers = []
+    all_violations = []
     
-    # T[i, q] will store the tick (time step) for the CNOT between stabilizer i and qubit q
-    T = {}
-    for i, qubits in enumerate(stabs_qubits):
-        for q in qubits:
-            v = z3.Int(f"T_{i}_{q}")
-            opt.add(v >= 0)
-            T[(i, q)] = v
+    for L, stabs_qubits in enumerate(layers):
+        if not stabs_qubits:
+            all_scheduled_layers.append([])
+            continue
+        if len(stabs_qubits) == 1:
+            all_scheduled_layers.append([[(0, q)] for q in stabs_qubits[0]])
+            continue
+
+        opt = z3.Optimize()
+        
+        T = {}
+        qubit_to_stabs = {}
+        for i, qubits in enumerate(stabs_qubits):
+            for q in qubits:
+                v = z3.Int(f"T_{i}_{q}")
+                opt.add(v >= 0)
+                T[(i, q)] = v
+                if q not in qubit_to_stabs:
+                    qubit_to_stabs[q] = []
+                qubit_to_stabs[q].append(i)
+                
+        for i, qubits in enumerate(stabs_qubits):
+            for j1 in range(len(qubits)):
+                for j2 in range(j1 + 1, len(qubits)):
+                    q1, q2 = qubits[j1], qubits[j2]
+                    opt.add(T[(i, q1)] != T[(i, q2)])
+                    
+        for q, stabs in qubit_to_stabs.items():
+            for j1 in range(len(stabs)):
+                for j2 in range(j1 + 1, len(stabs)):
+                    i1, i2 = stabs[j1], stabs[j2]
+                    opt.add(T[(i1, q)] != T[(i2, q)])
+                    
+        all_flags = []
+        flag_details = []
+        flag_idx = 0
+                    
+        for q, stabs in qubit_to_stabs.items():
+            for df in dangerous_faults:
+                D_E = df.D_E
+                req_T_E_q = df.T_E_q[q]
+                
+                abs_D_E = len(D_E)
+                D_gt_L = { (l_idx, s_idx) for (l_idx, s_idx) in D_E if l_idx > L }
+                
+                syn_gt_L = set()
+                for l_idx in range(L + 1, len(layers)):
+                    for s_idx, st in enumerate(layers[l_idx]):
+                        if q in st:
+                            syn_gt_L.add((l_idx, s_idx))
+                            
+                xor_set = D_gt_L.symmetric_difference(syn_gt_L)
+                M_E_q = abs_D_E - len(D_gt_L) + len(xor_set) - req_T_E_q
+                
+                if M_E_q < 0:
+                    raise RuntimeError(f"Impossible to schedule: M_E_q = {M_E_q} for layer {L}, q {q}")
+                    
+                w_E = {s_i: 1 if (L, s_i) in D_E else -1 for s_i in stabs}
+                max_possible_sum = sum(v for v in w_E.values() if v > 0)
+                
+                if max_possible_sum > M_E_q:
+                    for s_j in stabs:
+                        sum_expr = []
+                        for s_i in stabs:
+                            sum_expr.append(z3.If(T[(s_i, q)] >= T[(s_j, q)], w_E[s_i], 0))
+                            
+                        flag = z3.Int(f"flag_{flag_idx}")
+                        opt.add(flag >= 0)
+                        opt.add(z3.Sum(sum_expr) <= M_E_q + flag)
+                        all_flags.append(flag)
+                        flag_details.append({"layer": L, "q": q, "s_j": s_j, "D_E": D_E, "M_E_q": M_E_q})
+                        flag_idx += 1
+
+        max_tick = z3.Int("max_tick")
+        for (i, q), v in T.items():
+            opt.add(max_tick >= v)
             
-    # Constraint 1: A stabilizer can do at most 1 CNOT per tick
-    for i, qubits in enumerate(stabs_qubits):
-        for j1 in range(len(qubits)):
-            for j2 in range(j1 + 1, len(qubits)):
-                q1, q2 = qubits[j1], qubits[j2]
-                opt.add(T[(i, q1)] != T[(i, q2)])
-                
-    # Constraint 2: A data qubit can be involved in at most 1 CNOT per tick
-    qubit_to_stabs = {}
-    for i, qubits in enumerate(stabs_qubits):
-        for q in qubits:
-            if q not in qubit_to_stabs:
-                qubit_to_stabs[q] = []
-            qubit_to_stabs[q].append(i)
+        if all_flags:
+            opt.minimize(1000 * z3.Sum(all_flags) + max_tick)
+        else:
+            opt.minimize(max_tick)
+        
+        if opt.check() != z3.sat:
+            raise RuntimeError(f"Failed to find a valid CNOT schedule for layer {L} even with soft constraints!")
             
-    for q, stabs in qubit_to_stabs.items():
-        for j1 in range(len(stabs)):
-            for j2 in range(j1 + 1, len(stabs)):
-                i1, i2 = stabs[j1], stabs[j2]
-                opt.add(T[(i1, q)] != T[(i2, q)])
-                
-    # Constraint 3: If two stabilizers share EXACTLY 2 qubits, enforce the specific interlace pattern
-    for i1 in range(len(stabs_qubits)):
-        for i2 in range(i1 + 1, len(stabs_qubits)):
-            shared = list(set(stabs_qubits[i1]) & set(stabs_qubits[i2]))
-            if len(shared) == 2:
-                q1, q2 = shared[0], shared[1]
-                t11 = T[(i1, q1)]
-                t12 = T[(i1, q2)]
-                t21 = T[(i2, q1)]
-                t22 = T[(i2, q2)]
-                
-                # The user's specific ordering: q1 in s1, q2 in s2, q1 in s2, q2 in s1
-                # This corresponds to: t11 < t22 < t21 < t12
-                # But since s1/s2 and q1/q2 are arbitrary relative to i1/i2/q1/q2,
-                # any of the 4 symmetric orderings is valid:
-                opt.add(z3.Or(
-                    z3.And(t11 < t22, t22 < t21, t21 < t12),
-                    z3.And(t12 < t21, t21 < t22, t22 < t11),
-                    z3.And(t21 < t12, t12 < t11, t11 < t22),
-                    z3.And(t22 < t11, t11 < t12, t12 < t21)
-                ))
-
-    # Minimize the maximum tick (circuit depth)
-    max_tick = z3.Int("max_tick")
-    for (i, q), v in T.items():
-        opt.add(max_tick >= v)
+        m = opt.model()
         
-    opt.minimize(max_tick)
-    
-    if opt.check() != z3.sat:
-        raise RuntimeError("Failed to find a valid CNOT schedule!")
+        for idx, flag in enumerate(all_flags):
+            flag_val = m.evaluate(flag).as_long()
+            if flag_val > 0:
+                detail = flag_details[idx]
+                detail["violation_amount"] = flag_val
+                all_violations.append(detail)
         
-    m = opt.model()
-    schedule = {}
-    for (i, q), v in T.items():
-        tick = m.evaluate(v).as_long()
-        if tick not in schedule:
-            schedule[tick] = []
-        schedule[tick].append((i, q))
+        schedule = {}
+        for (i, q), v in T.items():
+            tick = m.evaluate(v).as_long()
+            if tick not in schedule:
+                schedule[tick] = []
+            schedule[tick].append((i, q))
+            
+        ticks = []
+        for t_tick in sorted(schedule.keys()):
+            ticks.append(schedule[t_tick])
+            
+        all_scheduled_layers.append(ticks)
         
-    ticks = []
-    for t in sorted(schedule.keys()):
-        ticks.append(schedule[t])
-        
-    return ticks
-
-def schedule_layer_cnots(stabs_qubits: list[list[int]]) -> list[list[tuple[int, int]]]:
-    """
-    Schedules the CNOTs for a layer of stabilizers to prevent correlated errors.
-    
-    stabs_qubits[i] is the list of data qubits that stabilizer i interacts with.
-    
-    Returns a list of 'ticks'. Each tick is a list of (stab_idx, qubit) pairs
-    that should be executed simultaneously.
-    """
-    stabs_qubits_tuple = tuple(tuple(q) for q in stabs_qubits)
-    return _schedule_layer_cnots_cached(stabs_qubits_tuple)
+    return all_scheduled_layers, all_violations
