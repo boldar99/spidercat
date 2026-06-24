@@ -336,6 +336,14 @@ def count_operations(circ: stim.Circuit) -> tuple[int, int]:
     return num_two_qubit_ops, num_measurements
 
 
+def strings_to_H_T(stabilizers: list[str]) -> np.ndarray:
+    """
+    Converts a list of binary strings into the parity-check matrix H^T.
+    Returns a numpy array of shape (num_stabs, num_data_qubits).
+    """
+    return np.array([[int(bit) for bit in stab] for stab in stabilizers], dtype=np.int8)
+
+
 if __name__ == "__main__":
     from spiderstate.cat_at_origin import row_optimized_cat_at_origin
 

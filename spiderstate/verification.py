@@ -23,31 +23,13 @@ def compute_unitary_fault_set_1(cnots: list[tuple[int, int]], num_qubits: int, k
         circ.initialize_qubit(rem, "Z")
     circ.add_cnots(cnots)
     single_faults = PureFaultSet.from_cnot_circuit(circ, kind=kind)
+    print("FS:", single_faults)
     single_faults.remove_zero_rows()
     single_faults.remove_duplicates()
     return single_faults
 
 
-def compute_bare_injected_faults(stabs_layers: list[list[np.ndarray]], num_qubits: int) -> PureFaultSet:
-    injected_faults = []
-    for layer in stabs_layers:
-        for stab in layer:
-            qubits = np.where(stab)[0].tolist()
-            # For a bare SE circuit, a fault on the ancilla propagates to a suffix of the data qubits
-            # The suffixes correspond to the faults injected between the sequential CNOTs
-            for k in range(len(qubits)):
-                f = np.zeros(num_qubits, dtype=np.int8)
-                f[qubits[k:]] = 1
-                injected_faults.append(f)
-                
-    if injected_faults:
-        fs = PureFaultSet.from_fault_array(np.array(injected_faults, dtype=np.int8))
-    else:
-        fs = PureFaultSet.from_fault_array(np.zeros((0, num_qubits), dtype=np.int8))
-        
-    fs.remove_zero_rows()
-    fs.remove_duplicates()
-    return fs
+
 
 
 def _generate_candidate_stabilizers(stabs: np.ndarray, max_combinations: int) -> np.ndarray:
@@ -155,7 +137,20 @@ def _solve_top_n_weighted_set_covers(
         selected_idx = [start_idx]
         if np.any(uncovered > 0):
             from spiderstate.fast_verification import fast_greedy_set_cover
-            rest_idx = fast_greedy_set_cover(valid_cov, costs, uncovered)
+            rest_idx = fast_greedy_set_cover(
+                valid_cov, 
+                costs, 
+                uncovered,
+                candidate_stabs=candidate_stabs,
+                selected_stabs_indices=[start_idx]
+            )
+            
+            # Check if we fully covered the faults. If not, the overlap constraint made it impossible.
+            uncovered_after = uncovered.copy()
+            for idx in rest_idx:
+                uncovered_after[valid_cov[idx]] -= 1
+            if np.any(uncovered_after > 0):
+                continue
 
             selected_idx.extend(rest_idx)
             
@@ -216,8 +211,7 @@ def _generate_raw_fault_sets(single_faults: PureFaultSet, t: int, H_filter: np.n
             continue
             
         next_raw = product_fault_set(fault_sets[-1], single_faults)
-        # Include lower weight faults as well
-        next_raw.faults = np.concatenate((fault_sets[-1].faults, next_raw.faults))
+        next_raw.faults = np.concatenate((fault_sets[-1].faults, next_raw.faults)) # Measurement errors?
         next_raw.faults = np.unique(next_raw.faults, axis=0)
         next_raw.remove_zero_rows()
         next_raw.filter_by_weight_at_least(k + 1, H_filter)
@@ -244,6 +238,8 @@ def find_lookahead_verification_stabilizers(
     costs = np.array([cnot_cost(w, t) for w in np.sum(candidate_stabs, axis=1)])
     
     raw_fault_sets = _generate_raw_fault_sets(single_faults, t, H_filter)
+    for fs in raw_fault_sets:
+        print(fs)
     
     beam = [(0.0, [], [])]
     
@@ -268,14 +264,18 @@ def find_lookahead_verification_stabilizers(
                 
             # Compute dynamic target coverage
             W_eff = compute_effective_weights(surviving_faults, H_filter)
-            # layer_idx = number of faults - 1. So f_count = layer_idx + 1.
             f_count = layer_idx + 1
             target_coverage = np.clip(W_eff - f_count, 1, t)
+            
+            cov_matrix = ((candidate_stabs @ surviving_faults.T) % 2).astype(bool)
+            num_uncoverable = np.sum(~np.any(cov_matrix, axis=0))
+            realized_cost += num_uncoverable * 1000
                 
             candidate_covers = _solve_top_n_weighted_set_covers(surviving_faults, stabs, t, max_combinations, max_time_sec, top_n, target_coverage=target_coverage)
             
             if not candidate_covers:
-                next_beam_candidates.append((realized_cost, realized_cost, layers + [[]], accumulated_stabs))
+                penalty = 1000 * len(surviving_faults)
+                next_beam_candidates.append((realized_cost + penalty, realized_cost + penalty, layers + [[]], accumulated_stabs))
                 continue
                 
             if layer_idx == t - 1:
@@ -300,9 +300,17 @@ def find_lookahead_verification_stabilizers(
                     coverable = np.any(next_cov, axis=0)
                     valid_cov = next_cov[:, coverable]
                     if valid_cov.shape[1] > 0:
-                        chosen = fast_greedy_set_cover(valid_cov, costs)
+                        chosen = fast_greedy_set_cover(valid_cov, costs, candidate_stabs=candidate_stabs)
                         next_cost = np.sum(costs[chosen])
-                    uncoverable = fs_size - valid_cov.shape[1]
+                        
+                        uncovered_after = np.ones(valid_cov.shape[1], dtype=int)
+                        for idx in chosen:
+                            uncovered_after[valid_cov[idx]] -= 1
+                        missed_in_valid = np.sum(uncovered_after > 0)
+                    else:
+                        missed_in_valid = 0
+                        
+                    uncoverable = fs_size - valid_cov.shape[1] + missed_in_valid
                     next_cost += uncoverable * 1000
                     
                 cover_cost = sum(cnot_cost(w, t) for w in np.sum(cover, axis=1))
@@ -342,16 +350,25 @@ def find_lookahead_verification_stabilizers(
     return beam[0][1]
 
 def compute_bare_injected_faults(layers: list[list[np.ndarray]], num_qubits: int) -> PureFaultSet:
-    from spiderstate.cat_at_origin import bare_se_circuit
+    from spiderstate.cnot_scheduler import schedule_layer_cnots
     faults = []
     for layer in layers:
-        for stab in layer:
-            qubits = np.where(stab)[0].tolist()
-            # SE circuit has CNOTs from ancilla to qubits
-            for j in range(1, len(qubits)):
+        stabs_qubits = [np.where(stab)[0].tolist() for stab in layer]
+        ticks = schedule_layer_cnots(stabs_qubits)
+        
+        # Build the ordered list of data qubits for each stabilizer
+        ordered_qubits_by_stab = [[] for _ in range(len(layer))]
+        for tick_ops in ticks:
+            for stab_idx, q in tick_ops:
+                ordered_qubits_by_stab[stab_idx].append(q)
+                
+        # Generate the suffix faults for each stabilizer
+        for stab_idx, ordered_qubits in enumerate(ordered_qubits_by_stab):
+            for j in range(1, len(ordered_qubits)):
                 err = np.zeros(num_qubits, dtype=np.int8)
-                err[qubits[j:]] = 1
+                err[ordered_qubits[j:]] = 1
                 faults.append(err)
+                
     fs = PureFaultSet(num_qubits)
     if not faults:
         return fs

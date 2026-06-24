@@ -1,7 +1,14 @@
 import numpy as np
 from spidercat.syndrome_measurement import cnot_cost as se_cnot_cost
 
-def fast_greedy_set_cover(coverage: np.ndarray, costs: np.ndarray, initial_uncovered: np.ndarray = None, target_coverage: int = 1) -> list[int]:
+def fast_greedy_set_cover(
+    coverage: np.ndarray, 
+    costs: np.ndarray, 
+    initial_uncovered: np.ndarray = None, 
+    target_coverage: int = 1,
+    candidate_stabs: np.ndarray = None,
+    selected_stabs_indices: list[int] = None
+) -> list[int]:
     """
     Vectorized greedy set cover algorithm.
     coverage: (num_candidates, num_faults) boolean array
@@ -22,6 +29,18 @@ def fast_greedy_set_cover(coverage: np.ndarray, costs: np.ndarray, initial_uncov
         covered_counts = np.sum(coverage[:, active_faults], axis=1)
         
         valid = covered_counts > 0
+        
+        # Enforce overlap <= 2 constraint if candidate_stabs is provided
+        if candidate_stabs is not None:
+            current_selected = selected_idx.copy()
+            if selected_stabs_indices is not None:
+                current_selected = selected_stabs_indices + current_selected
+                
+            for s_idx in current_selected:
+                stab = candidate_stabs[s_idx]
+                overlaps = np.sum(candidate_stabs & stab, axis=1)
+                valid[overlaps > 2] = False
+                
         if not valid.any():
             break
             

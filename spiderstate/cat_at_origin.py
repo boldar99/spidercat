@@ -4,8 +4,10 @@ import stim
 
 from spidercat.circuit_extraction import CatStateExtractor, StimBuilder
 from spidercat.draw import draw_forest_on_graph, display_digraph
+from spiderstate.between_shor_and_steane import measure_stabilizers_scheme_B, measure_stabilizers_scheme_A
+from spiderstate.circuit_finder import find_circuit
 from spiderstate.spider_leg_matcher import match_edges
-from spiderstate.utils import find_pivots_in_matrix, load_qecc, count_operations
+from spiderstate.utils import find_pivots_in_matrix, load_qecc, count_operations, flatten
 from spiderstate.well_ordered_cat_state import well_ordered_ft_cat_state_data
 from spiderstate.optimize_parity_matrix import has_unique_ones_property, optimize_fault_tolerant_matrix, row_optimize_matrix
 from spidercat.syndrome_measurement import fao_se_circuit, bare_se_circuit
@@ -189,6 +191,9 @@ def cat_at_origin_with_verification(
         H_x, t=t, max_col_ops=max_col_ops, H_x=H_x, H_z=H_z, max_basis_tries=max_basis_tries,
         stabs_X=stabs_x, stabs_Z=stabs_z, H_filter_X=H_filter_x, H_filter_Z=H_filter_z
     )
+
+    if verbose:
+        print(f"Chosen CNOT gates: {col_ops}")
     
     circ = cat_at_origin(final_M, d)
     circ.append("TICK", [])
@@ -243,35 +248,61 @@ def cat_at_origin_with_verification(
             single_faults=single_faults_z, stabs=stabs_z, H_filter=H_filter_z, t=t, top_n=top_n, verbose=verbose
         )
 
+    from spiderstate.circuit_merger import synthesize_and_merge_layer
+    
     def synthesize_X_layer():
         nonlocal circ
         ancilla_start = H_x.shape[1]
         if verbose: print("\nSynthesizing X fault verification circuits...")
         for layer in ver_x_stabs_layers:
+            stabs_qubits = []
             for stab in layer:
                 qubits = np.where(stab)[0].tolist()
-                if first_layer == "X":
-                    meas_circ = bare_se_circuit(qubits=qubits, ancilla=ancilla_start, basis="Z")
-                else:
-                    meas_circ = fao_se_circuit(qubits=qubits, ancilla_start=ancilla_start, t=t, basis="Z")
-                    meas_circ.append("DETECTOR", stim.target_rec(-1))
-                circ += meas_circ
-                ancilla_start = meas_circ.num_qubits
+                stabs_qubits.append(qubits)
+            
+            merged_layer_circ, ancilla_start = synthesize_and_merge_layer(
+                stabs_qubits, 
+                t=0 if first_layer == "X" else t,
+                ancilla_start=ancilla_start,
+                basis="Z"
+            )
+            circ += merged_layer_circ
+
+            # if len(layer) == 0:
+            #     continue
+            # elif len(layer) == 1:
+            #     meas_circ = fao_se_circuit(qubits = np.where(layer[0])[0].tolist(), ancilla_start=ancilla_start, t=t, basis="Z")
+            #     meas_circ.append("DETECTOR", stim.target_rec(-1))
+            #     circ += meas_circ
+            # else:
+            #     circ += measure_stabilizers_scheme_B(np.array(layer), d, basis="Z")
 
     def synthesize_Z_layer():
         nonlocal circ
         ancilla_start = H_x.shape[1]
         if verbose: print("\nSynthesizing Z fault verification circuits...")
         for layer in ver_z_stabs_layers:
+            stabs_qubits = []
             for stab in layer:
                 qubits = np.where(stab)[0].tolist()
-                if first_layer == "Z":
-                    meas_circ = bare_se_circuit(qubits=qubits, ancilla=ancilla_start, basis="X")
-                else:
-                    meas_circ = fao_se_circuit(qubits=qubits, ancilla_start=ancilla_start, t=t, basis="X")
-                    meas_circ.append("DETECTOR", stim.target_rec(-1))
-                circ += meas_circ
-                ancilla_start = meas_circ.num_qubits
+                stabs_qubits.append(qubits)
+
+            merged_layer_circ, ancilla_start = synthesize_and_merge_layer(
+                stabs_qubits, 
+                t=0 if first_layer == "Z" else t,
+                ancilla_start=ancilla_start,
+                basis="X"
+            )
+            circ += merged_layer_circ
+
+            # if len(layer) == 0:
+            #     continue
+            # elif len(layer) == 1:
+            #     meas_circ = fao_se_circuit(qubits = np.where(layer[0])[0].tolist(), ancilla_start=ancilla_start, t=t, basis="X")
+            #     meas_circ.append("DETECTOR", stim.target_rec(-1))
+            #     circ += meas_circ
+            # else:
+            #     circ += measure_stabilizers_scheme_B(np.array(layer), d, basis="X")
 
     if first_layer == "Z":
         synthesize_Z_layer()
