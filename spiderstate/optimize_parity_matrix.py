@@ -215,7 +215,7 @@ def simulated_annealing_phase2(base_M: np.ndarray, t: int, max_col_ops: int,
     return best_M, best_ops, best_cost
 
 
-def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, H_x: np.ndarray = None, H_z: np.ndarray = None, max_basis_tries: int = 5000, return_portfolio: bool = False, beam_width: int = 5, portfolio_size: int = 20, stabs_X: np.ndarray = None, stabs_Z: np.ndarray = None, H_filter_X: np.ndarray = None, H_filter_Z: np.ndarray = None):
+def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, H_x: np.ndarray = None, H_z: np.ndarray = None, max_basis_tries: int = 5000, return_portfolio: bool = False, beam_width: int = 5, portfolio_size: int = 20, stabs_X: np.ndarray = None, stabs_Z: np.ndarray = None):
     """
     Returns:
     - matrix_after_row_ops
@@ -239,16 +239,15 @@ def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, H_x:
     if stabs_Z is None and H_z is not None:
         stabs_Z = H_z
 
-    if stabs_X is not None and stabs_Z is not None:
-        candidate_stabs_X = _generate_candidate_stabilizers(stabs_X, 3)
-        candidate_stabs_Z = _generate_candidate_stabilizers(stabs_Z, 3)
+    if stabs_X is not None:
+        candidate_stabs_X = _generate_candidate_stabilizers(stabs_X, 0)
+    if stabs_Z is not None:
+        candidate_stabs_Z = _generate_candidate_stabilizers(stabs_Z, 0)
         
     base_tracker = DynamicCoverageTracker(
         t,
         current_F_X, current_F_Z, 
         candidate_stabs_X, candidate_stabs_Z, 
-        H_filter_X=H_filter_X,
-        H_filter_Z=H_filter_Z,
     )
 
     current_M = matrix_after_row_ops.copy()
@@ -258,7 +257,7 @@ def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, H_x:
     
     all_candidates = [(initial_score, current_M, [])]
     
-    for op_num in range(max_col_ops):
+    for op_num in range(1, max_col_ops):
         next_beam = []
         for score, curr_M, curr_tracker, curr_ops in beam:
             if ancilla_cost(curr_M, t) == 0:

@@ -189,7 +189,7 @@ def cat_at_origin_with_verification(
         
     row_M, final_M, col_ops = optimize_fault_tolerant_matrix(
         H_x, t=t, max_col_ops=max_col_ops, H_x=H_x, H_z=H_z, max_basis_tries=max_basis_tries,
-        stabs_X=stabs_x, stabs_Z=stabs_z, H_filter_X=H_filter_x, H_filter_Z=H_filter_z
+        stabs_X=stabs_x, stabs_Z=stabs_z
     )
 
     if verbose:

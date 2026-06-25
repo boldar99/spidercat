@@ -454,22 +454,33 @@ def verify_ftsp(
 
 
 if __name__ == "__main__":
+    import argparse
     from spiderstate.utils import load_qecc
     import random
-    random.seed(35)
+    
+    parser = argparse.ArgumentParser(description="Fault Tolerance Verification")
+    parser.add_argument("--code", type=str, default="17_1_5", help="Code string (default: 17_1_5)")
+    parser.add_argument("--state", type=str, default="0", help="State (default: 0)")
+    parser.add_argument("--max_col_ops", type=int, default=100, help="Max column operations (default: 100)")
+    parser.add_argument("--top_n", type=int, default=50, help="Top N (default: 50)")
+    parser.add_argument("--first_layer", type=str, choices=["X", "Z", "none"], default="X", help="First layer (default: X)")
+    
+    args = parser.parse_args()
+    
+    random.seed(10)
 
-    code = "20_2_6"
-    is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code)
+    is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(args.code)
     t = d // 2
 
-    print(f"Generating circuit for {code} (d={d}, t={t})...")
+    print(f"Generating circuit for {args.code} (d={d}, t={t})...")
     circ = cat_at_origin_with_verification(
-        H_x=H_x, H_z=H_z, L_x=L_x, L_z=L_z, d=d, state="0", verbose=True, first_layer="Z", max_col_ops=0
+        H_x=H_x, H_z=H_z, L_x=L_x, L_z=L_z, d=d,
+        state=args.state, max_col_ops=args.max_col_ops, top_n=args.top_n,
+        first_layer=args.first_layer, verbose=True
     )
-    # circ = stim.Circuit(get_project_root().joinpath("good_circuits", f"{code}.stim").read_text())
 
     num_cx, num_meas = count_operations(circ)
-    print(f"  [{code}] circuit generated!\n"
+    print(f"  [{args.code}] circuit generated!\n"
           f"  #CX: {num_cx}, #Meas: {num_meas}, Total: {num_cx + num_meas}\n"
           f"  Depth: {get_circuit_depth(circ)}")
 

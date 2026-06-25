@@ -1,0 +1,81 @@
+# Fault Tolerant Circuit Synthesis (ZX) - Reference Guide
+
+This document is a comprehensive guide for LLMs working on this project. It outlines the project objectives, architecture, environment requirements, and core entry points for Fault Tolerant State Preparation (FTSP) of CSS quantum error-correcting codes.
+
+## 1. Environment Requirements
+
+**CRITICAL INSTRUCTION FOR LLMS:** 
+All Python scripts and tests in this project must be executed using the `zxlive` Conda environment. All dependencies are already installed.
+
+To run a script from the terminal, ensure you run using the environment's python executable:
+```bash
+conda run -n zxlive python <script_name.py>
+```
+
+## 2. Project Overview & Objective
+
+The primary aim of this project is to perform **Fault Tolerant State Preparation (FTSP) of Quantum Error Correcting Codes (specifically CSS states)**.
+
+The strategy revolves around preparing a state based on a parity check matrix $H$ (representing X or Z stabilizers). The workflow is roughly as follows:
+1. **Matrix Requirements**: The matrix must represent a bipartite graph state. This is computationally verified using the `has_unique_ones_property`.
+2. **Matrix Operations**:
+   - **Row Operations**: Correspond to changing the basis. These are "free" operations.
+   - **Column Operations**: Correspond to appending CNOT gates *after* the prepared state. 
+3. **Verification**: The CNOT gates from column operations are assumed to be perfect. Therefore, to ensure the state preparation is truly Fault Tolerant, any faults (up to weight $t$) stemming from these column-operation CNOTs **must be detected**.
+4. **Optimization**: The goal is to find a sequence of column operations (CNOTs) and a good set of stabilizers to measure such that the overall cost is minimized.
+
+## 3. Code Architecture & Modules
+
+The project is split into two main packages, `spidercat` and `spiderstate`.
+- **`spidercat`**: Originally written for fault-tolerant preparation of CAT states. It contains useful utilities, but active development and CSS state FTSP work should **not** happen here.
+- **`spiderstate`**: The active package where the FTSP project resides. It utilizes `spidercat` under the hood.
+
+### Key Components in `spiderstate`
+
+*   **Matrix Optimization (`spiderstate.optimize_parity_matrix`)**
+    *   `has_unique_ones_property`: Guarantees the matrix represents a valid bipartite graph.
+    *   `cnot_cost`: Calculates the cost of preparing a given state in constant time.
+    *   This module handles row and column operations to find a suitable matrix that minimizes the overall FTSP cost.
+
+*   **Heuristic Verification Cost (`spiderstate.fast_verification`)**
+    *   `DynamicCoverageTracker`: A highly efficient method used to evaluate the cost of verification circuits quickly during the matrix optimization phase.
+
+*   **Stabilizer Finding (`spiderstate.verification`)**
+    *   `find_lookahead_verification_stabilizers`: Once column operations are chosen, this module finds a very efficient set of stabilizers to measure. It operates in layers (detecting 1, 2, ... $t$ faults progressively).
+
+*   **Scheduling (`spiderstate.cnot_scheduler`)**
+    *   `cnot_scheduler`: Responsible for scheduling the CNOTs that implement a single verification layer. It guarantees that implementing a layer of syndrome measurements ensures 1 fault can only cause 1 measurement error. It should also flag faults that happen within the verification layer that are not before or after it.
+    *   *(Note: `spiderstate.circuit_finder` and `spiderstate.between_shor_and_steane` contain methods for synthesizing particular syndrome measurement circuits, but they are not necessary for the main pipeline. We use `cnot_scheduler` instead.)*
+
+*   **Fast Fault Analysis (`spiderstate.fast_faults`)**
+    *   `FastFaultSet`: A wrapper of `PureFaultSet` that uses a lookup table and caching instead of a SAT solver for much faster execution.
+
+*   **State Generation (`spiderstate.cat_at_origin`)**
+    *   `cat_at_origin`: A "black box" method that takes the parity check matrix and distance, returning a `stim.Circuit` that always produces a provably FT state for any CSS state (though not necessarily optimally). -> cnot_cost and ancilla_cost calculates the cost for this method.
+    *   **`cat_at_origin_with_verification`**: The **primary end-to-end execution method** that combines state preparation and verification into a complete protocol.
+
+## 4. Testing and Execution
+
+To run end-to-end generation and evaluate if the generated circuits are genuinely fault-tolerant:
+- Use **`spiderstate.fault_tolerance_verification.py`**. 
+- This module is the main testing ground. You can call it with a code name, and it will execute the generation pipeline and verify the fault tolerance of the output circuits.
+
+**Example execution (using the correct environment):**
+```bash
+conda run -n zxlive python -m spiderstate.fault_tolerance_verification <code_name>
+```
+
+*(Note: Verify the specific arguments needed for the tester, but `fault_tolerance_verification.py` is the entry point for validation.)*
+
+## 5. Current Implementation Status & Benchmarks
+
+*   **Known Issues**: Currently, the implementation has a bug. The `DynamicCoverageTracker` logic is flawed, leading to the generation of non-FT circuits for distance > 5.
+*   **Baseline Method**: Running the pipeline with 0 column operations corresponds directly to pure `cat_at_origin`.
+*   **Benchmarks**: Below are some reliable tester configurations and expected performance metrics:
+    *   **17_1_5**: Expected to produce around 70 CNOT gates and execute in about 10 seconds.
+    *   **19_1_5**: Expected to produce around 100 CNOT gates and execute in about 15 seconds.
+    *   **20_2_6**: Takes about 1 to 3 minutes to run.
+    *   **23_1_7**: Takes a similar time to 20_2_6 (1 to 3 minutes).
+
+---
+*If you are an LLM reading this file, use the above references to navigate the project's logic and remember to run everything inside the `zxlive` conda environment.*

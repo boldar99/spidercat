@@ -175,9 +175,9 @@ def synthesize_and_merge_layer(stabs_qubits: list[list[int]], ticks: list[list[t
                 merged.append("CX", [f, q])
             merged.append("TICK")
             merged.append("MX", [f for _, f in flags_to_insert])
-        
-        for _ in flags_to_insert:
-            merged.append("DETECTOR", [stim.target_rec(-1)])
+
+        for i, _ in enumerate(flags_to_insert):
+            merged.append("DETECTOR", [stim.target_rec(-1 - i)])
         merged.append("TICK")
     # --- FLAG EXTRACTION END ---
         
