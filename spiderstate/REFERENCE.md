@@ -28,6 +28,7 @@ The strategy revolves around preparing a state based on a parity check matrix $H
 
 The project is split into two main packages, `spidercat` and `spiderstate`.
 - **`spidercat`**: Originally written for fault-tolerant preparation of CAT states. It contains useful utilities, but active development and CSS state FTSP work should **not** happen here.
+    *   `fao_se_circuit`: Returns a fault-tolerant measurement of a stabilizer up to $t$ faults. It modifies the GHZ state preparation scheme from Flag-at-Origin.
 - **`spiderstate`**: The active package where the FTSP project resides. It utilizes `spidercat` under the hood.
 
 ### Key Components in `spiderstate`
@@ -41,10 +42,11 @@ The project is split into two main packages, `spidercat` and `spiderstate`.
     *   `DynamicCoverageTracker`: A highly efficient method used to evaluate the cost of verification circuits quickly during the matrix optimization phase.
 
 *   **Stabilizer Finding (`spiderstate.verification`)**
-    *   `find_lookahead_verification_stabilizers`: Once column operations are chosen, this module finds a very efficient set of stabilizers to measure. It operates in layers (detecting 1, 2, ... $t$ faults progressively).
+    *   `find_lookahead_verification_stabilizers`: Once column operations are chosen, this module finds a very efficient set of stabilizers to measure. It operates in layers (detecting 1, 2, ... $t$ faults progressively). **Crucial Rule**: Basis cross-verification is required. To detect Z-faults, the algorithm must measure X-stabilizers, and to detect X-faults, it must measure Z-stabilizers.
 
-*   **Scheduling (`spiderstate.cnot_scheduler`)**
-    *   `cnot_scheduler`: Responsible for scheduling the CNOTs that implement a single verification layer. It guarantees that implementing a layer of syndrome measurements ensures 1 fault can only cause 1 measurement error. It should also flag faults that happen within the verification layer that are not before or after it.
+*   **Scheduling (`spiderstate.cnot_scheduler` & `spiderstate.circuit_merger`)**
+    *   `cnot_scheduler`: Uses the Z3 SMT solver to determine the precise time-ordering of data-ancilla CNOTs for a layer of stabilizer measurements. It orders the CNOTs to prevent internal faults from maliciously cascading and cancelling out their own syndromes. If no safe ordering exists mathematically, it uses soft constraints to find an optimal schedule that requires the minimum number of physical flags, returning these "violations" for later injection.
+    *   `circuit_merger`: Acts as the final assembler. It takes the scheduled CNOTs and chosen stabilizers, injects physical flags around unschedulable data CNOTs, and merges everything into the final `stim.Circuit`.
     *   *(Note: `spiderstate.circuit_finder` and `spiderstate.between_shor_and_steane` contain methods for synthesizing particular syndrome measurement circuits, but they are not necessary for the main pipeline. We use `cnot_scheduler` instead.)*
 
 *   **Fast Fault Analysis (`spiderstate.fast_faults`)**
@@ -62,7 +64,7 @@ To run end-to-end generation and evaluate if the generated circuits are genuinel
 
 **Example execution (using the correct environment):**
 ```bash
-conda run -n zxlive python -m spiderstate.fault_tolerance_verification <code_name>
+conda run -n zxlive python spiderstate/fault_tolerance_verification.py --code <code_name>
 ```
 
 *(Note: Verify the specific arguments needed for the tester, but `fault_tolerance_verification.py` is the entry point for validation.)*
