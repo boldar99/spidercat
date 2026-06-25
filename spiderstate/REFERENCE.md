@@ -20,8 +20,8 @@ The strategy revolves around preparing a state based on a parity check matrix $H
 1. **Matrix Requirements**: The matrix must represent a bipartite graph state. This is computationally verified using the `has_unique_ones_property`.
 2. **Matrix Operations**:
    - **Row Operations**: Correspond to changing the basis. These are "free" operations.
-   - **Column Operations**: Correspond to appending CNOT gates *after* the prepared state. 
-3. **Verification**: The CNOT gates from column operations are assumed to be perfect. Therefore, to ensure the state preparation is truly Fault Tolerant, any faults (up to weight $t$) stemming from these column-operation CNOTs **must be detected**.
+   - **Column Operations**: Correspond to appending CNOT gates *after* the prepared state.
+3. **Verification**: The CNOT gates from column operations are assumed to be perfect. Therefore, to ensure the state preparation is truly Fault Tolerant, any faults (up to weight $t$) stemming from these column-operation CNOTs **must be detected**. Alternatively, a state preparation is also considered Fault Tolerant if a fault evades internal flags but produces a bounded residual data syndrome that requires an equivalent or lesser weight to correct ($W_{residual} \leq W_{init}$).
 4. **Optimization**: The goal is to find a sequence of column operations (CNOTs) and a good set of stabilizers to measure such that the overall cost is minimized.
 
 ## 3. Code Architecture & Modules
@@ -61,6 +61,10 @@ The project is split into two main packages, `spidercat` and `spiderstate`.
 To run end-to-end generation and evaluate if the generated circuits are genuinely fault-tolerant:
 - Use **`spiderstate.fault_tolerance_verification.py`**. 
 - This module is the main testing ground. You can call it with a code name, and it will execute the generation pipeline and verify the fault tolerance of the output circuits.
+- **The Core Verifier (`verify_ftsp`):** This script uses the orchestrator, `verify_ftsp`, which coordinates verification of X and Z faults: 
+  - **Primary Basis (ILP):** The primary basis verification relies on the `mip` library to solve an exact Integer Linear Program (ILP). It evaluates if there exists a catastrophic cascade where `W(E_init) + W(E_data) <= d - 1`.
+  - **Conjugate Basis (Combinatorial BFS):** Uses a fast bitwise breadth-first search against a pre-computed Maximum Likelihood Decoder dictionary to evaluate uncorrectable syndrome mass.
+
 
 **Example execution (using the correct environment):**
 ```bash
