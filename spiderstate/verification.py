@@ -356,8 +356,9 @@ def find_lookahead_verification_stabilizers(
                     else:
                         missed_in_valid = 0
                         
+                        
                     uncoverable = fs_size - valid_cov.shape[1] + missed_in_valid
-                    next_cost += uncoverable * 1000
+                    next_cost += uncoverable * 2  # Penalize uncoverable faults by 2 CNOTs (1 flag)
                     
                 cover_cost = sum(cnot_cost(w, t) for w in np.sum(cover, axis=1))
                 new_realized_cost = realized_cost + cover_cost
@@ -389,7 +390,7 @@ def find_lookahead_verification_stabilizers(
         if verbose:
             print(f"  -> Kept top {len(beam)} states. Best Lookahead Score: {next_beam_candidates[0][1] if layer_idx < t - 1 else beam[0][0]}")
 
-    # STRICT PRUNING
+    # SCORING & PRUNING
     valid_beam = []
     from spiderstate.cnot_scheduler import DangerousFault, schedule_all_verification_layers
     num_qubits = raw_fault_sets[0].num_qubits if raw_fault_sets else 0
@@ -399,22 +400,16 @@ def find_lookahead_verification_stabilizers(
         det_counts = cand[3]
         chosen_layers = cand[1]
         
-        is_valid = True
-        for layer_idx, target_coverage in enumerate(targets):
-            if len(target_coverage) == 0: continue
-            total_det = np.sum(det_counts[layer_idx], axis=1)
-            if np.any(total_det < target_coverage):
-                is_valid = False
-                break
-        if not is_valid:
-            continue
-            
+        target_coverage_violations = []
         dangerous_faults = []
+        
         for layer_idx, fs in enumerate(raw_fault_sets):
             k = layer_idx + 1
             target_coverage = targets[layer_idx]
             if len(target_coverage) == 0:
                 continue
+                
+            total_det = np.sum(det_counts[layer_idx], axis=1)
                 
             E_oplus_q_flat = (fs.faults[:, None, :] + I_N[None, :, :]) % 2
             E_oplus_q_flat = E_oplus_q_flat.reshape(-1, num_qubits)
@@ -434,6 +429,20 @@ def find_lookahead_verification_stabilizers(
                         if det_counts[layer_idx][i, col_idx] == 1:
                             D_E.add((l_idx, s_idx))
                         col_idx += 1
+                        
+                # Check for target coverage failure
+                if total_det[i] < target_coverage[i]:
+                    # Find any qubit where this fault acts
+                    active_qubits = np.nonzero(f)[0]
+                    if len(active_qubits) > 0:
+                        q_to_flag = active_qubits[0]
+                        target_coverage_violations.append({
+                            "layer": 0, 
+                            "q": q_to_flag, 
+                            "s_j": -1, 
+                            "violation_amount": 1,
+                            "type": "target_coverage"
+                        })
                         
                 if len(D_E) > 0:
                     T_E_q = {q: T_E_q_matrix[i, q] for q in range(num_qubits)}
@@ -457,23 +466,24 @@ def find_lookahead_verification_stabilizers(
             layers_qubits.append(stabs_qubits)
             
         try:
-            ticks, violations = schedule_all_verification_layers(layers_qubits, unique_dfs)
+            ticks, sched_violations = schedule_all_verification_layers(layers_qubits, unique_dfs)
+            all_violations = target_coverage_violations + sched_violations
             valid_beam.append({
                 "cand": cand,
                 "chosen_layers": chosen_layers,
                 "det_counts": det_counts,
                 "unique_dfs": unique_dfs,
                 "ticks": ticks,
-                "violations": violations
+                "violations": all_violations
             })
         except RuntimeError:
             pass # Failed to schedule, try next state
             
     if not valid_beam:
-        raise RuntimeError("Strict Pruning: No states in the beam satisfied the target coverage AND could be scheduled safely! Try increasing max_combinations or top_n.")
+        raise RuntimeError("No states in the beam could be scheduled safely! Try increasing max_combinations or top_n.")
         
-    # Sort valid beam by number of violations (minimize), then by lookahead score (maximize, negative because we sort ascending)
-    valid_beam.sort(key=lambda x: (len(x["violations"]), -x["cand"][0]))
+    # Sort valid beam by total score: realized_cost + 2 * number of flags
+    valid_beam.sort(key=lambda x: x["cand"][0] + 2 * len(x["violations"]))
     best_state = valid_beam[0]
     
     if verbose:

@@ -458,15 +458,15 @@ if __name__ == "__main__":
     import random
     random.seed(35)
 
-    code = "17_1_5"
+    code = "20_2_6"
     is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code)
     t = d // 2
 
     print(f"Generating circuit for {code} (d={d}, t={t})...")
-    # circ = cat_at_origin_with_verification(
-    #     H_x=H_x, H_z=H_z, L_x=L_x, L_z=L_z, d=d, state="0", verbose=True, first_layer="Z", max_col_ops=10
-    # )
-    circ = stim.Circuit(get_project_root().joinpath("good_circuits", f"{code}.stim").read_text())
+    circ = cat_at_origin_with_verification(
+        H_x=H_x, H_z=H_z, L_x=L_x, L_z=L_z, d=d, state="0", verbose=True, first_layer="Z", max_col_ops=0
+    )
+    # circ = stim.Circuit(get_project_root().joinpath("good_circuits", f"{code}.stim").read_text())
 
     num_cx, num_meas = count_operations(circ)
     print(f"  [{code}] circuit generated!\n"

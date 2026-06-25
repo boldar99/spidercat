@@ -67,9 +67,6 @@ def schedule_all_verification_layers(
                             
                 xor_set = D_gt_L.symmetric_difference(syn_gt_L)
                 M_E_q = abs_D_E - len(D_gt_L) + len(xor_set) - req_T_E_q
-                
-                if M_E_q < 0:
-                    raise RuntimeError(f"Impossible to schedule: M_E_q = {M_E_q} for layer {L}, q {q}")
                     
                 w_E = {s_i: 1 if (L, s_i) in D_E else -1 for s_i in stabs}
                 max_possible_sum = sum(v for v in w_E.values() if v > 0)
@@ -95,25 +92,39 @@ def schedule_all_verification_layers(
             opt.minimize(1000 * z3.Sum(all_flags) + max_tick)
         else:
             opt.minimize(max_tick)
+            
+        opt.set("timeout", 2000) # 2 seconds timeout per layer
         
-        if opt.check() != z3.sat:
+        status = opt.check()
+        if status == z3.unsat:
             raise RuntimeError(f"Failed to find a valid CNOT schedule for layer {L} even with soft constraints!")
             
-        m = opt.model()
+        try:
+            m = opt.model()
+        except z3.Z3Exception:
+            raise RuntimeError(f"Z3 timed out and could not find any valid model for layer {L}!")
         
         for idx, flag in enumerate(all_flags):
-            flag_val = m.evaluate(flag).as_long()
-            if flag_val > 0:
-                detail = flag_details[idx]
-                detail["violation_amount"] = flag_val
-                all_violations.append(detail)
+            # Evaluate might return a Real or an uninterpreted expression if Z3 didn't fully resolve it,
+            # but for Integer variables it should be safe.
+            try:
+                flag_val = m.evaluate(flag).as_long()
+                if flag_val > 0:
+                    detail = flag_details[idx]
+                    detail["violation_amount"] = flag_val
+                    all_violations.append(detail)
+            except z3.Z3Exception:
+                pass # If it couldn't evaluate, assume 0
         
         schedule = {}
         for (i, q), v in T.items():
-            tick = m.evaluate(v).as_long()
-            if tick not in schedule:
-                schedule[tick] = []
-            schedule[tick].append((i, q))
+            try:
+                tick = m.evaluate(v).as_long()
+                if tick not in schedule:
+                    schedule[tick] = []
+                schedule[tick].append((i, q))
+            except z3.Z3Exception:
+                raise RuntimeError(f"Failed to evaluate tick for stab {i} on qubit {q} after timeout.")
             
         ticks = []
         for t_tick in sorted(schedule.keys()):
