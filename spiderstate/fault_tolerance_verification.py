@@ -459,7 +459,7 @@ if __name__ == "__main__":
     import random
     
     parser = argparse.ArgumentParser(description="Fault Tolerance Verification")
-    parser.add_argument("--code", type=str, default="12_2_4", help="Code string (default: 17_1_5)")
+    parser.add_argument("--code", type=str, default="20_2_6", help="Code string (default: 17_1_5)")
     parser.add_argument("--state", type=str, default="0", help="State (default: 0)")
     parser.add_argument("--max_col_ops", type=int, default=100, help="Max column operations (default: 100)")
     parser.add_argument("--top_n", type=int, default=50, help="Top N (default: 50)")

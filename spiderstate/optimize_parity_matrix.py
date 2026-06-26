@@ -8,7 +8,8 @@ import math
 
 from spiderstate.utils import load_qecc
 from spiderstate.verification import _generate_candidate_stabilizers
-from spiderstate.fast_verification import DynamicCoverageTracker
+from spiderstate.fast_verification import TrueBackwardTracker
+from spidercat.syndrome_measurement import cnot_cost as se_cnot_cost
 
 
 # --- USER'S ORIGINAL COST FUNCTIONS ---
@@ -226,11 +227,6 @@ def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, H_x:
     r, c = M.shape
     best_row_op_cost, matrix_after_row_ops = row_optimize_matrix(M, t, max_basis_tries)
 
-    # --- PHASE 2: Column Operations ---
-    current_M = matrix_after_row_ops.copy()
-    current_F_X = np.eye(c, dtype=int)
-    current_F_Z = np.eye(c, dtype=int)
-
     candidate_stabs_X = None
     candidate_stabs_Z = None
 
@@ -244,12 +240,11 @@ def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, H_x:
     if stabs_Z is not None:
         candidate_stabs_Z = _generate_candidate_stabilizers(stabs_Z, 0)
         
-    base_tracker = DynamicCoverageTracker(
-        t,
-        current_F_X, current_F_Z, 
-        candidate_stabs_X, candidate_stabs_Z,
-        H_reduce_X=H_reduce_X,
-        H_reduce_Z=H_reduce_Z
+    costs_X = np.array([se_cnot_cost(w, t) for w in np.sum(candidate_stabs_X, axis=1)]) if candidate_stabs_X is not None else None
+    costs_Z = np.array([se_cnot_cost(w, t) for w in np.sum(candidate_stabs_Z, axis=1)]) if candidate_stabs_Z is not None else None
+
+    base_tracker = TrueBackwardTracker(
+        t, candidate_stabs_X, candidate_stabs_Z, H_reduce_X, H_reduce_Z, costs_X, costs_Z
     )
 
     current_M = matrix_after_row_ops.copy()
