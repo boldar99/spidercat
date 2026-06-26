@@ -54,24 +54,12 @@ def fast_greedy_set_cover(
         
     return selected_idx
 
-def generate_all_combinations(stabs: np.ndarray) -> np.ndarray:
-    """
-    Generates the full subspace spanned by the rows of stabs, INCLUDING the zero vector.
-    """
-    if stabs is None:
-        return None
-    k = stabs.shape[0]
-    combos = np.zeros((1 << k, stabs.shape[1]), dtype=np.int8)
-    for i in range(1 << k):
-        comb = [j for j in range(k) if (i >> j) & 1]
-        if comb:
-            combos[i] = np.bitwise_xor.reduce(stabs[comb], axis=0)
-    return combos
 
 class TrueBackwardTracker:
-    def __init__(self, t: int, candidate_stabs_X, candidate_stabs_Z, H_filter_X, H_filter_Z, costs_X, costs_Z):
+    def __init__(self, t: int, candidate_stabs_X, candidate_stabs_Z, H_filter_X, H_filter_Z, costs_X, costs_Z, heuristic: str = "overlap"):
         self.c = H_filter_X.shape[1] if H_filter_X is not None else (H_filter_Z.shape[1] if H_filter_Z is not None else 0)
         self.t = t
+        self.heuristic = heuristic
         
         self.U_X = np.eye(self.c, dtype=np.int8)
         self.U_Z = np.eye(self.c, dtype=np.int8)
@@ -106,6 +94,7 @@ class TrueBackwardTracker:
         new_obj.costs_Z = self.costs_Z
         new_obj.has_X_cands = self.has_X_cands
         new_obj.has_Z_cands = self.has_Z_cands
+        new_obj.heuristic = self.heuristic
         return new_obj
 
     def update_cnot(self, source, target):
@@ -130,12 +119,21 @@ class TrueBackwardTracker:
         full_F_X = np.vstack((self.U_X, self.cnot_faults_X))
         full_F_Z = np.vstack((self.U_Z, self.cnot_faults_Z))
         
-        if self.has_Z_cands:
-            if self.H_filter_X is not None:
-                S_X = (full_F_X @ self.H_filter_X.T) % 2
-                faults_active_X = np.sum(S_X, axis=1) >= 2
+        def _get_active_faults(F, H_filter, stabs):
+            if H_filter is not None:
+                S = (F @ H_filter.T) % 2
+                if self.heuristic == "zero_tolerance":
+                    return np.sum(S, axis=1) >= 1
+                elif self.heuristic == "weighted_syndrome":
+                    stab_costs = np.sum(H_filter, axis=1)
+                    return (S @ stab_costs) > np.mean(stab_costs)
+                else: # "overlap" (default)
+                    return np.sum(S, axis=1) >= 2
             else:
-                faults_active_X = np.any(full_F_X, axis=1)
+                return np.any(F, axis=1)
+        
+        if self.has_Z_cands:
+            faults_active_X = _get_active_faults(full_F_X, self.H_filter_X, self.candidate_stabs_X)
                 
             if np.any(faults_active_X):
                 cov_X = ((self.candidate_stabs_Z @ full_F_X.T) % 2).astype(bool)
@@ -152,11 +150,7 @@ class TrueBackwardTracker:
                     verif_cost += np.sum(self.costs_Z[chosen_idx])
                 
         if self.has_X_cands:
-            if self.H_filter_Z is not None:
-                S_Z = (full_F_Z @ self.H_filter_Z.T) % 2
-                faults_active_Z = np.sum(S_Z, axis=1) >= 2
-            else:
-                faults_active_Z = np.any(full_F_Z, axis=1)
+            faults_active_Z = _get_active_faults(full_F_Z, self.H_filter_Z, self.candidate_stabs_Z)
                 
             if np.any(faults_active_Z):
                 cov_Z = ((self.candidate_stabs_X @ full_F_Z.T) % 2).astype(bool)

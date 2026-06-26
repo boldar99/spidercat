@@ -216,7 +216,21 @@ def simulated_annealing_phase2(base_M: np.ndarray, t: int, max_col_ops: int,
     return best_M, best_ops, best_cost
 
 
-def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, H_x: np.ndarray = None, H_z: np.ndarray = None, max_basis_tries: int = 5000, return_portfolio: bool = False, beam_width: int = 5, portfolio_size: int = 20, stabs_X: np.ndarray = None, stabs_Z: np.ndarray = None, H_reduce_X: np.ndarray = None, H_reduce_Z: np.ndarray = None):
+def optimize_fault_tolerant_matrix(
+    M: np.ndarray,
+    t: int,
+    max_col_ops: int = 10,
+    H_x: np.ndarray = None,
+    H_z: np.ndarray = None,
+    max_basis_tries: int = 5000,
+    beam_width: int = 5,
+    return_portfolio: bool = False,
+    stabs_X: np.ndarray = None,
+    stabs_Z: np.ndarray = None,
+    H_reduce_X: np.ndarray = None,
+    H_reduce_Z: np.ndarray = None,
+    heuristic: str = "overlap"
+):
     """
     Returns:
     - matrix_after_row_ops
@@ -224,17 +238,16 @@ def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, H_x:
     - col_ops_performed (list of tuples: (target, source))
     If return_portfolio is True, returns (matrix_after_row_ops, portfolio) where portfolio is a list of (M, col_ops)
     """
-    r, c = M.shape
-    best_row_op_cost, matrix_after_row_ops = row_optimize_matrix(M, t, max_basis_tries)
-
-    candidate_stabs_X = None
-    candidate_stabs_Z = None
+    best_row_op_cost, matrix_after_row_ops = row_optimize_matrix(M, t, 5000)
+    c = M.shape[1]
 
     if stabs_X is None and H_x is not None:
         stabs_X = H_x
     if stabs_Z is None and H_z is not None:
         stabs_Z = H_z
-
+        
+    candidate_stabs_X = None
+    candidate_stabs_Z = None
     if stabs_X is not None:
         candidate_stabs_X = _generate_candidate_stabilizers(stabs_X, 0)
     if stabs_Z is not None:
@@ -244,7 +257,7 @@ def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, H_x:
     costs_Z = np.array([se_cnot_cost(w, t) for w in np.sum(candidate_stabs_Z, axis=1)]) if candidate_stabs_Z is not None else None
 
     base_tracker = TrueBackwardTracker(
-        t, candidate_stabs_X, candidate_stabs_Z, H_reduce_X, H_reduce_Z, costs_X, costs_Z
+        t, candidate_stabs_X, candidate_stabs_Z, H_reduce_X, H_reduce_Z, costs_X, costs_Z, heuristic=heuristic
     )
 
     current_M = matrix_after_row_ops.copy()

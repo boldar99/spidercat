@@ -464,6 +464,7 @@ if __name__ == "__main__":
     parser.add_argument("--max_col_ops", type=int, default=100, help="Max column operations (default: 100)")
     parser.add_argument("--top_n", type=int, default=50, help="Top N (default: 50)")
     parser.add_argument("--first_layer", type=str, choices=["X", "Z", "none"], default="X", help="First layer (default: X)")
+    parser.add_argument("--heuristic", type=str, choices=["overlap", "zero_tolerance", "weighted_syndrome", "global_sparsity", "max_contention", "soft_cover"], default="overlap", help="Heuristic for fault tracker")
     parser.add_argument("--seed", type=str, default="100", help="The random seed")
 
     args = parser.parse_args()
@@ -477,7 +478,7 @@ if __name__ == "__main__":
     circ = cat_at_origin_with_verification(
         H_x=H_x, H_z=H_z, L_x=L_x, L_z=L_z, d=d,
         state=args.state, max_col_ops=args.max_col_ops, top_n=args.top_n,
-        first_layer=args.first_layer, verbose=True
+        first_layer=args.first_layer, verbose=True, heuristic=args.heuristic
     )
     # circ = stim.Circuit(get_project_root().joinpath("good_circuits", f"{args.code}.stim").read_text())
 

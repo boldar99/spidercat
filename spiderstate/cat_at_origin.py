@@ -165,7 +165,8 @@ def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False) -> stim.Circuit:
 def cat_at_origin_with_verification(
     H_x: np.ndarray, H_z: np.ndarray, L_x: np.ndarray, L_z: np.ndarray, d: int,
     state: str = "0", max_col_ops: int = 100, top_n: int = 50, max_basis_tries: int = 10_000,
-    first_layer: Literal["X", "Z", "none"] = "none", verbose: bool = False
+    first_layer: Literal["X", "Z", "none"] = "none", verbose: bool = False,
+    heuristic: str = "overlap"
 ) -> stim.Circuit:
     t = d // 2
     
@@ -196,7 +197,7 @@ def cat_at_origin_with_verification(
     row_M, final_M, col_ops = optimize_fault_tolerant_matrix(
         H_x, t=t, max_col_ops=max_col_ops, H_x=H_x, H_z=H_z, max_basis_tries=max_basis_tries,
         stabs_X=stabs_z, stabs_Z=stabs_x,  # stabs_X expects X-type, stabs_Z expects Z-type
-        H_reduce_X=H_reduce_x, H_reduce_Z=H_reduce_z
+        H_reduce_X=H_reduce_x, H_reduce_Z=H_reduce_z, heuristic=heuristic
     )
 
     if verbose:

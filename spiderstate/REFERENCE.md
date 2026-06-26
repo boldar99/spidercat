@@ -39,7 +39,10 @@ The project is split into two main packages, `spidercat` and `spiderstate`.
     *   This module handles row and column operations to find a suitable matrix that minimizes the overall FTSP cost.
 
 *   **Heuristic Verification Cost (`spiderstate.fast_verification`)**
-    *   `TrueBackwardTracker`: A highly efficient, exact physical fault tracker used during the matrix optimization phase. By "prepending" CNOTs (building the circuit backwards), it maintains the true physical faults by updating the Heisenberg unitary operator $U$ in $O(c)$ time per step. Instead of strictly penalizing weight $\ge 2$ faults (which would conservatively halt optimization at 0 CNOTs), it feeds these *true* faults into a greedy set-cover and **overlap** heuristic (support intersection modulo 2) against the candidate stabilizer basis. This combination of exact physical tracking and submodular heuristic coverage drives down CNOT counts (e.g., reaching 40 CNOTs for the 12_2_4 code) without over-constraining the search, relying on the second module to guarantee strict mathematical fault tolerance.
+    *   `TrueBackwardTracker`: A highly efficient, exact physical fault tracker used during the matrix optimization phase. By "prepending" CNOTs (building the circuit backwards), it maintains the true physical faults by updating the Heisenberg unitary operator $U$ in $O(c)$ time per step. It feeds these *true* faults into a greedy set-cover based on specific matrix heuristics:
+        *   **`overlap` (Baseline)**: Penalizes faults with a syndrome weight $\ge 2$ (support intersection modulo 2) against the candidate stabilizer basis.
+        *   **`zero_tolerance`**: Strictly penalizes *any* fault with a syndrome weight $\ge 1$. This encourages the simulated annealing to find inherently robust circuits where faults self-cancel or become full stabilizers.
+        *   **`weighted_syndrome`**: Penalizes faults if the physical CNOT cost of the stabilizers they trigger is above the mean.
 
 *   **Stabilizer Finding (`spiderstate.verification`)**
     *   `find_lookahead_verification_stabilizers`: Once column operations are chosen, this module finds a very efficient set of stabilizers to measure. It operates in layers (detecting 1, 2, ... $t$ faults progressively). **Crucial Rule**: Basis cross-verification is required. To detect Z-faults, the algorithm must measure X-stabilizers, and to detect X-faults, it must measure Z-stabilizers.
@@ -78,15 +81,13 @@ conda run -n zxlive python spiderstate/fault_tolerance_verification.py --code <c
 *   **Architecture Note on Heuristics**: Because the `DynamicCoverageTracker` uses a loose overlap heuristic, it intentionally passes highly entangled candidate matrices to the verification module to keep CNOT counts extremely low. While this works beautifully for smaller codes (e.g., yielding records like 40 CNOTs for 12_2_4), for higher distance codes (distance > 5), the heuristic can occasionally under-penalize complex faults to a degree where the subsequent lookahead verification module struggles to find a fully valid stabilizer set without scheduling violations.
 *   **Baseline Method**: Running the pipeline with 0 column operations corresponds directly to pure `cat_at_origin`.
 *   **Benchmarks**: Below are some reliable tester configurations and expected performance metrics:
-    *   **7_1_3**: Optimal result needs 11 CNOT gates.
-    *   **9_1_3**: Best known result needs 11 CNOT gates.
-    *   **15_7_3**: Best known result needs 28 CNOT gates.
-    *   **12_2_4**: xpected to produce around 70 CNOT gates and execute in about 10 seconds. Best known result uses 40 CNOT gates.
-        *   When running with first_layer="X", it can produce a circuits with 38 CNOTs, but it's non-FT. 
-    *   **16_6_4**: Expected to produce around 70 CNOT gates and execute in about 10 seconds. Best known result uses 64 CNOT gates.
-        *   When running with first_layer="X", it produces circuits with not Z verification layer and the circuit is non-FT. It's fine with first_layer="Z". 
-    *   **17_1_5**: Expected to produce around 70 CNOT gates and execute in about 10 seconds. Best known result uses 57 CNOT gates.
-    *   **19_1_5**: Expected to produce around 100 CNOT gates and execute in about 15 seconds. Best known result uses 86 CNOT gates.
+    *   **7_1_3**: Best FT result uses 11 CNOT gates.
+    *   **9_1_3**: Best FT result uses 11 CNOT gates.
+    *   **15_7_3**: Best FT result uses 28 CNOT gates.
+    *   **12_2_4**: Best FT result uses 50 CNOT gates.
+    *   **16_6_4**: Best FT result uses 40 CNOT gates.
+    *   **17_1_5**: Best FT result uses 57 CNOT gates.
+    *   **19_1_5**: Best FT result uses 86 CNOT gates.
     *   **20_2_6**: Takes about 1 to 3 minutes to run.
     *   **23_1_7**: Takes a similar time to 20_2_6 (1 to 3 minutes).
 
