@@ -7,7 +7,7 @@ import time
 CODES = ["7_1_3", "9_1_3", "15_7_3", "12_2_4", "16_6_4", "17_1_5", "19_1_5"]
 HEURISTICS = ["overlap", "zero_tolerance", "weighted_syndrome"]
 FIRST_LAYERS = ["Z", "X"]
-NUM_RUNS_PER_LAYER = 2
+NUM_RUNS_PER_LAYER = 4
 
 def run_test(code, heuristic, first_layer, seed):
     cmd = [
