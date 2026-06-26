@@ -459,15 +459,16 @@ if __name__ == "__main__":
     import random
     
     parser = argparse.ArgumentParser(description="Fault Tolerance Verification")
-    parser.add_argument("--code", type=str, default="20_2_6", help="Code string (default: 17_1_5)")
+    parser.add_argument("--code", type=str, default="16_6_4", help="Code string (default: 17_1_5)")
     parser.add_argument("--state", type=str, default="0", help="State (default: 0)")
     parser.add_argument("--max_col_ops", type=int, default=100, help="Max column operations (default: 100)")
     parser.add_argument("--top_n", type=int, default=50, help="Top N (default: 50)")
     parser.add_argument("--first_layer", type=str, choices=["X", "Z", "none"], default="X", help="First layer (default: X)")
-    
+    parser.add_argument("--seed", type=str, default="100", help="The random seed")
+
     args = parser.parse_args()
     
-    random.seed(100)
+    random.seed(args.seed)
 
     is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(args.code)
     t = d // 2

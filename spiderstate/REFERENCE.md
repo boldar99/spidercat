@@ -78,8 +78,15 @@ conda run -n zxlive python spiderstate/fault_tolerance_verification.py --code <c
 *   **Architecture Note on Heuristics**: Because the `DynamicCoverageTracker` uses a loose overlap heuristic, it intentionally passes highly entangled candidate matrices to the verification module to keep CNOT counts extremely low. While this works beautifully for smaller codes (e.g., yielding records like 40 CNOTs for 12_2_4), for higher distance codes (distance > 5), the heuristic can occasionally under-penalize complex faults to a degree where the subsequent lookahead verification module struggles to find a fully valid stabilizer set without scheduling violations.
 *   **Baseline Method**: Running the pipeline with 0 column operations corresponds directly to pure `cat_at_origin`.
 *   **Benchmarks**: Below are some reliable tester configurations and expected performance metrics:
-    *   **17_1_5**: Expected to produce around 70 CNOT gates and execute in about 10 seconds.
-    *   **19_1_5**: Expected to produce around 100 CNOT gates and execute in about 15 seconds.
+    *   **7_1_3**: Optimal result needs 11 CNOT gates.
+    *   **9_1_3**: Best known result needs 11 CNOT gates.
+    *   **15_7_3**: Best known result needs 28 CNOT gates.
+    *   **12_2_4**: xpected to produce around 70 CNOT gates and execute in about 10 seconds. Best known result uses 40 CNOT gates.
+        *   When running with first_layer="X", it can produce a circuits with 38 CNOTs, but it's non-FT. 
+    *   **16_6_4**: Expected to produce around 70 CNOT gates and execute in about 10 seconds. Best known result uses 64 CNOT gates.
+        *   When running with first_layer="X", it produces circuits with not Z verification layer and the circuit is non-FT. It's fine with first_layer="Z". 
+    *   **17_1_5**: Expected to produce around 70 CNOT gates and execute in about 10 seconds. Best known result uses 57 CNOT gates.
+    *   **19_1_5**: Expected to produce around 100 CNOT gates and execute in about 15 seconds. Best known result uses 86 CNOT gates.
     *   **20_2_6**: Takes about 1 to 3 minutes to run.
     *   **23_1_7**: Takes a similar time to 20_2_6 (1 to 3 minutes).
 
