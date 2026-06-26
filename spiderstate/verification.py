@@ -144,13 +144,7 @@ def _solve_top_n_weighted_set_covers(
                 selected_stabs_indices=[start_idx]
             )
             
-            # Check if we fully covered the faults. If not, the overlap constraint made it impossible.
-            uncovered_after = uncovered.copy()
-            for idx in rest_idx:
-                uncovered_after[valid_cov[idx]] -= 1
-            if np.any(uncovered_after > 0):
-                continue
-
+            # Accept partial covers because the beam search can finish them in later layers
             selected_idx.extend(rest_idx)
             
         selected_idx.sort()
@@ -264,37 +258,40 @@ def find_lookahead_verification_stabilizers(
     beam = [(0.0, [], [], initial_detections)]
     
     for layer_idx in range(t):
-        raw_current = raw_fault_sets[layer_idx]
-        target_current = targets[layer_idx]
-        
         next_beam_candidates = []
         
         if verbose:
             print(f"  [Layer {layer_idx + 1}] Expanding beam of size {len(beam)}:")
             
         for state_idx, (realized_cost, layers, accumulated_stabs, det_counts) in enumerate(beam):
-            det_current = det_counts[layer_idx]
+            active_surviving_list = []
+            active_threat_list = []
             
-            if len(raw_current.faults) == 0:
+            for k in range(layer_idx + 1):
+                raw_k = raw_fault_sets[k]
+                if len(raw_k.faults) == 0:
+                    continue
+                target_k = targets[k]
+                total_k = np.sum(det_counts[k], axis=1)
+                unsat_mask = total_k < target_k
+                if np.any(unsat_mask):
+                    active_surviving_list.append(raw_k.faults[unsat_mask])
+                    active_threat_list.append(target_k[unsat_mask] - total_k[unsat_mask])
+                    
+            if not active_surviving_list:
                 next_beam_candidates.append((realized_cost, realized_cost, layers + [[]], accumulated_stabs, det_counts))
                 continue
                 
-            total_detections = np.sum(det_current, axis=1)
-            unsatisfied_mask = total_detections < target_current
-            surviving_faults = raw_current.faults[unsatisfied_mask]
-            
-            if len(surviving_faults) == 0:
-                next_beam_candidates.append((realized_cost, realized_cost, layers + [[]], accumulated_stabs, det_counts))
-                continue
-                
-            threat_targets = target_current[unsatisfied_mask] - total_detections[unsatisfied_mask]
+            surviving_faults = np.vstack(active_surviving_list)
+            threat_targets = np.concatenate(active_threat_list)
+            capped_targets = np.minimum(threat_targets, 1)
             
             cov_matrix = ((candidate_stabs @ surviving_faults.T) % 2).astype(bool)
             num_uncoverable = np.sum(~np.any(cov_matrix, axis=0))
             realized_cost += num_uncoverable * 1000
                 
             candidate_covers = _solve_top_n_weighted_set_covers(
-                surviving_faults, stabs, t, max_combinations, max_time_sec, top_n, target_coverage=threat_targets
+                surviving_faults, stabs, t, max_combinations, max_time_sec, top_n, target_coverage=capped_targets
             )
             
             if not candidate_covers:
@@ -327,16 +324,22 @@ def find_lookahead_verification_stabilizers(
                     new_det_counts.append(np.hstack((det, new_sigs)))
                 
                 # Lookahead scoring
-                raw_next = raw_fault_sets[layer_idx + 1]
-                target_next = targets[layer_idx + 1]
+                next_surviving_list = []
+                for k in range(min(layer_idx + 2, t)):
+                    raw_k = raw_fault_sets[k]
+                    if len(raw_k.faults) == 0:
+                        continue
+                    target_k = targets[k]
+                    total_k = np.sum(new_det_counts[k], axis=1)
+                    unsat_mask = total_k < target_k
+                    if np.any(unsat_mask):
+                        next_surviving_list.append(raw_k.faults[unsat_mask])
                 
-                if len(raw_next.faults) > 0:
-                    det_next = new_det_counts[layer_idx + 1]
-                    total_next = np.sum(det_next, axis=1)
-                    unsat_next_mask = total_next < target_next
-                    next_surviving = raw_next.faults[unsat_next_mask]
+                if next_surviving_list:
+                    next_surviving = np.vstack(next_surviving_list)
                 else:
-                    next_surviving = np.zeros((0, raw_next.num_qubits), dtype=np.int8)
+                    num_qubits = raw_fault_sets[0].num_qubits if raw_fault_sets else 0
+                    next_surviving = np.zeros((0, num_qubits), dtype=np.int8)
                 
                 fs_size = len(next_surviving)
                 

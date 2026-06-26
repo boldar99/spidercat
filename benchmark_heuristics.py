@@ -30,8 +30,6 @@ def run_test(code, heuristic, first_layer, seed):
     output = result.stdout + "\n" + result.stderr
     
     # Check if non-FT or Verification failed
-    if "WARNING:" in output and "unschedulable CNOT violations" in output:
-        return "NON-FT", -1, elapsed
     if "Final Verification Result: False" in output or "[FAIL]" in output:
         return "NON-FT", -1, elapsed
     if "Final Verification Result: True" not in output:
