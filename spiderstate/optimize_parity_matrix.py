@@ -215,7 +215,7 @@ def simulated_annealing_phase2(base_M: np.ndarray, t: int, max_col_ops: int,
     return best_M, best_ops, best_cost
 
 
-def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, H_x: np.ndarray = None, H_z: np.ndarray = None, max_basis_tries: int = 5000, return_portfolio: bool = False, beam_width: int = 5, portfolio_size: int = 20, stabs_X: np.ndarray = None, stabs_Z: np.ndarray = None):
+def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, H_x: np.ndarray = None, H_z: np.ndarray = None, max_basis_tries: int = 5000, return_portfolio: bool = False, beam_width: int = 5, portfolio_size: int = 20, stabs_X: np.ndarray = None, stabs_Z: np.ndarray = None, H_reduce_X: np.ndarray = None, H_reduce_Z: np.ndarray = None):
     """
     Returns:
     - matrix_after_row_ops
@@ -247,7 +247,9 @@ def optimize_fault_tolerant_matrix(M: np.ndarray, t: int, max_col_ops: int, H_x:
     base_tracker = DynamicCoverageTracker(
         t,
         current_F_X, current_F_Z, 
-        candidate_stabs_X, candidate_stabs_Z, 
+        candidate_stabs_X, candidate_stabs_Z,
+        H_reduce_X=H_reduce_X,
+        H_reduce_Z=H_reduce_Z
     )
 
     current_M = matrix_after_row_ops.copy()
@@ -302,7 +304,12 @@ if __name__ == "__main__":
     is_self_dual, H_z, H_x, L_x, L_z, d = load_qecc("12_2_4")
     t = d // 2
 
-    row_M, final_M, col_ops = optimize_fault_tolerant_matrix(H_x, t=t, max_col_ops=0, max_basis_tries=10_000)
+    # We want H_reduce_X to reduce X faults, so it must be X-type stabilizers.
+    # We want H_reduce_Z to reduce Z faults, so it must be Z-type stabilizers.
+    H_reduce_X = H_x
+    H_reduce_Z = H_z
+
+    row_M, final_M, col_ops = optimize_fault_tolerant_matrix(H_x, t=t, max_col_ops=0, max_basis_tries=10_000, H_reduce_X=H_reduce_X, H_reduce_Z=H_reduce_Z)
     # row_M = pivot_optimize_parity_matrix(H_x, t=t, max_basis_tries=100_000)
 
 

@@ -171,16 +171,22 @@ def cat_at_origin_with_verification(
     
     if state == "0":
         if verbose: print("Configuring stabilizers for logical |0> state preparation...")
+        # For verifying X faults, we measure Z-type observables (H_z + L_z)
         stabs_x = np.concatenate((H_z, L_z))
+        # To reduce X faults, we use X-type stabilizers of |0>_L (H_x)
+        H_reduce_x = H_x
+        # For verifying Z faults, we measure X-type observables (H_x + L_x)
         stabs_z = H_x
-        H_filter_x = H_x
-        H_filter_z = np.concatenate((H_z, L_z))
+        # To reduce Z faults, we use Z-type stabilizers of |0>_L (H_z + Z_L)
+        H_reduce_z = np.concatenate((H_z, L_z)) if len(L_z) > 0 else H_z
     elif state == "+":
         if verbose: print("Configuring stabilizers for logical |+> state preparation...")
         stabs_x = H_z
+        # To reduce X faults, we use X-type stabilizers of |+>_L (H_x + X_L)
+        H_reduce_x = np.concatenate((H_x, L_x)) if len(L_x) > 0 else H_x
         stabs_z = np.concatenate((H_x, L_x))
-        H_filter_x = np.concatenate((H_x, L_x))
-        H_filter_z = H_z
+        # To reduce Z faults, we use Z-type stabilizers of |+>_L (H_z)
+        H_reduce_z = H_z
     else:
         raise ValueError(f"Unknown state: {state}")
         
@@ -189,7 +195,8 @@ def cat_at_origin_with_verification(
         
     row_M, final_M, col_ops = optimize_fault_tolerant_matrix(
         H_x, t=t, max_col_ops=max_col_ops, H_x=H_x, H_z=H_z, max_basis_tries=max_basis_tries,
-        stabs_X=stabs_x, stabs_Z=stabs_z
+        stabs_X=stabs_z, stabs_Z=stabs_x,  # stabs_X expects X-type, stabs_Z expects Z-type
+        H_reduce_X=H_reduce_x, H_reduce_Z=H_reduce_z
     )
 
     if verbose:
@@ -215,7 +222,7 @@ def cat_at_origin_with_verification(
     if first_layer == "X":
         if verbose: print("\n--- X Faults Verification (Non-FT) ---")
         ver_x_stabs_layers, dfs_x, ticks_x, violations_x = find_lookahead_verification_stabilizers(
-            single_faults=single_faults_x, stabs=stabs_x, H_filter=H_filter_x, t=t, top_n=top_n, verbose=verbose
+            single_faults=single_faults_x, stabs=stabs_x, H_filter=H_reduce_x, t=t, top_n=top_n, verbose=verbose
         )
         if violations_x:
             print(f"WARNING: X Faults Verification has {len(violations_x)} unschedulable CNOT violations.")
@@ -227,7 +234,7 @@ def cat_at_origin_with_verification(
         if verbose: print(f"Injected {len(injected_z.faults)} Z faults into Z-verification pool.")
         if verbose: print("\n--- Z Faults Verification (FT) ---")
         ver_z_stabs_layers, dfs_z, ticks_z, violations_z = find_lookahead_verification_stabilizers(
-            single_faults=single_faults_z, stabs=stabs_z, H_filter=H_filter_z, t=t, top_n=top_n, verbose=verbose
+            single_faults=single_faults_z, stabs=stabs_z, H_filter=H_reduce_z, t=t, top_n=top_n, verbose=verbose
         )
         if violations_z:
             print(f"WARNING: Z Faults Verification has {len(violations_z)} unschedulable CNOT violations.")
@@ -236,7 +243,7 @@ def cat_at_origin_with_verification(
     elif first_layer == "Z":
         if verbose: print("\n--- Z Faults Verification (Non-FT) ---")
         ver_z_stabs_layers, dfs_z, ticks_z, violations_z = find_lookahead_verification_stabilizers(
-            single_faults=single_faults_z, stabs=stabs_z, H_filter=H_filter_z, t=t, top_n=top_n, verbose=verbose
+            single_faults=single_faults_z, stabs=stabs_z, H_filter=H_reduce_z, t=t, top_n=top_n, verbose=verbose
         )
         if violations_z:
             print(f"WARNING: Z Faults Verification has {len(violations_z)} unschedulable CNOT violations.")
@@ -248,7 +255,7 @@ def cat_at_origin_with_verification(
         if verbose: print(f"Injected {len(injected_x.faults)} X faults into X-verification pool.")
         if verbose: print("\n--- X Faults Verification (FT) ---")
         ver_x_stabs_layers, dfs_x, ticks_x, violations_x = find_lookahead_verification_stabilizers(
-            single_faults=single_faults_x, stabs=stabs_x, H_filter=H_filter_x, t=t, top_n=top_n, verbose=verbose
+            single_faults=single_faults_x, stabs=stabs_x, H_filter=H_reduce_x, t=t, top_n=top_n, verbose=verbose
         )
         if violations_x:
             print(f"WARNING: X Faults Verification has {len(violations_x)} unschedulable CNOT violations.")
@@ -257,7 +264,7 @@ def cat_at_origin_with_verification(
     else:
         if verbose: print("\n--- X Faults Verification (FT) ---")
         ver_x_stabs_layers, dfs_x, ticks_x, violations_x = find_lookahead_verification_stabilizers(
-            single_faults=single_faults_x, stabs=stabs_x, H_filter=H_filter_x, t=t, top_n=top_n, verbose=verbose
+            single_faults=single_faults_x, stabs=stabs_x, H_filter=H_reduce_x, t=t, top_n=top_n, verbose=verbose
         )
         if violations_x:
             print(f"WARNING: X Faults Verification has {len(violations_x)} unschedulable CNOT violations.")
@@ -265,7 +272,7 @@ def cat_at_origin_with_verification(
                 print(f"  - Layer {v['layer']}, Qubit {v['q']}, Stab {v['s_j']}, Amount: {v['violation_amount']}")
         if verbose: print("\n--- Z Faults Verification (FT) ---")
         ver_z_stabs_layers, dfs_z, ticks_z, violations_z = find_lookahead_verification_stabilizers(
-            single_faults=single_faults_z, stabs=stabs_z, H_filter=H_filter_z, t=t, top_n=top_n, verbose=verbose
+            single_faults=single_faults_z, stabs=stabs_z, H_filter=H_reduce_z, t=t, top_n=top_n, verbose=verbose
         )
         if violations_z:
             print(f"WARNING: Z Faults Verification has {len(violations_z)} unschedulable CNOT violations.")

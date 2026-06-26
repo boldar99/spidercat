@@ -459,7 +459,7 @@ if __name__ == "__main__":
     import random
     
     parser = argparse.ArgumentParser(description="Fault Tolerance Verification")
-    parser.add_argument("--code", type=str, default="17_1_5", help="Code string (default: 17_1_5)")
+    parser.add_argument("--code", type=str, default="12_2_4", help="Code string (default: 17_1_5)")
     parser.add_argument("--state", type=str, default="0", help="State (default: 0)")
     parser.add_argument("--max_col_ops", type=int, default=100, help="Max column operations (default: 100)")
     parser.add_argument("--top_n", type=int, default=50, help="Top N (default: 50)")
@@ -467,7 +467,7 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
-    random.seed(10)
+    random.seed(100)
 
     is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(args.code)
     t = d // 2
@@ -478,6 +478,7 @@ if __name__ == "__main__":
         state=args.state, max_col_ops=args.max_col_ops, top_n=args.top_n,
         first_layer=args.first_layer, verbose=True
     )
+    # circ = stim.Circuit(get_project_root().joinpath("good_circuits", f"{args.code}.stim").read_text())
 
     num_cx, num_meas = count_operations(circ)
     print(f"  [{args.code}] circuit generated!\n"
