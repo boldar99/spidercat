@@ -109,18 +109,17 @@ def syndrome_measurement_circuit(qubits: Sequence[int], ancilla_start: int, t: i
 
 def bare_se_circuit(qubits: Sequence[int], ancilla: int, basis: Literal["X", "Z"] = "Z") -> stim.Circuit:
     circ = stim.Circuit()
-    circ.append("R", [ancilla])
     
     if basis == "X":
-        circ.append("H", [ancilla])
+        circ.append("RX", [ancilla])
         for q in qubits:
             circ.append("CX", [ancilla, q])
-        circ.append("H", [ancilla])
+        circ.append("MX", [ancilla])
     else:
+        circ.append("R", [ancilla])
         for q in qubits:
             circ.append("CX", [q, ancilla])
-            
-    circ.append("M", [ancilla])
+        circ.append("M", [ancilla])
     circ.append("DETECTOR", stim.target_rec(-1))
     
     return circ
@@ -163,16 +162,29 @@ def fao_se_circuit(qubits: Sequence[int], ancilla_start: int, t: int, basis: Lit
         q_to_mapped[num_ancilla + q] = qubits[q]
 
     permuted_circuit = permute_circ(fao_circ, q_to_mapped, qubits)
-    permuted_circuit.insert(0, stim.CircuitInstruction("R", range(ancilla_start, permuted_circuit.num_qubits)))
-    permuted_circuit.append("M", range(ancilla_start + 1, permuted_circuit.num_qubits))
-    for q in range(permuted_circuit.num_qubits - ancilla_start - 1):
-        permuted_circuit.append("DETECTOR", stim.target_rec(-q - 1))
-    permuted_circuit.append("MX", [ancilla_start])
-    if basis == "Z":
-        permuted_circuit.insert(0, stim.CircuitInstruction("H", qubits))
-        permuted_circuit.append(stim.CircuitInstruction("H", qubits))
 
-    return permuted_circuit
+    if basis == "X":
+        permuted_circuit = permuted_circuit[1:]
+        permuted_circuit.insert(0, stim.CircuitInstruction("RX", [ancilla_start]))
+        permuted_circuit.insert(0, stim.CircuitInstruction("R", range(ancilla_start + 1, permuted_circuit.num_qubits)))
+        permuted_circuit.append("M", range(ancilla_start + 1, permuted_circuit.num_qubits))
+        for q in range(permuted_circuit.num_qubits - ancilla_start - 1):
+            permuted_circuit.append("DETECTOR", stim.target_rec(-q - 1))
+        permuted_circuit.append("MX", [ancilla_start])
+        return permuted_circuit
+    else:
+        inverted_circ = stim.Circuit()
+        inverted_circ.insert(0, stim.CircuitInstruction("R", [ancilla_start]))
+        inverted_circ.insert(0, stim.CircuitInstruction("RX", range(ancilla_start + 1, permuted_circuit.num_qubits)))
+        cnots = permuted_circuit[1].targets_copy()
+        for i in range(0, len(cnots), 2):
+            inverted_circ.append("CX", [cnots[i + 1], cnots[i]])
+        inverted_circ.append("MX", range(ancilla_start + 1, inverted_circ.num_qubits))
+        for q in range(inverted_circ.num_qubits - ancilla_start - 1):
+            inverted_circ.append("DETECTOR", stim.target_rec(-q - 1))
+        inverted_circ.append("M", [ancilla_start])
+        return inverted_circ
+
 
 
 def cnot_cost(n, t) -> int:
