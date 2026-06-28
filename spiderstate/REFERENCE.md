@@ -45,6 +45,7 @@ The project is split into two main packages, `spidercat` and `spiderstate`.
         *   **`weighted_syndrome`**: Penalizes faults if the physical CNOT cost of the stabilizers they trigger is above the mean.
 
 *   **Stabilizer Finding (`spiderstate.verification`)**
+    *   `TrackedFaultSet`: Uses a Detector Error Model (DEM)-like approach to track exactly how physical faults are formed from lower-weight combinations. It replaces the naive `PureFaultSet` by computing minimum-weight representatives and preserving the generation history (`ways_to_form`), allowing for algebraic, higher-order analysis of error propagation before verification.
     *   `find_lookahead_verification_stabilizers`: Once column operations are chosen, this module finds a very efficient set of stabilizers to measure. It uses a beam search and greedy set-cover to operate in layers (detecting 1, 2, ... $t$ faults progressively). To respect intra-layer `overlap <= 2` constraints while achieving target coverages $\ge 2$, it tracks unresolved faults and fulfills their total required coverage across multiple temporal layers. **Crucial Rule**: Basis cross-verification is required. To detect Z-faults, the algorithm must measure X-stabilizers, and to detect X-faults, it must measure Z-stabilizers.
 
 *   **Scheduling (`spiderstate.cnot_scheduler` & `spiderstate.circuit_merger`)**
