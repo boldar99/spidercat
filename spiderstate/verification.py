@@ -198,26 +198,138 @@ def find_low_weight_verification_stabilizers(fault_sets: list[PureFaultSet], sta
             layers[num_errors] = covers[0]
     return layers
 
-def _generate_raw_fault_sets(single_faults: PureFaultSet, t: int, H_filter: np.ndarray) -> list[PureFaultSet]:
-    """Generates the raw unfiltered unitary fault sets U_1, ..., U_t."""
+class TrackedFaultSet:
+    def __init__(self, num_qubits: int):
+        self.num_qubits = num_qubits
+        self.faults = np.empty((0, num_qubits), dtype=np.int8)
+        self.original_reps = [] 
+        self.ways_to_form = [] 
+        self.fault_ids = []
+
+    def __len__(self):
+        return len(self.faults)
+
+def compute_minimum_weight_representatives(faults: np.ndarray, stabs: np.ndarray) -> np.ndarray:
+    if len(faults) == 0:
+        return faults.copy()
+    k = stabs.shape[0]
+    if k == 0:
+        return faults.copy()
+        
+    all_stabs = []
+    for i in range(1 << k):
+        comb = [j for j in range(k) if (i >> j) & 1]
+        if comb:
+            s = np.bitwise_xor.reduce(stabs[comb], axis=0)
+        else:
+            s = np.zeros(stabs.shape[1], dtype=np.int8)
+        all_stabs.append(s)
+    all_stabs = np.array(all_stabs, dtype=np.int8)
+    
+    batch_size = 2000
+    reps = np.zeros_like(faults)
+    for i in range(0, len(faults), batch_size):
+        batch = faults[i:i+batch_size]
+        candidate = (batch[:, None, :] + all_stabs[None, :, :]) % 2
+        cand_weights = np.sum(candidate, axis=2)
+        min_idx = np.argmin(cand_weights, axis=1)
+        reps[i:i+batch_size] = candidate[np.arange(len(batch)), min_idx]
+        
+    return reps
+
+def _generate_raw_fault_sets(single_faults: PureFaultSet, t: int, H_filter: np.ndarray) -> list[TrackedFaultSet]:
+    """Generates the raw unfiltered unitary fault sets U_1, ..., U_t with full generation tracking."""
     fault_sets = []
     
-    current = single_faults.copy()
-    current.filter_by_weight_at_least(2, H_filter)
-    fault_sets.append(current)
+    base_faults = single_faults.faults
+    min_weight_reps = compute_minimum_weight_representatives(base_faults, H_filter)
+    
+    base_id_to_rep = {} 
+    base_id_to_orig = {} 
+    rep_to_base_id = {} 
+    
+    next_base_id = 0
+    for i in range(len(base_faults)):
+        rep = min_weight_reps[i]
+        rep_bytes = rep.tobytes()
+        if rep_bytes not in rep_to_base_id:
+            rep_to_base_id[rep_bytes] = next_base_id
+            base_id_to_rep[next_base_id] = rep
+            base_id_to_orig[next_base_id] = base_faults[i]
+            next_base_id += 1
+            
+    layer_1 = TrackedFaultSet(single_faults.num_qubits)
+    layer_1_faults = []
+    for rep_bytes, base_id in rep_to_base_id.items():
+        rep = base_id_to_rep[base_id]
+        if np.sum(rep) >= 2: 
+            layer_1_faults.append(rep)
+            layer_1.original_reps.append(base_id_to_orig[base_id])
+            layer_1.ways_to_form.append([(base_id,)])
+            layer_1.fault_ids.append(base_id)
+            
+    layer_1.faults = np.array(layer_1_faults, dtype=np.int8) if layer_1_faults else np.empty((0, single_faults.num_qubits), dtype=np.int8)
+    fault_sets.append(layer_1)
+    
+    if next_base_id == 0:
+        base_reps = np.empty((0, single_faults.num_qubits), dtype=np.int8)
+    else:
+        base_reps = np.array([base_id_to_rep[i] for i in range(next_base_id)], dtype=np.int8)
     
     for k in range(2, t + 1):
         if len(fault_sets[-1]) == 0:
-            empty_fs = fault_sets[-1].copy()
-            fault_sets.append(empty_fs)
+            fault_sets.append(TrackedFaultSet(single_faults.num_qubits))
             continue
             
-        next_raw = product_fault_set(fault_sets[-1], single_faults)
+        prev_fs = fault_sets[-1]
+        
+        new_faults = (prev_fs.faults[:, None, :] + base_reps[None, :, :]) % 2
+        new_faults_flat = new_faults.reshape(-1, single_faults.num_qubits)
+        
+        new_reps_flat = compute_minimum_weight_representatives(new_faults_flat, H_filter)
+        
+        new_reps_dict = {}
+        idx = 0
+        for i in range(len(prev_fs.faults)):
+            for base_id in range(next_base_id):
+                rep = new_reps_flat[idx]
+                rep_bytes = rep.tobytes()
+                
+                if rep_bytes not in new_reps_dict:
+                    new_reps_dict[rep_bytes] = {
+                        "rep": rep,
+                        "ways": set(),
+                        "orig": None
+                    }
+                    
+                for way in prev_fs.ways_to_form[i]:
+                    new_way = tuple(sorted(list(way) + [base_id]))
+                    new_reps_dict[rep_bytes]["ways"].add(new_way)
+                    
+                idx += 1
+                
+        layer_k = TrackedFaultSet(single_faults.num_qubits)
+        layer_k_faults = []
+        for rep_bytes, data in new_reps_dict.items():
+            rep = data["rep"]
+            if np.sum(rep) >= k + 1:
+                layer_k_faults.append(rep)
+                layer_k.original_reps.append(rep) 
+                layer_k.ways_to_form.append(list(data["ways"]))
+                layer_k.fault_ids.append(hash(rep_bytes))
+                
+        layer_k.faults = np.array(layer_k_faults, dtype=np.int8) if layer_k_faults else np.empty((0, single_faults.num_qubits), dtype=np.int8)
+        
+        # Exclude zero rows
+        if len(layer_k.faults) > 0:
+            nonzero_mask = np.any(layer_k.faults, axis=1)
+            if not np.all(nonzero_mask):
+                layer_k.faults = layer_k.faults[nonzero_mask]
+                layer_k.original_reps = [layer_k.original_reps[i] for i in range(len(nonzero_mask)) if nonzero_mask[i]]
+                layer_k.ways_to_form = [layer_k.ways_to_form[i] for i in range(len(nonzero_mask)) if nonzero_mask[i]]
+                layer_k.fault_ids = [layer_k.fault_ids[i] for i in range(len(nonzero_mask)) if nonzero_mask[i]]
 
-        next_raw.faults = np.unique(next_raw.faults, axis=0)
-        next_raw.remove_zero_rows()
-        next_raw.filter_by_weight_at_least(k + 1, H_filter)
-        fault_sets.append(next_raw)
+        fault_sets.append(layer_k)
         
     return fault_sets
 
