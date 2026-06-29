@@ -83,12 +83,12 @@ conda run -n zxlive python spiderstate/fault_tolerance_verification.py --code <c
 *   **Baseline Method**: Running the pipeline with 0 column operations corresponds directly to pure `cat_at_origin`.
 *   **Benchmarks**: Below are some reliable tester configurations and expected performance metrics:
     *   **7_1_3**: Best FT result uses 11 CNOT gates.
-    *   **9_1_3**: Best FT result uses 11 CNOT gates.
-    *   **15_7_3**: Best FT result uses 28 CNOT gates.
-    *   **12_2_4**: Best FT result uses 40 CNOT gates.
-    *   **16_6_4**: Best FT result uses 61 CNOT gates + 9 measurements.
+    *   **9_1_3**: Best FT result uses 11 CNOT gates + 1 measurement.
+    *   **15_7_3**: Best FT result uses 25 CNOT gates + 1 measurement.
+    *   **12_2_4**: Best FT result uses 40 CNOT gates + 7 measurements.
+    *   **16_6_4**: Best FT result uses 58 CNOT gates + 9 measurements.
     *   **17_1_5**: Best FT result uses 57 CNOT gates + 9 measurements.
-    *   **19_1_5**: Best FT result uses 86 CNOT gates + 17 measurements.
+    *   **19_1_5**: Best FT result uses 82 CNOT gates + 16 measurements.
     *   **20_2_6**: Takes about 1 to 3 minutes to run.
     *   **23_1_7**: Takes a similar time to 20_2_6 (1 to 3 minutes).
 

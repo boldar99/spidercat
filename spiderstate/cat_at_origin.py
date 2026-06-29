@@ -1,6 +1,7 @@
 import networkx as nx
 import numpy as np
 import stim
+from tqdm import tqdm
 
 from spidercat.circuit_extraction import CatStateExtractor, StimBuilder
 from spidercat.draw import draw_forest_on_graph, display_digraph
@@ -167,7 +168,8 @@ def cat_at_origin_with_verification(
     H_x: np.ndarray, H_z: np.ndarray, L_x: np.ndarray, L_z: np.ndarray, d: int,
     state: str = "0", max_col_ops: int = 100, top_n: int = 50, max_basis_tries: int = 10_000,
     first_layer: Literal["X", "Z", "none"] = "none", verbose: bool = False,
-    heuristic: str = "overlap", non_ft_penalty_factor: float = 0.01
+    heuristic: str = "overlap", non_ft_penalty_factor: float = 0.01,
+    num_circuits: int = 1
 ) -> stim.Circuit:
     t = d // 2
     
@@ -193,169 +195,181 @@ def cat_at_origin_with_verification(
         raise ValueError(f"Unknown state: {state}")
         
     if verbose:
-        print(f"Optimizing parity matrix (max_col_ops={max_col_ops})...")
+        print(f"Optimizing parity matrix (max_col_ops={max_col_ops}, num_circuits={num_circuits})...")
         
-    row_M, final_M, col_ops = optimize_fault_tolerant_matrix(
-        H_x, t=t, max_col_ops=max_col_ops, H_x=H_x, H_z=H_z, max_basis_tries=max_basis_tries,
-        stabs_X=stabs_z, stabs_Z=stabs_x,  # stabs_X expects X-type, stabs_Z expects Z-type
-        H_reduce_X=H_reduce_x, H_reduce_Z=H_reduce_z, heuristic=heuristic
-    )
+    unique_matrices = {}
 
     if verbose:
-        print(f"Cost of final M: {cnot_cost(final_M, t)}")
-        print(f"Chosen CNOT gates: {col_ops}")
+        pbar = tqdm(total=num_circuits, desc="Finding unique matrix configuration")
+    
+    for run_idx in range(num_circuits):
+        row_M, final_M, col_ops = optimize_fault_tolerant_matrix(
+            H_x, t=t, max_col_ops=max_col_ops, H_x=H_x, H_z=H_z, max_basis_tries=max_basis_tries,
+            stabs_X=stabs_z, stabs_Z=stabs_x,  # stabs_X expects X-type, stabs_Z expects Z-type
+            H_reduce_X=H_reduce_x, H_reduce_Z=H_reduce_z, heuristic=heuristic
+        )
+        
+        m_tup = tuple(final_M.flatten())
+        if m_tup not in unique_matrices:
+            unique_matrices[m_tup] = (final_M, col_ops)
+            if verbose:
+                pbar.update(1)
 
-    circ = cat_at_origin(final_M, d)
-    circ.append("TICK", [])
-    for c, n in col_ops:
-        circ.append("CX", [c, n])
-    circ.append("TICK", [])
-    
-    if verbose:
-        print("Computing initial single faults...")
-    single_faults_x = compute_unitary_fault_set_1(col_ops, num_qubits=H_x.shape[1], kind="X")
-    single_faults_z = compute_unitary_fault_set_1(col_ops, num_qubits=H_x.shape[1], kind="Z")
-    
-    if verbose:
-        print(f"\nRunning verification stabilizers search for t={t} layers (top_n={top_n}, first_layer={first_layer})...")
+    if verbose and num_circuits > 1:
+        print(f"Found {len(unique_matrices)} unique configurations out of {num_circuits} runs. Evaluating them...")
 
-    ver_x_stabs_layers = []
-    ver_z_stabs_layers = []
-    
-    def non_ft_cost_fn(w: int, t: int) -> float:
-        return w + non_ft_penalty_factor * 2 * minimum_number_of_flags(w, t)
-    
-    
-    if first_layer == "X":
-        if verbose: print("\n--- X Faults Verification (Non-FT) ---")
-        ver_x_stabs_layers, dfs_x, ticks_x, violations_x = find_lookahead_verification_stabilizers(
-            single_faults=single_faults_x, stabs=stabs_x, H_filter=H_reduce_x, t=t, top_n=top_n, verbose=verbose, cost_fn=non_ft_cost_fn
-        )
-        if violations_x:
-            print(f"WARNING: X Faults Verification has {len(violations_x)} unschedulable CNOT violations.")
-            for v in violations_x:
-                print(f"  - Layer {v['layer']}, Qubit {v['q']}, Stab {v['s_j']}, Amount: {v['violation_amount']}")
-        injected_z = compute_bare_injected_faults(ver_x_stabs_layers, ticks_x, H_x.shape[1])
-        single_faults_z.add_faults(injected_z.faults)
-        single_faults_z.remove_duplicates()
-        if verbose: print(f"Injected {len(injected_z.faults)} Z faults into Z-verification pool.")
-        if verbose: print("\n--- Z Faults Verification (FT) ---")
-        ver_z_stabs_layers, dfs_z, ticks_z, violations_z = find_lookahead_verification_stabilizers(
-            single_faults=single_faults_z, stabs=stabs_z, H_filter=H_reduce_z, t=t, top_n=top_n, verbose=verbose
-        )
-        if violations_z:
-            print(f"WARNING: Z Faults Verification has {len(violations_z)} unschedulable CNOT violations.")
-            for v in violations_z:
-                print(f"  - Layer {v['layer']}, Qubit {v['q']}, Stab {v['s_j']}, Amount: {v['violation_amount']}")
-    elif first_layer == "Z":
-        if verbose: print("\n--- Z Faults Verification (Non-FT) ---")
-        ver_z_stabs_layers, dfs_z, ticks_z, violations_z = find_lookahead_verification_stabilizers(
-            single_faults=single_faults_z, stabs=stabs_z, H_filter=H_reduce_z, t=t, top_n=top_n, verbose=verbose, cost_fn=non_ft_cost_fn
-        )
-        if violations_z:
-            print(f"WARNING: Z Faults Verification has {len(violations_z)} unschedulable CNOT violations.")
-            for v in violations_z:
-                print(f"  - Layer {v['layer']}, Qubit {v['q']}, Stab {v['s_j']}, Amount: {v['violation_amount']}")
-        injected_x = compute_bare_injected_faults(ver_z_stabs_layers, ticks_z, H_x.shape[1])
-        single_faults_x.add_faults(injected_x.faults)
-        single_faults_x.remove_duplicates()
-        if verbose: print(f"Injected {len(injected_x.faults)} X faults into X-verification pool.")
-        if verbose: print("\n--- X Faults Verification (FT) ---")
-        ver_x_stabs_layers, dfs_x, ticks_x, violations_x = find_lookahead_verification_stabilizers(
-            single_faults=single_faults_x, stabs=stabs_x, H_filter=H_reduce_x, t=t, top_n=top_n, verbose=verbose
-        )
-        if violations_x:
-            print(f"WARNING: X Faults Verification has {len(violations_x)} unschedulable CNOT violations.")
-            for v in violations_x:
-                print(f"  - Layer {v['layer']}, Qubit {v['q']}, Stab {v['s_j']}, Amount: {v['violation_amount']}")
-    else:
-        if verbose: print("\n--- X Faults Verification (FT) ---")
-        ver_x_stabs_layers, dfs_x, ticks_x, violations_x = find_lookahead_verification_stabilizers(
-            single_faults=single_faults_x, stabs=stabs_x, H_filter=H_reduce_x, t=t, top_n=top_n, verbose=verbose
-        )
-        if violations_x:
-            print(f"WARNING: X Faults Verification has {len(violations_x)} unschedulable CNOT violations.")
-            for v in violations_x:
-                print(f"  - Layer {v['layer']}, Qubit {v['q']}, Stab {v['s_j']}, Amount: {v['violation_amount']}")
-        if verbose: print("\n--- Z Faults Verification (FT) ---")
-        ver_z_stabs_layers, dfs_z, ticks_z, violations_z = find_lookahead_verification_stabilizers(
-            single_faults=single_faults_z, stabs=stabs_z, H_filter=H_reduce_z, t=t, top_n=top_n, verbose=verbose
-        )
-        if violations_z:
-            print(f"WARNING: Z Faults Verification has {len(violations_z)} unschedulable CNOT violations.")
-            for v in violations_z:
-                print(f"  - Layer {v['layer']}, Qubit {v['q']}, Stab {v['s_j']}, Amount: {v['violation_amount']}")
+    best_circ = None
+    best_cnot_count = float('inf')
 
     from spiderstate.circuit_merger import synthesize_and_merge_layer
-    
-    def synthesize_X_layer():
-        nonlocal circ
-        ancilla_start = H_x.shape[1]
-        if verbose: print("\nSynthesizing X fault verification circuits...")
-        for i, layer in enumerate(ver_x_stabs_layers):
-            stabs_qubits = []
-            for stab in layer:
-                qubits = np.where(stab)[0].tolist()
-                stabs_qubits.append(qubits)
-            
-            layer_violations = [v for v in violations_x if v["layer"] == i]
-            merged_layer_circ, ancilla_start = synthesize_and_merge_layer(
-                stabs_qubits, 
-                ticks_x[i],
-                t=0 if first_layer == "X" else t,
-                ancilla_start=ancilla_start,
-                basis="Z",
-                layer_violations=layer_violations
-            )
-            circ += merged_layer_circ
 
-            # if len(layer) == 0:
-            #     continue
-            # elif len(layer) == 1:
-            #     meas_circ = fao_se_circuit(qubits = np.where(layer[0])[0].tolist(), ancilla_start=ancilla_start, t=t, basis="Z")
-            #     meas_circ.append("DETECTOR", stim.target_rec(-1))
-            #     circ += meas_circ
-            # else:
-            #     circ += measure_stabilizers_scheme_B(np.array(layer), d, basis="Z")
+    for final_M, col_ops in unique_matrices.values():
+        if verbose and num_circuits > 1:
+            print(f"\nEvaluating configuration with Cost: {cnot_cost(final_M, t)}")
+            print(f"Chosen CNOT gates: {col_ops}")
+        elif verbose:
+            print(f"Cost of final M: {cnot_cost(final_M, t)}")
+            print(f"Chosen CNOT gates: {col_ops}")
 
-    def synthesize_Z_layer():
-        nonlocal circ
-        ancilla_start = H_x.shape[1]
-        if verbose: print("\nSynthesizing Z fault verification circuits...")
-        for i, layer in enumerate(ver_z_stabs_layers):
-            stabs_qubits = []
-            for stab in layer:
-                qubits = np.where(stab)[0].tolist()
-                stabs_qubits.append(qubits)
-
-            layer_violations = [v for v in violations_z if v["layer"] == i]
-            merged_layer_circ, ancilla_start = synthesize_and_merge_layer(
-                stabs_qubits, 
-                ticks_z[i],
-                t=0 if first_layer == "Z" else t,
-                ancilla_start=ancilla_start,
-                basis="X",
-                layer_violations=layer_violations
-            )
-            circ += merged_layer_circ
-
-            # if len(layer) == 0:
-            #     continue
-            # elif len(layer) == 1:
-            #     meas_circ = fao_se_circuit(qubits = np.where(layer[0])[0].tolist(), ancilla_start=ancilla_start, t=t, basis="X")
-            #     meas_circ.append("DETECTOR", stim.target_rec(-1))
-            #     circ += meas_circ
-            # else:
-            #     circ += measure_stabilizers_scheme_B(np.array(layer), d, basis="X")
-
-    if first_layer == "Z":
-        synthesize_Z_layer()
-        synthesize_X_layer()
-    else:
-        synthesize_X_layer()
-        synthesize_Z_layer()
+        circ = cat_at_origin(final_M, d)
+        circ.append("TICK", [])
+        for c, n in col_ops:
+            circ.append("CX", [c, n])
+        circ.append("TICK", [])
         
-    return circ
+        if verbose:
+            print("Computing initial single faults...")
+        single_faults_x = compute_unitary_fault_set_1(col_ops, num_qubits=H_x.shape[1], kind="X")
+        single_faults_z = compute_unitary_fault_set_1(col_ops, num_qubits=H_x.shape[1], kind="Z")
+        
+        if verbose:
+            print(f"\nRunning verification stabilizers search for t={t} layers (top_n={top_n}, first_layer={first_layer})...")
+
+        ver_x_stabs_layers = []
+        ver_z_stabs_layers = []
+        
+        def non_ft_cost_fn(w: int, t: int) -> float:
+            return w + non_ft_penalty_factor * 2 * minimum_number_of_flags(w, t)
+        
+        
+        if first_layer == "X":
+            if verbose: print("\n--- X Faults Verification (Non-FT) ---")
+            ver_x_stabs_layers, dfs_x, ticks_x, violations_x = find_lookahead_verification_stabilizers(
+                single_faults=single_faults_x, stabs=stabs_x, H_filter=H_reduce_x, t=t, top_n=top_n, verbose=verbose, cost_fn=non_ft_cost_fn
+            )
+            if violations_x:
+                print(f"WARNING: X Faults Verification has {len(violations_x)} unschedulable CNOT violations.")
+                for v in violations_x:
+                    print(f"  - Layer {v['layer']}, Qubit {v['q']}, Stab {v['s_j']}, Amount: {v['violation_amount']}")
+            injected_z = compute_bare_injected_faults(ver_x_stabs_layers, ticks_x, H_x.shape[1])
+            single_faults_z.add_faults(injected_z.faults)
+            single_faults_z.remove_duplicates()
+            if verbose: print(f"Injected {len(injected_z.faults)} Z faults into Z-verification pool.")
+            if verbose: print("\n--- Z Faults Verification (FT) ---")
+            ver_z_stabs_layers, dfs_z, ticks_z, violations_z = find_lookahead_verification_stabilizers(
+                single_faults=single_faults_z, stabs=stabs_z, H_filter=H_reduce_z, t=t, top_n=top_n, verbose=verbose
+            )
+            if violations_z:
+                print(f"WARNING: Z Faults Verification has {len(violations_z)} unschedulable CNOT violations.")
+                for v in violations_z:
+                    print(f"  - Layer {v['layer']}, Qubit {v['q']}, Stab {v['s_j']}, Amount: {v['violation_amount']}")
+        elif first_layer == "Z":
+            if verbose: print("\n--- Z Faults Verification (Non-FT) ---")
+            ver_z_stabs_layers, dfs_z, ticks_z, violations_z = find_lookahead_verification_stabilizers(
+                single_faults=single_faults_z, stabs=stabs_z, H_filter=H_reduce_z, t=t, top_n=top_n, verbose=verbose, cost_fn=non_ft_cost_fn
+            )
+            if violations_z:
+                print(f"WARNING: Z Faults Verification has {len(violations_z)} unschedulable CNOT violations.")
+                for v in violations_z:
+                    print(f"  - Layer {v['layer']}, Qubit {v['q']}, Stab {v['s_j']}, Amount: {v['violation_amount']}")
+            injected_x = compute_bare_injected_faults(ver_z_stabs_layers, ticks_z, H_x.shape[1])
+            single_faults_x.add_faults(injected_x.faults)
+            single_faults_x.remove_duplicates()
+            if verbose: print(f"Injected {len(injected_x.faults)} X faults into X-verification pool.")
+            if verbose: print("\n--- X Faults Verification (FT) ---")
+            ver_x_stabs_layers, dfs_x, ticks_x, violations_x = find_lookahead_verification_stabilizers(
+                single_faults=single_faults_x, stabs=stabs_x, H_filter=H_reduce_x, t=t, top_n=top_n, verbose=verbose
+            )
+            if violations_x:
+                print(f"WARNING: X Faults Verification has {len(violations_x)} unschedulable CNOT violations.")
+                for v in violations_x:
+                    print(f"  - Layer {v['layer']}, Qubit {v['q']}, Stab {v['s_j']}, Amount: {v['violation_amount']}")
+        else:
+            if verbose: print("\n--- X Faults Verification (FT) ---")
+            ver_x_stabs_layers, dfs_x, ticks_x, violations_x = find_lookahead_verification_stabilizers(
+                single_faults=single_faults_x, stabs=stabs_x, H_filter=H_reduce_x, t=t, top_n=top_n, verbose=verbose
+            )
+            if violations_x:
+                print(f"WARNING: X Faults Verification has {len(violations_x)} unschedulable CNOT violations.")
+                for v in violations_x:
+                    print(f"  - Layer {v['layer']}, Qubit {v['q']}, Stab {v['s_j']}, Amount: {v['violation_amount']}")
+            if verbose: print("\n--- Z Faults Verification (FT) ---")
+            ver_z_stabs_layers, dfs_z, ticks_z, violations_z = find_lookahead_verification_stabilizers(
+                single_faults=single_faults_z, stabs=stabs_z, H_filter=H_reduce_z, t=t, top_n=top_n, verbose=verbose
+            )
+            if violations_z:
+                print(f"WARNING: Z Faults Verification has {len(violations_z)} unschedulable CNOT violations.")
+                for v in violations_z:
+                    print(f"  - Layer {v['layer']}, Qubit {v['q']}, Stab {v['s_j']}, Amount: {v['violation_amount']}")
+
+        
+        def synthesize_X_layer(current_circ, v_x_layers, t_x, viol_x):
+            ancilla_start = H_x.shape[1]
+            if verbose: print("\nSynthesizing X fault verification circuits...")
+            for i, layer in enumerate(v_x_layers):
+                stabs_qubits = []
+                for stab in layer:
+                    qubits = np.where(stab)[0].tolist()
+                    stabs_qubits.append(qubits)
+                
+                layer_violations = [v for v in viol_x if v["layer"] == i]
+                merged_layer_circ, ancilla_start = synthesize_and_merge_layer(
+                    stabs_qubits, 
+                    t_x[i],
+                    t=0 if first_layer == "X" else t,
+                    ancilla_start=ancilla_start,
+                    basis="Z",
+                    layer_violations=layer_violations
+                )
+                current_circ += merged_layer_circ
+            return current_circ
+
+        def synthesize_Z_layer(current_circ, v_z_layers, t_z, viol_z):
+            ancilla_start = H_x.shape[1]
+            if verbose: print("\nSynthesizing Z fault verification circuits...")
+            for i, layer in enumerate(v_z_layers):
+                stabs_qubits = []
+                for stab in layer:
+                    qubits = np.where(stab)[0].tolist()
+                    stabs_qubits.append(qubits)
+
+                layer_violations = [v for v in viol_z if v["layer"] == i]
+                merged_layer_circ, ancilla_start = synthesize_and_merge_layer(
+                    stabs_qubits, 
+                    t_z[i],
+                    t=0 if first_layer == "Z" else t,
+                    ancilla_start=ancilla_start,
+                    basis="X",
+                    layer_violations=layer_violations
+                )
+                current_circ += merged_layer_circ
+            return current_circ
+
+        if first_layer == "Z":
+            circ = synthesize_Z_layer(circ, ver_z_stabs_layers, ticks_z, violations_z)
+            circ = synthesize_X_layer(circ, ver_x_stabs_layers, ticks_x, violations_x)
+        else:
+            circ = synthesize_X_layer(circ, ver_x_stabs_layers, ticks_x, violations_x)
+            circ = synthesize_Z_layer(circ, ver_z_stabs_layers, ticks_z, violations_z)
+            
+        current_cnots = count_operations(circ)[0]
+        if current_cnots < best_cnot_count:
+            best_cnot_count = current_cnots
+            best_circ = circ.copy()
+            if verbose and num_circuits > 1:
+                print(f"  -> New best circuit found with {best_cnot_count} CNOTs!")
+                
+    return best_circ
 
 
 if __name__ == "__main__":

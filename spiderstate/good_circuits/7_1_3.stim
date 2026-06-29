@@ -1,0 +1,19 @@
+R 0 1
+RX 2
+R 3
+RX 4
+R 5
+RX 6
+CX 2 1 2 3 6 1 4 3 6 5 4 5
+TICK
+CX 4 0 1 0
+TICK
+R 7
+CX 0 7
+TICK
+CX 3 7
+TICK
+CX 6 7
+TICK
+M 7
+DETECTOR rec[-1]
