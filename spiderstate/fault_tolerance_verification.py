@@ -318,6 +318,149 @@ def solve_ftsp_combinatorial_fast(
 # ==============================================================================
 # ORCHESTRATOR
 # ==============================================================================
+def precompute_primary_syndromes(H_check: np.ndarray, L_matrix: np.ndarray, d: int) -> dict:
+    """Precomputes the minimum weight data error required to produce a combined (syndrome, logical) signature."""
+    valid_syndromes: dict[int, Tuple[int, List[int]]] = {}
+    n_qubits = H_check.shape[1]
+    
+    if L_matrix is not None and L_matrix.size > 0:
+        combined_matrix = np.vstack([H_check, L_matrix])
+    else:
+        combined_matrix = H_check
+        
+    for w in range(d):
+        for combo in itertools.combinations(range(n_qubits), w):
+            err = np.zeros(n_qubits, dtype=int)
+            if w > 0:
+                err[list(combo)] = 1
+                
+            syn_array = (combined_matrix @ err) % 2
+            syn_int = sum(int(val) << i for i, val in enumerate(syn_array))
+            
+            if syn_int not in valid_syndromes or valid_syndromes[syn_int][0] > w:
+                valid_syndromes[syn_int] = (w, list(combo))
+                
+    return valid_syndromes
+
+
+def solve_ftsp_combinatorial_primary_fast(
+    unique_mechanisms: List[FrozenSet[Tuple[str, int]]],
+    num_internal_detectors: int,
+    num_final_stabilizers: int,
+    num_logicals: int,
+    H_check: np.ndarray,
+    L_matrix: np.ndarray,
+    d: int,
+    t: int
+) -> Union[bool, Tuple[List[FrozenSet[Tuple[str, int]]], List[int]]]:
+    """Evaluates the primary basis using a Bitwise Breadth-First Search (BFS)."""
+    valid_syndromes = precompute_primary_syndromes(H_check, L_matrix, d)
+    
+    # Convert DEM mechanisms into fast integer bitmasks
+    mech_masks = []
+    for mech in unique_mechanisms:
+        int_mask = 0
+        ext_mask = 0
+        for t_type, t_val in mech:
+            if t_type == "D":
+                if t_val < num_internal_detectors:
+                    int_mask ^= (1 << t_val)
+                else:
+                    ext_mask ^= (1 << (t_val - num_internal_detectors))
+            elif t_type == "L":
+                ext_mask ^= (1 << (num_final_stabilizers + t_val))
+        mech_masks.append((int_mask, ext_mask, mech))
+
+    # BFS State Tracker: {(internal_mask, external_mask): [path_of_mechanisms]}
+    reachable_states = {(0, 0): []}
+
+    for k in range(1, t + 1):
+        next_states = {}
+
+        for (curr_int, curr_ext), path in reachable_states.items():
+            for m_int, m_ext, mech in mech_masks:
+                new_int = curr_int ^ m_int
+                new_ext = curr_ext ^ m_ext
+                state_key = (new_int, new_ext)
+
+                # Prune degenerate physical faults that produce the same syndrome
+                if state_key in reachable_states or state_key in next_states:
+                    continue
+
+                new_path = path + [mech]
+                next_states[state_key] = new_path
+
+                # Check FTSP Bounds
+                if new_int == 0:  # Evades FTSP internal flags
+                    stab_mask = (1 << num_final_stabilizers) - 1
+                    for syn_data, (w_data, err_indices) in valid_syndromes.items():
+                        if k + w_data <= d - 1:
+                            if (new_ext ^ syn_data) & stab_mask == 0:
+                                if (new_ext ^ syn_data) >> num_final_stabilizers != 0:
+                                    return (new_path, err_indices)  # Return the catastrophic cascade
+
+        reachable_states.update(next_states)
+
+    return True
+
+
+def verify_ftsp_primary_exact(
+    prep_circ: stim.Circuit,
+    H_check: np.ndarray,
+    L_op: np.ndarray,
+    d: int,
+    t: int,
+    basis_char: str,
+    verbose: bool = False
+) -> Union[bool, stim.Circuit]:
+    """Verifies the primary FTSP error basis using the Fast Combinatorial Tracker."""
+    if verbose:
+        print(f"\n  [Primary] Evaluating {basis_char}-basis via Combinatorics (d={d}, t={t})...")
+
+    from spiderstate.utils import make_stim_circ_noisy
+    noisy_prep = make_stim_circ_noisy(prep_circ.copy(), p=0.001)
+
+    num_internal_detectors = noisy_prep.num_detectors
+    num_final_stabilizers = H_check.shape[0]
+
+    L_matrix = np.atleast_2d(L_op) if L_op is not None else None
+    num_logicals = L_matrix.shape[0] if L_matrix is not None else 0
+
+    # Step 1: Prep and Flatten
+    eval_circ = build_primary_eval_circ(noisy_prep, H_check, L_matrix, basis_char)
+    flat_eval_circ = eval_circ.flattened()
+
+    unique_mechanisms = extract_unique_fault_mechanisms(flat_eval_circ)
+
+    # Step 2: Solve the Math
+    result = solve_ftsp_combinatorial_primary_fast(
+        unique_mechanisms, num_internal_detectors, num_final_stabilizers, num_logicals,
+        H_check, L_matrix, d, t
+    )
+
+    # Step 3: Extract the Verdict
+    if isinstance(result, tuple):
+        failed_mechs, failed_y_indices = result
+        if verbose:
+            print(f"    [FAIL] Catastrophic cascade found!")
+            print(f"    W(E_init)={len(failed_mechs)} faults bypassed flags to require only W(E_data)={len(failed_y_indices)} to fail.")
+            print("    Extracting unified failure circuit (Prep Faults + Data Faults)...")
+
+        # Pass E_data indices and basis to extraction function
+        fault_example = extract_deterministic_failure(
+            flat_eval_circ,
+            failed_mechs,
+            failed_y_indices,
+            basis_char
+        )
+
+        return fault_example
+    else:
+        if verbose:
+            print(f"    [PASS] No uncorrectable conjugate cascades found.")
+        return True
+
+
 def verify_ftsp_primary_ilp(
     prep_circ: stim.Circuit,
     H_check: np.ndarray,
@@ -438,7 +581,7 @@ def verify_ftsp(
     verbose: bool = False
 ) -> bool:
     """Comprehensive FT Verification mapping both primary and conjugate error channels."""
-    res_primary = verify_ftsp_primary_ilp(
+    res_primary = verify_ftsp_primary_exact(
         prep_circ, H_primary, L_primary, d, t, basis_char=primary_basis, verbose=verbose
     )
     if res_primary is not True:
@@ -459,11 +602,11 @@ if __name__ == "__main__":
     import random
     
     parser = argparse.ArgumentParser(description="Fault Tolerance Verification")
-    parser.add_argument("--code", type=str, default="16_6_4", help="Code string (default: 17_1_5)")
+    parser.add_argument("--code", type=str, default="17_1_5", help="Code string (default: 17_1_5)")
     parser.add_argument("--state", type=str, default="0", help="State (default: 0)")
     parser.add_argument("--max_col_ops", type=int, default=100, help="Max column operations (default: 100)")
     parser.add_argument("--top_n", type=int, default=50, help="Top N (default: 50)")
-    parser.add_argument("--first_layer", type=str, choices=["X", "Z", "none"], default="X", help="First layer (default: X)")
+    parser.add_argument("--first_layer", type=str, choices=["X", "Z", "none", "interleaved"], default="interleaved", help="First layer (default: X)")
     parser.add_argument("--heuristic", type=str, choices=["overlap", "zero_tolerance", "weighted_syndrome", "global_sparsity", "max_contention", "soft_cover"], default="overlap", help="Heuristic for fault tracker")
     parser.add_argument("--seed", type=str, default="100", help="The random seed")
 

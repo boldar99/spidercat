@@ -28,17 +28,19 @@ def run_test(code, heuristic, first_layer, seed):
     elapsed = end_time - start_time
     
     output = result.stdout + "\n" + result.stderr
+
+    match = re.search(r"#CX:\s*(\d+)", output)
+    num_cx = int(match.group(1))
     
     # Check if non-FT or Verification failed
     if "Final Verification Result: False" in output or "[FAIL]" in output:
-        return "NON-FT", -1, elapsed
+        return "NON-FT", num_cx, elapsed
     if "Final Verification Result: True" not in output:
-        return "ERROR", -1, elapsed
+        return "ERROR", num_cx, elapsed
         
     # Extract CNOT count
-    match = re.search(r"#CX:\s*(\d+)", output)
     if match:
-        return "FT", int(match.group(1)), elapsed
+        return "FT", num_cx, elapsed
     
     return "UNKNOWN", -1, elapsed
 
