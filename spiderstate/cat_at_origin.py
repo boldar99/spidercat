@@ -9,7 +9,8 @@ from spiderstate.circuit_finder import find_circuit
 from spiderstate.spider_leg_matcher import match_edges
 from spiderstate.utils import find_pivots_in_matrix, load_qecc, count_operations, flatten
 from spiderstate.well_ordered_cat_state import well_ordered_ft_cat_state_data
-from spiderstate.optimize_parity_matrix import has_unique_ones_property, optimize_fault_tolerant_matrix, row_optimize_matrix
+from spiderstate.optimize_parity_matrix import has_unique_ones_property, optimize_fault_tolerant_matrix, \
+    row_optimize_matrix, minimum_number_of_flags, cnot_cost
 from spidercat.syndrome_measurement import fao_se_circuit, bare_se_circuit
 from spiderstate.verification import find_lookahead_verification_stabilizers, compute_unitary_fault_set_1, compute_bare_injected_faults
 from typing import Literal
@@ -166,7 +167,7 @@ def cat_at_origin_with_verification(
     H_x: np.ndarray, H_z: np.ndarray, L_x: np.ndarray, L_z: np.ndarray, d: int,
     state: str = "0", max_col_ops: int = 100, top_n: int = 50, max_basis_tries: int = 10_000,
     first_layer: Literal["X", "Z", "none"] = "none", verbose: bool = False,
-    heuristic: str = "overlap"
+    heuristic: str = "overlap", non_ft_penalty_factor: float = 0.01
 ) -> stim.Circuit:
     t = d // 2
     
@@ -201,8 +202,9 @@ def cat_at_origin_with_verification(
     )
 
     if verbose:
+        print(f"Cost of final M: {cnot_cost(final_M, t)}")
         print(f"Chosen CNOT gates: {col_ops}")
-    
+
     circ = cat_at_origin(final_M, d)
     circ.append("TICK", [])
     for c, n in col_ops:
@@ -220,10 +222,14 @@ def cat_at_origin_with_verification(
     ver_x_stabs_layers = []
     ver_z_stabs_layers = []
     
+    def non_ft_cost_fn(w: int, t: int) -> float:
+        return w + non_ft_penalty_factor * 2 * minimum_number_of_flags(w, t)
+    
+    
     if first_layer == "X":
         if verbose: print("\n--- X Faults Verification (Non-FT) ---")
         ver_x_stabs_layers, dfs_x, ticks_x, violations_x = find_lookahead_verification_stabilizers(
-            single_faults=single_faults_x, stabs=stabs_x, H_filter=H_reduce_x, t=t, top_n=top_n, verbose=verbose
+            single_faults=single_faults_x, stabs=stabs_x, H_filter=H_reduce_x, t=t, top_n=top_n, verbose=verbose, cost_fn=non_ft_cost_fn
         )
         if violations_x:
             print(f"WARNING: X Faults Verification has {len(violations_x)} unschedulable CNOT violations.")
@@ -244,7 +250,7 @@ def cat_at_origin_with_verification(
     elif first_layer == "Z":
         if verbose: print("\n--- Z Faults Verification (Non-FT) ---")
         ver_z_stabs_layers, dfs_z, ticks_z, violations_z = find_lookahead_verification_stabilizers(
-            single_faults=single_faults_z, stabs=stabs_z, H_filter=H_reduce_z, t=t, top_n=top_n, verbose=verbose
+            single_faults=single_faults_z, stabs=stabs_z, H_filter=H_reduce_z, t=t, top_n=top_n, verbose=verbose, cost_fn=non_ft_cost_fn
         )
         if violations_z:
             print(f"WARNING: Z Faults Verification has {len(violations_z)} unschedulable CNOT violations.")

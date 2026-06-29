@@ -90,17 +90,13 @@ def invert_mod2(matrix: np.ndarray) -> np.ndarray:
                 A[j] = (A[j] + A[i]) % 2
     return A[:, n:]
 
-
 def has_unique_ones_property(M: np.ndarray) -> bool:
     """Checks if each row has a '1' that is the unique '1' in its column."""
-    r, c = M.shape
-    found_rows = set()
-    for j in range(c):
-        col = M[:, j]
-        if np.sum(col) == 1:
-            found_rows.add(np.argmax(col))
-    return len(found_rows) == r
-
+    col_sums = np.sum(M, axis=0)
+    cols_with_one = np.where(col_sums == 1)[0]
+    if len(cols_with_one) < M.shape[0]: return False
+    found_rows = np.unique(np.argmax(M[:, cols_with_one], axis=0))
+    return len(found_rows) == M.shape[0]
 
 def row_optimize_matrix(M: np.ndarray, t: int, max_basis_tries: int = 1_000) -> np.ndarray:
     r, c = M.shape
@@ -134,88 +130,6 @@ def row_optimize_matrix(M: np.ndarray, t: int, max_basis_tries: int = 1_000) -> 
     matrix_after_row_ops = best_row_op_M.copy()
     return best_row_op_cost, matrix_after_row_ops
 
-
-# --- SIMULATED ANNEALING FOR PHASE 2 ---
-def apply_ops(base_M: np.ndarray, ops: list) -> np.ndarray:
-    """Applies a sequence of column operations to a matrix."""
-    M = base_M.copy()
-    for target, source in ops:
-        M[:, target] = (M[:, target] + M[:, source]) % 2
-    return M
-
-
-def simulated_annealing_phase2(base_M: np.ndarray, t: int, max_col_ops: int,
-                               initial_temp: float = 10.0, cooling_rate: float = 0.99, max_iter: int = 1500):
-    """
-    Optimizes column operations using Simulated Annealing.
-    State is defined as a specific sequence of operations.
-    """
-    c = base_M.shape[1]
-
-    # Current state: an empty sequence of operations
-    current_ops = []
-    current_M = base_M.copy()
-    current_cost = cnot_cost(current_M, t)  # len(ops) is 0 here
-
-    # Track the global best seen
-    best_ops = []
-    best_M = current_M.copy()
-    best_cost = current_cost
-
-    temp = initial_temp
-
-    for iteration in range(max_iter):
-        # 1. Generate a neighbor sequence
-        neighbor_ops = current_ops.copy()
-
-        # Decide how to mutate the sequence
-        mutation_type = random.choice(['add', 'remove', 'modify'])
-
-        if mutation_type == 'add' and len(neighbor_ops) < max_col_ops:
-            target = random.randint(0, c - 1)
-            source = random.choice([x for x in range(c) if x != target])
-            neighbor_ops.append((target, source))
-
-        elif mutation_type == 'remove' and len(neighbor_ops) > 0:
-            neighbor_ops.pop(random.randrange(len(neighbor_ops)))
-
-        elif mutation_type == 'modify' and len(neighbor_ops) > 0:
-            idx = random.randrange(len(neighbor_ops))
-            target = random.randint(0, c - 1)
-            source = random.choice([x for x in range(c) if x != target])
-            neighbor_ops[idx] = (target, source)
-        else:
-            continue  # Skip if mutation wasn't possible (e.g., remove on empty list)
-
-        # 2. Evaluate neighbor
-        neighbor_M = apply_ops(base_M, neighbor_ops)
-
-        # Hard constraint: Must maintain the unique 1s property
-        if not has_unique_ones_property(neighbor_M):
-            continue
-
-            # Energy = CNOT cost + sequence length (since each op costs 1)
-        neighbor_cost = cnot_cost(neighbor_M, t) + len(neighbor_ops)
-
-        # 3. Acceptance criteria
-        delta_E = neighbor_cost - (cnot_cost(current_M, t) + len(current_ops))
-
-        if delta_E < 0 or random.random() < math.exp(-delta_E / temp):
-            current_ops = neighbor_ops
-            current_M = neighbor_M
-
-            # Update global best if this is the absolute lowest we've seen
-            if neighbor_cost < best_cost:
-                best_cost = neighbor_cost
-                best_M = neighbor_M.copy()
-                best_ops = neighbor_ops.copy()
-
-        # Cool down
-        temp *= cooling_rate
-
-    return best_M, best_ops, best_cost
-
-
 def optimize_fault_tolerant_matrix(
     M: np.ndarray,
     t: int,
@@ -229,7 +143,8 @@ def optimize_fault_tolerant_matrix(
     stabs_Z: np.ndarray = None,
     H_reduce_X: np.ndarray = None,
     H_reduce_Z: np.ndarray = None,
-    heuristic: str = "overlap"
+    heuristic: str = "overlap",
+    patience: int = 10
 ):
     """
     Returns:
@@ -265,10 +180,12 @@ def optimize_fault_tolerant_matrix(
     beam = [(initial_score, current_M, base_tracker, [])]
     global_best = beam[0]
     
-    all_candidates = [(initial_score, current_M, [])]
+    global_seen = {tuple(current_M.flatten())}
     
+    ops_since_improvement = 0
+
     for op_num in range(1, max_col_ops):
-        next_beam = []
+        next_beam_fast = []
         for score, curr_M, curr_tracker, curr_ops in beam:
             if ancilla_cost(curr_M, t) == 0:
                 # Reached the end: 0 ancillas needed!
@@ -278,29 +195,64 @@ def optimize_fault_tolerant_matrix(
                 for j in range(c):
                     if i == j:
                         continue
+                    
+                    # Prevent trivial backtracking (undoing the exact same CNOT)
+                    if curr_ops and curr_ops[-1] == (j, i):
+                        continue
+
                     test_M = curr_M.copy()
                     test_M[:, i] = (test_M[:, i] + test_M[:, j]) % 2
 
                     if has_unique_ones_property(test_M):
-                        test_tracker = curr_tracker.copy()
-                        test_tracker.update_cnot(j, i)
-                        heur = cnot_cost(test_M, t) + op_num + test_tracker.evaluate_cost()
-                        next_beam.append((heur, test_M, test_tracker, curr_ops + [(j, i)]))
+                        m_tup = tuple(test_M.flatten())
+                        if m_tup in global_seen:
+                            continue
+
+                        # Fast heuristic: just the CNOT cost
+                        fast_heur = cnot_cost(test_M, t) + op_num
+                        next_beam_fast.append((fast_heur, test_M, curr_tracker, curr_ops, j, i, m_tup))
         
-        if not next_beam:
+        if not next_beam_fast:
             break
             
-        next_beam.sort(key=lambda x: x[0])
-        seen = set()
+        # Pre-sort by fast heuristic
+        next_beam_fast.sort(key=lambda x: x[0])
+        
+        # Only fully evaluate the top candidates (margin of safety: beam_width * 40)
+        fully_evaluated = []
+        for cand in next_beam_fast[:beam_width * 40]:
+            fast_heur, test_M, curr_tracker, curr_ops, j, i, m_tup = cand
+            
+            test_tracker = curr_tracker.copy()
+            test_tracker.update_cnot(j, i)
+            heur = fast_heur + test_tracker.evaluate_cost()
+            fully_evaluated.append((heur, test_M, test_tracker, curr_ops + [(j, i)], m_tup))
+            
+        fully_evaluated.sort(key=lambda x: x[0])
+        
         beam = []
-        for cand in next_beam:
+        layer_seen = set()
+        
+        improved_in_this_layer = False
+        for cand in fully_evaluated:
             if cand[0] < global_best[0]:
-                global_best = cand
-            m_tup = tuple(cand[1].flatten())
-            if m_tup not in seen:
-                seen.add(m_tup)
-                beam.append(cand)
+                global_best = cand[:4]
+                improved_in_this_layer = True
+                
+            m_tup = cand[4]
+            if m_tup not in layer_seen:
+                layer_seen.add(m_tup)
+                global_seen.add(m_tup)
+                beam.append(cand[:4])
             if len(beam) >= beam_width:
+                break
+                
+        if improved_in_this_layer:
+            ops_since_improvement = 0
+        else:
+            ops_since_improvement += 1
+            if ops_since_improvement >= patience:
+                # Early stopping: No improvement in the last `patience` operations
                 break
 
     best_score, best_M, best_tracker, best_ops = global_best

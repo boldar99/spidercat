@@ -602,11 +602,11 @@ if __name__ == "__main__":
     import random
     
     parser = argparse.ArgumentParser(description="Fault Tolerance Verification")
-    parser.add_argument("--code", type=str, default="17_1_5", help="Code string (default: 17_1_5)")
+    parser.add_argument("--code", type=str, default="24_4_5", help="Code string (default: 17_1_5)")
     parser.add_argument("--state", type=str, default="0", help="State (default: 0)")
     parser.add_argument("--max_col_ops", type=int, default=100, help="Max column operations (default: 100)")
     parser.add_argument("--top_n", type=int, default=50, help="Top N (default: 50)")
-    parser.add_argument("--first_layer", type=str, choices=["X", "Z", "none", "interleaved"], default="interleaved", help="First layer (default: X)")
+    parser.add_argument("--first_layer", type=str, choices=["X", "Z", "none", "interleaved"], default="X", help="First layer (default: X)")
     parser.add_argument("--heuristic", type=str, choices=["overlap", "zero_tolerance", "weighted_syndrome", "global_sparsity", "max_contention", "soft_cover"], default="overlap", help="Heuristic for fault tracker")
     parser.add_argument("--seed", type=str, default="100", help="The random seed")
 
@@ -642,3 +642,6 @@ if __name__ == "__main__":
     )
 
     print("\nFinal Verification Result:", is_ft)
+
+    # with open(get_project_root().joinpath("good_circuits", f"{args.code}.stim").read_text(), "w") as f:
+    #     f.write(str(circ))

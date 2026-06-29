@@ -1,5 +1,6 @@
 import logging
 from itertools import combinations
+from typing import Callable
 
 import numpy as np
 from mqt.qecc.circuit_synthesis.faults import product_fault_set, PureFaultSet
@@ -160,29 +161,8 @@ def _solve_top_n_weighted_set_covers(
     return unique_covers
 
 def compute_effective_weights(faults: np.ndarray, stabs: np.ndarray) -> np.ndarray:
-    k = stabs.shape[0]
-    if k == 0:
-        return np.sum(faults, axis=1)
-        
-    all_stabs = []
-    for i in range(1 << k):
-        comb = [j for j in range(k) if (i >> j) & 1]
-        if comb:
-            s = np.bitwise_xor.reduce(stabs[comb], axis=0)
-        else:
-            s = np.zeros(stabs.shape[1], dtype=np.int8)
-        all_stabs.append(s)
-    all_stabs = np.array(all_stabs, dtype=np.int8)
-    
-    batch_size = 2000
-    weights = np.zeros(len(faults), dtype=int)
-    for i in range(0, len(faults), batch_size):
-        batch = faults[i:i+batch_size]
-        candidate = (batch[:, None, :] + all_stabs[None, :, :]) % 2
-        cand_weights = np.sum(candidate, axis=2)
-        weights[i:i+batch_size] = np.min(cand_weights, axis=1)
-        
-    return weights
+    reps = compute_minimum_weight_representatives(faults, stabs)
+    return np.sum(reps, axis=1)
 
 def find_low_weight_verification_stabilizers(fault_sets: list[PureFaultSet], stabs: np.ndarray, max_combinations: int = 4, max_time_sec: int = 60) -> list[list[np.ndarray]]:
     logger.info("Finding low-weight verification stabilizers using Z3 ILP")
@@ -216,24 +196,61 @@ def compute_minimum_weight_representatives(faults: np.ndarray, stabs: np.ndarray
     if k == 0:
         return faults.copy()
         
-    all_stabs = []
-    for i in range(1 << k):
-        comb = [j for j in range(k) if (i >> j) & 1]
-        if comb:
-            s = np.bitwise_xor.reduce(stabs[comb], axis=0)
-        else:
-            s = np.zeros(stabs.shape[1], dtype=np.int8)
-        all_stabs.append(s)
-    all_stabs = np.array(all_stabs, dtype=np.int8)
+    num_qubits = stabs.shape[1]
+
+    if k <= 15:
+        all_stabs = []
+        for i in range(1 << k):
+            comb = [j for j in range(k) if (i >> j) & 1]
+            if comb:
+                s = np.bitwise_xor.reduce(stabs[comb], axis=0)
+            else:
+                s = np.zeros(num_qubits, dtype=np.int8)
+            all_stabs.append(s)
+        all_stabs = np.array(all_stabs, dtype=np.int8)
+        
+        batch_size = 2000
+        reps = np.zeros_like(faults)
+        for i in range(0, len(faults), batch_size):
+            batch = faults[i:i+batch_size]
+            candidate = (batch[:, None, :] + all_stabs[None, :, :]) % 2
+            cand_weights = np.sum(candidate, axis=2)
+            min_idx = np.argmin(cand_weights, axis=1)
+            reps[i:i+batch_size] = candidate[np.arange(len(batch)), min_idx]
+            
+        return reps
+
+    import galois
+    GF2 = galois.GF(2)
+    stabs_gf2 = GF2(stabs)
+    H_gf2 = stabs_gf2.null_space()
+    H = np.array(H_gf2, dtype=np.int8)
     
-    batch_size = 2000
+    if H.shape[0] == 0:
+        return np.zeros_like(faults)
+
+    syndromes = (faults @ H.T) % 2
+    unique_syndromes = np.unique(syndromes, axis=0)
+    target_syndromes = set(tuple(s) for s in unique_syndromes)
+    
+    found = {}
+    from collections import deque
+    queue = deque([(np.zeros(num_qubits, dtype=np.int8), 0, 0)])
+    
+    while queue and len(found) < len(target_syndromes):
+        vec, wt, last_idx = queue.popleft()
+        syn = tuple((H @ vec) % 2)
+        if syn in target_syndromes and syn not in found:
+            found[syn] = vec
+            
+        for i in range(last_idx, num_qubits):
+            new_vec = vec.copy()
+            new_vec[i] ^= 1
+            queue.append((new_vec, wt + 1, i + 1))
+            
     reps = np.zeros_like(faults)
-    for i in range(0, len(faults), batch_size):
-        batch = faults[i:i+batch_size]
-        candidate = (batch[:, None, :] + all_stabs[None, :, :]) % 2
-        cand_weights = np.sum(candidate, axis=2)
-        min_idx = np.argmin(cand_weights, axis=1)
-        reps[i:i+batch_size] = candidate[np.arange(len(batch)), min_idx]
+    for i, syn in enumerate(syndromes):
+        reps[i] = found[tuple(syn)]
         
     return reps
 
@@ -342,14 +359,18 @@ def find_lookahead_verification_stabilizers(
     top_n: int = 50,
     beam_width: int = 5,
     max_time_sec: int = 60,
-    verbose: bool = False
+    verbose: bool = False,
+    cost_fn: Callable[[int, int], float] | None = None
 ) -> list[list[np.ndarray]]:
     """
     Finds verification stabilizers for t layers using mathematical lookahead.
     Tracks exact fault detections across layers using a 2D signature matrix.
     """
+    if cost_fn is None:
+        cost_fn = cnot_cost
+
     candidate_stabs = _generate_candidate_stabilizers(stabs, max_combinations)
-    costs = np.array([cnot_cost(w, t) for w in np.sum(candidate_stabs, axis=1)])
+    costs = np.array([cost_fn(w, t) for w in np.sum(candidate_stabs, axis=1)])
     
     raw_fault_sets = _generate_raw_fault_sets(single_faults, t, H_filter)
     
@@ -414,7 +435,7 @@ def find_lookahead_verification_stabilizers(
             if layer_idx == t - 1:
                 # Last layer: no lookahead needed
                 best_last = candidate_covers[0]
-                best_last_score = sum(cnot_cost(w, t) for w in np.sum(best_last, axis=1))
+                best_last_score = sum(cost_fn(w, t) for w in np.sum(best_last, axis=1))
                 final_cost = realized_cost + best_last_score
                 
                 # Update detections
@@ -475,7 +496,7 @@ def find_lookahead_verification_stabilizers(
                     uncoverable = fs_size - valid_cov.shape[1] + missed_in_valid
                     next_cost += uncoverable * 2  # Penalize uncoverable faults by 2 CNOTs (1 flag)
                     
-                cover_cost = sum(cnot_cost(w, t) for w in np.sum(cover, axis=1))
+                cover_cost = sum(cost_fn(w, t) for w in np.sum(cover, axis=1))
                 new_realized_cost = realized_cost + cover_cost
                 lookahead_score = new_realized_cost + next_cost
                 

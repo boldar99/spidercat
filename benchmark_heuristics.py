@@ -4,10 +4,11 @@ import sys
 import os
 import time
 
-CODES = ["7_1_3", "9_1_3", "15_7_3", "12_2_4", "16_6_4", "17_1_5", "19_1_5"]
+CODES = ["7_1_3", "9_1_3", "15_7_3", "12_2_4", "16_6_4", "17_1_5", "19_1_5", "32_20_4", "24_4_5", "20_2_6", "23_1_7"]
+CODES = ["12_2_4", "16_6_4", "17_1_5", "19_1_5"]
 HEURISTICS = ["overlap", "zero_tolerance", "weighted_syndrome"]
-FIRST_LAYERS = ["Z", "X"]
-NUM_RUNS_PER_LAYER = 1
+FIRST_LAYERS = ["X"]
+NUM_RUNS_PER_LAYER = 30
 
 def run_test(code, heuristic, first_layer, seed):
     cmd = [
@@ -19,41 +20,44 @@ def run_test(code, heuristic, first_layer, seed):
     ]
     
     start_time = time.time()
+    TIMEOUT = 1200
     try:
         # Use a timeout of 120 seconds per run just in case
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=TIMEOUT)
     except subprocess.TimeoutExpired:
-        return "TIMEOUT", -1, 120.0
+        return "TIMEOUT", -1, -1, float(TIMEOUT)
     end_time = time.time()
     elapsed = end_time - start_time
     
     output = result.stdout + "\n" + result.stderr
 
-    match = re.search(r"#CX:\s*(\d+)", output)
-    num_cx = int(match.group(1))
-    
+    cx_match = re.search(r"#CX:\s*(\d+)", output)
+    ms_match = re.search(r"#Meas:\s*(\d+)", output)
+
+    if not cx_match or not ms_match:
+        return "UNKNOWN", -1, -1, elapsed
+
+    num_cx = int(cx_match.group(1))
+    num_meas = int(ms_match.group(1))
+
     # Check if non-FT or Verification failed
     if "Final Verification Result: False" in output or "[FAIL]" in output:
-        return "NON-FT", num_cx, elapsed
+        return "NON-FT", num_cx, num_meas, elapsed
     if "Final Verification Result: True" not in output:
-        return "ERROR", num_cx, elapsed
-        
-    # Extract CNOT count
-    if match:
-        return "FT", num_cx, elapsed
-    
-    return "UNKNOWN", -1, elapsed
+        return "ERROR", num_cx, num_meas, elapsed
+
+    return "FT", num_cx, num_meas, elapsed
 
 import multiprocessing
 
 def process_task(args):
     code, heuristic, first_layer, seed = args
-    status, cnots, elapsed = run_test(code, heuristic, first_layer, seed)
-    return args, status, cnots, elapsed
+    status, cnots, measurements, elapsed = run_test(code, heuristic, first_layer, seed)
+    return args, status, cnots, measurements, elapsed
 
 def main():
-    print(f"{'Code':<10} | {'Heuristic':<20} | {'Layer':<5} | {'Run':<5} | {'Status':<10} | {'CNOTs':<5} | {'Time (s)':<8}")
-    print("-" * 75)
+    print(f"{'Code':<10} | {'Heuristic':<20} | {'Layer':<5} | {'Run':<5} | {'Status':<10} | {'CNOTs':<5} | {'Meas':<5} | {'Time (s)':<8}")
+    print("-" * 88)
     
     results = {}
     
@@ -68,9 +72,9 @@ def main():
     num_cores = max(1, multiprocessing.cpu_count() - 2)
     
     with multiprocessing.Pool(processes=num_cores) as pool:
-        for (code, heuristic, first_layer, seed), status, cnots, elapsed in pool.imap(process_task, tasks):
+        for (code, heuristic, first_layer, seed), status, cnots, measurements, elapsed in pool.imap(process_task, tasks):
             run_idx = seed - 100
-            print(f"{code:<10} | {heuristic:<20} | {first_layer:<5} | {run_idx:<5} | {status:<10} | {cnots if cnots != -1 else '-':<5} | {elapsed:.2f}")
+            print(f"{code:<10} | {heuristic:<20} | {first_layer:<5} | {run_idx:<5} | {status:<10} | {cnots if cnots != -1 else '-':<5} | {measurements if measurements != -1 else '-':<5} | {elapsed:.2f}")
             
             key = (code, heuristic, first_layer)
             if key not in results:
