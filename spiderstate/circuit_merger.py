@@ -68,7 +68,7 @@ def synthesize_and_merge_layer(previous_circ: stim.Circuit, stabs_qubits: list[l
         layer_violations = []
         
     if not stabs_qubits:
-        return stim.Circuit(), ancilla_start
+        return previous_circ, ancilla_start
 
     # 1. Schedule data CNOTs
     # ticks is passed as argument
