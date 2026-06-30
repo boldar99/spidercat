@@ -602,14 +602,14 @@ if __name__ == "__main__":
     import random
     
     parser = argparse.ArgumentParser(description="Fault Tolerance Verification")
-    parser.add_argument("--code", type=str, default="24_4_5", help="Code string (default: 17_1_5)")
+    parser.add_argument("--code", type=str, default="20_2_6", help="Code string (default: 17_1_5)")
     parser.add_argument("--state", type=str, default="0", help="State (default: 0)")
     parser.add_argument("--max_col_ops", type=int, default=100, help="Max column operations (default: 100)")
     parser.add_argument("--top_n", type=int, default=50, help="Top N (default: 50)")
     parser.add_argument("--num_circuits", type=int, default=1, help="Number of portfolio circuits (default: 1)")
     parser.add_argument("--first_layer", type=str, choices=["X", "Z", "none", "interleaved"], default="X", help="First layer (default: X)")
     parser.add_argument("--heuristic", type=str, choices=["overlap", "zero_tolerance", "weighted_syndrome", "global_sparsity", "max_contention", "soft_cover"], default="overlap", help="Heuristic for fault tracker")
-    parser.add_argument("--seed", type=str, default="100", help="The random seed")
+    parser.add_argument("--seed", type=str, default="101", help="The random seed")
     parser.add_argument("--save_circuit", type=str, default="", help="Path to save the circuit if FT")
 
     args = parser.parse_args()
@@ -642,7 +642,9 @@ if __name__ == "__main__":
         verbose=True
     )
 
-    print("\nFinal Verification Result:", is_ft)
+    print("\nFinal Verification Result:", is_ft is True)
+
+    print(circ)
     
     if is_ft is True and args.save_circuit:
         with open(args.save_circuit, "w") as f:

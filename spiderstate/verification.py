@@ -375,7 +375,10 @@ def find_lookahead_verification_stabilizers(
     raw_fault_sets = _generate_raw_fault_sets(single_faults, t, H_filter)
     
     # Precompute target coverage for each R_k pool
+    all_fault_sets = list(raw_fault_sets)
     targets = []
+    all_starts = [0] * len(raw_fault_sets)
+    
     for layer_idx, fs in enumerate(raw_fault_sets):
         if len(fs.faults) == 0:
             targets.append(np.array([]))
@@ -384,10 +387,22 @@ def find_lookahead_verification_stabilizers(
         f_count = layer_idx + 1
         target_coverage = np.minimum(W_eff - f_count, t - f_count + 1)
         targets.append(target_coverage)
+        
+    # Inject DEM-like inter-layer delayed faults
+    if len(raw_fault_sets) > 0 and len(raw_fault_sets[0].faults) > 0:
+        base_fs = raw_fault_sets[0]
+        W_eff = compute_effective_weights(base_fs.faults, H_filter)
+        for m in range(1, t):
+            all_fault_sets.append(base_fs)
+            all_starts.append(m)
+            # A fault starting after layer m is weight-1, but has fewer layers left
+            # We want its target coverage to be scaled down appropriately
+            target_coverage = np.maximum(1, np.minimum(W_eff - 1, t - m))
+            targets.append(target_coverage)
     
     # beam state: (realized_cost, layers, accumulated_stabs, detection_counts)
-    # detection_counts is a list of 2D arrays, one for each R_k
-    initial_detections = [np.zeros((len(fs.faults), 0), dtype=np.int8) for fs in raw_fault_sets]
+    # detection_counts is a list of 2D arrays, one for each fault set
+    initial_detections = [np.zeros((len(fs.faults), 0), dtype=np.int8) for fs in all_fault_sets]
     beam = [(0.0, [], [], initial_detections)]
     
     for layer_idx in range(t):
@@ -400,8 +415,17 @@ def find_lookahead_verification_stabilizers(
             active_surviving_list = []
             active_threat_list = []
             
-            for k in range(layer_idx + 1):
-                raw_k = raw_fault_sets[k]
+            for k in range(len(all_fault_sets)):
+                is_active_now = False
+                if all_starts[k] == 0:
+                    is_active_now = (k <= layer_idx)
+                else:
+                    is_active_now = (all_starts[k] <= layer_idx)
+                    
+                if not is_active_now:
+                    continue
+                    
+                raw_k = all_fault_sets[k]
                 if len(raw_k.faults) == 0:
                     continue
                 target_k = targets[k]
@@ -442,7 +466,10 @@ def find_lookahead_verification_stabilizers(
                 layer_matrix = np.vstack(best_last).astype(np.int8)
                 new_det_counts = []
                 for k, det in enumerate(det_counts):
-                    new_sigs = ((layer_matrix @ raw_fault_sets[k].faults.T) % 2).T.astype(np.int8)
+                    if layer_idx < all_starts[k]:
+                        new_sigs = np.zeros((len(all_fault_sets[k].faults), 1), dtype=np.int8)
+                    else:
+                        new_sigs = ((layer_matrix @ all_fault_sets[k].faults.T) % 2).T.astype(np.int8)
                     new_det_counts.append(np.hstack((det, new_sigs)))
                 
                 next_beam_candidates.append((final_cost, final_cost, layers + [best_last], accumulated_stabs + best_last, new_det_counts))
@@ -453,13 +480,25 @@ def find_lookahead_verification_stabilizers(
                 
                 new_det_counts = []
                 for k, det in enumerate(det_counts):
-                    new_sigs = ((cover_matrix @ raw_fault_sets[k].faults.T) % 2).T.astype(np.int8)
+                    if layer_idx < all_starts[k]:
+                        new_sigs = np.zeros((len(all_fault_sets[k].faults), 1), dtype=np.int8)
+                    else:
+                        new_sigs = ((cover_matrix @ all_fault_sets[k].faults.T) % 2).T.astype(np.int8)
                     new_det_counts.append(np.hstack((det, new_sigs)))
                 
                 # Lookahead scoring
                 next_surviving_list = []
-                for k in range(min(layer_idx + 2, t)):
-                    raw_k = raw_fault_sets[k]
+                for k in range(len(all_fault_sets)):
+                    is_active_next = False
+                    if all_starts[k] == 0:
+                        is_active_next = (k <= layer_idx + 1)
+                    else:
+                        is_active_next = (all_starts[k] <= layer_idx + 1)
+                        
+                    if not is_active_next:
+                        continue
+                        
+                    raw_k = all_fault_sets[k]
                     if len(raw_k.faults) == 0:
                         continue
                     target_k = targets[k]
@@ -471,7 +510,7 @@ def find_lookahead_verification_stabilizers(
                 if next_surviving_list:
                     next_surviving = np.vstack(next_surviving_list)
                 else:
-                    num_qubits = raw_fault_sets[0].num_qubits if raw_fault_sets else 0
+                    num_qubits = all_fault_sets[0].num_qubits if all_fault_sets else 0
                     next_surviving = np.zeros((0, num_qubits), dtype=np.int8)
                 
                 fs_size = len(next_surviving)
@@ -529,7 +568,7 @@ def find_lookahead_verification_stabilizers(
     # SCORING & PRUNING
     valid_beam = []
     from spiderstate.cnot_scheduler import DangerousFault, schedule_all_verification_layers
-    num_qubits = raw_fault_sets[0].num_qubits if raw_fault_sets else 0
+    num_qubits = all_fault_sets[0].num_qubits if all_fault_sets else 0
     I_N = np.eye(num_qubits, dtype=np.int8)
     
     for cand in beam:
@@ -539,19 +578,24 @@ def find_lookahead_verification_stabilizers(
         target_coverage_violations = []
         dangerous_faults = []
         
-        for layer_idx, fs in enumerate(raw_fault_sets):
-            k = layer_idx + 1
-            target_coverage = targets[layer_idx]
+        for layer_idx_loop, fs in enumerate(all_fault_sets):
+            target_coverage = targets[layer_idx_loop]
             if len(target_coverage) == 0:
                 continue
                 
-            total_det = np.sum(det_counts[layer_idx], axis=1)
+            total_det = np.sum(det_counts[layer_idx_loop], axis=1)
                 
             E_oplus_q_flat = (fs.faults[:, None, :] + I_N[None, :, :]) % 2
             E_oplus_q_flat = E_oplus_q_flat.reshape(-1, num_qubits)
             W_eff_flat = compute_effective_weights(E_oplus_q_flat, H_filter)
             W_eff_matrix = W_eff_flat.reshape(len(fs.faults), num_qubits)
-            T_E_q_matrix = np.minimum(W_eff_matrix - (k + 1), t - (k + 1) + 1)
+            
+            if all_starts[layer_idx_loop] == 0:
+                k_faults = layer_idx_loop + 1
+                T_E_q_matrix = np.minimum(W_eff_matrix - (k_faults + 1), t - (k_faults + 1) + 1)
+            else:
+                m = all_starts[layer_idx_loop]
+                T_E_q_matrix = np.minimum(W_eff_matrix - 2, t - m - 1)
             
             for i, f in enumerate(fs.faults):
                 T_E = target_coverage[i]
