@@ -315,6 +315,7 @@ def cat_at_origin_with_verification(
         
         def synthesize_X_layer(current_circ, v_x_layers, t_x, viol_x):
             ancilla_start = H_x.shape[1]
+            phase_circ = stim.Circuit()
             if verbose: print("\nSynthesizing X fault verification circuits...")
             for i, layer in enumerate(v_x_layers):
                 stabs_qubits = []
@@ -323,7 +324,8 @@ def cat_at_origin_with_verification(
                     stabs_qubits.append(qubits)
                 
                 layer_violations = [v for v in viol_x if v["layer"] == i]
-                merged_layer_circ, ancilla_start = synthesize_and_merge_layer(
+                phase_circ, ancilla_start = synthesize_and_merge_layer(
+                    phase_circ,
                     stabs_qubits, 
                     t_x[i],
                     t=0 if first_layer == "X" else t,
@@ -331,11 +333,11 @@ def cat_at_origin_with_verification(
                     basis="Z",
                     layer_violations=layer_violations
                 )
-                current_circ += merged_layer_circ
-            return current_circ
+            return current_circ + phase_circ
 
         def synthesize_Z_layer(current_circ, v_z_layers, t_z, viol_z):
             ancilla_start = H_x.shape[1]
+            phase_circ = stim.Circuit()
             if verbose: print("\nSynthesizing Z fault verification circuits...")
             for i, layer in enumerate(v_z_layers):
                 stabs_qubits = []
@@ -344,7 +346,8 @@ def cat_at_origin_with_verification(
                     stabs_qubits.append(qubits)
 
                 layer_violations = [v for v in viol_z if v["layer"] == i]
-                merged_layer_circ, ancilla_start = synthesize_and_merge_layer(
+                phase_circ, ancilla_start = synthesize_and_merge_layer(
+                    phase_circ,
                     stabs_qubits, 
                     t_z[i],
                     t=0 if first_layer == "Z" else t,
@@ -352,8 +355,7 @@ def cat_at_origin_with_verification(
                     basis="X",
                     layer_violations=layer_violations
                 )
-                current_circ += merged_layer_circ
-            return current_circ
+            return current_circ + phase_circ
 
         if first_layer == "Z":
             circ = synthesize_Z_layer(circ, ver_z_stabs_layers, ticks_z, violations_z)

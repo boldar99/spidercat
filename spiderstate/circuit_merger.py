@@ -1,6 +1,67 @@
 import stim
 
-def synthesize_and_merge_layer(stabs_qubits: list[list[int]], ticks: list[list[tuple[int, int]]], t: int, ancilla_start: int, basis: str, layer_violations: list[dict] = None) -> tuple[stim.Circuit, int]:
+def splice_flag_injection(circ: stim.Circuit, q: int, f: int, basis: str) -> stim.Circuit:
+    blocks = []
+    curr = stim.Circuit()
+    for inst in circ:
+        if inst.name == "TICK":
+            blocks.append(curr)
+            curr = stim.Circuit()
+        else:
+            curr.append(inst)
+    if len(curr) > 0:
+        blocks.append(curr)
+        
+    target_idx = -1
+    for i in range(len(blocks)-1, -1, -1):
+        block = blocks[i]
+        involves_q = False
+        for inst in block:
+            for t in inst.targets_copy():
+                if t.is_qubit_target and t.value == q:
+                    involves_q = True
+                    break
+            if involves_q: break
+        if involves_q:
+            target_idx = i
+            break
+            
+    if target_idx == -1:
+        target_idx = 0
+        
+    new_circ = stim.Circuit()
+    for i, b in enumerate(blocks):
+        if i == target_idx:
+            if basis == 'Z':
+                new_circ.append("R", [f])
+                new_circ.append("TICK")
+                new_circ.append("CX", [q, f])
+                new_circ.append("TICK")
+            else:
+                new_circ.append("RX", [f])
+                new_circ.append("TICK")
+                new_circ.append("CX", [f, q])
+                new_circ.append("TICK")
+        for inst in b:
+            new_circ.append(inst)
+        if i < len(blocks) - 1:
+            new_circ.append("TICK")
+            
+    if target_idx == len(blocks):
+        if basis == 'Z':
+            new_circ.append("R", [f])
+            new_circ.append("TICK")
+            new_circ.append("CX", [q, f])
+            new_circ.append("TICK")
+        else:
+            new_circ.append("RX", [f])
+            new_circ.append("TICK")
+            new_circ.append("CX", [f, q])
+            new_circ.append("TICK")
+            
+    return new_circ
+
+def synthesize_and_merge_layer(previous_circ: stim.Circuit, stabs_qubits: list[list[int]], ticks: list[list[tuple[int, int]]], t: int, ancilla_start: int, basis: str, layer_violations: list[dict] = None) -> tuple[stim.Circuit, int]:
     from spidercat.syndrome_measurement import bare_se_circuit, fao_se_circuit
     
     if layer_violations is None:
@@ -116,7 +177,6 @@ def synthesize_and_merge_layer(stabs_qubits: list[list[int]], ticks: list[list[t
         merged.append("TICK")
         
     # --- FLAG INJECTION START ---
-    # We will surround ALL CNOTs on violating qubits in this layer.
     violating_qubits = set(v["q"] for v in layer_violations)
     flags_to_insert = []
     for q in sorted(list(violating_qubits)):
@@ -124,19 +184,8 @@ def synthesize_and_merge_layer(stabs_qubits: list[list[int]], ticks: list[list[t
         current_ancilla += 1
         flags_to_insert.append((q, f_qubit))
         
-    if flags_to_insert:
-        if basis == 'Z':
-            merged.append("R", [f for _, f in flags_to_insert])
-            merged.append("TICK")
-            for q, f in flags_to_insert:
-                merged.append("CX", [q, f])
-            merged.append("TICK")
-        else:
-            merged.append("RX", [f for _, f in flags_to_insert])
-            merged.append("TICK")
-            for q, f in flags_to_insert:
-                merged.append("CX", [f, q])
-            merged.append("TICK")
+    for q, f in flags_to_insert:
+        previous_circ = splice_flag_injection(previous_circ, q, f, basis)
     # --- FLAG INJECTION END ---
         
     for tick_ops in ticks:
@@ -185,7 +234,7 @@ def synthesize_and_merge_layer(stabs_qubits: list[list[int]], ticks: list[list[t
         merged.append("H", sorted(list(data_qubits_needing_h)))
         merged.append("TICK")
         
-    return merged, current_ancilla
+    return previous_circ + merged, current_ancilla
 
 if __name__ == '__main__':
     stabs = ['01001100000010000', '10001000111010101']
