@@ -581,7 +581,7 @@ def verify_ftsp(
     verbose: bool = False
 ) -> bool:
     """Comprehensive FT Verification mapping both primary and conjugate error channels."""
-    res_primary = verify_ftsp_primary_exact(
+    res_primary = verify_ftsp_primary_ilp(
         prep_circ, H_primary, L_primary, d, t, basis_char=primary_basis, verbose=verbose
     )
     if res_primary is not True:
