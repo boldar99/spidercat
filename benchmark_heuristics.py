@@ -9,11 +9,12 @@ import shutil
 import stim
 from spiderstate.utils import count_operations, get_project_root
 
-CODES = ["7_1_3", "9_1_3", "15_1_3", "15_7_3", "12_2_4", "16_6_4", "17_1_5", "19_1_5", "25_1_5", "32_20_4", "24_4_5", "20_2_6"]
-CODES = ["20_2_6", "23_1_7", "31_1_7"]
-HEURISTICS = ["overlap"]
-FIRST_LAYERS = ["X"]
-NUM_RUNS_PER_LAYER = 120
+CODES = ["7_1_3", "9_1_3", "15_1_3", "15_7_3", "12_2_4", "16_6_4", "17_1_5", "19_1_5", "25_1_5", "24_4_5", "20_2_6", "23_1_7"]
+# CODES = ["20_2_6"]
+HEURISTICS = ["overlap", "zero_tolerance", "weighted_syndrome"]
+# HEURISTICS = ["overlap"]
+FIRST_LAYERS = ["X", "Z"]
+NUM_RUNS_PER_LAYER = 1
 
 def get_best_count(code):
     path = get_project_root().joinpath("good_circuits", f"{code}.stim")
@@ -33,7 +34,7 @@ def run_test(code, heuristic, first_layer, seed):
         "conda", "run", "-n", "zxlive", "python", "-m", "spiderstate.fault_tolerance_verification",
         "--code", code,
         "--heuristic", heuristic,
-        # "--num_circuits", str(NUM_RUNS_PER_LAYER),
+        "--num_circuits", str(100),
         "--first_layer", first_layer,
         "--seed", str(seed),
         "--save_circuit", tmp_path

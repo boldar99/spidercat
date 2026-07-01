@@ -258,9 +258,12 @@ def cat_at_origin_with_verification(
                 single_faults=single_faults_x, stabs=stabs_x, H_filter=H_reduce_x, t=t, top_n=top_n, verbose=verbose, cost_fn=non_ft_cost_fn
             )
             if violations_x:
-                print(f"WARNING: X Faults Verification has {len(violations_x)} unschedulable CNOT violations.")
+                print(f"WARNING: X Faults Verification has {len(violations_x)} violations.")
                 for v in violations_x:
-                    print(f"  - Layer {v['layer']}, Qubits {v['Q']}, Injection Points {v['J']}, M_E_Q: {v['M_E_Q']}")
+                    if v.get("type") == "target_coverage":
+                        print(f"  - Target Coverage Violation: Qubit {v['q']}, Amount: {v['violation_amount']}")
+                    else:
+                        print(f"  - Layer {v['layer']}, Qubits {v['Q']}, Injection Points {v['J']}, M_E_Q: {v['M_E_Q']}")
             injected_z = compute_bare_injected_faults(ver_x_stabs_layers, ticks_x, H_x.shape[1])
             single_faults_z.add_faults(injected_z.faults)
             single_faults_z.remove_duplicates()
@@ -270,18 +273,24 @@ def cat_at_origin_with_verification(
                 single_faults=single_faults_z, stabs=stabs_z, H_filter=H_reduce_z, t=t, top_n=top_n, verbose=verbose
             )
             if violations_z:
-                print(f"WARNING: Z Faults Verification has {len(violations_z)} unschedulable CNOT violations.")
+                print(f"WARNING: Z Faults Verification has {len(violations_z)} violations.")
                 for v in violations_z:
-                    print(f"  - Layer {v['layer']}, Qubits {v['Q']}, Injection Points {v['J']}, M_E_Q: {v['M_E_Q']}")
+                    if v.get("type") == "target_coverage":
+                        print(f"  - Target Coverage Violation: Qubit {v['q']}, Amount: {v['violation_amount']}")
+                    else:
+                        print(f"  - Layer {v['layer']}, Qubits {v['Q']}, Injection Points {v['J']}, M_E_Q: {v['M_E_Q']}")
         elif first_layer == "Z":
             if verbose: print("\n--- Z Faults Verification (Non-FT) ---")
             ver_z_stabs_layers, dfs_z, ticks_z, violations_z = find_lookahead_verification_stabilizers(
                 single_faults=single_faults_z, stabs=stabs_z, H_filter=H_reduce_z, t=t, top_n=top_n, verbose=verbose, cost_fn=non_ft_cost_fn
             )
             if violations_z:
-                print(f"WARNING: Z Faults Verification has {len(violations_z)} unschedulable CNOT violations.")
+                print(f"WARNING: Z Faults Verification has {len(violations_z)} violations.")
                 for v in violations_z:
-                    print(f"  - Layer {v['layer']}, Qubits {v['Q']}, Injection Points {v['J']}, M_E_Q: {v['M_E_Q']}")
+                    if v.get("type") == "target_coverage":
+                        print(f"  - Target Coverage Violation: Qubit {v['q']}, Amount: {v['violation_amount']}")
+                    else:
+                        print(f"  - Layer {v['layer']}, Qubits {v['Q']}, Injection Points {v['J']}, M_E_Q: {v['M_E_Q']}")
             injected_x = compute_bare_injected_faults(ver_z_stabs_layers, ticks_z, H_x.shape[1])
             single_faults_x.add_faults(injected_x.faults)
             single_faults_x.remove_duplicates()
@@ -291,26 +300,35 @@ def cat_at_origin_with_verification(
                 single_faults=single_faults_x, stabs=stabs_x, H_filter=H_reduce_x, t=t, top_n=top_n, verbose=verbose
             )
             if violations_x:
-                print(f"WARNING: X Faults Verification has {len(violations_x)} unschedulable CNOT violations.")
+                print(f"WARNING: X Faults Verification has {len(violations_x)} violations.")
                 for v in violations_x:
-                    print(f"  - Layer {v['layer']}, Qubits {v['Q']}, Injection Points {v['J']}, M_E_Q: {v['M_E_Q']}")
+                    if v.get("type") == "target_coverage":
+                        print(f"  - Target Coverage Violation: Qubit {v['q']}, Amount: {v['violation_amount']}")
+                    else:
+                        print(f"  - Layer {v['layer']}, Qubits {v['Q']}, Injection Points {v['J']}, M_E_Q: {v['M_E_Q']}")
         else:
             if verbose: print("\n--- X Faults Verification (FT) ---")
             ver_x_stabs_layers, dfs_x, ticks_x, violations_x = find_lookahead_verification_stabilizers(
                 single_faults=single_faults_x, stabs=stabs_x, H_filter=H_reduce_x, t=t, top_n=top_n, verbose=verbose
             )
             if violations_x:
-                print(f"WARNING: X Faults Verification has {len(violations_x)} unschedulable CNOT violations.")
+                print(f"WARNING: X Faults Verification has {len(violations_x)} violations.")
                 for v in violations_x:
-                    print(f"  - Layer {v['layer']}, Qubit {v['q']}, Stab {v['s_j']}, Amount: {v['violation_amount']}")
+                    if v.get("type") == "target_coverage":
+                        print(f"  - Target Coverage Violation: Qubit {v['q']}, Amount: {v['violation_amount']}")
+                    else:
+                        print(f"  - Layer {v['layer']}, Qubits {v['Q']}, Injection Points {v['J']}, M_E_Q: {v['M_E_Q']}")
             if verbose: print("\n--- Z Faults Verification (FT) ---")
             ver_z_stabs_layers, dfs_z, ticks_z, violations_z = find_lookahead_verification_stabilizers(
                 single_faults=single_faults_z, stabs=stabs_z, H_filter=H_reduce_z, t=t, top_n=top_n, verbose=verbose
             )
             if violations_z:
-                print(f"WARNING: Z Faults Verification has {len(violations_z)} unschedulable CNOT violations.")
+                print(f"WARNING: Z Faults Verification has {len(violations_z)} violations.")
                 for v in violations_z:
-                    print(f"  - Layer {v['layer']}, Qubit {v['q']}, Stab {v['s_j']}, Amount: {v['violation_amount']}")
+                    if v.get("type") == "target_coverage":
+                        print(f"  - Target Coverage Violation: Qubit {v['q']}, Amount: {v['violation_amount']}")
+                    else:
+                        print(f"  - Layer {v['layer']}, Qubits {v['Q']}, Injection Points {v['J']}, M_E_Q: {v['M_E_Q']}")
 
         
         def synthesize_X_layer(current_circ, v_x_layers, t_x, viol_x):

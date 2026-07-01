@@ -602,11 +602,11 @@ if __name__ == "__main__":
     import random
     
     parser = argparse.ArgumentParser(description="Fault Tolerance Verification")
-    parser.add_argument("--code", type=str, default="20_2_6", help="Code string (default: 17_1_5)")
+    parser.add_argument("--code", type=str, default="16_6_4", help="Code string (default: 17_1_5)")
     parser.add_argument("--state", type=str, default="0", help="State (default: 0)")
     parser.add_argument("--max_col_ops", type=int, default=100, help="Max column operations (default: 100)")
     parser.add_argument("--top_n", type=int, default=50, help="Top N (default: 50)")
-    parser.add_argument("--num_circuits", type=int, default=1, help="Number of portfolio circuits (default: 1)")
+    parser.add_argument("--num_circuits", type=int, default=50, help="Number of portfolio circuits (default: 1)")
     parser.add_argument("--first_layer", type=str, default="X", choices=["X", "Z", "none", "interleaved"], help="First layer (default: X)")
     parser.add_argument("--heuristic", type=str, default="overlap", choices=["overlap", "zero_tolerance", "weighted_syndrome", "global_sparsity", "max_contention", "soft_cover"], help="Heuristic for fault tracker")
     parser.add_argument("--seed", type=str, default="100", help="The random seed")

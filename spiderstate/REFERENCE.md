@@ -84,9 +84,9 @@ conda run -n zxlive python spiderstate/fault_tolerance_verification.py --code <c
 *   **Benchmarks**: Below are some reliable tester configurations and expected performance metrics:
     *   **7_1_3**: Best FT result uses 11 CNOT gates + 1 measurement.
     *   **9_1_3**: Best FT result uses 11 CNOT gates + 1 measurement.
-    *   **15_7_3**: Best FT result uses 27 CNOT gates + 2 measurement.
+    *   **15_1_3**: Best FT result uses 27 CNOT gates + 2 measurement.
     *   **15_7_3**: Best FT result uses 25 CNOT gates + 1 measurement.
-    *   **12_2_4**: Best FT result uses 36 CNOT gates + 6 measurements.
+    *   **12_2_4**: Best FT result uses 36 CNOT gates + 5 measurements.
     *   **16_6_4**: Best FT result uses 58 CNOT gates + 9 measurements.
     *   **32_20_4**: Best FT result uses 132 CNOT gates + 21 measurements.
     *   **17_1_5**: Best FT result uses 57 CNOT gates + 9 measurements.
