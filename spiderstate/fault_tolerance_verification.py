@@ -607,8 +607,8 @@ if __name__ == "__main__":
     parser.add_argument("--max_col_ops", type=int, default=100, help="Max column operations (default: 100)")
     parser.add_argument("--top_n", type=int, default=50, help="Top N (default: 50)")
     parser.add_argument("--num_circuits", type=int, default=1, help="Number of portfolio circuits (default: 1)")
-    parser.add_argument("--first_layer", type=str, choices=["X", "Z", "none", "interleaved"], default="Z", help="First layer (default: X)")
-    parser.add_argument("--heuristic", type=str, choices=["overlap", "zero_tolerance", "weighted_syndrome", "global_sparsity", "max_contention", "soft_cover"], default="overlap", help="Heuristic for fault tracker")
+    parser.add_argument("--first_layer", type=str, default="X", choices=["X", "Z", "none", "interleaved"], help="First layer (default: X)")
+    parser.add_argument("--heuristic", type=str, default="overlap", choices=["overlap", "zero_tolerance", "weighted_syndrome", "global_sparsity", "max_contention", "soft_cover"], help="Heuristic for fault tracker")
     parser.add_argument("--seed", type=str, default="100", help="The random seed")
     parser.add_argument("--save_circuit", type=str, default="", help="Path to save the circuit if FT")
 
@@ -620,12 +620,12 @@ if __name__ == "__main__":
     t = d // 2
 
     print(f"Generating circuit for {args.code} (d={d}, t={t})...")
-    # circ = cat_at_origin_with_verification(
-    #     H_x=H_x, H_z=H_z, L_x=L_x, L_z=L_z, d=d,
-    #     state=args.state, max_col_ops=args.max_col_ops, top_n=args.top_n,
-    #     first_layer=args.first_layer, verbose=True, heuristic=args.heuristic, num_circuits=args.num_circuits,
-    # )
-    circ = stim.Circuit(get_project_root().joinpath("good_circuits", f"{args.code}.stim").read_text())
+    circ = cat_at_origin_with_verification(
+        H_x=H_x, H_z=H_z, L_x=L_x, L_z=L_z, d=d,
+        state=args.state, max_col_ops=args.max_col_ops, top_n=args.top_n,
+        first_layer=args.first_layer, verbose=True, heuristic=args.heuristic, num_circuits=args.num_circuits,
+    )
+    # circ = stim.Circuit(get_project_root().joinpath("good_circuits", f"{args.code}.stim").read_text())
 
 
     num_cx, num_meas = count_operations(circ)
