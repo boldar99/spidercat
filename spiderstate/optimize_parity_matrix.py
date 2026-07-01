@@ -184,12 +184,11 @@ def optimize_fault_tolerant_matrix(
     
     ops_since_improvement = 0
 
-    for op_num in range(1, max_col_ops):
+    for op_num in range(1, max_col_ops + 1):
         next_beam_fast = []
         for score, curr_M, curr_tracker, curr_ops in beam:
-            if ancilla_cost(curr_M, t) == 0:
-                # Reached the end: 0 ancillas needed!
-                return matrix_after_row_ops, curr_M, curr_ops[::-1]
+            # if ancilla_cost(curr_M, t) == 0:
+            #     return matrix_after_row_ops, curr_M, curr_ops[::-1]
                 
             for i in range(c):
                 for j in range(c):
@@ -251,11 +250,14 @@ def optimize_fault_tolerant_matrix(
             ops_since_improvement = 0
         else:
             ops_since_improvement += 1
-            if ops_since_improvement >= patience:
-                # Early stopping: No improvement in the last `patience` operations
-                break
+            # if ops_since_improvement >= patience:
+            #     break
 
-    best_score, best_M, best_tracker, best_ops = global_best
+    if beam and max_col_ops > 0:
+        best_score, best_M, best_tracker, best_ops = beam[0]
+    else:
+        best_score, best_M, best_tracker, best_ops = global_best
+
     return matrix_after_row_ops, best_M, best_ops[::-1]
 
 
