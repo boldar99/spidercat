@@ -4,6 +4,8 @@ from typing import Callable
 
 import numpy as np
 from mqt.qecc.circuit_synthesis.faults import product_fault_set, PureFaultSet
+from tqdm import tqdm
+
 from spiderstate.fast_verification import fast_greedy_set_cover
 from mqt.qecc.circuit_synthesis import CNOTCircuit
 from spidercat.syndrome_measurement import cnot_cost
@@ -198,7 +200,7 @@ def compute_minimum_weight_representatives(faults: np.ndarray, stabs: np.ndarray
         
     num_qubits = stabs.shape[1]
 
-    if k <= 15:
+    if k <= 4:
         all_stabs = []
         for i in range(1 << k):
             comb = [j for j in range(k) if (i >> j) & 1]
@@ -208,7 +210,7 @@ def compute_minimum_weight_representatives(faults: np.ndarray, stabs: np.ndarray
                 s = np.zeros(num_qubits, dtype=np.int8)
             all_stabs.append(s)
         all_stabs = np.array(all_stabs, dtype=np.int8)
-        
+
         batch_size = 2000
         reps = np.zeros_like(faults)
         for i in range(0, len(faults), batch_size):
@@ -532,6 +534,21 @@ def find_lookahead_verification_stabilizers(
     num_qubits = raw_fault_sets[0].num_qubits if raw_fault_sets else 0
     I_N = np.eye(num_qubits, dtype=np.int8)
     
+    # Precompute effective weights and T_E_q_matrix for each fault set since they don't depend on the beam candidate
+    precomputed_T_E_q = []
+    for layer_idx, fs in enumerate(raw_fault_sets):
+        k = layer_idx + 1
+        if len(targets[layer_idx]) == 0:
+            precomputed_T_E_q.append(None)
+            continue
+            
+        E_oplus_q_flat = (fs.faults[:, None, :] + I_N[None, :, :]) % 2
+        E_oplus_q_flat = E_oplus_q_flat.reshape(-1, num_qubits)
+        W_eff_flat = compute_effective_weights(E_oplus_q_flat, H_filter)
+        W_eff_matrix = W_eff_flat.reshape(len(fs.faults), num_qubits)
+        T_E_q_matrix = np.minimum(W_eff_matrix - (k + 1), t - (k + 1) + 1)
+        precomputed_T_E_q.append(T_E_q_matrix)
+    
     for cand in beam:
         det_counts = cand[3]
         chosen_layers = cand[1]
@@ -540,18 +557,12 @@ def find_lookahead_verification_stabilizers(
         dangerous_faults = []
         
         for layer_idx, fs in enumerate(raw_fault_sets):
-            k = layer_idx + 1
             target_coverage = targets[layer_idx]
             if len(target_coverage) == 0:
                 continue
                 
             total_det = np.sum(det_counts[layer_idx], axis=1)
-                
-            E_oplus_q_flat = (fs.faults[:, None, :] + I_N[None, :, :]) % 2
-            E_oplus_q_flat = E_oplus_q_flat.reshape(-1, num_qubits)
-            W_eff_flat = compute_effective_weights(E_oplus_q_flat, H_filter)
-            W_eff_matrix = W_eff_flat.reshape(len(fs.faults), num_qubits)
-            T_E_q_matrix = np.minimum(W_eff_matrix - (k + 1), t - (k + 1) + 1)
+            T_E_q_matrix = precomputed_T_E_q[layer_idx]
             
             for i, f in enumerate(fs.faults):
                 T_E = target_coverage[i]
