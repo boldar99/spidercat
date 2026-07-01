@@ -260,7 +260,7 @@ def cat_at_origin_with_verification(
             if violations_x:
                 print(f"WARNING: X Faults Verification has {len(violations_x)} unschedulable CNOT violations.")
                 for v in violations_x:
-                    print(f"  - Layer {v['layer']}, Qubit {v['q']}, Stab {v['s_j']}, Amount: {v['violation_amount']}")
+                    print(f"  - Layer {v['layer']}, Qubits {v['Q']}, Injection Points {v['J']}, M_E_Q: {v['M_E_Q']}")
             injected_z = compute_bare_injected_faults(ver_x_stabs_layers, ticks_x, H_x.shape[1])
             single_faults_z.add_faults(injected_z.faults)
             single_faults_z.remove_duplicates()
@@ -272,7 +272,7 @@ def cat_at_origin_with_verification(
             if violations_z:
                 print(f"WARNING: Z Faults Verification has {len(violations_z)} unschedulable CNOT violations.")
                 for v in violations_z:
-                    print(f"  - Layer {v['layer']}, Qubit {v['q']}, Stab {v['s_j']}, Amount: {v['violation_amount']}")
+                    print(f"  - Layer {v['layer']}, Qubits {v['Q']}, Injection Points {v['J']}, M_E_Q: {v['M_E_Q']}")
         elif first_layer == "Z":
             if verbose: print("\n--- Z Faults Verification (Non-FT) ---")
             ver_z_stabs_layers, dfs_z, ticks_z, violations_z = find_lookahead_verification_stabilizers(
@@ -281,7 +281,7 @@ def cat_at_origin_with_verification(
             if violations_z:
                 print(f"WARNING: Z Faults Verification has {len(violations_z)} unschedulable CNOT violations.")
                 for v in violations_z:
-                    print(f"  - Layer {v['layer']}, Qubit {v['q']}, Stab {v['s_j']}, Amount: {v['violation_amount']}")
+                    print(f"  - Layer {v['layer']}, Qubits {v['Q']}, Injection Points {v['J']}, M_E_Q: {v['M_E_Q']}")
             injected_x = compute_bare_injected_faults(ver_z_stabs_layers, ticks_z, H_x.shape[1])
             single_faults_x.add_faults(injected_x.faults)
             single_faults_x.remove_duplicates()
@@ -293,7 +293,7 @@ def cat_at_origin_with_verification(
             if violations_x:
                 print(f"WARNING: X Faults Verification has {len(violations_x)} unschedulable CNOT violations.")
                 for v in violations_x:
-                    print(f"  - Layer {v['layer']}, Qubit {v['q']}, Stab {v['s_j']}, Amount: {v['violation_amount']}")
+                    print(f"  - Layer {v['layer']}, Qubits {v['Q']}, Injection Points {v['J']}, M_E_Q: {v['M_E_Q']}")
         else:
             if verbose: print("\n--- X Faults Verification (FT) ---")
             ver_x_stabs_layers, dfs_x, ticks_x, violations_x = find_lookahead_verification_stabilizers(

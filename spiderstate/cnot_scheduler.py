@@ -5,7 +5,7 @@ from dataclasses import dataclass
 @dataclass
 class DangerousFault:
     D_E: frozenset[tuple[int, int]]
-    T_E_q: dict[int, int]
+    T_E_Q: dict[tuple[int, ...], int]
 
 def schedule_all_verification_layers(
     layers: list[list[list[int]]], 
@@ -51,38 +51,76 @@ def schedule_all_verification_layers(
         flag_details = []
         flag_idx = 0
                     
-        for q, stabs in qubit_to_stabs.items():
-            for df in dangerous_faults:
-                D_E = df.D_E
-                req_T_E_q = df.T_E_q[q]
+        # Precompute subsets of stabilizers for quick XOR sum condition
+        # For a tuple of qubits Q, stabs_Q is all stabs containing at least one q in Q
+        for df in dangerous_faults:
+            D_E = df.D_E
+            abs_D_E = len(D_E)
+            D_gt_L = { (l_idx, s_idx) for (l_idx, s_idx) in D_E if l_idx > L }
+            D_eq_L_E = { s_idx for (l_idx, s_idx) in D_E if l_idx == L }
+            
+            for Q, req_T_E_Q in df.T_E_Q.items():
+                syn_gt_L_Q = set()
+                stabs_Q = set()
                 
-                abs_D_E = len(D_E)
-                D_gt_L = { (l_idx, s_idx) for (l_idx, s_idx) in D_E if l_idx > L }
+                for q in Q:
+                    # Collect all stabs for Q in layer L
+                    if q in qubit_to_stabs:
+                        stabs_Q.update(qubit_to_stabs[q])
+                    # Compute future syndrome for Q
+                    for l_idx in range(L + 1, len(layers)):
+                        for s_idx, st in enumerate(layers[l_idx]):
+                            if q in st:
+                                if (l_idx, s_idx) in syn_gt_L_Q:
+                                    syn_gt_L_Q.remove((l_idx, s_idx))
+                                else:
+                                    syn_gt_L_Q.add((l_idx, s_idx))
+                                    
+                xor_set = D_gt_L.symmetric_difference(syn_gt_L_Q)
+                M_E_Q = abs_D_E - len(D_gt_L) + len(xor_set) - req_T_E_Q
                 
-                syn_gt_L = set()
-                for l_idx in range(L + 1, len(layers)):
-                    for s_idx, st in enumerate(layers[l_idx]):
-                        if q in st:
-                            syn_gt_L.add((l_idx, s_idx))
-                            
-                xor_set = D_gt_L.symmetric_difference(syn_gt_L)
-                M_E_q = abs_D_E - len(D_gt_L) + len(xor_set) - req_T_E_q
+                # Check if it's possible to violate the constraint
+                # Only stabilizers in D_eq_L_E that interact with Q can be removed from the detection pool
+                max_possible_sum = 0
+                w_E = {}
+                for s_i in stabs_Q:
+                    w = 1 if s_i in D_eq_L_E else -1
+                    w_E[s_i] = w
+                    if w > 0:
+                        max_possible_sum += 1
+                        
+                if max_possible_sum > M_E_Q:
+                    import itertools
+                    Q_list = list(Q)
+                    if len(Q_list) == 0:
+                        # Empty Q shouldn't reach here if max_possible_sum > M_E_Q since stabs_Q is empty and sum is 0
+                        continue
+                        
+                    # All possible injection points for each q in Q
+                    # A fault can be injected BEFORE any stabilizer s_j that interacts with it
+                    injection_choices = [qubit_to_stabs.get(q, [-1]) for q in Q_list]
                     
-                w_E = {s_i: 1 if (L, s_i) in D_E else -1 for s_i in stabs}
-                max_possible_sum = sum(v for v in w_E.values() if v > 0)
-                
-                if max_possible_sum > M_E_q:
-                    for s_j in stabs:
+                    for J in itertools.product(*injection_choices):
                         sum_expr = []
-                        for s_i in stabs:
-                            sum_expr.append(z3.If(T[(s_i, q)] >= T[(s_j, q)], w_E[s_i], 0))
-                            
-                        flag = z3.Int(f"flag_{flag_idx}")
-                        opt.add(flag >= 0)
-                        opt.add(z3.Sum(sum_expr) <= M_E_q + flag)
-                        all_flags.append(flag)
-                        flag_details.append({"layer": L, "q": q, "s_j": s_j, "D_E": D_E, "M_E_q": M_E_q})
-                        flag_idx += 1
+                        for s_i in stabs_Q:
+                            # Does an odd number of faults in Q trigger s_i?
+                            triggers = []
+                            for q_idx, q in enumerate(Q_list):
+                                if q in layers[L][s_i]:
+                                    triggers.append(T[(s_i, q)] >= T[(J[q_idx], q)])
+                                    
+                            if len(triggers) == 1:
+                                sum_expr.append(z3.If(triggers[0], w_E[s_i], 0))
+                            elif len(triggers) > 1:
+                                sum_expr.append(z3.If(z3.Xor(*triggers), w_E[s_i], 0))
+                                
+                        if sum_expr:
+                            flag = z3.Int(f"flag_{flag_idx}")
+                            opt.add(flag >= 0)
+                            opt.add(z3.Sum(sum_expr) <= M_E_Q + flag)
+                            all_flags.append(flag)
+                            flag_details.append({"layer": L, "Q": Q, "J": J, "D_E": D_E, "M_E_Q": M_E_Q})
+                            flag_idx += 1
 
         max_tick = z3.Int("max_tick")
         for (i, q), v in T.items():

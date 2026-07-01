@@ -177,7 +177,13 @@ def synthesize_and_merge_layer(previous_circ: stim.Circuit, stabs_qubits: list[l
         merged.append("TICK")
         
     # --- FLAG INJECTION START ---
-    violating_qubits = set(v["q"] for v in layer_violations)
+    violating_qubits = set()
+    for v in layer_violations:
+        if "Q" in v:
+            violating_qubits.update(v["Q"])
+        elif "q" in v: # Fallback just in case
+            violating_qubits.add(v["q"])
+            
     flags_to_insert = []
     for q in sorted(list(violating_qubits)):
         f_qubit = current_ancilla

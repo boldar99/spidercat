@@ -355,24 +355,9 @@ def _generate_unified_active_errors(
         valid_final_data.append(final_data_list[i])
         
     if not valid_active_errors:
-        return np.empty((0, t, N), dtype=np.int8), np.array([]), np.array([]), np.empty((0, N), dtype=np.int8), []
+        return np.empty((0, t, N), dtype=np.int8), np.array([]), np.array([]), None, []
         
-    valid_final_data_array = np.array(valid_final_data, dtype=np.int8)
-    M = len(valid_active_errors)
-    E_oplus_q = np.zeros((M, N, N), dtype=np.int8)
-    for q in range(N):
-        E_oplus_q[:, q, :] = valid_final_data_array
-        E_oplus_q[:, q, q] ^= 1
-        
-    E_oplus_q_flat = E_oplus_q.reshape(-1, N)
-    reps_q = compute_minimum_weight_representatives(E_oplus_q_flat, H_filter)
-    W_eff_q_flat = np.sum(reps_q, axis=1)
-    W_eff_matrix = W_eff_q_flat.reshape(M, N)
-    
-    valid_weights = np.array([m["weight"] for m in valid_meta])
-    T_E_q_matrix = np.minimum(W_eff_matrix - (valid_weights[:, None] + 1), t - (valid_weights[:, None] + 1) + 1)
-    
-    return np.array(valid_active_errors), np.array(valid_targets), np.array(valid_Weffs), T_E_q_matrix, valid_meta
+    return np.array(valid_active_errors), np.array(valid_targets), np.array(valid_Weffs), None, valid_meta
 
 def find_lookahead_verification_stabilizers(
     single_faults: PureFaultSet,
@@ -559,34 +544,117 @@ def find_lookahead_verification_stabilizers(
                         "type": "target_coverage"
                     })
                     
+        # Precompute T_E_Q for unique final_data and k combinations
+        unique_final_data_keys = {}
+        for i in range(num_mixed_faults):
+            T_E = targets[i]
+            if T_E <= 0:
+                continue
+            k = fault_meta[i]["weight"]
+            final_data = fault_meta[i]["final_data"]
+            key = (tuple(final_data), k, T_E)
+            if key not in unique_final_data_keys:
+                unique_final_data_keys[key] = []
+            unique_final_data_keys[key].append(i)
+            
+        precomputed_T_E_Q = {}
+        import itertools
+        for key in unique_final_data_keys:
+            final_data_tuple, k, T_E = key
+            final_data = np.array(final_data_tuple, dtype=np.int8)
+            T_E_Q = {(): int(T_E)}
+            
+            for size in range(1, t - k + 1):
+                combs = list(itertools.combinations(range(num_qubits), size))
+                if not combs:
+                    continue
+                combs_array = np.zeros((len(combs), num_qubits), dtype=np.int8)
+                for c_idx, comb in enumerate(combs):
+                    combs_array[c_idx] = final_data
+                    for q in comb:
+                        combs_array[c_idx, q] ^= 1
+                        
+                reps_combs = compute_minimum_weight_representatives(combs_array, H_filter)
+                weff_combs = np.sum(reps_combs, axis=1)
+                t_e_combs = np.minimum(weff_combs - (k + size), t - (k + size) + 1)
+                for c_idx, comb in enumerate(combs):
+                    T_E_Q[comb] = int(t_e_combs[c_idx])
+            precomputed_T_E_Q[key] = T_E_Q
+            
+        # Precompute syndromes for ALL faults across ALL chosen layers in a vectorized manner
+        D_E_all = [set() for _ in range(num_mixed_faults)]
+        D_eq_L_E_counts_all = np.zeros((num_mixed_faults, t), dtype=int)
+        
+        for l_idx, layer in enumerate(chosen_layers):
+            if len(layer) == 0:
+                continue
+            layer_matrix = np.vstack(layer).astype(np.int8)
+            syn_all = (active_errors[:, l_idx, :] @ layer_matrix.T) % 2
+            
+            fault_indices, stab_indices = np.nonzero(syn_all)
+            for f_idx, s_idx in zip(fault_indices, stab_indices):
+                D_E_all[f_idx].add((l_idx, s_idx))
+                D_eq_L_E_counts_all[f_idx, l_idx] += 1
+                
         for i in range(num_mixed_faults):
             T_E = targets[i]
             if T_E <= 0:
                 continue
                 
-            D_E = set()
-            for l_idx, layer in enumerate(chosen_layers):
-                if len(layer) == 0:
-                    continue
-                layer_matrix = np.vstack(layer).astype(np.int8)
-                syn = (active_errors[i, l_idx, :] @ layer_matrix.T) % 2
-                for s_idx, flipped in enumerate(syn):
-                    if flipped:
-                        D_E.add((l_idx, s_idx))
+            D_E = D_E_all[i]
+            D_eq_L_E_counts = D_eq_L_E_counts_all[i]
                         
-            if len(D_E) > 0:
-                T_E_q = {q: T_E_q_matrix[i, q] for q in range(num_qubits)}
-                dangerous_faults.append(DangerousFault(frozenset(D_E), T_E_q))
+            key = (tuple(fault_meta[i]["final_data"]), fault_meta[i]["weight"], T_E)
+            T_E_Q = precomputed_T_E_Q[key]
+            
+            # Filter: we only need to pass this fault if there is SOME layer L and SOME Q 
+            # where M_E_Q < |D_{=L}(E)|.
+            # M_E_Q = |D_E| - |D_{>L}(E)| + |syn_{>L}(E \oplus Q)| - T_E_Q
+            # |syn_{>L}(E \oplus Q)| = |D_{>L}(E) \oplus syn_{>L}(Q)|
+            
+            is_dangerous = False
+            for L in range(len(chosen_layers)):
+                abs_D_eq_L = D_eq_L_E_counts[L]
+                abs_D_gt_L = sum(D_eq_L_E_counts[L+1:])
+                
+                # Check if ANY Q violates M_E_Q >= |D_{=L}|
+                for Q, req in T_E_Q.items():
+                    # Calculate syn_{>L}(Q)
+                    syn_gt_L_Q = set()
+                    for q in Q:
+                        for l_idx in range(L + 1, len(chosen_layers)):
+                            for s_idx, st in enumerate(chosen_layers[l_idx]):
+                                if q in np.nonzero(st)[0]:
+                                    if (l_idx, s_idx) in syn_gt_L_Q:
+                                        syn_gt_L_Q.remove((l_idx, s_idx))
+                                    else:
+                                        syn_gt_L_Q.add((l_idx, s_idx))
+                                        
+                    D_gt_L = { (l_idx, s_idx) for (l_idx, s_idx) in D_E if l_idx > L }
+                    xor_set = D_gt_L.symmetric_difference(syn_gt_L_Q)
+                    M_E_Q = len(D_E) - abs_D_gt_L + len(xor_set) - req
+                    
+                    if M_E_Q < abs_D_eq_L:
+                        is_dangerous = True
+                        break
+                if is_dangerous:
+                    break
+                    
+            if is_dangerous:
+                dangerous_faults.append(DangerousFault(frozenset(D_E), T_E_Q))
                     
         df_dict = {}
         for df in dangerous_faults:
             if df.D_E not in df_dict:
-                df_dict[df.D_E] = df.T_E_q.copy()
+                df_dict[df.D_E] = df.T_E_Q.copy()
             else:
-                for q in df_dict[df.D_E]:
-                    df_dict[df.D_E][q] = max(df_dict[df.D_E][q], df.T_E_q[q])
+                for Q in df.T_E_Q:
+                    if Q not in df_dict[df.D_E]:
+                        df_dict[df.D_E][Q] = df.T_E_Q[Q]
+                    else:
+                        df_dict[df.D_E][Q] = max(df_dict[df.D_E][Q], df.T_E_Q[Q])
                     
-        unique_dfs = [DangerousFault(D_E, T_E_q) for D_E, T_E_q in df_dict.items()]
+        unique_dfs = [DangerousFault(D_E, T_E_Q) for D_E, T_E_Q in df_dict.items()]
         
         layers_qubits = []
         for layer in chosen_layers:
