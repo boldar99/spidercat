@@ -226,10 +226,10 @@ def cat_at_origin_with_verification(
     for final_M, col_ops in unique_matrices.values():
         if verbose and num_circuits > 1:
             print(f"\nEvaluating configuration with Cost: {cnot_cost(final_M, t)}")
-            print(f"Chosen CNOT gates: {col_ops}")
+            print(f"Chosen {len(col_ops)} CNOT gates: {col_ops}")
         elif verbose:
             print(f"Cost of final M: {cnot_cost(final_M, t)}")
-            print(f"Chosen CNOT gates: {col_ops}")
+            print(f"Chosen {len(col_ops)} CNOT gates: {col_ops}")
 
         circ = cat_at_origin(final_M, d)
         circ.append("TICK", [])

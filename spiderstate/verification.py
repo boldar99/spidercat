@@ -380,7 +380,9 @@ def find_lookahead_verification_stabilizers(
 
     candidate_stabs = _generate_candidate_stabilizers(stabs, max_combinations)
     costs = np.array([cost_fn(w, t) for w in np.sum(candidate_stabs, axis=1)])
-    
+
+    if verbose:
+        print("Generating Active Errors...")
     active_errors, targets, W_effs, T_E_q_matrix, fault_meta = _generate_unified_active_errors(single_faults, t, H_filter)
     num_mixed_faults = len(active_errors)
     
@@ -388,7 +390,9 @@ def find_lookahead_verification_stabilizers(
     # detection_counts is a 1D array of shape (num_mixed_faults,)
     initial_detections = np.zeros(num_mixed_faults, dtype=int)
     beam = [(0.0, [], [], initial_detections)]
-    
+
+    if verbose:
+        print("Finding layers...")
     for layer_idx in range(t):
         next_beam_candidates = []
         
@@ -523,8 +527,10 @@ def find_lookahead_verification_stabilizers(
     valid_beam = []
     from spiderstate.cnot_scheduler import DangerousFault, schedule_all_verification_layers
     num_qubits = active_errors.shape[2] if len(active_errors) > 0 else 0
-    
+
     # Precompute T_E_Q for unique final_data and k combinations ONCE before scoring candidates
+    if verbose:
+        print("Computing T_E_Q...")
     unique_final_data_keys = {}
     for i in range(num_mixed_faults):
         T_E = targets[i]
@@ -593,6 +599,8 @@ def find_lookahead_verification_stabilizers(
                 offset += n_c
             precomputed_T_E_Q[key] = T_E_Q
 
+    if verbose:
+        print("Finding the best circuits in the beam...")
     for cand in beam:
         det_counts = cand[3]
         chosen_layers = cand[1]
