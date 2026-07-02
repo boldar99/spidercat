@@ -28,18 +28,7 @@ def fast_greedy_set_cover(
         covered_counts = np.sum(coverage[:, active_faults], axis=1)
         
         valid = covered_counts > 0
-        
-        # Enforce overlap <= 2 constraint if candidate_stabs is provided
-        if candidate_stabs is not None:
-            current_selected = selected_idx.copy()
-            if selected_stabs_indices is not None:
-                current_selected = selected_stabs_indices + current_selected
-                
-            for s_idx in current_selected:
-                stab = candidate_stabs[s_idx]
-                overlaps = np.sum(candidate_stabs & stab, axis=1)
-                valid[overlaps > 2] = False
-                
+
         if not valid.any():
             break
             
