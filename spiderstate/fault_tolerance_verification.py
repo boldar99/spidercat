@@ -603,7 +603,7 @@ if __name__ == "__main__":
     parser.add_argument("--state", type=str, default="0", help="State (default: 0)")
     parser.add_argument("--max_col_ops", type=int, default=100, help="Max column operations (default: 100)")
     parser.add_argument("--top_n", type=int, default=50, help="Top N (default: 50)")
-    parser.add_argument("--num_circuits", type=int, default=50, help="Number of portfolio circuits (default: 1)")
+    parser.add_argument("--num_circuits", type=int, default=1, help="Number of portfolio circuits (default: 1)")
     parser.add_argument("--first_layer", type=str, default="X", choices=["X", "Z", "none", "interleaved"], help="First layer (default: X)")
     parser.add_argument("--heuristic", type=str, default="overlap", choices=["overlap", "zero_tolerance", "weighted_syndrome", "global_sparsity", "max_contention", "soft_cover"], help="Heuristic for fault tracker")
     parser.add_argument("--seed", type=str, default="100", help="The random seed")
@@ -632,12 +632,24 @@ if __name__ == "__main__":
 
     print("\nRunning Comprehensive ExRec/SAT FT Verification...")
 
+    if args.state == "0":
+        H_primary = H_z; L_primary = np.atleast_2d(L_z)
+        H_conjugate = H_x; L_conjugate = np.atleast_2d(L_x)
+        primary_basis = "Z"; conjugate_basis = "X"
+    elif args.state == "+":
+        H_primary = H_x; L_primary = np.atleast_2d(L_x)
+        H_conjugate = H_z; L_conjugate = np.atleast_2d(L_z)
+        # primary_basis = "X"; conjugate_basis = "Z"
+        primary_basis = "Z"; conjugate_basis = "X"
+    else:
+        raise ValueError(f"Unknown state: {args.state}")
+
     is_ft = verify_ftsp(
         prep_circ=circ,
-        H_primary=H_z, L_primary=np.atleast_2d(L_z),
-        H_conjugate=H_x, L_conjugate=np.atleast_2d(L_x),
+        H_primary=H_primary, L_primary=L_primary,
+        H_conjugate=H_conjugate, L_conjugate=L_conjugate,
         d=d, t=t,
-        primary_basis="Z", conjugate_basis="X",
+        primary_basis=primary_basis, conjugate_basis=conjugate_basis,
         verbose=True
     )
 

@@ -172,27 +172,23 @@ def cat_at_origin_with_verification(
     num_circuits: int = 1
 ) -> stim.Circuit:
     t = d // 2
-    
+
     if state == "0":
-        if verbose: print("Configuring stabilizers for logical |0> state preparation...")
-        # For verifying X faults, we measure Z-type observables (H_z + L_z)
-        stabs_x = np.concatenate((H_z, L_z))
-        # To reduce X faults, we use X-type stabilizers of |0>_L (H_x)
-        H_reduce_x = H_x
-        # For verifying Z faults, we measure X-type observables (H_x + L_x)
-        stabs_z = H_x
-        # To reduce Z faults, we use Z-type stabilizers of |0>_L (H_z + Z_L)
-        H_reduce_z = np.concatenate((H_z, L_z)) if len(L_z) > 0 else H_z
+        pass
     elif state == "+":
-        if verbose: print("Configuring stabilizers for logical |+> state preparation...")
-        stabs_x = H_z
-        # To reduce X faults, we use X-type stabilizers of |+>_L (H_x + X_L)
-        H_reduce_x = np.concatenate((H_x, L_x)) if len(L_x) > 0 else H_x
-        stabs_z = np.concatenate((H_x, L_x))
-        # To reduce Z faults, we use Z-type stabilizers of |+>_L (H_z)
-        H_reduce_z = H_z
+        H_x, H_z = H_z, H_x
+        L_x, L_z = L_z, L_x
     else:
         raise ValueError(f"Unknown state: {state}")
+
+    # For verifying X faults, we measure Z-type observables (H_z + L_z)
+    stabs_x = np.concatenate((H_z, L_z))
+    # To reduce X faults, we use X-type stabilizers of |0>_L (H_x)
+    H_reduce_x = H_x
+    # For verifying Z faults, we measure X-type observables (H_x + L_x)
+    stabs_z = H_x
+    # To reduce Z faults, we use Z-type stabilizers of |0>_L (H_z + Z_L)
+    H_reduce_z = np.concatenate((H_z, L_z)) if len(L_z) > 0 else H_z
         
     if verbose:
         print(f"Optimizing parity matrix (max_col_ops={max_col_ops}, num_circuits={num_circuits})...")
@@ -236,6 +232,8 @@ def cat_at_origin_with_verification(
         for c, n in col_ops:
             circ.append("CX", [c, n])
         circ.append("TICK", [])
+        if max_col_ops == 0:
+            return circ
         
         if verbose:
             print("Computing initial single faults...")
