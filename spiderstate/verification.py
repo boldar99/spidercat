@@ -491,7 +491,7 @@ def find_lookahead_verification_stabilizers(
                         
                         
                     uncoverable = fs_size - valid_cov.shape[1] + missed_in_valid
-                    next_cost += uncoverable * 2  # Penalize uncoverable faults by 2 CNOTs (1 flag)
+                    next_cost += uncoverable * 1000  # Severely penalize uncoverable faults
                     
                 cover_cost = sum(cost_fn(w, t) for w in np.sum(cover, axis=1))
                 new_realized_cost = realized_cost + cover_cost
