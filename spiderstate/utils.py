@@ -157,6 +157,44 @@ def make_stim_circ_noisy(circ: stim.Circuit, p: float) -> stim.Circuit:
     return noisy_circ
 
 
+def layered_ops_to_single_type_noisy_stim_circuit(layered_ops: list[list[tuple]], num_qubits: int, p: float, error_type: str) -> stim.Circuit:
+    circuit = stim.Circuit()
+    error_gate = f"{error_type}_ERROR"
+    for i, ops in enumerate(layered_ops):
+        for op_name, targets, params in ops:
+            reconstructed_targets = []
+            for t in targets:
+                if isinstance(t, tuple) and t[0] == 'rec':
+                    reconstructed_targets.append(stim.target_rec(t[1]))
+                else:
+                    reconstructed_targets.append(t)
+            targets = reconstructed_targets
+
+            is_measurement = op_name in Z_MEASUREMENTS or op_name in X_MEASUREMENTS
+            is_special = op_name in SPECIAL_GATES
+
+            # if is_measurement:
+            #     circuit.append(error_gate, targets, p)
+
+            if params:
+                circuit.append(op_name, targets, params)
+            else:
+                circuit.append(op_name, targets)
+
+            if not is_measurement and not is_special:
+                circuit.append(error_gate, targets, p)
+
+    return circuit
+
+
+def make_stim_circ_single_type_noisy(circ: stim.Circuit, p: float, error_type: str) -> stim.Circuit:
+    operations = list(circ.flattened_operations())
+    operations = _expand_stim_operation_list(operations)
+    layered_ops = _layer_circuit_ops(operations, circ.num_qubits)
+    noisy_circ = layered_ops_to_single_type_noisy_stim_circuit(layered_ops, circ.num_qubits, p, error_type)
+    return noisy_circ
+
+
 def apply_qubit_reuse(layers: list[list[tuple]]) -> tuple[list[list[tuple]], int]:
     """
     Takes a temporally optimized list of layers and maps logical qubits

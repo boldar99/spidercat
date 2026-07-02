@@ -7,7 +7,7 @@ import stim
 
 from spiderstate.cat_at_origin import cat_at_origin_with_verification
 from spiderstate.stim_utils import get_circuit_depth
-from spiderstate.utils import count_operations, NOISE_GATES, get_project_root
+from spiderstate.utils import count_operations, NOISE_GATES, get_project_root, make_stim_circ_single_type_noisy
 
 
 # ==============================================================================
@@ -417,8 +417,7 @@ def verify_ftsp_primary_exact(
     if verbose:
         print(f"\n  [Primary] Evaluating {basis_char}-basis via Combinatorics (d={d}, t={t})...")
 
-    from spiderstate.utils import make_stim_circ_noisy
-    noisy_prep = make_stim_circ_noisy(prep_circ.copy(), p=0.001)
+    noisy_prep = make_stim_circ_single_type_noisy(prep_circ.copy(), p=0.001, error_type="X" if basis_char == "Z" else "Z")
 
     num_internal_detectors = noisy_prep.num_detectors
     num_final_stabilizers = H_check.shape[0]
@@ -474,8 +473,7 @@ def verify_ftsp_primary_ilp(
     if verbose:
         print(f"\n  [Primary] Evaluating {basis_char}-basis (d={d}, t={t})...")
 
-    from spiderstate.utils import make_stim_circ_noisy
-    noisy_prep = make_stim_circ_noisy(prep_circ.copy(), p=0.001)
+    noisy_prep = make_stim_circ_single_type_noisy(prep_circ.copy(), p=0.001, error_type="X" if basis_char == "Z" else "Z")
 
     n_data_qubits = H_check.shape[1]
     num_internal_detectors = noisy_prep.num_detectors
@@ -536,8 +534,7 @@ def verify_ftsp_conjugate_exact(
     if verbose:
         print(f"\n  [Conjugate] Evaluating {basis_char}-basis via Combinatorics (t={t})...")
 
-    from spiderstate.utils import make_stim_circ_noisy
-    noisy_prep = make_stim_circ_noisy(prep_circ.copy(), p=0.001)
+    noisy_prep = make_stim_circ_single_type_noisy(prep_circ.copy(), p=0.001, error_type="X" if basis_char == "Z" else "Z")
 
     num_internal_detectors = noisy_prep.num_detectors
     num_final_stabilizers = H_check.shape[0]
@@ -581,7 +578,7 @@ def verify_ftsp(
     verbose: bool = False
 ) -> bool:
     """Comprehensive FT Verification mapping both primary and conjugate error channels."""
-    res_primary = verify_ftsp_primary_ilp(
+    res_primary = verify_ftsp_primary_exact(
         prep_circ, H_primary, L_primary, d, t, basis_char=primary_basis, verbose=verbose
     )
     if res_primary is not True:
@@ -602,7 +599,7 @@ if __name__ == "__main__":
     import random
     
     parser = argparse.ArgumentParser(description="Fault Tolerance Verification")
-    parser.add_argument("--code", type=str, default="16_6_4", help="Code string (default: 17_1_5)")
+    parser.add_argument("--code", type=str, default="31_1_7", help="Code string (default: 17_1_5)")
     parser.add_argument("--state", type=str, default="0", help="State (default: 0)")
     parser.add_argument("--max_col_ops", type=int, default=100, help="Max column operations (default: 100)")
     parser.add_argument("--top_n", type=int, default=50, help="Top N (default: 50)")
