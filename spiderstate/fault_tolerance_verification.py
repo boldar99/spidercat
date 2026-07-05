@@ -599,7 +599,7 @@ if __name__ == "__main__":
     import random
     
     parser = argparse.ArgumentParser(description="Fault Tolerance Verification")
-    parser.add_argument("--code", type=str, default="31_1_7", help="Code string (default: 17_1_5)")
+    parser.add_argument("--code", type=str, default="23_1_7", help="Code string (default: 17_1_5)")
     parser.add_argument("--state", type=str, default="0", help="State (default: 0)")
     parser.add_argument("--max_col_ops", type=int, default=100, help="Max column operations (default: 100)")
     parser.add_argument("--top_n", type=int, default=50, help="Top N (default: 50)")
@@ -654,6 +654,8 @@ if __name__ == "__main__":
     )
 
     print("\nFinal Verification Result:", is_ft is True)
+
+    print(is_ft)
     
     if is_ft is True and args.save_circuit:
         with open(args.save_circuit, "w") as f:

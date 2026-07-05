@@ -21,7 +21,7 @@ def fast_greedy_set_cover(
         
     selected_idx = []
     ratios = np.full(num_candidates, np.inf)
-    
+
     while np.any(remaining_coverage > 0):
         # Count newly covered faults for each candidate
         active_faults = remaining_coverage > 0
@@ -31,9 +31,23 @@ def fast_greedy_set_cover(
 
         if not valid.any():
             break
+
+        # Calculate dynamic costs based on overlaps with already selected stabilizers
+        dynamic_costs = costs.astype(float).copy()
+        if candidate_stabs is not None:
+            current_selected = selected_idx.copy()
+            if selected_stabs_indices is not None:
+                current_selected = selected_stabs_indices + current_selected
+
+            if len(current_selected) > 0:
+                chosen_matrix = candidate_stabs[current_selected]
+                N_q = np.sum(chosen_matrix, axis=0)
+                marginal_costs = np.sum(candidate_stabs[:, N_q == 1], axis=1)
+
+                dynamic_costs += 2 * np.max(marginal_costs - np.ceil(candidate_stabs.shape[1] / 10), 0)
             
         ratios.fill(np.inf)
-        ratios[valid] = costs[valid] / covered_counts[valid]
+        ratios[valid] = dynamic_costs[valid] / covered_counts[valid]
         
         best_idx = np.argmin(ratios)
         selected_idx.append(best_idx)
@@ -135,8 +149,13 @@ class TrueBackwardTracker:
                 verif_cost += uncoverable * 1000
                 
                 if valid_cov.shape[1] > 0:
-                    chosen_idx = fast_greedy_set_cover(valid_cov, self.costs_Z)
+                    chosen_idx = fast_greedy_set_cover(valid_cov, self.costs_Z, candidate_stabs=self.candidate_stabs_Z)
                     verif_cost += np.sum(self.costs_Z[chosen_idx])
+                    if self.candidate_stabs_Z is not None and len(chosen_idx) > 1:
+                        chosen = self.candidate_stabs_Z[chosen_idx]
+                        N_q = np.sum(chosen, axis=0)
+                        overlaps = np.sum(N_q > 1)
+                        verif_cost += 2 * overlaps
                 
         if self.has_X_cands:
             faults_active_Z = _get_active_faults(full_F_Z, self.H_filter_Z, self.candidate_stabs_Z)
@@ -152,7 +171,12 @@ class TrueBackwardTracker:
                 verif_cost += uncoverable * 1000
                 
                 if valid_cov.shape[1] > 0:
-                    chosen_idx = fast_greedy_set_cover(valid_cov, self.costs_X)
+                    chosen_idx = fast_greedy_set_cover(valid_cov, self.costs_X, candidate_stabs=self.candidate_stabs_X)
                     verif_cost += np.sum(self.costs_X[chosen_idx])
+                    if self.candidate_stabs_X is not None and len(chosen_idx) > 1:
+                        chosen = self.candidate_stabs_X[chosen_idx]
+                        N_q = np.sum(chosen, axis=0)
+                        overlaps = np.sum(N_q > 1)
+                        verif_cost += 2 * overlaps
                 
         return verif_cost

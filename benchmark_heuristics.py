@@ -10,12 +10,13 @@ import stim
 from spiderstate.utils import count_operations, get_project_root
 
 CODES = ["7_1_3", "9_1_3", "15_1_3", "15_7_3", "12_2_4", "16_6_4", "17_1_5", "19_1_5", "25_1_5", "24_4_5", "20_2_6", "23_1_7"]
+# CODES = ["23_1_7"]
 CODES = ["37_1_7"]
 HEURISTICS = ["overlap", "zero_tolerance", "weighted_syndrome"]
 # HEURISTICS = ["overlap"]
 FIRST_LAYERS = ["X"]
 NUM_RUNS_PER_LAYER = 1
-NUM_CIRCUITS = 5
+NUM_CIRCUITS = 1
 
 def get_best_count(code):
     path = get_project_root().joinpath("good_circuits", f"{code}.stim")
@@ -58,6 +59,7 @@ def run_test(code, heuristic, first_layer, seed):
 
     if not cx_match or not ms_match:
         if os.path.exists(tmp_path): os.remove(tmp_path)
+        print(output, file=sys.stderr)
         return "UNKNOWN", -1, -1, elapsed, None
 
     num_cx = int(cx_match.group(1))
@@ -69,6 +71,7 @@ def run_test(code, heuristic, first_layer, seed):
         return "NON-FT", num_cx, num_meas, elapsed, None
     if "Final Verification Result: True" not in output:
         if os.path.exists(tmp_path): os.remove(tmp_path)
+        print(output, file=sys.stderr)
         return "ERROR", num_cx, num_meas, elapsed, None
 
     return "FT", num_cx, num_meas, elapsed, tmp_path

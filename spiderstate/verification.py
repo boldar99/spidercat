@@ -1,6 +1,10 @@
 import logging
+from pprint import pprint
+
+import galois
 from itertools import combinations
 from typing import Callable
+from scipy.spatial.distance import cdist
 
 import numpy as np
 from mqt.qecc.circuit_synthesis.faults import product_fault_set, PureFaultSet
@@ -200,7 +204,7 @@ def compute_minimum_weight_representatives(faults: np.ndarray, stabs: np.ndarray
         
     num_qubits = stabs.shape[1]
 
-    if k <= 4:
+    if k <= 20:
         all_stabs = []
         for i in range(1 << k):
             comb = [j for j in range(k) if (i >> j) & 1]
@@ -215,14 +219,13 @@ def compute_minimum_weight_representatives(faults: np.ndarray, stabs: np.ndarray
         reps = np.zeros_like(faults)
         for i in range(0, len(faults), batch_size):
             batch = faults[i:i+batch_size]
-            candidate = (batch[:, None, :] + all_stabs[None, :, :]) % 2
-            cand_weights = np.sum(candidate, axis=2)
-            min_idx = np.argmin(cand_weights, axis=1)
-            reps[i:i+batch_size] = candidate[np.arange(len(batch)), min_idx]
-            
+
+            dist = cdist(batch, all_stabs, metric='cityblock')
+            min_idx = np.argmin(dist, axis=1)
+            reps[i:i+batch_size] = (batch + all_stabs[min_idx]) % 2
+
         return reps
 
-    import galois
     GF2 = galois.GF(2)
     stabs_gf2 = GF2(stabs)
     H_gf2 = stabs_gf2.null_space()
@@ -381,8 +384,6 @@ def find_lookahead_verification_stabilizers(
     candidate_stabs = _generate_candidate_stabilizers(stabs, max_combinations)
     costs = np.array([cost_fn(w, t) for w in np.sum(candidate_stabs, axis=1)])
 
-    if verbose:
-        print("Generating Active Errors...")
     active_errors, targets, W_effs, T_E_q_matrix, fault_meta = _generate_unified_active_errors(single_faults, t, H_filter)
     num_mixed_faults = len(active_errors)
     
@@ -391,8 +392,6 @@ def find_lookahead_verification_stabilizers(
     initial_detections = np.zeros(num_mixed_faults, dtype=int)
     beam = [(0.0, [], [], initial_detections)]
 
-    if verbose:
-        print("Finding layers...")
     for layer_idx in range(t):
         next_beam_candidates = []
         
@@ -443,6 +442,11 @@ def find_lookahead_verification_stabilizers(
                 # Last layer: no lookahead needed
                 best_last = candidate_covers[0]
                 best_last_score = sum(cost_fn(w, t) for w in np.sum(best_last, axis=1))
+                if len(best_last) > 1:
+                    N_q = np.sum(best_last, axis=0)
+                    overlaps = np.sum(N_q > 1)
+                    print(H_filter)
+                    best_last_score += 2 * np.max(overlaps - H_filter.shape[1] // 10, 0)
                 final_cost = realized_cost + best_last_score
                 
                 # Update detections
@@ -494,6 +498,10 @@ def find_lookahead_verification_stabilizers(
                     next_cost += uncoverable * 1000  # Severely penalize uncoverable faults
                     
                 cover_cost = sum(cost_fn(w, t) for w in np.sum(cover, axis=1))
+                if len(cover) > 1:
+                    N_q = np.sum(cover, axis=0)
+                    overlaps = np.sum(N_q > 1)
+                    cover_cost += 2 * overlaps
                 new_realized_cost = realized_cost + cover_cost
                 lookahead_score = new_realized_cost + next_cost
                 
@@ -720,8 +728,9 @@ def find_lookahead_verification_stabilizers(
     if not valid_beam:
         raise RuntimeError("No states in the beam could be scheduled safely! Try increasing max_combinations or top_n.")
         
-    # Sort valid beam by total score: realized_cost + 2 * number of flags
-    valid_beam.sort(key=lambda x: x["cand"][0] + 2 * len(x["violations"]))
+    # Sort valid beam by total score: realized_cost + 1000 * number of flags
+    # print([x["cand"] for x in valid_beam])
+    valid_beam.sort(key=lambda x: x["cand"][0] + 1000 * len(x["violations"]))
     best_state = valid_beam[0]
     
     if verbose:

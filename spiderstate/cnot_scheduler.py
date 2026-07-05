@@ -131,7 +131,7 @@ def schedule_all_verification_layers(
         else:
             opt.minimize(max_tick)
             
-        opt.set("timeout", 2000) # 2 seconds timeout per layer
+        opt.set("timeout", 10_000) # 10 seconds timeout per layer
         
         status = opt.check()
         if status == z3.unsat:
@@ -141,27 +141,25 @@ def schedule_all_verification_layers(
             m = opt.model()
         except z3.Z3Exception:
             raise RuntimeError(f"Z3 timed out and could not find any valid model for layer {L}!")
-        
+
         for idx, flag in enumerate(all_flags):
-            # Evaluate might return a Real or an uninterpreted expression if Z3 didn't fully resolve it,
-            # but for Integer variables it should be safe.
             try:
-                flag_val = m.evaluate(flag).as_long()
+                flag_val = m.evaluate(flag, model_completion=True).as_long()
                 if flag_val > 0:
                     detail = flag_details[idx]
                     detail["violation_amount"] = flag_val
                     all_violations.append(detail)
-            except z3.Z3Exception:
-                pass # If it couldn't evaluate, assume 0
-        
+            except (z3.Z3Exception, AttributeError):
+                pass
+
         schedule = {}
         for (i, q), v in T.items():
             try:
-                tick = m.evaluate(v).as_long()
+                tick = m.evaluate(v, model_completion=True).as_long()
                 if tick not in schedule:
                     schedule[tick] = []
                 schedule[tick].append((i, q))
-            except z3.Z3Exception:
+            except (z3.Z3Exception, AttributeError):
                 raise RuntimeError(f"Failed to evaluate tick for stab {i} on qubit {q} after timeout.")
             
         ticks = []
