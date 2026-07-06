@@ -294,15 +294,16 @@ def get_project_root() -> Path:
     return Path(__file__).parent
 
 
-def load_qecc(code: str):
+def load_qecc(code: str, method: str | None = None):
     root = get_project_root()
     code_file = f"{code}.json"
-    for lib in os.listdir(root.joinpath("qeccs")):
-        if code_file in os.listdir(root.joinpath("qeccs", lib)):
-            method = lib
-            break
-    else:
-        raise FileNotFoundError(code)
+    if method is None:
+        for lib in os.listdir(root.joinpath("qeccs")):
+            if code_file in os.listdir(root.joinpath("qeccs", lib)):
+                method = lib
+                break
+        else:
+            raise FileNotFoundError(code)
 
     file = root.joinpath("qeccs", method, f"{code}.json")
 
