@@ -7,35 +7,19 @@ from typing import Callable
 from scipy.spatial.distance import cdist
 
 import numpy as np
-from mqt.qecc.circuit_synthesis.faults import product_fault_set, PureFaultSet
 from tqdm import tqdm
 
 from spiderstate.fast_verification import fast_greedy_set_cover
-from mqt.qecc.circuit_synthesis import CNOTCircuit
+from spiderstate.fault_set import MixedFaultSet, compute_minimum_weight_representatives, PureFaultSet
 from spidercat.syndrome_measurement import cnot_cost
 
 logger = logging.getLogger(__name__)
 
 def compute_unitary_fault_set_1(cnots: list[tuple[int, int]], num_qubits: int, kind: str = "X"):
-    circ = CNOTCircuit()
-    seen = set()
-    for (c, n) in cnots:
-        if c not in seen:
-            seen.add(c)
-            circ.initialize_qubit(c, "X")
-        if n not in seen:
-            seen.add(n)
-            circ.initialize_qubit(n, "Z")
-    for rem in set(range(num_qubits)) - seen:
-        circ.initialize_qubit(rem, "Z")
-    circ.add_cnots(cnots)
-    single_faults = PureFaultSet.from_cnot_circuit(circ, kind=kind)
+    single_faults = PureFaultSet.from_cnots(cnots, num_qubits, kind=kind)
     single_faults.remove_zero_rows()
     single_faults.remove_duplicates()
     return single_faults
-
-
-
 
 
 def _generate_candidate_stabilizers(stabs: np.ndarray, max_combinations: int) -> np.ndarray:
@@ -185,174 +169,6 @@ def find_low_weight_verification_stabilizers(fault_sets: list[PureFaultSet], sta
             layers[num_errors] = covers[0]
     return layers
 
-class TrackedFaultSet:
-    def __init__(self, num_qubits: int):
-        self.num_qubits = num_qubits
-        self.faults = np.empty((0, num_qubits), dtype=np.int8)
-        self.original_reps = [] 
-        self.ways_to_form = [] 
-        self.fault_ids = []
-
-    def __len__(self):
-        return len(self.faults)
-
-def compute_minimum_weight_representatives(faults: np.ndarray, stabs: np.ndarray) -> np.ndarray:
-    if len(faults) == 0:
-        return faults.copy()
-    k = stabs.shape[0]
-    if k == 0:
-        return faults.copy()
-        
-    num_qubits = stabs.shape[1]
-
-    print(f"{k=} and {faults.shape=}")
-    GF2 = galois.GF(2)
-    stabs_gf2 = GF2(stabs)
-    H_gf2 = stabs_gf2.null_space()
-    H = np.array(H_gf2, dtype=np.int8)
-    
-    if H.shape[0] == 0:
-        return np.zeros_like(faults)
-
-    syndromes = (faults @ H.T) % 2
-    unique_syndromes = np.unique(syndromes, axis=0)
-    target_syndromes = set(tuple(s) for s in unique_syndromes)
-    
-    found = {}
-    from collections import deque
-    queue = deque([(np.zeros(num_qubits, dtype=np.int8), 0, 0)])
-    pbar = tqdm(total=len(target_syndromes), desc="Finding minimum weight representatives of faults (using galois)")
-    
-    while queue and len(found) < len(target_syndromes):
-        vec, wt, last_idx = queue.popleft()
-        syn = tuple((H @ vec) % 2)
-        if syn in target_syndromes and syn not in found:
-            found[syn] = vec
-            pbar.update(1)
-            
-        for i in range(last_idx, num_qubits):
-            new_vec = vec.copy()
-            new_vec[i] ^= 1
-            queue.append((new_vec, wt + 1, i + 1))
-            
-    reps = np.zeros_like(faults)
-    for i, syn in enumerate(syndromes):
-        reps[i] = found[tuple(syn)]
-        
-    return reps
-
-def _generate_raw_fault_sets(single_faults: PureFaultSet, t: int, H_filter: np.ndarray) -> list[TrackedFaultSet]:
-    """Generates the raw unfiltered unitary fault sets U_1, ..., U_t with full generation tracking."""
-    fault_sets = []
-    
-    base_faults = single_faults.faults
-    min_weight_reps = compute_minimum_weight_representatives(base_faults, H_filter)
-    
-    base_id_to_rep = {} 
-    base_id_to_orig = {} 
-    rep_to_base_id = {} 
-    
-    next_base_id = 0
-    for i in range(len(base_faults)):
-        rep = min_weight_reps[i]
-        rep_bytes = rep.tobytes()
-        if rep_bytes not in rep_to_base_id:
-            rep_to_base_id[rep_bytes] = next_base_id
-            base_id_to_rep[next_base_id] = rep
-            base_id_to_orig[next_base_id] = base_faults[i]
-            next_base_id += 1
-            
-    return fault_sets
-
-def _generate_unified_active_errors(
-    single_faults: PureFaultSet, 
-    t: int, 
-    H_filter: np.ndarray
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, list[dict]]:
-    import itertools
-    
-    N = single_faults.num_qubits
-    
-    unique_components = []
-    seen = set()
-    
-    for f in single_faults.faults:
-        key = (f.tobytes(), 0)
-        if key not in seen:
-            seen.add(key)
-            unique_components.append((f, 0))
-            
-    I_N = np.eye(N, dtype=np.int8)
-    for L in range(1, t):
-        for q in range(N):
-            f = I_N[q]
-            key = (f.tobytes(), L)
-            if key not in seen:
-                seen.add(key)
-                unique_components.append((f, L))
-                
-    combinations_list = []
-    final_data_list = []
-    weights_list = []
-    
-    for k in range(1, t + 1):
-        # TODO: Faster fault combinations and smaller footprint
-        #
-        # The current implementation uses itertools.combinations to generate any
-        # combination of unique faults. For larger distances (>= 9) and large fault
-        # sets very slow. It would be better to instead generate the combination of
-        # k-faults from k-1 fault combined with 1 fault. Because we will have to find
-        # the minimum weight of all faults, we also actually find their minimum weight
-        # representative (MWR) afterwards. Therefore, it would be more efficient to
-        # calculate the MWR for each fault as they are generated, and filter out
-        # duplicates.
-        for combo in tqdm(itertools.combinations(unique_components, k)):
-            final_data = np.zeros(N, dtype=np.int8)
-            for f, L in combo:
-                final_data ^= f
-            combinations_list.append(combo)
-            final_data_list.append(final_data)
-            weights_list.append(k)
-            
-    if len(combinations_list) == 0:
-        return np.empty((0, t, N), dtype=np.int8), np.array([]), np.array([]), np.empty((0, N), dtype=np.int8), []
-        
-    final_data_array = np.array(final_data_list, dtype=np.int8)
-    reps = compute_minimum_weight_representatives(final_data_array, H_filter)
-    W_effs = np.sum(reps, axis=1)
-    
-    valid_active_errors = []
-    valid_targets = []
-    valid_Weffs = []
-    valid_meta = []
-    valid_final_data = []
-    
-    for i in range(len(combinations_list)):
-        k = weights_list[i]
-        W_eff = W_effs[i]
-        req_det = min(W_eff - k, t - k + 1)
-        if req_det <= 0:
-            continue
-            
-        combo = combinations_list[i]
-        active = np.zeros((t, N), dtype=np.int8)
-        for f, L in combo:
-            active[L:] ^= f
-            
-        valid_active_errors.append(active)
-        valid_targets.append(req_det)
-        valid_Weffs.append(W_eff)
-        valid_meta.append({
-            "components": combo,
-            "weight": k,
-            "final_data": final_data_list[i]
-        })
-        valid_final_data.append(final_data_list[i])
-        
-    if not valid_active_errors:
-        return np.empty((0, t, N), dtype=np.int8), np.array([]), np.array([]), None, []
-        
-    return np.array(valid_active_errors), np.array(valid_targets), np.array(valid_Weffs), None, valid_meta
 
 def find_lookahead_verification_stabilizers(
     single_faults: PureFaultSet,
@@ -377,13 +193,10 @@ def find_lookahead_verification_stabilizers(
     costs = np.array([cost_fn(w, t) for w in np.sum(candidate_stabs, axis=1)])
     print("Found {} stabilizers".format(len(candidate_stabs)))
 
-    # TODO: Cleaner fault management
-    #
-    # Because we have so many details we need to keep track of related to faults,
-    # and also quite a lot of methods to deal with these, we should have a custom
-    # class (FaultSet) that wraps all these together. This class should be in a
-    # saparate file.
-    active_errors, targets, W_effs, T_E_q_matrix, fault_meta = _generate_unified_active_errors(single_faults, t, H_filter)
+    mixed_faults = MixedFaultSet(single_faults, t, H_filter, track_origins=False)
+    active_errors = mixed_faults.active_errors
+    targets = mixed_faults.targets
+    fault_meta = mixed_faults.fault_meta
     num_mixed_faults = len(active_errors)
     print("Found {} active errors".format(num_mixed_faults))
     

@@ -655,8 +655,6 @@ if __name__ == "__main__":
 
     print("\nFinal Verification Result:", is_ft is True)
 
-    print(is_ft)
-    
     if is_ft is True and args.save_circuit:
         with open(args.save_circuit, "w") as f:
             f.write(str(circ))
