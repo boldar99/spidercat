@@ -39,6 +39,7 @@ def close_flag_qubit(circ: stim.Circuit, basis: str, f: int, q: int):
     circ.append("DETECTOR", [stim.target_rec(-1)])
     circ.append("TICK")
 
+
 def splice_flag_injection(circ: stim.Circuit, q: int, f: int, basis: str) -> stim.Circuit:
     blocks = split_at_ticks(circ)
 
@@ -74,28 +75,70 @@ def splice_flag_injection(circ: stim.Circuit, q: int, f: int, basis: str) -> sti
     return new_circ
 
 
-# TODO: ideally make the implementation very clean
-def synthesize_and_merge_layer(previous_circ: stim.Circuit, stabs_qubits: list[list[int]],
-                               ticks: list[list[tuple[int, int]]], t: int, ancilla_start: int, basis: Literal["X", "Z"],
-                               layer_violations: list[dict] = None) -> stim.Circuit:
-    from spidercat.syndrome_measurement import bare_se_circuit, fao_se_circuit
+class MeasurementCircuitMerger:
+    def __init__(self, meas_circs: list[stim.Circuit], stabs_qubits: list[list[int]]):
+        self.stab_data_sets = [set(qubits) for qubits in stabs_qubits]
+        self.circ_iters = [iter(explode_circuit(circ)) for circ in meas_circs]
+        self.current_insts = [next(it, None) for it in self.circ_iters]
+        self.merged = stim.Circuit()
 
-    if layer_violations is None:
-        layer_violations = []
+    def is_data_cx(self, inst: stim.CircuitInstruction, stab_idx: int) -> bool:
+        if inst.name != "CX":
+            return False
+        data_set = self.stab_data_sets[stab_idx]
+        for t in inst.targets_copy():
+            if t.value in data_set:
+                return True
+        return False
 
-    if not stabs_qubits:
-        return previous_circ
+    def advance_until_data_cx(self, stab_idx: int):
+        while self.current_insts[stab_idx] is not None:
+            inst = self.current_insts[stab_idx]
+            if inst.name == "TICK":
+                self.current_insts[stab_idx] = next(self.circ_iters[stab_idx], None)
+                continue
 
-    # 1. Schedule data CNOTs
-    # ticks is passed as argument
+            if self.is_data_cx(inst, stab_idx):
+                break
 
-    # 2. Determine ordered qubits for each stabilizer
+            self.merged.append(inst)
+            self.current_insts[stab_idx] = next(self.circ_iters[stab_idx], None)
+
+    def merge(self, ticks: list[list[tuple[int, int]]]) -> stim.Circuit:
+        for i in range(len(self.circ_iters)):
+            self.advance_until_data_cx(i)
+
+        for tick_ops in ticks:
+            tick_targets = []
+            for stab_idx, q in tick_ops:
+                inst = self.current_insts[stab_idx]
+                if inst is None or not self.is_data_cx(inst, stab_idx):
+                    raise ValueError(f"Expected data CX instruction for stab {stab_idx} on qubit {q}, got {inst}")
+
+                tick_targets.extend(inst.targets_copy())
+                self.current_insts[stab_idx] = next(self.circ_iters[stab_idx], None)
+
+            self.merged.append("CX", tick_targets)
+            self.merged.append("TICK")
+
+            for stab_idx, _ in tick_ops:
+                self.advance_until_data_cx(stab_idx)
+
+        return self.merged
+
+
+def _extract_ordered_qubits(stabs_qubits: list[list[int]], ticks: list[list[tuple[int, int]]]) -> list[list[int]]:
     ordered_qubits = [[] for _ in range(len(stabs_qubits))]
     for tick_ops in ticks:
         for stab_idx, q in tick_ops:
             ordered_qubits[stab_idx].append(q)
+    return ordered_qubits
 
-    # 3. Generate circuits
+
+def _generate_measurement_circuits(ordered_qubits: list[list[int]], t: int, ancilla_start: int,
+                                   basis: Literal["X", "Z"]) -> tuple[list[stim.Circuit], int]:
+    from spidercat.syndrome_measurement import bare_se_circuit, fao_se_circuit
+
     meas_circs = []
     current_ancilla = ancilla_start
     for qubits in ordered_qubits:
@@ -106,87 +149,66 @@ def synthesize_and_merge_layer(previous_circ: stim.Circuit, stabs_qubits: list[l
             circ.append("DETECTOR", [stim.target_rec(-1)])
 
         circ.flattened_operations()
-
         meas_circs.append(circ)
         current_ancilla = circ.num_qubits
 
-    # 4. Merge via iterators
-    merged = stim.Circuit()
+    return meas_circs, current_ancilla
 
-    # Flatten instructions to avoid Stim's automatic folding
-    flat_circs = [explode_circuit(circ) for circ in meas_circs]
-    circ_iters = [iter(flat) for flat in flat_circs]
-    current_insts = [next(it, None) for it in circ_iters]
 
-    def is_data_cx(inst: stim.CircuitInstruction, stab_idx):
-        if inst.name != "CX":
-            return False
-        data_set = set(stabs_qubits[stab_idx])
-        for t in inst.targets_copy():
-            if t.value in data_set:
-                return True
-        return False
-
-    def advance_until_data_cx(stab_idx):
-        while current_insts[stab_idx] is not None:
-            inst = current_insts[stab_idx]
-            if inst.name == "TICK":
-                current_insts[stab_idx] = next(circ_iters[stab_idx], None)
-                continue
-
-            if is_data_cx(inst, stab_idx):
-                break
-
-            merged.append(inst)
-
-            current_insts[stab_idx] = next(circ_iters[stab_idx], None)
-
-    # Initial advance for all circuits
-    for i in range(len(meas_circs)):
-        advance_until_data_cx(i)
-
-    # --- FLAG INJECTION START ---
+def _determine_flags_to_insert(layer_violations: list[dict], current_ancilla: int) -> tuple[list[tuple[int, int]], int]:
     violating_qubits = set()
     for v in layer_violations:
         if "Q" in v:
             violating_qubits.update(v["Q"])
-        elif "q" in v:  # Fallback just in case
+        elif "q" in v:
             violating_qubits.add(v["q"])
 
     flags_to_insert = []
     for q in sorted(list(violating_qubits)):
-        f_qubit = current_ancilla
+        flags_to_insert.append((q, current_ancilla))
         current_ancilla += 1
-        flags_to_insert.append((q, f_qubit))
 
+    return flags_to_insert, current_ancilla
+
+
+def _inject_flags(circ: stim.Circuit, flags_to_insert: list[tuple[int, int]], basis: Literal["X", "Z"]) -> stim.Circuit:
     for q, f in flags_to_insert:
-        previous_circ = splice_flag_injection(previous_circ, q, f, basis)
-    # --- FLAG INJECTION END ---
+        circ = splice_flag_injection(circ, q, f, basis)
+    return circ
 
-    for tick_ops in ticks:
-        tick_targets = []
 
-        for stab_idx, q in tick_ops:
-            inst = current_insts[stab_idx]
-            if inst is None or not is_data_cx(inst, stab_idx):
-                raise ValueError(f"Expected data CX instruction for stab {stab_idx} on qubit {q}, got {inst}")
-
-            tick_targets.extend(inst.targets_copy())
-
-            # Advance past this specific data CX
-            current_insts[stab_idx] = next(circ_iters[stab_idx], None)
-
-        merged.append("CX", tick_targets)
-        merged.append("TICK")
-
-        # Advance iterators to queue up next ancilla operations
-        for stab_idx, _ in tick_ops:
-            advance_until_data_cx(stab_idx)
-
-    # --- FLAG EXTRACTION START ---
+def _extract_flags(circ: stim.Circuit, flags_to_insert: list[tuple[int, int]], basis: Literal["X", "Z"]) -> None:
     for q, f in flags_to_insert:
-        close_flag_qubit(merged, basis, f, q)
-    # --- FLAG EXTRACTION END ---
+        close_flag_qubit(circ, basis, f, q)
+
+
+def _merge_measurement_circuits(meas_circs: list[stim.Circuit], stabs_qubits: list[list[int]],
+                                ticks: list[list[tuple[int, int]]]) -> stim.Circuit:
+    merger = MeasurementCircuitMerger(meas_circs, stabs_qubits)
+    return merger.merge(ticks)
+
+
+def synthesize_and_merge_layer(
+    previous_circ: stim.Circuit,
+    stabs_qubits: list[list[int]],
+    ticks: list[list[tuple[int, int]]],
+    t: int,
+    ancilla_start: int,
+    basis: Literal["X", "Z"],
+    layer_violations: list[dict] | None = None
+) -> stim.Circuit:
+    if not stabs_qubits:
+        return previous_circ
+
+    layer_violations = layer_violations or []
+
+    ordered_qubits = _extract_ordered_qubits(stabs_qubits, ticks)
+    meas_circs, current_ancilla = _generate_measurement_circuits(ordered_qubits, t, ancilla_start, basis)
+    flags_to_insert, current_ancilla = _determine_flags_to_insert(layer_violations, current_ancilla)
+
+    previous_circ = _inject_flags(previous_circ, flags_to_insert, basis)
+    merged = _merge_measurement_circuits(meas_circs, stabs_qubits, ticks)
+    _extract_flags(merged, flags_to_insert, basis)
 
     return previous_circ + merged
 
