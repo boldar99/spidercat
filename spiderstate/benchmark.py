@@ -1,12 +1,30 @@
-import itertools
+import os
+
+os.environ["KMP_WARNINGS"] = "0"
+import multiprocessing as mp
+
+mp.set_start_method("fork", force=True)
+import hashlib
+import pandas as pd
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from tqdm import tqdm
 
 import numpy as np
 import stim
+import galois
 
 from spiderstate.stim_utils import make_stim_circ_noisy
 from spidercat.simulate import _layer_cnot_circuit
 from spiderstate.cat_at_origin import row_optimized_cat_at_origin
 from spiderstate.utils import load_qecc, MQT_simp_QECCS
+from spiderstate.qubit_reuse import (
+    build_circuit_dag,
+    inject_qubit_reuse,
+    apply_logical_qubit_merge_and_compress,
+    dag_to_circuit,
+    DepthPreservingStrategy, PureAggressiveStrategy
+)
+import json
 
 
 class LutDecoder:
@@ -15,10 +33,11 @@ class LutDecoder:
         self.m, self.n = self.H.shape
         self.max_weight = max_decodable_weight
         if self.max_weight is None:
-            self.max_weight = 0
+            self.max_weight = self.n  # Unbounded max weight
         self.powers_of_2 = 1 << np.arange(self.m)[::-1]
         self.lut_size = 1 << self.m
-        self.lut = np.full((self.lut_size, self.n), -1, dtype=np.int8)
+        self.lut = np.zeros((self.lut_size, self.n), dtype=np.bool_)
+        self.can_correct = np.zeros(self.lut_size, dtype=np.bool_)
         self._build_table()
 
     def _syndrome_int(self, e):
@@ -26,32 +45,117 @@ class LutDecoder:
         return s @ self.powers_of_2
 
     def _build_table(self):
-        e_zero = np.zeros(self.n, dtype=np.int8)
+        e_zero = np.zeros(self.n, dtype=np.bool_)
         self.lut[0] = e_zero
-        if self.max_weight > 0:
-            for w in range(1, self.max_weight + 1):
-                for error_positions in itertools.combinations(range(self.n), w):
-                    e = np.zeros(self.n, dtype=np.int8)
-                    e[list(error_positions)] = 1
-                    s_int = self._syndrome_int(e)
-                    if self.lut[s_int, 0] == -1:
-                        self.lut[s_int] = e
+        self.can_correct[0] = True
+        if self.max_weight <= 0:
+            return
+
+        from collections import deque
+        # Queue stores: (syndrome_int, error_array, weight)
+        queue = deque([(0, e_zero, 0)])
+        filled_count = 1
+
+        # Precompute the syndrome integer for each single-qubit flip
+        # to avoid matrix multiplication in the BFS loop
+        H_cols = [self._syndrome_int(np.eye(self.n, dtype=np.bool_)[i]) for i in range(self.n)]
+
+        while queue and filled_count < self.lut_size:
+            s_int, e, w = queue.popleft()
+
+            if w >= self.max_weight:
+                continue
+
+            for i in range(self.n):
+                if not e[i]:
+                    new_s_int = s_int ^ H_cols[i]
+                    if not self.can_correct[new_s_int]:
+                        new_e = e.copy()
+                        new_e[i] = True
+                        self.lut[new_s_int] = new_e
+                        self.can_correct[new_s_int] = True
+                        filled_count += 1
+                        queue.append((new_s_int, new_e, w + 1))
 
     def batch_decode_z(self, syndromes):
-        s_ints = syndromes @ self.powers_of_2
-        return self.lut[s_ints]
+        s_ints = np.asarray(syndromes) @ self.powers_of_2
+        return self.lut[s_ints], self.can_correct[s_ints]
 
 
-def benchmark_CAO_state_prep(code: str, p=0.001, num_samples=100_000_000):
+# Globals to inherit via OS fork (Zero-Copy)
+_G_CIRC_STR: str = None
+_G_DECODER: LutDecoder = None
+_G_H_X: np.ndarray = None
+_G_L_X: np.ndarray = None
+
+
+def _simulate_batch(batch_size):
+    # Compiling per-batch mathematically guarantees independent PRNG streams
+    # and takes negligible time (~11 microseconds)
+    sampler = stim.Circuit(_G_CIRC_STR).compile_sampler()
+    samples = sampler.sample(batch_size)
+
+    _GF = galois.GF(2)
+    g_H_x_T = _GF(_G_H_X.T)
+    g_L_x_T = _GF(_G_L_X.T)
+
+    # Flagged shots (any 1 in the flag measurements)
+    is_flagged = np.any(samples[:, :-_G_H_X.shape[1]], axis=1)
+    num_flagged = np.sum(is_flagged)
+
+    filtered_samples = samples[~is_flagged]
+    raw_measurements = filtered_samples[:, -_G_H_X.shape[1]:]
+
+    # Fast GF(2) matrix multiplication for syndromes
+    g_raw = _GF(raw_measurements.astype(np.int8))
+    syndromes = g_raw @ g_H_x_T
+
+    corrections, valid_mask = _G_DECODER.batch_decode_z(syndromes)
+
+    valid_corrections = corrections[valid_mask]
+    num_discarded = len(syndromes) - len(valid_corrections)
+
+    valid_measurements = raw_measurements[valid_mask]
+    # Fast bitwise XOR using NumPy
+    corrected_measurements = valid_measurements ^ valid_corrections
+    
+    # Fast GF(2) matrix multiplication for logicals
+    g_corrected = _GF(corrected_measurements.astype(np.int8))
+    predicted_logicals = g_corrected @ g_L_x_T
+
+    # Incorrect if any logical observable is flipped
+    incorrect_predictions = np.any(predicted_logicals, axis=1)
+    num_incorrect = np.sum(incorrect_predictions)
+
+    return batch_size, int(num_flagged), int(num_discarded), int(num_incorrect)
+
+
+def benchmark_CAO_state_prep(code: str, reuse_strategy, p=0.001, num_samples=100_000_000):
+    import random
+    # Ensure deterministic circuit generation for this specific code
+    # so the circuit hash matches across different script executions
+    seed_val = int(hashlib.sha256(code.encode()).hexdigest()[:8], 16)
+    random.seed(seed_val)
+    np.random.seed(seed_val)
+
     is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code)
     if code in ("49_1_5", "95_1_7"):
-        print("State: |+>")
+        print(f"State: |+> (Code {code})")
         H_x, H_z = H_z, H_x
         L_x, L_z = L_z, L_x
     else:
-        print("State: |0>")
-    circ = row_optimized_cat_at_origin(H_z, d, max_basis_tries=25_000)
-    noisy_circ, _ = make_stim_circ_noisy(circ, p, one_cnot_per_layer=True)
+        print(f"State: |0> (Code {code})")
+
+    original_circ = row_optimized_cat_at_origin(H_z, d, max_basis_tries=25_000)
+
+    n_data = H_x.shape[1]
+    dag = build_circuit_dag(original_circ)
+    mod_dag, _, _ = inject_qubit_reuse(dag, n_data, reuse_strategy)
+    compressed_dag = apply_logical_qubit_merge_and_compress(mod_dag, n_data)
+    circ_with_reuse, _ = dag_to_circuit(compressed_dag)
+
+    noisy_circ, _ = make_stim_circ_noisy(circ_with_reuse, p, one_cnot_per_layer=True)
+    # print(noisy_circ)
 
     noisy_circ.append("M", range(H_x.shape[1]))
 
@@ -64,69 +168,146 @@ def benchmark_CAO_state_prep(code: str, p=0.001, num_samples=100_000_000):
         record_targets = [stim.target_rec(i - H_x.shape[1]) for i in qubit_indices]
         noisy_circ.append("OBSERVABLE_INCLUDE", record_targets, i)
 
-    # 3. Sample detectors and logicals
-    samples = noisy_circ.compile_sampler().sample(num_samples)
-    total_shots = len(samples)
-
-    # 4. Post-selection: Identify flagged shots
-    is_flagged = np.any(samples[:, :-H_x.shape[1]], axis=1)
-    AR = 1.0 - np.average(is_flagged)
-
-    filtered_samples = samples[~is_flagged]
-    raw_measurements = filtered_samples[:, -H_x.shape[1]:]
-    syndromes = raw_measurements @ H_x.T % 2
-    max_weight = (d - 1) // 2
-    decoder = LutDecoder(H_x, max_decodable_weight=max_weight)
-    corrections = decoder.batch_decode_z(syndromes)
-
-    # 3. Post-selection: Find valid rows
-    # Since valid correction arrays only contain 0s and 1s, checking if the
-    # minimum value in the row is -1 instantly flags the sentinels.
-    valid_mask = np.min(corrections, axis=1) != -1
-
-    # 4. Filter the raw data
-    valid_measurements = raw_measurements[valid_mask]
-    valid_corrections = corrections[valid_mask]
-
-    # 5. Apply corrections safely
-    corrected_measurements = valid_measurements ^ valid_corrections
-    predicted_logicals = corrected_measurements @ L_x.T % 2
-
-    # Optional: Track your post-selection discard rate
-    discarded_shots = len(syndromes) - len(valid_corrections)
-    print(f"Discarded {discarded_shots} uncorrectable shots.")
-
-    # If any logical observable failed to be corrected in a shot, that shot is a logical error
-    incorrect_predictions = np.any(predicted_logicals, axis=1)
-    LER = np.average(incorrect_predictions) if len(incorrect_predictions) > 0 else 0.0
-
-    # Total Experimental Yield
-    total_AR = len(valid_corrections) / total_shots
-
-    raw_cnots = [l for (name, l, _) in circ.flattened_operations() if name == "CX"]
+    # Compute circuit properties
+    raw_cnots = [l for (name, l, _) in circ_with_reuse.flattened_operations() if name == "CX"]
     cnots = [(ops[i], ops[i + 1]) for ops in raw_cnots for i in range(0, len(ops), 2)]
     num_cx = len(cnots)
-    num_flags = circ.num_qubits - H_x.shape[1]
-    num_qubits = circ.num_qubits
+    num_flags = original_circ.num_detectors
+    num_qubits = noisy_circ.num_qubits
     depth = len(_layer_cnot_circuit(cnots))
+    num_sim_qubits = noisy_circ.num_qubits
 
-    return LER, total_AR, num_cx, num_flags, num_qubits, noisy_circ.num_qubits, depth
+    # Compute circuit hash and setup CSV caching
+    circ_str = str(noisy_circ)
+    circ_hash = hashlib.sha256(circ_str.encode()).hexdigest()[:16]
+
+    os.makedirs("simulation_results", exist_ok=True)
+    csv_file = f"simulation_results/{code}_{circ_hash}.csv"
+
+    total_shots = 0
+    total_flagged = 0
+    total_discarded = 0
+    total_incorrect = 0
+
+    if os.path.exists(csv_file):
+        df = pd.read_csv(csv_file)
+        if not df.empty:
+            total_shots = int(df['total_shots'].sum())
+            total_flagged = int(df['num_flagged'].sum())
+            total_discarded = int(df['num_discarded'].sum())
+            total_incorrect = int(df['num_incorrect'].sum())
+
+    remaining_samples = max(0, num_samples - total_shots)
+    max_weight = None if bool(d % 2) else (d - 1) // 2
+
+    # Build the LUT ONCE in the main thread
+    decoder = LutDecoder(H_x, max_decodable_weight=max_weight)
+
+    global _G_DECODER, _G_CIRC_STR, _G_H_X, _G_L_X
+    _G_DECODER = decoder
+    _G_CIRC_STR = circ_str
+    _G_H_X = H_x
+    _G_L_X = L_x
+
+    if remaining_samples > 0:
+        batch_size = 1_000_000
+        num_full_batches = remaining_samples // batch_size
+        remainder = remaining_samples % batch_size
+        batches = [batch_size] * num_full_batches
+        if remainder > 0:
+            batches.append(remainder)
+
+        print(f"Running {remaining_samples} additional samples (Total existing: {total_shots})...")
+
+        num_cores = max(1, mp.cpu_count() - 2)
+        with ProcessPoolExecutor(max_workers=num_cores) as executor:
+            futures = [
+                executor.submit(_simulate_batch, b_size)
+                for b_size in batches
+            ]
+
+            with tqdm(total=remaining_samples, desc=f"Simulating {code}") as pbar:
+                for future in as_completed(futures):
+                    b_size, n_flagged, n_discarded, n_incorrect = future.result()
+                    total_shots += b_size
+                    total_flagged += n_flagged
+                    total_discarded += n_discarded
+                    total_incorrect += n_incorrect
+
+                    # Update CSV incrementally
+                    df_new = pd.DataFrame([{
+                        "total_shots": b_size,
+                        "num_flagged": n_flagged,
+                        "num_discarded": n_discarded,
+                        "num_incorrect": n_incorrect
+                    }])
+
+                    if os.path.exists(csv_file):
+                        df_new.to_csv(csv_file, mode='a', header=False, index=False)
+                    else:
+                        df_new.to_csv(csv_file, index=False)
+
+                    pbar.update(b_size)
+    else:
+        print(f"Using {total_shots} cached samples from {csv_file}")
+
+    # Compute final metrics
+    AR = 1.0 - (total_flagged / total_shots) if total_shots > 0 else 0.0
+    total_valid_corrections = total_shots - total_flagged - total_discarded
+    total_AR = total_valid_corrections / total_shots if total_shots > 0 else 0.0
+
+    print(f"Discarded {total_discarded} uncorrectable shots.")
+
+    LER = total_incorrect / total_valid_corrections if total_valid_corrections > 0 else 0.0
+
+    stats = {
+        "code": code,
+        "strategy": reuse_strategy.__class__.__name__,
+        "p": p,
+        "num_samples": total_shots,
+        "total_flagged": total_flagged,
+        "total_discarded": total_discarded,
+        "total_incorrect": total_incorrect,
+        "logical_error_rate": LER,
+        "acceptance_rate": total_AR,
+        "raw_acceptance_rate": AR,
+        "num_cx": num_cx,
+        "num_flags": num_flags,
+        "num_qubits_original": num_qubits,
+        "num_sim_qubits": num_sim_qubits,
+        "depth": depth,
+        "circuit_volume": int(depth * num_sim_qubits),
+        "expected_circuit_volume": int(depth * num_sim_qubits / total_AR) if total_AR > 0 else 0,
+        "circuit_hash": circ_hash,
+        "perfect_stim": str(circ_with_reuse),
+        "noisy_circuit": circ_str,
+    }
+
+    json_file = f"simulation_results/{code}_{reuse_strategy.__class__.__name__}_{circ_hash}.json"
+    with open(json_file, "w") as f:
+        json.dump(stats, f, indent=4)
+
+    return stats
 
 
 if __name__ == "__main__":
-
-    # LER, AR, num_cx, num_flags, num_qubits, depth = benchmark_CAO_state_prep("95_1_7", "FAO")
     methods = {"MQT": MQT_simp_QECCS}
+    strategies = [
+        PureAggressiveStrategy,
+        DepthPreservingStrategy,
+    ]
     for method_name, code_iterator in methods.items():
         for code in code_iterator():
-            LER, AR, num_cx, num_flags, num_qubits, num_sim_qubits, depth = benchmark_CAO_state_prep(
-                code, num_samples=10_000_000
-            )
-            print(f"Logical Error Rate = {LER:.4e}", end=";\t ")
-            print(f"Acceptance Rate = {AR:.4f}", end=";\t ")
-            print(f"CXs = {num_cx}", end=";\t ")
-            print(f"Sim. Qubits = {num_sim_qubits}", end=";\t ")
-            print(f"Flags = {num_flags}", end=";\t ")
-            print(f"Depth = {depth}", end=";\t ")
-            print(f"Expected Circuit Volume = {int(depth * num_sim_qubits / AR)}")
-            print()
+            for StrategyClass in strategies:
+                print(f"--- Benchmarking {code} with {StrategyClass.__name__} ---")
+                stats = benchmark_CAO_state_prep(
+                    code, reuse_strategy=StrategyClass(), num_samples=250_000_000
+                )
+                print(f"Logical Error Rate = {stats['logical_error_rate']:.4e}", end=";\t ")
+                print(f"Acceptance Rate = {stats['acceptance_rate']:.4f}", end=";\t ")
+                print(f"CXs = {stats['num_cx']}", end=";\t ")
+                print(f"Sim. Qubits = {stats['num_sim_qubits']}", end=";\t ")
+                print(f"Flags = {stats['num_flags']}", end=";\t ")
+                print(f"Depth = {stats['depth']}", end=";\t ")
+                print(f"Expected Circuit Volume = {stats['expected_circuit_volume']}")
+                print()

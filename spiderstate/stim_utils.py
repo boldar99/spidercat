@@ -134,15 +134,21 @@ def _expand_stim_operation_list(operations: list[tuple[str, list[stim.GateTarget
     return stim_operations
 
 
-def _layer_circuit_ops(operations: list[tuple[str, list[int]]], num_qubits: int):
+def _layer_circuit_ops(operations: list[tuple[str, list[int]]], num_qubits: int, one_cnot_per_layer: bool = False):
     all_qubits = range(num_qubits)
     next_free_layer = {q: 0 for q in all_qubits}
     asap_layers = defaultdict(list)
     meas_id = 0
+    cx_layers = set()
 
     # --- PASS 1: ASAP Forward Layering ---
     for op_name, targets in operations:
         last_layer = max((next_free_layer[i] for i in targets), default=0)
+
+        if one_cnot_per_layer and op_name in TWO_QUBIT_GATES:
+            while last_layer in cx_layers:
+                last_layer += 1
+            cx_layers.add(last_layer)
 
         if op_name in ("M", "MX"):
             asap_layers[last_layer].append(((op_name, meas_id), targets))
@@ -249,10 +255,7 @@ def make_stim_circ_noisy(circ: stim.Circuit, p: float, one_cnot_per_layer: bool=
     operations = [(op, targets) for (op, targets, _) in circ.flattened_operations() if op != "DETECTOR"]
 
     expanded_ops = _expand_stim_operation_list(operations)
-    if one_cnot_per_layer:
-        layered_ops = [[op] for op in expanded_ops]
-    else:
-        layered_ops = _layer_circuit_ops(expanded_ops, circ.num_qubits)
+    layered_ops = _layer_circuit_ops(expanded_ops, circ.num_qubits, one_cnot_per_layer=one_cnot_per_layer)
 
     noisy_circ, mm = layered_ops_to_noisy_stim_circuit(
         layered_ops=layered_ops,
