@@ -131,7 +131,7 @@ def schedule_all_verification_layers(
         else:
             opt.minimize(max_tick)
             
-        opt.set("timeout", 10_000) # 10 seconds timeout per layer
+        opt.set("timeout", 2_000) # 10 seconds timeout per layer
         
         status = opt.check()
         if status == z3.unsat:

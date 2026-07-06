@@ -105,7 +105,8 @@ def _solve_top_n_weighted_set_covers(
 
     costs = np.array([cnot_cost(w, t) for w in weights])
     
-    coverage = ((candidate_stabs @ faults.T) % 2).astype(bool)
+    GF2 = galois.GF(2)
+    coverage = np.array(GF2(candidate_stabs) @ GF2(faults).T, dtype=bool)
     
     num_candidates = candidate_stabs.shape[0]
     
@@ -204,7 +205,9 @@ def compute_minimum_weight_representatives(faults: np.ndarray, stabs: np.ndarray
         
     num_qubits = stabs.shape[1]
 
-    if k <= 20:
+    print(f"{k=} and {faults.shape=}")
+
+    if k <= 15:
         all_stabs = []
         for i in range(1 << k):
             comb = [j for j in range(k) if (i >> j) & 1]
@@ -217,7 +220,7 @@ def compute_minimum_weight_representatives(faults: np.ndarray, stabs: np.ndarray
 
         batch_size = 2000
         reps = np.zeros_like(faults)
-        for i in range(0, len(faults), batch_size):
+        for i in tqdm(range(0, len(faults), batch_size), desc="Finding minimum weight representatives of faults (using LUT)"):
             batch = faults[i:i+batch_size]
 
             dist = cdist(batch, all_stabs, metric='cityblock')
@@ -241,12 +244,14 @@ def compute_minimum_weight_representatives(faults: np.ndarray, stabs: np.ndarray
     found = {}
     from collections import deque
     queue = deque([(np.zeros(num_qubits, dtype=np.int8), 0, 0)])
+    pbar = tqdm(total=len(target_syndromes), desc="Finding minimum weight representatives of faults (using galois)")
     
     while queue and len(found) < len(target_syndromes):
         vec, wt, last_idx = queue.popleft()
         syn = tuple((H @ vec) % 2)
         if syn in target_syndromes and syn not in found:
             found[syn] = vec
+            pbar.update(1)
             
         for i in range(last_idx, num_qubits):
             new_vec = vec.copy()
@@ -383,9 +388,15 @@ def find_lookahead_verification_stabilizers(
 
     candidate_stabs = _generate_candidate_stabilizers(stabs, max_combinations)
     costs = np.array([cost_fn(w, t) for w in np.sum(candidate_stabs, axis=1)])
+    print("Found {} stabilizers".format(len(candidate_stabs)))
 
     active_errors, targets, W_effs, T_E_q_matrix, fault_meta = _generate_unified_active_errors(single_faults, t, H_filter)
     num_mixed_faults = len(active_errors)
+    print("Found {} active errors".format(num_mixed_faults))
+    
+    GF2 = galois.GF(2)
+    candidate_stabs_gf2 = GF2(candidate_stabs)
+    active_errors_gf2 = GF2(active_errors)
     
     # beam state: (realized_cost, layers, accumulated_stabs, detection_counts)
     # detection_counts is a 1D array of shape (num_mixed_faults,)
@@ -425,14 +436,16 @@ def find_lookahead_verification_stabilizers(
                 next_beam_candidates.append((realized_cost, realized_cost, layers + [[]], accumulated_stabs, det_counts))
                 continue
                 
-            cov_matrix = ((candidate_stabs @ surviving_faults.T) % 2).astype(bool)
+            cov_matrix = np.array(candidate_stabs_gf2 @ GF2(surviving_faults).T, dtype=bool)
             num_uncoverable = np.sum(~np.any(cov_matrix, axis=0))
             realized_cost += num_uncoverable * 1000
+            print("Cov matrix done")
                 
             candidate_covers = _solve_top_n_weighted_set_covers(
                 surviving_faults, stabs, t, max_combinations, max_time_sec, top_n, target_coverage=capped_targets
             )
-            
+            print("Cand. covers done")
+
             if not candidate_covers:
                 penalty = 1000 * len(surviving_faults)
                 next_beam_candidates.append((realized_cost + penalty, realized_cost + penalty, layers + [[]], accumulated_stabs, det_counts))
@@ -451,16 +464,19 @@ def find_lookahead_verification_stabilizers(
                 
                 # Update detections
                 layer_matrix = np.vstack(best_last).astype(np.int8)
-                new_sigs = np.sum((active_errors[:, layer_idx, :] @ layer_matrix.T) % 2, axis=1)
+                new_sigs = np.sum(np.array(active_errors_gf2[:, layer_idx, :] @ GF2(layer_matrix).T, dtype=np.int8), axis=1)
                 new_det_counts = det_counts + new_sigs
+                print()
                 
                 next_beam_candidates.append((final_cost, final_cost, layers + [best_last], accumulated_stabs + best_last, new_det_counts))
                 continue
+
+            print()
                 
             for cover_idx, cover in enumerate(candidate_covers):
                 cover_matrix = np.vstack(cover).astype(np.int8)
                 
-                new_sigs = np.sum((active_errors[:, layer_idx, :] @ cover_matrix.T) % 2, axis=1)
+                new_sigs = np.sum(np.array(active_errors_gf2[:, layer_idx, :] @ GF2(cover_matrix).T, dtype=np.int8), axis=1)
                 new_det_counts = det_counts + new_sigs
                 
                 # Lookahead scoring
@@ -479,7 +495,7 @@ def find_lookahead_verification_stabilizers(
                 
                 next_cost = 0
                 if fs_size > 0:
-                    next_cov = ((candidate_stabs @ next_surviving.T) % 2).astype(bool)
+                    next_cov = np.array(candidate_stabs_gf2 @ GF2(next_surviving).T, dtype=bool)
                     coverable = np.any(next_cov, axis=0)
                     valid_cov = next_cov[:, coverable]
                     if valid_cov.shape[1] > 0:
@@ -513,7 +529,7 @@ def find_lookahead_verification_stabilizers(
         # Deduplicate and form new beam
         unique_beam = []
         seen_sigs = set()
-        for r_cost, l_score, lyrs, acc_stabs, det_counts in next_beam_candidates:
+        for r_cost, l_score, lyrs, acc_stabs, det_counts in tqdm(next_beam_candidates):
             if not acc_stabs:
                 sig = ()
             else:
@@ -637,7 +653,7 @@ def find_lookahead_verification_stabilizers(
             if len(layer) == 0:
                 continue
             layer_matrix = np.vstack(layer).astype(np.int8)
-            syn_all = (active_errors[:, l_idx, :] @ layer_matrix.T) % 2
+            syn_all = np.array(active_errors_gf2[:, l_idx, :] @ GF2(layer_matrix).T, dtype=np.int8)
             
             fault_indices, stab_indices = np.nonzero(syn_all)
             for f_idx, s_idx in zip(fault_indices, stab_indices):
