@@ -206,32 +206,6 @@ def compute_minimum_weight_representatives(faults: np.ndarray, stabs: np.ndarray
     num_qubits = stabs.shape[1]
 
     print(f"{k=} and {faults.shape=}")
-
-    # TODO: This is temporaraly 10 from 15 because the other method is faster,
-    if k <= 10:
-        all_stabs = []
-        for i in range(1 << k):
-            comb = [j for j in range(k) if (i >> j) & 1]
-            if comb:
-                s = np.bitwise_xor.reduce(stabs[comb], axis=0)
-            else:
-                s = np.zeros(num_qubits, dtype=np.int8)
-            all_stabs.append(s)
-        all_stabs = np.array(all_stabs, dtype=np.int8)
-
-        batch_size = 2000
-        reps = np.zeros_like(faults)
-        for i in tqdm(range(0, len(faults), batch_size), desc="Finding minimum weight representatives of faults (using LUT)"):
-            batch = faults[i:i+batch_size]
-
-            # TODO: why do we need cdist? We have a complete list of stabilizers
-            # We can turn the stabs to an into and index the list.
-            dist = cdist(batch, all_stabs, metric='cityblock')
-            min_idx = np.argmin(dist, axis=1)
-            reps[i:i+batch_size] = (batch + all_stabs[min_idx]) % 2
-
-        return reps
-
     GF2 = galois.GF(2)
     stabs_gf2 = GF2(stabs)
     H_gf2 = stabs_gf2.null_space()
