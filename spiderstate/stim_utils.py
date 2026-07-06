@@ -64,9 +64,6 @@ def explode_circuit(circuit: stim.Circuit) -> list[stim.CircuitInstruction]:
     """
     atomized_ops = []
 
-    # Common 2-qubit gates in CSS codes
-    TWO_QUBIT_GATES = {"CX", "CNOT", "CZ", "SWAP", "CY", "XCZ", "YCX"}
-
     for op in circuit.flattened():
         # Handle 2-Qubit Gates (Target pairs)
         if op.name in TWO_QUBIT_GATES:
@@ -78,7 +75,7 @@ def explode_circuit(circuit: stim.Circuit) -> list[stim.CircuitInstruction]:
                 )
 
         # Handle Annotations (Don't split, just keep)
-        elif op.name in {"DETECTOR", "OBSERVABLE_INCLUDE", "SHIFT_COORDS", "QUBIT_COORDS", "TICK"}:
+        elif op.name in SPECIAL_GATES:
             atomized_ops.append(op)
 
         # Handle 1-Qubit Gates & Measurements (Single targets)
