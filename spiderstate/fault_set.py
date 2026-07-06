@@ -122,9 +122,9 @@ class MixedFaultSet:
 
         self.mwr_calc = MWRCalculator(H_filter)
 
-        self.active_errors, self.targets, self.W_effs, self.fault_meta = self._generate(single_faults, H_filter)
+        self.active_errors, self.targets, self.W_effs, self.fault_meta = self._generate(single_faults)
 
-    def _generate(self, single_faults: PureFaultSet, H_filter: np.ndarray):
+    def _generate(self, single_faults: PureFaultSet):
         unique_components = []
         seen = set()
 

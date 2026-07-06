@@ -10,13 +10,13 @@ import stim
 from spiderstate.utils import count_operations, get_project_root
 
 CODES = ["7_1_3", "9_1_3", "15_1_3", "15_7_3", "12_2_4", "16_6_4", "17_1_5", "19_1_5", "25_1_5", "24_4_5", "20_2_6", "23_1_7"]
-# CODES = ["23_1_7"]
-CODES = ["37_1_7"]
+CODES = ["25_1_5"]
+# CODES = ["37_1_7"]
 HEURISTICS = ["overlap", "zero_tolerance", "weighted_syndrome"]
 # HEURISTICS = ["overlap"]
 FIRST_LAYERS = ["X"]
 NUM_RUNS_PER_LAYER = 1
-NUM_CIRCUITS = 1
+NUM_CIRCUITS = 25
 
 def get_best_count(code):
     path = get_project_root().joinpath("good_circuits", f"{code}.stim")

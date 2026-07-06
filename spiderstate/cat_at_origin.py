@@ -231,10 +231,6 @@ def _evaluate_configuration(
     final_M, col_ops, H_x, stabs_x, stabs_z, H_reduce_x, H_reduce_z, 
     t, d, top_n, first_layer, verbose, non_ft_penalty_factor
 ):
-    if verbose:
-        print(f"Cost of final M: {cnot_cost(final_M, t)}")
-        print(f"Chosen {len(col_ops)} CNOT gates: {col_ops}")
-
     circ = cat_at_origin(final_M, d)
     circ.append("TICK", [])
     for c, n in col_ops:
