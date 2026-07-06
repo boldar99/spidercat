@@ -29,6 +29,7 @@ import json
 
 class LutDecoder:
     def __init__(self, H, max_decodable_weight=None):
+        import math
         self.H = H
         self.m, self.n = self.H.shape
         self.max_weight = max_decodable_weight
@@ -36,8 +37,10 @@ class LutDecoder:
             self.max_weight = self.n  # Unbounded max weight
         self.powers_of_2 = 1 << np.arange(self.m)[::-1]
         self.lut_size = 1 << self.m
-        self.lut = np.zeros((self.lut_size, self.n), dtype=np.bool_)
-        self.can_correct = np.zeros(self.lut_size, dtype=np.bool_)
+        
+        self.packed_len = math.ceil(self.n / 8)
+        self.lut = np.zeros((self.lut_size, self.packed_len), dtype=np.uint8)
+        self.can_correct = np.zeros(math.ceil(self.lut_size / 8), dtype=np.uint8)
         self._build_table()
 
     def _syndrome_int(self, e):
@@ -46,8 +49,8 @@ class LutDecoder:
 
     def _build_table(self):
         e_zero = np.zeros(self.n, dtype=np.bool_)
-        self.lut[0] = e_zero
-        self.can_correct[0] = True
+        self.lut[0] = np.packbits(e_zero, bitorder='little')
+        self.can_correct[0] |= (1 << 0)
         if self.max_weight <= 0:
             return
 
@@ -69,17 +72,29 @@ class LutDecoder:
             for i in range(self.n):
                 if not e[i]:
                     new_s_int = s_int ^ H_cols[i]
-                    if not self.can_correct[new_s_int]:
+                    byte_idx = new_s_int >> 3
+                    bit_idx = new_s_int & 7
+                    
+                    if not (self.can_correct[byte_idx] & (1 << bit_idx)):
                         new_e = e.copy()
                         new_e[i] = True
-                        self.lut[new_s_int] = new_e
-                        self.can_correct[new_s_int] = True
+                        self.lut[new_s_int] = np.packbits(new_e, bitorder='little')
+                        self.can_correct[byte_idx] |= (1 << bit_idx)
                         filled_count += 1
                         queue.append((new_s_int, new_e, w + 1))
 
     def batch_decode_z(self, syndromes):
         s_ints = np.asarray(syndromes) @ self.powers_of_2
-        return self.lut[s_ints], self.can_correct[s_ints]
+        
+        byte_idxs = s_ints >> 3
+        bit_idxs = s_ints & 7
+        valid_mask = (self.can_correct[byte_idxs] & (1 << bit_idxs)) != 0
+        
+        packed_corrections = self.lut[s_ints]
+        unpacked = np.unpackbits(packed_corrections, axis=1, bitorder='little')
+        corrections = unpacked[:, :self.n].astype(np.bool_)
+        
+        return corrections, valid_mask
 
 
 # Globals to inherit via OS fork (Zero-Copy)
@@ -301,7 +316,7 @@ if __name__ == "__main__":
             for StrategyClass in strategies:
                 print(f"--- Benchmarking {code} with {StrategyClass.__name__} ---")
                 stats = benchmark_CAO_state_prep(
-                    code, reuse_strategy=StrategyClass(), num_samples=250_000_000
+                    code, reuse_strategy=StrategyClass(), num_samples=1_000_000_000
                 )
                 print(f"Logical Error Rate = {stats['logical_error_rate']:.4e}", end=";\t ")
                 print(f"Acceptance Rate = {stats['acceptance_rate']:.4f}", end=";\t ")
