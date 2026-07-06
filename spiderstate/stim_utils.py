@@ -225,10 +225,12 @@ def layered_ops_to_noisy_stim_circuit(
 
             circuit.append(op_name, targets)
 
-            if op_name in X_INITIALIZATIONS and p_init > 0:
-                circuit.append("Z_ERROR", targets, p_init)
-            elif op_name in Z_INITIALIZATIONS and p_init > 0:
-                circuit.append("X_ERROR", targets, p_init)
+            # if op_name in X_INITIALIZATIONS and p_init > 0:
+            #     circuit.append("Z_ERROR", targets, p_init)
+            # elif op_name in Z_INITIALIZATIONS and p_init > 0:
+            #     circuit.append("X_ERROR", targets, p_init)
+            if (op_name in Z_MEASUREMENTS or op_name in Z_INITIALIZATIONS) and p_meas > 0:
+                circuit.append("DEPOLARIZE1", targets, p_init)
             elif op_name in TWO_QUBIT_GATES and p_2 > 0:
                 circuit.append("DEPOLARIZE2", targets, p_2)
             elif op_name not in SPECIAL_GATES and p_1 > 0:
@@ -255,10 +257,10 @@ def make_stim_circ_noisy(circ: stim.Circuit, p: float, one_cnot_per_layer: bool=
     noisy_circ, mm = layered_ops_to_noisy_stim_circuit(
         layered_ops=layered_ops,
         num_qubits=circ.num_qubits,
-        p_1=0,
+        p_1=p,
         p_2=p,
-        p_init=(2 / 3) * p,
-        p_meas=(2 / 3) * p,
+        p_init=p,
+        p_meas=p,
         p_mem=p / 100
     )
     return noisy_circ, mm

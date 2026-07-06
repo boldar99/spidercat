@@ -3,7 +3,7 @@ import itertools
 import numpy as np
 import stim
 
-from spidercat.circuit_extraction import make_stim_circ_noisy
+from spiderstate.stim_utils import make_stim_circ_noisy
 from spidercat.simulate import _layer_cnot_circuit
 from spiderstate.cat_at_origin import row_optimized_cat_at_origin
 from spiderstate.utils import load_qecc, MQT_simp_QECCS
@@ -51,7 +51,7 @@ def benchmark_CAO_state_prep(code: str, p=0.001, num_samples=100_000_000):
     else:
         print("State: |0>")
     circ = row_optimized_cat_at_origin(H_z, d, max_basis_tries=25_000)
-    noisy_circ = make_stim_circ_noisy(circ, p)
+    noisy_circ, _ = make_stim_circ_noisy(circ, p, one_cnot_per_layer=True)
 
     noisy_circ.append("M", range(H_x.shape[1]))
 
@@ -120,7 +120,7 @@ if __name__ == "__main__":
     for method_name, code_iterator in methods.items():
         for code in code_iterator():
             LER, AR, num_cx, num_flags, num_qubits, num_sim_qubits, depth = benchmark_CAO_state_prep(
-                code, num_samples=1_000_000
+                code, num_samples=10_000_000
             )
             print(f"Logical Error Rate = {LER:.4e}", end=";\t ")
             print(f"Acceptance Rate = {AR:.4f}", end=";\t ")
