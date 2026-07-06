@@ -2,3 +2,5 @@
 .python-version
 __pycache__/
 .ipynb_checkpoints/
+out/
+spiderstate/good_circuits/tmp_ft_circ.stim
