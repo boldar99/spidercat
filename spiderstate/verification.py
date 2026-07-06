@@ -4,7 +4,6 @@ from pprint import pprint
 import galois
 from itertools import combinations
 from typing import Callable
-from scipy.spatial.distance import cdist
 
 import numpy as np
 from tqdm import tqdm
@@ -357,78 +356,9 @@ def find_lookahead_verification_stabilizers(
     # SCORING & PRUNING
     valid_beam = []
     from spiderstate.cnot_scheduler import DangerousFault, schedule_all_verification_layers
-    num_qubits = active_errors.shape[2] if len(active_errors) > 0 else 0
-
-    # Precompute T_E_Q for unique final_data and k combinations ONCE before scoring candidates
     if verbose:
         print("Computing T_E_Q...")
-    unique_final_data_keys = {}
-    for i in range(num_mixed_faults):
-        T_E = targets[i]
-        if T_E <= 0:
-            continue
-        k = fault_meta[i]["weight"]
-        final_data = fault_meta[i]["final_data"]
-        key = (tuple(final_data), k, T_E)
-        if key not in unique_final_data_keys:
-            unique_final_data_keys[key] = []
-        unique_final_data_keys[key].append(i)
-        
-    precomputed_T_E_Q = {}
-    import itertools
-    
-    all_combs_list = []
-    key_to_slices = {}
-    current_idx = 0
-    
-    for key in unique_final_data_keys:
-        final_data_tuple, k, T_E = key
-        final_data = np.array(final_data_tuple, dtype=np.int8)
-        T_E_Q = {(): int(T_E)}
-        
-        key_combs = []
-        combs_meta = []
-        for size in range(1, t - k + 1):
-            combs = list(itertools.combinations(range(num_qubits), size))
-            if not combs:
-                continue
-            combs_array = np.zeros((len(combs), num_qubits), dtype=np.int8)
-            for c_idx, comb in enumerate(combs):
-                combs_array[c_idx] = final_data
-                for q in comb:
-                    combs_array[c_idx, q] ^= 1
-            key_combs.append(combs_array)
-            combs_meta.append((size, combs))
-            
-        if key_combs:
-            stacked_combs = np.vstack(key_combs)
-            n_combs = len(stacked_combs)
-            all_combs_list.append(stacked_combs)
-            key_to_slices[key] = (current_idx, current_idx + n_combs, combs_meta)
-            current_idx += n_combs
-        else:
-            precomputed_T_E_Q[key] = T_E_Q
-            
-    if all_combs_list:
-        giant_combs_array = np.vstack(all_combs_list)
-        giant_reps = compute_minimum_weight_representatives(giant_combs_array, H_filter)
-        giant_weffs = np.sum(giant_reps, axis=1)
-        
-        for key in key_to_slices:
-            final_data_tuple, k, T_E = key
-            start_idx, end_idx, combs_meta = key_to_slices[key]
-            key_weffs = giant_weffs[start_idx:end_idx]
-            
-            T_E_Q = {(): int(T_E)}
-            offset = 0
-            for size, combs in combs_meta:
-                n_c = len(combs)
-                weff_combs = key_weffs[offset : offset + n_c]
-                t_e_combs = np.minimum(weff_combs - (k + size), t - (k + size) + 1)
-                for c_idx, comb in enumerate(combs):
-                    T_E_Q[comb] = int(t_e_combs[c_idx])
-                offset += n_c
-            precomputed_T_E_Q[key] = T_E_Q
+    precomputed_T_E_Q = mixed_faults.precompute_T_E_Q()
 
     if verbose:
         print("Finding the best circuits in the beam...")
@@ -437,7 +367,6 @@ def find_lookahead_verification_stabilizers(
         chosen_layers = cand[1]
         
         target_coverage_violations = []
-        dangerous_faults = []
         
         unsat_mask = det_counts < targets
         if np.any(unsat_mask):
@@ -451,81 +380,8 @@ def find_lookahead_verification_stabilizers(
                         "violation_amount": int(targets[idx] - det_counts[idx]),
                         "type": "target_coverage"
                     })
-            
-        # Precompute syndromes for ALL faults across ALL chosen layers in a vectorized manner
-        D_E_all = [set() for _ in range(num_mixed_faults)]
-        D_eq_L_E_counts_all = np.zeros((num_mixed_faults, t), dtype=int)
-        
-        for l_idx, layer in enumerate(chosen_layers):
-            if len(layer) == 0:
-                continue
-            layer_matrix = np.vstack(layer).astype(np.int8)
-            syn_all = np.array(active_errors_gf2[:, l_idx, :] @ GF2(layer_matrix).T, dtype=np.int8)
-            
-            fault_indices, stab_indices = np.nonzero(syn_all)
-            for f_idx, s_idx in zip(fault_indices, stab_indices):
-                D_E_all[f_idx].add((l_idx, s_idx))
-                D_eq_L_E_counts_all[f_idx, l_idx] += 1
-                
-        for i in range(num_mixed_faults):
-            T_E = targets[i]
-            if T_E <= 0:
-                continue
-                
-            D_E = D_E_all[i]
-            D_eq_L_E_counts = D_eq_L_E_counts_all[i]
-                        
-            key = (tuple(fault_meta[i]["final_data"]), fault_meta[i]["weight"], T_E)
-            T_E_Q = precomputed_T_E_Q[key]
-            
-            # Filter: we only need to pass this fault if there is SOME layer L and SOME Q 
-            # where M_E_Q < |D_{=L}(E)|.
-            # M_E_Q = |D_E| - |D_{>L}(E)| + |syn_{>L}(E \oplus Q)| - T_E_Q
-            # |syn_{>L}(E \oplus Q)| = |D_{>L}(E) \oplus syn_{>L}(Q)|
-            
-            is_dangerous = False
-            for L in range(len(chosen_layers)):
-                abs_D_eq_L = D_eq_L_E_counts[L]
-                abs_D_gt_L = sum(D_eq_L_E_counts[L+1:])
-                
-                # Check if ANY Q violates M_E_Q >= |D_{=L}|
-                for Q, req in T_E_Q.items():
-                    # Calculate syn_{>L}(Q)
-                    syn_gt_L_Q = set()
-                    for q in Q:
-                        for l_idx in range(L + 1, len(chosen_layers)):
-                            for s_idx, st in enumerate(chosen_layers[l_idx]):
-                                if q in np.nonzero(st)[0]:
-                                    if (l_idx, s_idx) in syn_gt_L_Q:
-                                        syn_gt_L_Q.remove((l_idx, s_idx))
-                                    else:
-                                        syn_gt_L_Q.add((l_idx, s_idx))
-                                        
-                    D_gt_L = { (l_idx, s_idx) for (l_idx, s_idx) in D_E if l_idx > L }
-                    xor_set = D_gt_L.symmetric_difference(syn_gt_L_Q)
-                    M_E_Q = len(D_E) - abs_D_gt_L + len(xor_set) - req
                     
-                    if M_E_Q < abs_D_eq_L:
-                        is_dangerous = True
-                        break
-                if is_dangerous:
-                    break
-                    
-            if is_dangerous:
-                dangerous_faults.append(DangerousFault(frozenset(D_E), T_E_Q))
-                    
-        df_dict = {}
-        for df in dangerous_faults:
-            if df.D_E not in df_dict:
-                df_dict[df.D_E] = df.T_E_Q.copy()
-            else:
-                for Q in df.T_E_Q:
-                    if Q not in df_dict[df.D_E]:
-                        df_dict[df.D_E][Q] = df.T_E_Q[Q]
-                    else:
-                        df_dict[df.D_E][Q] = max(df_dict[df.D_E][Q], df.T_E_Q[Q])
-                    
-        unique_dfs = [DangerousFault(D_E, T_E_Q) for D_E, T_E_Q in df_dict.items()]
+        unique_dfs = mixed_faults.find_dangerous_faults(chosen_layers, precomputed_T_E_Q)
         
         layers_qubits = []
         for layer in chosen_layers:

@@ -3,6 +3,8 @@ from collections import deque
 import galois
 import numpy as np
 from tqdm import tqdm
+import itertools
+from spiderstate.cnot_scheduler import DangerousFault
 
 
 class PureFaultSet:
@@ -220,3 +222,149 @@ class MixedFaultSet:
             return np.empty((0, self.t, self.N), dtype=np.int8), np.array([]), np.array([]), []
 
         return np.array(valid_active_errors), np.array(valid_targets), np.array(valid_Weffs), valid_meta
+
+    def precompute_T_E_Q(self) -> dict:
+        unique_final_data_keys = {}
+        num_mixed_faults = len(self.active_errors)
+        for i in range(num_mixed_faults):
+            T_E = self.targets[i]
+            if T_E <= 0:
+                continue
+            k = self.fault_meta[i]["weight"]
+            final_data = self.fault_meta[i]["final_data"]
+            key = (tuple(final_data), k, T_E)
+            if key not in unique_final_data_keys:
+                unique_final_data_keys[key] = []
+            unique_final_data_keys[key].append(i)
+            
+        precomputed_T_E_Q = {}
+        all_combs_list = []
+        key_to_slices = {}
+        current_idx = 0
+        
+        for key in unique_final_data_keys:
+            final_data_tuple, k, T_E = key
+            final_data = np.array(final_data_tuple, dtype=np.int8)
+            T_E_Q = {(): int(T_E)}
+            
+            key_combs = []
+            combs_meta = []
+            for size in range(1, self.t - k + 1):
+                combs = list(itertools.combinations(range(self.N), size))
+                if not combs:
+                    continue
+                combs_array = np.zeros((len(combs), self.N), dtype=np.int8)
+                for c_idx, comb in enumerate(combs):
+                    combs_array[c_idx] = final_data
+                    for q in comb:
+                        combs_array[c_idx, q] ^= 1
+                key_combs.append(combs_array)
+                combs_meta.append((size, combs))
+                
+            if key_combs:
+                stacked_combs = np.vstack(key_combs)
+                n_combs = len(stacked_combs)
+                all_combs_list.append(stacked_combs)
+                key_to_slices[key] = (current_idx, current_idx + n_combs, combs_meta)
+                current_idx += n_combs
+            else:
+                precomputed_T_E_Q[key] = T_E_Q
+                
+        if all_combs_list:
+            giant_combs_array = np.vstack(all_combs_list)
+            giant_reps = self.mwr_calc.get_mwr_batch(giant_combs_array)
+            giant_weffs = np.sum(giant_reps, axis=1)
+            
+            for key in key_to_slices:
+                final_data_tuple, k, T_E = key
+                start_idx, end_idx, combs_meta = key_to_slices[key]
+                key_weffs = giant_weffs[start_idx:end_idx]
+                
+                T_E_Q = {(): int(T_E)}
+                offset = 0
+                for size, combs in combs_meta:
+                    n_c = len(combs)
+                    weff_combs = key_weffs[offset : offset + n_c]
+                    t_e_combs = np.minimum(weff_combs - (k + size), self.t - (k + size) + 1)
+                    for c_idx, comb in enumerate(combs):
+                        T_E_Q[comb] = int(t_e_combs[c_idx])
+                    offset += n_c
+                precomputed_T_E_Q[key] = T_E_Q
+
+        return precomputed_T_E_Q
+
+    def find_dangerous_faults(self, chosen_layers: list[list[np.ndarray]], precomputed_T_E_Q: dict) -> list[DangerousFault]:
+        num_mixed_faults = len(self.active_errors)
+        if num_mixed_faults == 0:
+            return []
+            
+        GF2 = galois.GF(2)
+        active_errors_gf2 = GF2(self.active_errors)
+        
+        D_E_all = [set() for _ in range(num_mixed_faults)]
+        D_eq_L_E_counts_all = np.zeros((num_mixed_faults, self.t), dtype=int)
+        
+        for l_idx, layer in enumerate(chosen_layers):
+            if len(layer) == 0:
+                continue
+            layer_matrix = np.vstack(layer).astype(np.int8)
+            syn_all = np.array(active_errors_gf2[:, l_idx, :] @ GF2(layer_matrix).T, dtype=np.int8)
+            
+            fault_indices, stab_indices = np.nonzero(syn_all)
+            for f_idx, s_idx in zip(fault_indices, stab_indices):
+                D_E_all[f_idx].add((l_idx, s_idx))
+                D_eq_L_E_counts_all[f_idx, l_idx] += 1
+                
+        dangerous_faults = []
+        for i in range(num_mixed_faults):
+            T_E = self.targets[i]
+            if T_E <= 0:
+                continue
+                
+            D_E = D_E_all[i]
+            D_eq_L_E_counts = D_eq_L_E_counts_all[i]
+                        
+            key = (tuple(self.fault_meta[i]["final_data"]), self.fault_meta[i]["weight"], T_E)
+            T_E_Q = precomputed_T_E_Q[key]
+            
+            is_dangerous = False
+            for L in range(len(chosen_layers)):
+                abs_D_eq_L = D_eq_L_E_counts[L]
+                abs_D_gt_L = sum(D_eq_L_E_counts[L+1:])
+                
+                for Q, req in T_E_Q.items():
+                    syn_gt_L_Q = set()
+                    for q in Q:
+                        for l_idx in range(L + 1, len(chosen_layers)):
+                            for s_idx, st in enumerate(chosen_layers[l_idx]):
+                                if q in np.nonzero(st)[0]:
+                                    if (l_idx, s_idx) in syn_gt_L_Q:
+                                        syn_gt_L_Q.remove((l_idx, s_idx))
+                                    else:
+                                        syn_gt_L_Q.add((l_idx, s_idx))
+                                        
+                    D_gt_L = { (l_idx, s_idx) for (l_idx, s_idx) in D_E if l_idx > L }
+                    xor_set = D_gt_L.symmetric_difference(syn_gt_L_Q)
+                    M_E_Q = len(D_E) - abs_D_gt_L + len(xor_set) - req
+                    
+                    if M_E_Q < abs_D_eq_L:
+                        is_dangerous = True
+                        break
+                if is_dangerous:
+                    break
+                    
+            if is_dangerous:
+                dangerous_faults.append(DangerousFault(frozenset(D_E), T_E_Q))
+                    
+        df_dict = {}
+        for df in dangerous_faults:
+            if df.D_E not in df_dict:
+                df_dict[df.D_E] = df.T_E_Q.copy()
+            else:
+                for Q in df.T_E_Q:
+                    if Q not in df_dict[df.D_E]:
+                        df_dict[df.D_E][Q] = df.T_E_Q[Q]
+                    else:
+                        df_dict[df.D_E][Q] = max(df_dict[df.D_E][Q], df.T_E_Q[Q])
+                    
+        return [DangerousFault(D_E, T_E_Q) for D_E, T_E_Q in df_dict.items()]
