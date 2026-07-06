@@ -207,7 +207,8 @@ def compute_minimum_weight_representatives(faults: np.ndarray, stabs: np.ndarray
 
     print(f"{k=} and {faults.shape=}")
 
-    if k <= 15:
+    # TODO: This is temporaraly 10 from 15 because the other method is faster,
+    if k <= 10:
         all_stabs = []
         for i in range(1 << k):
             comb = [j for j in range(k) if (i >> j) & 1]
@@ -223,6 +224,8 @@ def compute_minimum_weight_representatives(faults: np.ndarray, stabs: np.ndarray
         for i in tqdm(range(0, len(faults), batch_size), desc="Finding minimum weight representatives of faults (using LUT)"):
             batch = faults[i:i+batch_size]
 
+            # TODO: why do we need cdist? We have a complete list of stabilizers
+            # We can turn the stabs to an into and index the list.
             dist = cdist(batch, all_stabs, metric='cityblock')
             min_idx = np.argmin(dist, axis=1)
             reps[i:i+batch_size] = (batch + all_stabs[min_idx]) % 2
@@ -319,7 +322,17 @@ def _generate_unified_active_errors(
     weights_list = []
     
     for k in range(1, t + 1):
-        for combo in itertools.combinations(unique_components, k):
+        # TODO: Faster fault combinations and smaller footprint
+        #
+        # The current implementation uses itertools.combinations to generate any
+        # combination of unique faults. For larger distances (>= 9) and large fault
+        # sets very slow. It would be better to instead generate the combination of
+        # k-faults from k-1 fault combined with 1 fault. Because we will have to find
+        # the minimum weight of all faults, we also actually find their minimum weight
+        # representative (MWR) afterwards. Therefore, it would be more efficient to
+        # calculate the MWR for each fault as they are generated, and filter out
+        # duplicates.
+        for combo in tqdm(itertools.combinations(unique_components, k)):
             final_data = np.zeros(N, dtype=np.int8)
             for f, L in combo:
                 final_data ^= f
@@ -390,6 +403,12 @@ def find_lookahead_verification_stabilizers(
     costs = np.array([cost_fn(w, t) for w in np.sum(candidate_stabs, axis=1)])
     print("Found {} stabilizers".format(len(candidate_stabs)))
 
+    # TODO: Cleaner fault management
+    #
+    # Because we have so many details we need to keep track of related to faults,
+    # and also quite a lot of methods to deal with these, we should have a custom
+    # class (FaultSet) that wraps all these together. This class should be in a
+    # saparate file.
     active_errors, targets, W_effs, T_E_q_matrix, fault_meta = _generate_unified_active_errors(single_faults, t, H_filter)
     num_mixed_faults = len(active_errors)
     print("Found {} active errors".format(num_mixed_faults))
@@ -403,6 +422,9 @@ def find_lookahead_verification_stabilizers(
     initial_detections = np.zeros(num_mixed_faults, dtype=int)
     beam = [(0.0, [], [], initial_detections)]
 
+    # TODO: Somehow the first layer is always quite slow and then everythign else
+    # is super speedy. Why is that? Can we do better? Is the whole computation
+    # dependant on the first greedy cover?
     for layer_idx in range(t):
         next_beam_candidates = []
         
@@ -439,12 +461,10 @@ def find_lookahead_verification_stabilizers(
             cov_matrix = np.array(candidate_stabs_gf2 @ GF2(surviving_faults).T, dtype=bool)
             num_uncoverable = np.sum(~np.any(cov_matrix, axis=0))
             realized_cost += num_uncoverable * 1000
-            print("Cov matrix done")
-                
+
             candidate_covers = _solve_top_n_weighted_set_covers(
                 surviving_faults, stabs, t, max_combinations, max_time_sec, top_n, target_coverage=capped_targets
             )
-            print("Cand. covers done")
 
             if not candidate_covers:
                 penalty = 1000 * len(surviving_faults)

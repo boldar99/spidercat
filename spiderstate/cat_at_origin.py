@@ -195,8 +195,10 @@ def cat_at_origin_with_verification(
         
     unique_matrices = {}
 
-    if verbose:
+    if verbose and num_circuits > 1:
         pbar = tqdm(total=num_circuits, desc="Finding unique matrix configuration")
+    if verbose and num_circuits == 1:
+        print("Finding unique matrix configuration")
     
     for run_idx in range(num_circuits):
         row_M, final_M, col_ops = optimize_fault_tolerant_matrix(
@@ -208,7 +210,7 @@ def cat_at_origin_with_verification(
         m_tup = tuple(final_M.flatten())
         if m_tup not in unique_matrices:
             unique_matrices[m_tup] = (final_M, col_ops)
-            if verbose:
+            if verbose and num_circuits > 1:
                 pbar.update(1)
 
     if verbose and num_circuits > 1:
@@ -249,7 +251,11 @@ def cat_at_origin_with_verification(
         def non_ft_cost_fn(w: int, t: int) -> float:
             return w + non_ft_penalty_factor * 2 * minimum_number_of_flags(w, t)
         
-        
+        # TODO: clean up implementation
+        #
+        # The current implementation is super repetitive. This can be significant
+        # cleaner by extracting methods doing bare ancilla and FT syndrome measurement
+        # search.
         if first_layer == "X":
             if verbose: print("\n--- X Faults Verification (Non-FT) ---")
             ver_x_stabs_layers, dfs_x, ticks_x, violations_x = find_lookahead_verification_stabilizers(
@@ -340,7 +346,7 @@ def cat_at_origin_with_verification(
                     stabs_qubits.append(qubits)
                 
                 layer_violations = [v for v in viol_x if v["layer"] == i]
-                phase_circ, ancilla_start = synthesize_and_merge_layer(
+                phase_circ = synthesize_and_merge_layer(
                     phase_circ,
                     stabs_qubits, 
                     t_x[i],
@@ -362,7 +368,7 @@ def cat_at_origin_with_verification(
                     stabs_qubits.append(qubits)
 
                 layer_violations = [v for v in viol_z if v["layer"] == i]
-                phase_circ, ancilla_start = synthesize_and_merge_layer(
+                phase_circ = synthesize_and_merge_layer(
                     phase_circ,
                     stabs_qubits, 
                     t_z[i],

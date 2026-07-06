@@ -7,6 +7,11 @@ class DangerousFault:
     D_E: frozenset[tuple[int, int]]
     T_E_Q: dict[tuple[int, ...], int]
 
+
+# TODO: clean up implementation
+#
+# The current scheduler is all done in a single function. We should aim
+# for a clean implementation with nice sub-routines.
 def schedule_all_verification_layers(
     layers: list[list[list[int]]], 
     dangerous_faults: list[DangerousFault]
@@ -99,7 +104,12 @@ def schedule_all_verification_layers(
                     # All possible injection points for each q in Q
                     # A fault can be injected BEFORE any stabilizer s_j that interacts with it
                     injection_choices = [qubit_to_stabs.get(q, [-1]) for q in Q_list]
-                    
+                    # TODO: sometimes we get Injection Points with -1 being included.
+                    # This sometimes produces a non-FT circuit because I reckon it cannot flag it.
+                    # How is it even possible? Should it not be severly penalized from the start
+                    # so that we don't end up with a circuit where no matter what, a fault cannot be
+                    # flagged? Or is it more like this means that we need a flag in the previous layer?
+
                     for J in itertools.product(*injection_choices):
                         sum_expr = []
                         for s_i in stabs_Q:

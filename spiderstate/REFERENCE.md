@@ -53,9 +53,6 @@ The project is split into two main packages, `spidercat` and `spiderstate`.
     *   `circuit_merger`: Acts as the final assembler. It takes the scheduled CNOTs and chosen stabilizers, injects physical flags around unschedulable data CNOTs, and merges everything into the final `stim.Circuit`.
     *   *(Note: `spiderstate.circuit_finder` and `spiderstate.between_shor_and_steane` contain methods for synthesizing particular syndrome measurement circuits, but they are not necessary for the main pipeline. We use `cnot_scheduler` instead.)*
 
-*   **Fast Fault Analysis (`spiderstate.fast_faults`)**
-    *   `FastFaultSet`: A wrapper of `PureFaultSet` that uses a lookup table and caching instead of a SAT solver for much faster execution.
-
 *   **State Generation (`spiderstate.cat_at_origin`)**
     *   `cat_at_origin`: A "black box" method that takes the parity check matrix and distance, returning a `stim.Circuit` that always produces a provably FT state for any CSS state (though not necessarily optimally). -> cnot_cost and ancilla_cost calculates the cost for this method.
     *   **`cat_at_origin_with_verification`**: The **primary end-to-end execution method** that combines state preparation and verification into a complete protocol.
