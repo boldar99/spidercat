@@ -10,6 +10,9 @@ def get_state(code):
         return r"$\ket{\overline{+}}$"
     return r"$\ket{\overline{0}}$"
 
+def escape_percentage(p):
+    return f"{p:.2%}".replace("%", "\\%")
+
 def main():
     results_dir = "simulation_results"
     json_files = glob.glob(os.path.join(results_dir, "*.json"))
@@ -38,11 +41,11 @@ def main():
     
     print("\\begin{table*}[t]")
     print("\\centering")
-    print("\\small")
+    print("\\scriptsize")
     # Using 9 columns since CXs is its own column
     print("\\begin{tabular}{l c c c c c c c c}")
     print("\\toprule")
-    print("\\makecell[l]{QEC Code \\\\ \\& State} & \\makecell{CX \\\\ Count} & \\makecell{Flag \\\\ Count} & \\makecell{Reuse \\\\ Strategy} & \\makecell{Sim. \\\\ Qubits} & Depth & \\makecell{Expected \\\\ Circ. Volume} & \\makecell{Log. Error \\\\ Rate} & \\makecell{Acceptance \\\\ Rate} \\\\")
+    print("\\makecell[l]{QEC Code \\\\ \\& State} & \\makecell{CX \\\\ Count} & \\makecell{Flag \\\\ Count} & \\makecell{Reuse \\\\ Strategy} & \\makecell{Sim.\\@ \\\\ Qubits} & Depth & \\makecell{Exp.\\@ Circ.\\@ \\\\ Volume} & \\makecell{Log.\\@ Error \\\\ Rate} & \\makecell{Acc.\\@ \\\\ Rate} \\\\")
     print("\\midrule")
     
     for code_raw, group in grouped_data:
@@ -78,7 +81,7 @@ def main():
             if len(ler_str) == 2:
                 base = ler_str[0]
                 exp = int(ler_str[1])
-                ler_latex = f"${base} \\times 10^{{{exp}}}$"
+                ler_latex = f"${base}\\! \\times\\! 10^{{{exp}}}$"
             else:
                 ler_latex = f"${ler}$"
                 
@@ -89,7 +92,7 @@ def main():
             second_col = multirow_cx if i == 0 else ""
             third_col = multirow_flags if i == 0 else ""
             
-            print(f"{first_col} & {second_col} & {third_col} & {strategy} & {sim_qubits} & {depth} & {vol} & {ler_latex} & {ar:.4f} \\\\")
+            print(f"{first_col} & {second_col} & {third_col} & {strategy} & {sim_qubits} & {depth} & {vol} & {ler_latex} & {escape_percentage(ar)} \\\\")
             
         # Optional line between different codes for clean grouping
         print("\\midrule")
