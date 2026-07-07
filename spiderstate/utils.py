@@ -295,20 +295,7 @@ def get_project_root() -> Path:
 
 
 def load_qecc(code: str, method: str | None = None):
-    root = get_project_root()
-    code_file = f"{code}.json"
-    if method is None:
-        for lib in os.listdir(root.joinpath("qeccs")):
-            if code_file in os.listdir(root.joinpath("qeccs", lib)):
-                method = lib
-                break
-        else:
-            raise FileNotFoundError(code)
-
-    file = root.joinpath("qeccs", method, f"{code}.json")
-
-    with open(file, "r") as f:
-        data = json.load(f)
+    data = load_qecc_data(code, method)
 
     is_self_dual = data["is_self_dual"]
     H_x, H_z = data.get("H_x"), data.get("H_z")
@@ -325,6 +312,23 @@ def load_qecc(code: str, method: str | None = None):
     return False, np.array(H_x, dtype=np.int8), np.array(H_z, dtype=np.int8), np.array(L_x, dtype=np.int8), np.array(L_z, dtype=np.int8), data["d"]
 
 
+def load_qecc_data(code: str, method: str | None = None) -> dict:
+    root = get_project_root()
+    code_file = f"{code}.json"
+    if method is None:
+        for lib in os.listdir(root.joinpath("qeccs")):
+            if code_file in os.listdir(root.joinpath("qeccs", lib)):
+                method = lib
+                break
+        else:
+            raise FileNotFoundError(code)
+
+    file = root.joinpath("qeccs", method, f"{code}.json")
+
+    with open(file, "r") as f:
+        return json.load(f)
+
+
 def code_sort_key(code: str):
     n, k, dplus = code.split("_")
     return int(dplus[:-5]), int(n)
@@ -337,17 +341,10 @@ def FAO_QECCS():
         yield file_name[:-5]
 
 
-def MQT_QECCS():
-    root = get_project_root()
-    fao = root.joinpath("qeccs", "MQT")
-    for file_name in sorted(os.listdir(fao), key=code_sort_key):
-        yield file_name[:-5]
-
-
-def MQT_simp_QECCS():
+def FAO_simp_QECCS():
     yield from [
         "7_1_3",
-        "9_1_3_surface",
+        "9_1_3",
         "17_1_5",
         "25_1_5",
         "20_2_6",
@@ -357,6 +354,14 @@ def MQT_simp_QECCS():
         "49_1_9",
         "47_1_11",
     ]
+
+
+def MQT_QECCS():
+    root = get_project_root()
+    fao = root.joinpath("qeccs", "MQT")
+    for file_name in sorted(os.listdir(fao), key=code_sort_key):
+        yield file_name[:-5]
+
 
 
 def count_operations(circ: stim.Circuit) -> tuple[int, int]:

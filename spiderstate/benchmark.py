@@ -16,7 +16,7 @@ import galois
 from spiderstate.stim_utils import make_stim_circ_noisy
 from spidercat.simulate import _layer_cnot_circuit
 from spiderstate.cat_at_origin import row_optimized_cat_at_origin
-from spiderstate.utils import load_qecc, MQT_simp_QECCS
+from spiderstate.utils import load_qecc, FAO_simp_QECCS
 from spiderstate.qubit_reuse import (
     build_circuit_dag,
     inject_qubit_reuse,
@@ -153,7 +153,7 @@ def benchmark_CAO_state_prep(code: str, reuse_strategy, p=0.001, num_samples=100
     random.seed(seed_val)
     np.random.seed(seed_val)
 
-    is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code)
+    is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code, "FAO")
     if code in ("49_1_5", "95_1_7"):
         print(f"State: |+> (Code {code})")
         H_x, H_z = H_z, H_x
@@ -306,7 +306,7 @@ def benchmark_CAO_state_prep(code: str, reuse_strategy, p=0.001, num_samples=100
 
 
 if __name__ == "__main__":
-    methods = {"MQT": MQT_simp_QECCS}
+    methods = {"MQT": FAO_simp_QECCS}
     strategies = [
         PureAggressiveStrategy,
         DepthPreservingStrategy,
