@@ -1,3 +1,4 @@
+import galois
 from pprint import pprint
 
 import numpy as np
@@ -70,26 +71,6 @@ def ancilla_cost(M: np.ndarray, t: int) -> int:
 
 
 # --- OPTIMIZATION FUNCTIONS ---
-
-def invert_mod2(matrix: np.ndarray) -> np.ndarray:
-    """Inverts a square matrix over GF(2) using Gauss-Jordan elimination. Returns None if singular."""
-    n = matrix.shape[0]
-    A = np.hstack([matrix, np.eye(n, dtype=int)]) % 2
-    for i in range(n):
-        pivot = -1
-        for j in range(i, n):
-            if A[j, i] == 1:
-                pivot = j
-                break
-        if pivot == -1:
-            return None
-        if pivot != i:
-            A[[i, pivot]] = A[[pivot, i]]
-        for j in range(n):
-            if i != j and A[j, i] == 1:
-                A[j] = (A[j] + A[i]) % 2
-    return A[:, n:]
-
 def has_unique_ones_property(M: np.ndarray) -> bool:
     """Checks if each row has a '1' that is the unique '1' in its column."""
     col_sums = np.sum(M, axis=0)
@@ -98,34 +79,46 @@ def has_unique_ones_property(M: np.ndarray) -> bool:
     found_rows = np.unique(np.argmax(M[:, cols_with_one], axis=0))
     return len(found_rows) == M.shape[0]
 
-def row_optimize_matrix(M: np.ndarray, t: int, max_basis_tries: int = 1_000) -> np.ndarray:
+
+def row_optimize_matrix(M: np.ndarray, t: int, max_basis_tries: int = 1_000) -> tuple[float, np.ndarray]:
     r, c = M.shape
+    
+    GF2 = galois.GF(2)
+    A = GF2(M).row_reduce()
+    k = np.sum(np.any(A, axis=1))
 
     # --- PHASE 1: Row Operations (Find best basis) ---
     best_row_op_M = None
     best_row_op_cost = float('inf')
+    if has_unique_ones_property(M):
+        best_row_op_M = M
+        best_row_op_cost = cnot_cost(M, t)
 
     valid_bases = 0
     attempts = 0
+    
+    cols_arr = np.arange(c)
 
     while valid_bases < max_basis_tries and attempts < max_basis_tries * 5:
         attempts += 1
-        cols = random.sample(range(c), r)
-        submatrix = M[:, cols]
+        np.random.shuffle(cols_arr)
+        
+        A_perm = GF2(M[:, cols_arr]).row_reduce()
+        A_k_perm = np.array(A_perm[:k])
+        
+        inv_cols = np.empty_like(cols_arr)
+        inv_cols[cols_arr] = np.arange(c)
+        M_new = A_k_perm[:, inv_cols]
 
-        inv_sub = invert_mod2(submatrix)
-        if inv_sub is not None:
+        if has_unique_ones_property(M_new):
             valid_bases += 1
-            M_new = (inv_sub @ M) % 2
-
-            if has_unique_ones_property(M_new):
-                cost = cnot_cost(M_new, t)
-                if cost < best_row_op_cost:
-                    best_row_op_cost = cost
-                    best_row_op_M = M_new.copy()
+            cost = cnot_cost(M_new, t)
+            if cost < best_row_op_cost:
+                best_row_op_cost = cost
+                best_row_op_M = M_new.copy()
 
     if best_row_op_M is None:
-        raise ValueError("Could not find a full-rank submatrix.")
+        raise ValueError("Could not find any valid matrix representation.")
 
     matrix_after_row_ops = best_row_op_M.copy()
     return best_row_op_cost, matrix_after_row_ops
@@ -153,7 +146,7 @@ def optimize_fault_tolerant_matrix(
     - col_ops_performed (list of tuples: (target, source))
     If return_portfolio is True, returns (matrix_after_row_ops, portfolio) where portfolio is a list of (M, col_ops)
     """
-    best_row_op_cost, matrix_after_row_ops = row_optimize_matrix(M, t, 5000)
+    best_row_op_cost, matrix_after_row_ops = row_optimize_matrix(M, t, max_basis_tries)
     c = M.shape[1]
 
     if stabs_X is None and H_x is not None:
@@ -261,7 +254,7 @@ def optimize_fault_tolerant_matrix(
 
 # Example Execution
 if __name__ == "__main__":
-    is_self_dual, H_z, H_x, L_x, L_z, d = load_qecc("12_2_4")
+    is_self_dual, H_z, H_x, L_x, L_z, d = load_qecc("49_1_7")
     t = d // 2
 
     # We want H_reduce_X to reduce X faults, so it must be X-type stabilizers.
@@ -269,7 +262,7 @@ if __name__ == "__main__":
     H_reduce_X = H_x
     H_reduce_Z = H_z
 
-    row_M, final_M, col_ops = optimize_fault_tolerant_matrix(H_x, t=t, max_col_ops=0, max_basis_tries=10_000, H_reduce_X=H_reduce_X, H_reduce_Z=H_reduce_Z)
+    _, row_M = row_optimize_matrix(H_x, t=t, max_basis_tries=10_000)
     # row_M = pivot_optimize_parity_matrix(H_x, t=t, max_basis_tries=100_000)
 
 
@@ -294,13 +287,13 @@ if __name__ == "__main__":
         print(f"{row[-1]}],")
     print("])")
 
-    print(f"After Row & Column Operations:")
-    print(f"Column Operations Applied (target, source): {col_ops}")
-    print(f"CNOT cost (t={t}): {cnot_cost(final_M, t)}")
-    print("np.array([")
-    for row in final_M:
-        print("  [", end="")
-        for r in row[:-1]:
-            print(f"{r}, ", end="")
-        print(f"{row[-1]}],")
-    print("])")
+    # print(f"After Row & Column Operations:")
+    # print(f"Column Operations Applied (target, source): {col_ops}")
+    # print(f"CNOT cost (t={t}): {cnot_cost(final_M, t)}")
+    # print("np.array([")
+    # for row in final_M:
+    #     print("  [", end="")
+    #     for r in row[:-1]:
+    #         print(f"{r}, ", end="")
+    #     print(f"{row[-1]}],")
+    # print("])")
