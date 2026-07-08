@@ -86,6 +86,7 @@ They must be eliminated from the diagram to extract a valid, physically realizab
 To extract a physically realizable quantum circuit, we must find a fault-equivalent ZX-diagram with no idealized edges.
 To achieve this, we introduce the following fault-equivalent (FE) ZX-rewrite rule:
 \begin{proposition}
+  \label{prop:unidealize}
   An idealized edge can be unidealized under CSS-noise if the edge is between a Z- and an X-spider, and both spiders have at least 1 unidealized leg:
   \begin{equation}
     \tikzfig{figures/johns-rule}
@@ -99,9 +100,7 @@ To achieve this, we introduce the following fault-equivalent (FE) ZX-rewrite rul
 %  \tikzfig{figures/steane-plus-unidealize}
 %\end{equation}
 
-\subsection{Bipartite Structural Constraints and Systematic Form}
-
-
+\subsection{Bipartite Structural Constrains}
 
 If we wanted to apply this rewrite rule to unidealize all internal edges, we would fail because internal spiders have no unidealized legs.
 For this rewrite to enable the removal of all idealized edges, we need our ZX-diagram to represent a bipartite graph state.
@@ -114,7 +113,7 @@ While this might seem like a very particular property, it turns out that any CSS
   Every CSS state can be represented as a bipartite graph state.
 \end{proposition}
 
-Example
+For our running example, we can find a bipartite ZX-diagram where all nodes are boundary, and then unrealize all internal edges as follows:
 \begin{equation}
   \tikzfig{figures/steane-zero-basis-change}
   \label{eq:bipartite-state}
@@ -125,9 +124,14 @@ Once the bipartite ZX-diagram is free of perfect edges, the remaining graph cons
 In order to obtain a ZX-diagram from which a circuit can be extracted, each high-degree spider must be fault-equivalently decomposed into a network of degree-3 spiders.
 This can be done using SpiderCat~\cite{spidercat}.
 
+For example:
 \begin{equation}
   \tikzfig{figures/steane-zero-unfused}
 \end{equation}
+This final ZX-diagram fault-tolerantly prepares the $\ket{\overline 0}$ state for the Steane code.
+What remains to be done is extracting an actual circuit from such a ZX-diagram.
+
+\subsection{Circuit Extraction}
 
 A central challenge in extracting the overall CSS state preparation circuit is connecting these individually prepared cat states without introducing prohibitive Bell-state measurement overhead. While previous protocols (e.g., \textit{flag-at-origin}) resolve this for unbranched trees by substituting the Bell measurement with a direct CNOT connection (Eq.~\ref{eq:cat-part-1}), standard SpiderCat introduces internal branching, rendering that specific rewrite inapplicable.
 \begin{equation}\label{eq:cat-part-1}

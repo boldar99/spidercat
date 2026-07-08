@@ -32,6 +32,23 @@
 		\node [style=none] (32) at (4.75, -1) {};
 		\node [style=none] (33) at (4.75, -2) {};
 		\node [style=none] (34) at (4.75, -3) {};
+		\node [style=Z dot] (36) at (8.25, 3) {};
+		\node [style=Z dot] (37) at (8.25, -1) {};
+		\node [style=Z dot] (38) at (8.25, -3) {};
+		\node [style=X dot] (39) at (10.25, 2) {};
+		\node [style=X dot] (40) at (10.25, 1) {};
+		\node [style=X dot] (41) at (10.25, 0) {};
+		\node [style=X dot] (42) at (10.25, -2) {};
+		\node [style=none] (43) at (11.5, 3) {};
+		\node [style=none] (44) at (11.5, 2) {};
+		\node [style=none] (45) at (11.5, 1) {};
+		\node [style=none] (46) at (11.5, 0) {};
+		\node [style=none] (47) at (11.5, -1) {};
+		\node [style=none] (48) at (11.5, -2) {};
+		\node [style=none] (49) at (11.5, -3) {};
+		\node [style=none] (50) at (6.5, 0) {$\FaultEq$};
+		\node [style=sLabel] (51) at (6.5, -0.5) {CSS};
+		\node [style=sLabel] (52) at (6.5, 0.75) {Prop.~\ref{prop:unidealize}};
 	\end{pgfonlayer}
 	\begin{pgfonlayer}{edgelayer}
 		\draw [style=fault-free] (0) to (3);
@@ -69,5 +86,21 @@
 		\draw (18) to (28.center);
 		\draw (32.center) to (19);
 		\draw (34.center) to (20);
+		\draw (36) to (39);
+		\draw (36) to (40);
+		\draw (36) to (41);
+		\draw (37) to (39);
+		\draw (37) to (40);
+		\draw (37) to (42);
+		\draw (38) to (40);
+		\draw (38) to (41);
+		\draw (38) to (42);
+		\draw (48.center) to (42);
+		\draw (46.center) to (41);
+		\draw (45.center) to (40);
+		\draw (44.center) to (39);
+		\draw (36) to (43.center);
+		\draw (47.center) to (37);
+		\draw (49.center) to (38);
 	\end{pgfonlayer}
 \end{tikzpicture}
