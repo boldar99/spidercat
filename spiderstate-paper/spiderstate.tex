@@ -24,6 +24,8 @@
 \newtheorem{proposition}[theorem]{Proposition}
 \newtheorem{definition}{Definition}
 
+\usepackage{cleveref}
+
 \usepackage[a4paper, total={6in, 8in}]{geometry}
 
 \usepackage{macros/tikzfig}
@@ -36,6 +38,7 @@
 
 \title{CSSCat: scalable fault-tolerant CSS-state preparation}
 %\title{CSSCat: fault-tolerant CSS-states by construction}
+\author{}
 
 % Document
 \begin{document}
@@ -48,56 +51,82 @@
 Any Calderbank-Shor-Steane (CSS) quantum error-correcting code can be natively represented as a ZX-diagram~\cite{kissingerPhasefreeZXDiagrams2022}.
 This representation is constructed by mapping the generators of the stabilizer group and the logical operators of the code into a network of interconnected spiders.
 
-We will use the $\code{8,3,2}$ \enquote{smallest interesting color code} as a running example, whose stabilizer generators can be explicitly written as:
+\begin{proposition}
+  Given a set of stabilizers of any CSS-QECC\@.
+  We can represent a ZX-diagram fault-tolerantly preparing this state.
+\end{proposition}
+
+We will use the $\code{7,1,3}$ Steane as a running example, whose stabilizer generators can be explicitly written as:
 \begin{gather}
-X_{1} X_{2} X_{3} X_{4} X_{5} X_{6} X_{7} X_{8} \\
 Z_{1} Z_{2} Z_{3} Z_{4} \quad
-Z_{1} Z_{2} Z_{5} Z_{6} \quad
-Z_{1} Z_{3} Z_{5} Z_{7} \quad
-Z_{1} Z_{2} Z_{3} Z_{4} Z_{5} Z_{6} Z_{7} Z_{8}
+Z_{2} Z_{3} Z_{5} Z_{6} \quad
+Z_{3} Z_{4} Z_{6} Z_{7} \quad
+X_{1} X_{2} X_{3} X_{4} \quad
+X_{2} X_{3} X_{5} X_{6} \quad
+X_{3} X_{4} X_{6} X_{7}
 \end{gather}
 
-From these stabilizers, one can construct encoders for the code or the fault-tolerant state preparation ZX-diagrams:
+From these stabilizers, one can construct encoders for the code or the fault-tolerant state preparation ZX-diagrams.
+
 \begin{equation}
-  \ket{\overline{0}}\ = \ \tikzfig{figures/832-zero}
+  \ket{\overline{0}}\ = \ \tikzfig{figures/steane-zero}
   \qquad
   \qquad
-  \ket{\overline{+}}\ = \ \tikzfig{figures/832-plus}
+  \ket{\overline{+}}\ = \ \tikzfig{figures/steane-plus}
   \label{eq:logical-basis-states}
 \end{equation}
-In this representation, the correlations between stabilizers are denoted by ``perfect'' edges.
-As established in Section \ref{sec:preliminaries}, a perfect edge serves as a mathematical specification of an idealized, noiseless logical correlation. Because physical hardware cannot natively execute noiseless operations without an infinite distance code, these edges serve only as an intermediate topological tool. They must be systematically eliminated from the diagram to extract a valid, physically realizable fault-tolerant circuit.
-
-\subsection{Bipartite Structural Constraints and Systematic Form}
-\textbf{[TODO: Move the theoretical requirement for Systematic Form here. Explain that an arbitrary parity check matrix $M$ does not cleanly decompose. Prove/state that if $M$ contains a full-rank identity submatrix (systematic form), the resulting ZX diagram is strictly bipartite, granting each spider a dedicated physical output leg. This structural guarantee is required for the subsequent rewrites.]}
-\begin{equation}
-  \tikzfig{figures/832-plus-basis-change}
-  \label{eq:bipartite-state}
-\end{equation}
+In this representation, the connectivity of the X and Z spiders denote the stabilizers of the code.
+Note that we are marking internal edges with purple color, denoting that these are \enquote{perfect} edges.
+As established in Section \ref{sec:preliminaries}, a perfect edge serves as a mathematical specification of an idealized, noiseless logical correlation.
+Because physical hardware cannot natively execute noiseless operations, these edges serve only as an intermediate representation.
+They must be eliminated from the diagram to extract a valid, physically realizable fault-tolerant quantim circuit.
 
 \subsection{Fault-Equivalent Edge Elimination}
-To extract a physically realizable quantum circuit, we must find a fault-equivalent ZX-diagram with no perfect edges.
+
+To extract a physically realizable quantum circuit, we must find a fault-equivalent ZX-diagram with no idealized edges.
 To achieve this, we introduce the following fault-equivalent (FE) ZX-rewrite rule:
 \begin{proposition}
+  An idealized edge can be unidealized under CSS-noise if the edge is between a Z- and an X-spider, and both spiders have at least 1 unidealized leg:
   \begin{equation}
     \tikzfig{figures/johns-rule}
   \end{equation}
 \end{proposition}
+\begin{proof}
+  \textbf{TODO}
+\end{proof}
 
-\textbf{[TODO: Formally state the condition: A perfect edge can be eliminated iff both spiders possess a physical leg. Note that because we mathematically restricted the matrix to a bipartite graph state in the previous section, this condition is globally satisfied.]}
+%\begin{equation}
+%  \tikzfig{figures/steane-plus-unidealize}
+%\end{equation}
+
+\subsection{Bipartite Structural Constraints and Systematic Form}
 
 
+
+If we wanted to apply this rewrite rule to unidealize all internal edges, we would fail because internal spiders have no unidealized legs.
+For this rewrite to enable the removal of all idealized edges, we need our ZX-diagram to represent a bipartite graph state.
+\begin{proposition}
+  Given a ZX-diagram representing a bipartite graph state with idealized internal edges.
+  We can unidealize all internal edges.
+\end{proposition}
+While this might seem like a very particular property, it turns out that any CSS state can be represented in this form:
+\begin{proposition}
+  Every CSS state can be represented as a bipartite graph state.
+\end{proposition}
+
+Example
 \begin{equation}
-  \tikzfig{figures/832-plus-unidealize}
+  \tikzfig{figures/steane-zero-basis-change}
+  \label{eq:bipartite-state}
 \end{equation}
 
 \subsection{Spider Decompositions and Measurement-Free Connectivity}
-Once the bipartite ZX-diagram is free of perfect edges, the remaining graph consists of high-degree physical spiders.
-Directly mapping high-degree spiders to physical hardware violates native 2-qubit gate constraints.
-Therefore, each high-degree spider must be fault-equivalently decomposed into a network of degree-3 spiders utilizing the SpiderCat protocol \textbf{[TODO: Add citation]}.
+Once the bipartite ZX-diagram is free of perfect edges, the remaining graph consists of physical, but high-degree spiders, which cannot natively be realized using 2-qubit gates.
+In order to obtain a ZX-diagram from which a circuit can be extracted, each high-degree spider must be fault-equivalently decomposed into a network of degree-3 spiders.
+This can be done using SpiderCat~\cite{spidercat}.
 
 \begin{equation}
-  \tikzfig{figures/832-plus-expanded}
+  \tikzfig{figures/steane-zero-unfused}
 \end{equation}
 
 A central challenge in extracting the overall CSS state preparation circuit is connecting these individually prepared cat states without introducing prohibitive Bell-state measurement overhead. While previous protocols (e.g., \textit{flag-at-origin}) resolve this for unbranched trees by substituting the Bell measurement with a direct CNOT connection (Eq.~\ref{eq:cat-part-1}), standard SpiderCat introduces internal branching, rendering that specific rewrite inapplicable.
@@ -125,7 +154,8 @@ While standard SpiderCat minimizes gate counts, it does not guarantee the strict
 To physicalize the theoretical constructs outlined in Section~\ref{sec:the-theory}, we introduce a comprehensive compilation pipeline. This algorithm accepts an arbitrary CSS code parity check matrix and deterministically outputs a highly optimized, fault-tolerant state preparation circuit. The pipeline operates in three distinct phases: (1) logical resource optimization to find the ideal bipartite basis, (2) topologically constrained spider generation to satisfy Proposition~\ref{prop:connection_overhead}, and (3) acyclic global edge routing to synthesize the final circuit.
 
 \subsection{Phase 1: Resource Characterization and Basis Optimization}
-Our pipeline begins by quantifying the logical resources required to prepare a given state. Given an X or Z spider of degree $n$, we characterize the exact logical CNOT cost assuming a maximum tolerance of $t$ faults.
+Our pipeline begins by quantifying the logical resources required to prepare a given state.
+Given an X or Z spider of degree $n$, we characterize the exact logical CNOT cost assuming a tolerance of $t$ faults.
 
 The density lower bound, $\delta(t)$, governs the necessary graph density:
 \begin{equation}
@@ -140,20 +170,26 @@ E = 3 \left\lceil \frac{\lceil n / \delta(t') \rceil}{3} \right\rceil, \quad V =
 The minimum number of flag qubits is $f(n, t) = \max\left(0, \lceil E - V + 2 \rceil - 1\right)$. The logical CNOT cost for a single isolated spider is bounded by: $C_{\text{spider}}(n, t) = n - 1 + 2f(n, t)$.
 
 \subsubsection*{Row Optimization via Stochastic Basis Search}
-For the state preparation circuit to decompose cleanly, the corresponding ZX diagram must represent a bipartite graph state (Section \ref{sec:the-theory}). Thus, the parity matrix $M$ must assume systematic form. The total logical CNOT cost of the resulting circuit is:
+For the state preparation method to be correct, the corresponding ZX diagram must represent a bipartite graph state (\cref{sec:the-theory}).
+For any parity matrix $M$ in a systematic form, there is a corresponding bipartite ZX-diagram.
+The total logical CNOT cost of the resulting circuit is:
 \begin{equation}
 C_{\text{total}}(M, t) = \sum_{\substack{c=1 \\ w_c > 1}}^c 2f(w_c + 1, t) + \sum_{r=1}^r \left[ w_r - 1 + 2f(w_r, t) \right]
 \end{equation}
 where $w_c$ and $w_r$ are the column and row Hamming weights.
 
-Because finding the globally optimal basis over $\mathbb{F}_2$ is computationally prohibitive, Phase 1 employs a Monte Carlo optimization heuristic. We randomly sample subsets of $r$ columns from $M$ to form $r \times r$ submatrices. If a submatrix $M_{\text{sub}}$ is non-singular, we compute the row-equivalent matrix $M_{\text{new}} = (M_{\text{sub}}^{-1} M) \pmod 2$. We evaluate $C_{\text{total}}(M_{\text{new}}, t)$ for each valid basis and retain the matrix that minimizes the total logical CNOT cost.
+Because finding the globally optimal basis over $\mathbb{F}_2$ can be computationally hard, Phase 1 employs a Monte Carlo optimization heuristic.
+We randomly sample subsets of $r$ columns from $M$ to form $r \times r$ submatrices.
+If a submatrix $M_{\text{sub}}$ is non-singular, we compute the row-equivalent matrix $M_{\text{new}} = (M_{\text{sub}}^{-1} M) \pmod 2$.
+We evaluate $C_{\text{total}}(M_{\text{new}}, t)$ for each valid basis and retain the matrix that minimizes the total logical CNOT cost.
 
 \subsection{Phase 2: Constrained Spider Decompositions via Simulated Annealing}
 \textbf{[TODO: Draft Phase 2. Explain how the code translates individual spiders into physical structures.]}
 \begin{itemize}
     \item Explain the necessity of the Minimum Diameter Spanning Forest (MDSF) to minimize circuit depth (longest root-to-leaf path).
     \item Explain the Simulated Annealing heuristic used to mutate the forest while preserving $k$-components.
-    \item Crucially, detail the \textit{topological penalties} applied during generation (e.g., degree locking and penalizing leaf adjacency) that actively force the algorithm to satisfy Proposition \ref{prop:connection_overhead}. This is what transforms standard SpiderCat into your "Modified" version.
+    \item Detail the \textit{topological penalties} applied during generation (e.g., degree locking and penalizing leaf adjacency) that actively force the algorithm to satisfy Proposition \ref{prop:connection_overhead}.
+    This is what transforms standard SpiderCat into your "Modified" version.
 \end{itemize}
 
 \subsubsection*{Dependency Graph Construction and Acyclic Resolution}
