@@ -129,27 +129,117 @@ For example:
   \tikzfig{figures/steane-zero-unfused}
 \end{equation}
 This final ZX-diagram fault-tolerantly prepares the $\ket{\overline 0}$ state for the Steane code.
-What remains to be done is extracting an actual circuit from such a ZX-diagram.
 
 \subsection{Circuit Extraction}
 
-A central challenge in extracting the overall CSS state preparation circuit is connecting these individually prepared cat states without introducing prohibitive Bell-state measurement overhead. While previous protocols (e.g., \textit{flag-at-origin}) resolve this for unbranched trees by substituting the Bell measurement with a direct CNOT connection (Eq.~\ref{eq:cat-part-1}), standard SpiderCat introduces internal branching, rendering that specific rewrite inapplicable.
-\begin{equation}\label{eq:cat-part-1}
-  \tikzfig{figures/cat-part-1}
-\end{equation}
+Once a ZX-diagram is obtained, the only thing that remains is extracting a quantum circuit.
+However, this, in general, is computationally hard as the problem is closely related to finding a path-cover with $n$ paths on the ZX-diagram with additional constraints.
+While for smaller codes this is feasible, for larger codes, solving this problem will likely become untraceable.
 
-To preserve the depth advantages of branching while avoiding measurement overhead, we introduce a novel flag-delegated connection rewrite:
-\begin{equation}\label{eq:cat-part-2}
-  \tikzfig{figures/cat-part-2-fe}
-\end{equation}
-This topological substitution allows a designated flag qubit to absorb the classical measurement, connecting the independent cat states with identical resource savings. We formalize the applicability of these combined rewrites with the following proposition:
+In order to tractably solve this problem, we want to utilize spanning trees on individual 3-regular ZX-diagrams, which serve as blueprints for circuit extraction for the CAT sates.
+Then, we will only need to combine these spanning trees so that global blueprint can be obtained.
 
-\begin{proposition}\label{prop:connection_overhead}
-Consider a degree-$n$ spider decomposed into a physical circuit via a spanning forest. If all but one of its boundary legs satisfy either the direct CNOT condition (a single state preparation followed by a single CNOT) or the flag-delegated condition (the final CNOT acting on the boundary qubit is the initial CNOT acting on a flag qubit), then the entire spider can be directly connected to the broader CSS state without requiring intermediate Bell-state measurements.
+A naive approach to obtaining a quantum circuit would be to directly utilize the CAT states and implement the connections between them as Bell-state measurements:
+\begin{equation}
+  \tikzfig{figures/steane-zero-naive-se}
+\end{equation}
+However, this approach requires a very large number of ancilla qubits, and it does not utilize the fact that legs between a Z- and an X-spider can often be extracted as CNOT gates.
+In fact, each internal edge in the original diagram is extracted as 3 CNOT gates and 2 measurements:
+one CNOT gate for each output of the two CAT states, and an additional CNOT for the Bell measurement that also needs two measurements.
+
+To reduce the resource requirements, we introduce two fault equivalent rewrites, both of which can eliminate a CNOT gate and a measurement per application.
+\begin{proposition}[Direct CNOT condition]
+  Given a CAT state with an output qubit $q$ which is prepared using only a state preparation and a CNOT gate $a \to q$ gate.
+  Let $q$ be followed by another CNOT gate $q \to b$ and a measurement in the conjugate basis.
+  This circuit is fault-equivalent to a circuit where all operations on $q$ are replaced with a singed CNOT gate $a \to b$.
+  \label{prop:cat-reduction-1}
+  \begin{equation*}\label{eq:cat-part-1}
+    \tikzfig{figures/cat-part-1}
+  \end{equation*}
 \end{proposition}
 
-While standard SpiderCat minimizes gate counts, it does not guarantee the strict spanning forest topologies required by Proposition~\ref{prop:connection_overhead}.
+\begin{proposition}[Flag-delegation condition]
+  Given a CAT state with an output qubit $q$ on which the last CNOT gate involves a flag qubit $f$.
+  Furthermore, if $a \to f$ and $q \to f$ are the two CNOT gates applied to $f$, then $q \to f$ must happen before $a \to f$.
+  Let $q$ be followed by another CNOT gate $q \to b$ and a measurement in the conjugate basis.
+  This circuit is fault-equivalent to a circuit where qubit $f$ is removed and is replaced with CNOTs $q \to b$, $a \to q$, followed by the flag measurement applied to $q$.
+  \label{prop:cat-reduction-2}
+  \begin{equation*}\label{eq:cat-part-2}
+    \tikzfig{figures/cat-part-2-fe}
+  \end{equation*}
+\end{proposition}
 
+\begin{proposition}
+  Given a fault-tolerant CAT state prepared using state preparations, CNOT gates, and measurements.
+  On any of its output qubits, the last operations is a CNOT gate, and this CNOT gate is either:
+  \begin{enumerate}
+    \item the only CNOT gate applied to the qubit, or,
+    \item a CNOT between a flag and the qubit.
+  \end{enumerate}
+\end{proposition}
+\begin{proof}
+  The only thing that this eliminates is for a CNOT gate to be last if it was applied between two non-flag qubits.
+  [TODO: cannot happen because then the circuit is not FT...]
+\end{proof}
+
+\begin{proposition}\label{prop:connection_overhead}
+  Consider a CAT state decomposed into a physical circuit.
+  If all but one of its boundary legs satisfy either the direct CNOT condition or the flag-delegation condition, then the entire spider can be directly connected to the broader CSS state without requiring intermediate Bell-state measurements.
+  The leg not satisfying either of these conditions serves as the output of the spider.
+\end{proposition}
+
+While standard SpiderCat minimizes gate counts, it does not guarantee that extracted circuits satisfy \cref{prop:connection_overhead}.
+In particular, SpiderCat does not have conditions to satisfy the flag-delegation condition because the ordering of the CNOTs applied to the flag qubit can be arbitrary.
+
+
+
+\section{Simulation Results}
+
+\begin{table*}[h]
+\centering
+\scriptsize
+\begin{tabular}{l c c c c c c c c}
+\toprule
+\makecell[l]{QEC Code \\ \& State} & \makecell{CX \\ Count} & \makecell{Flag \\ Count} & \makecell{Reuse \\ Strategy} & \makecell{Sim.\@ \\ Qubits} & Depth & \makecell{Exp.\@ Circ.\@ \\ Volume} & \makecell{Log.\@ Error \\ Rate} & \makecell{Acc. \\ Rate} \\
+\midrule
+\multirow{2}{*}{\makecell[l]{$\code{7, 1, 3}$ Steane $\ket{\overline{0}}$}} & \multirow{2}{*}{17} & \multirow{2}{*}{4} & Naive & 11 & 5 & 55 & $2.40\! \times\! 10^{-5}$ & 98.31\% \\
+ &  &  & Aggressive & 10 & 8 & 81 & $2.49\! \times\! 10^{-5}$ & 98.33\% \\
+\midrule
+\multirow{2}{*}{\makecell[l]{$\code{9, 1, 3}$ rot.\@ surface $\ket{\overline{0}}$}} & \multirow{2}{*}{12} & \multirow{2}{*}{2} & Naive & 11 & 5 & 55 & $1.64\! \times\! 10^{-5}$ & 99.13\% \\
+ &  &  & Aggressive & 10 & 8 & 80 & $1.69\! \times\! 10^{-5}$ & 99.13\% \\
+\midrule
+\multirow{2}{*}{\makecell[l]{$\code{17, 1, 5}$ color code $\ket{\overline{0}}$}} & \multirow{2}{*}{74} & \multirow{2}{*}{21} & Naive & 35 & 12 & 461 & $8.92\! \times\! 10^{-7}$ & 91.01\% \\
+ &  &  & Aggressive & 27 & 41 & 1214 & $1.03\! \times\! 10^{-6}$ & 91.13\% \\
+\midrule
+\multirow{2}{*}{\makecell[l]{$\code{25, 1, 5}$ rot.\@ surface $\ket{\overline{0}}$}} & \multirow{2}{*}{78} & \multirow{2}{*}{21} & Naive & 46 & 8 & 406 & $6.95\! \times\! 10^{-7}$ & 90.62\% \\
+ &  &  & Aggressive & 35 & 41 & 1574 & $7.61\! \times\! 10^{-7}$ & 91.12\% \\
+\midrule
+\multirow{2}{*}{\makecell[l]{$\code{20, 2, 6}$ self-dual $\ket{\overline{0}}$}} & \multirow{2}{*}{145} & \multirow{2}{*}{47} & Naive & 57 & 22 & 1557 & $4.84\! \times\! 10^{-8}$ & 80.51\% \\
+ &  &  & Aggressive & 48 & 55 & 3261 & $3.83\! \times\! 10^{-8}$ & 80.94\% \\
+\midrule
+\multirow{2}{*}{\makecell[l]{$\code{23, 1, 7}$ Golay $\ket{\overline{0}}$}} & \multirow{2}{*}{241} & \multirow{2}{*}{82} & Naive & 83 & 22 & 2727 & $2.67\! \times\! 10^{-7}$ & 66.96\% \\
+ &  &  & Aggressive & 64 & 106 & 10035 & $3.21\! \times\! 10^{-7}$ & 67.60\% \\
+\midrule
+\multirow{2}{*}{\makecell[l]{$\code{31, 1, 7}$ color code $\ket{\overline{0}}$}} & \multirow{2}{*}{211} & \multirow{2}{*}{69} & Naive & 79 & 23 & 2518 & $1.12\! \times\! 10^{-7}$ & 72.14\% \\
+ &  &  & Aggressive & 63 & 90 & 7756 & $1.14\! \times\! 10^{-7}$ & 73.10\% \\
+\midrule
+\multirow{2}{*}{\makecell[l]{$\code{49, 1, 7}$ rot.\@ surface $\ket{\overline{0}}$}} & \multirow{2}{*}{240} & \multirow{2}{*}{74} & Naive & 93 & 23 & 3073 & $8.19\! \times\! 10^{-8}$ & 69.60\% \\
+ &  &  & Aggressive & 82 & 78 & 9059 & $9.63\! \times\! 10^{-8}$ & 70.60\% \\
+\midrule
+\multirow{2}{*}{\makecell[l]{$\code{49, 1, 9}$ color code $\ket{\overline{0}}$}} & \multirow{2}{*}{402} & \multirow{2}{*}{133} & Naive & 133 & 30 & 8263 & $3.73\! \times\! 10^{-8}$ & 48.28\% \\
+ &  &  & Aggressive & 111 & 160 & 35142 & $5.74\! \times\! 10^{-8}$ & 50.54\% \\
+\midrule
+\multirow{2}{*}{\makecell[l]{$\code{47, 1, 11}$ color code $\ket{\overline{0}}$}} & \multirow{2}{*}{955} & \multirow{2}{*}{349} & Naive & 247 & 49 & 121604 & $2.61\! \times\! 10^{-7}$ & 9.95\% \\
+ &  &  & Aggressive & 206 & 439 & 828055 & $1.74\! \times\! 10^{-7}$ & 10.92\% \\
+\midrule
+\bottomrule
+\end{tabular}
+\caption{Simulation results across various QEC codes and qubit reuse strategies.}
+\label{tab:sim_results}
+\end{table*}
+
+
+\iffalse
 % ==========================================
 % SECTION: THE PIPELINE
 % ==========================================
@@ -243,50 +333,7 @@ The extraction procedure operates layer-by-layer according to the topological ge
 
 The output of Phase 4 is a complete, hardware-agnostic circuit (e.g., exported natively as a Stim circuit) consisting strictly of initializations, 2-qubit CNOT gates, measurements, and deterministic detector annotations, ready for physical hardware deployment.
 
-\section{Simulation Results}
-
-\begin{table*}[t]
-\centering
-\scriptsize
-\begin{tabular}{l c c c c c c c c}
-\toprule
-\makecell[l]{QEC Code \\ \& State} & \makecell{CX \\ Count} & \makecell{Flag \\ Count} & \makecell{Reuse \\ Strategy} & \makecell{Sim.\@ \\ Qubits} & Depth & \makecell{Exp.\@ Circ.\@ \\ Volume} & \makecell{Log.\@ Error \\ Rate} & \makecell{Acc. \\ Rate} \\
-\midrule
-\multirow{2}{*}{\makecell[l]{$\code{7, 1, 3}$ Steane $\ket{\overline{0}}$}} & \multirow{2}{*}{17} & \multirow{2}{*}{4} & Naive & 11 & 5 & 55 & $2.40\! \times\! 10^{-5}$ & 98.31\% \\
- &  &  & Aggressive & 10 & 8 & 81 & $2.49\! \times\! 10^{-5}$ & 98.33\% \\
-\midrule
-\multirow{2}{*}{\makecell[l]{$\code{9, 1, 3}$ rot.\@ surface $\ket{\overline{0}}$}} & \multirow{2}{*}{12} & \multirow{2}{*}{2} & Naive & 11 & 5 & 55 & $1.64\! \times\! 10^{-5}$ & 99.13\% \\
- &  &  & Aggressive & 10 & 8 & 80 & $1.69\! \times\! 10^{-5}$ & 99.13\% \\
-\midrule
-\multirow{2}{*}{\makecell[l]{$\code{17, 1, 5}$ color code $\ket{\overline{0}}$}} & \multirow{2}{*}{74} & \multirow{2}{*}{21} & Naive & 35 & 12 & 461 & $8.92\! \times\! 10^{-7}$ & 91.01\% \\
- &  &  & Aggressive & 27 & 41 & 1214 & $1.03\! \times\! 10^{-6}$ & 91.13\% \\
-\midrule
-\multirow{2}{*}{\makecell[l]{$\code{25, 1, 5}$ rot.\@ surface $\ket{\overline{0}}$}} & \multirow{2}{*}{78} & \multirow{2}{*}{21} & Naive & 46 & 8 & 406 & $6.95\! \times\! 10^{-7}$ & 90.62\% \\
- &  &  & Aggressive & 35 & 41 & 1574 & $7.61\! \times\! 10^{-7}$ & 91.12\% \\
-\midrule
-\multirow{2}{*}{\makecell[l]{$\code{20, 2, 6}$ self-dual $\ket{\overline{0}}$}} & \multirow{2}{*}{145} & \multirow{2}{*}{47} & Naive & 57 & 22 & 1557 & $4.84\! \times\! 10^{-8}$ & 80.51\% \\
- &  &  & Aggressive & 48 & 55 & 3261 & $3.83\! \times\! 10^{-8}$ & 80.94\% \\
-\midrule
-\multirow{2}{*}{\makecell[l]{$\code{23, 1, 7}$ Golay $\ket{\overline{0}}$}} & \multirow{2}{*}{241} & \multirow{2}{*}{82} & Naive & 83 & 22 & 2727 & $2.67\! \times\! 10^{-7}$ & 66.96\% \\
- &  &  & Aggressive & 64 & 106 & 10035 & $3.21\! \times\! 10^{-7}$ & 67.60\% \\
-\midrule
-\multirow{2}{*}{\makecell[l]{$\code{31, 1, 7}$ color code $\ket{\overline{0}}$}} & \multirow{2}{*}{211} & \multirow{2}{*}{69} & Naive & 79 & 23 & 2518 & $1.12\! \times\! 10^{-7}$ & 72.14\% \\
- &  &  & Aggressive & 63 & 90 & 7756 & $1.14\! \times\! 10^{-7}$ & 73.10\% \\
-\midrule
-\multirow{2}{*}{\makecell[l]{$\code{49, 1, 7}$ rot.\@ surface $\ket{\overline{0}}$}} & \multirow{2}{*}{240} & \multirow{2}{*}{74} & Naive & 93 & 23 & 3073 & $8.19\! \times\! 10^{-8}$ & 69.60\% \\
- &  &  & Aggressive & 82 & 78 & 9059 & $9.63\! \times\! 10^{-8}$ & 70.60\% \\
-\midrule
-\multirow{2}{*}{\makecell[l]{$\code{49, 1, 9}$ color code $\ket{\overline{0}}$}} & \multirow{2}{*}{402} & \multirow{2}{*}{133} & Naive & 133 & 30 & 8263 & $3.73\! \times\! 10^{-8}$ & 48.28\% \\
- &  &  & Aggressive & 111 & 160 & 35142 & $5.74\! \times\! 10^{-8}$ & 50.54\% \\
-\midrule
-\multirow{2}{*}{\makecell[l]{$\code{47, 1, 11}$ color code $\ket{\overline{0}}$}} & \multirow{2}{*}{955} & \multirow{2}{*}{349} & Naive & 247 & 49 & 121604 & $2.61\! \times\! 10^{-7}$ & 9.95\% \\
- &  &  & Aggressive & 206 & 439 & 828055 & $1.74\! \times\! 10^{-7}$ & 10.92\% \\
-\midrule
-\bottomrule
-\end{tabular}
-\caption{Simulation results across various QEC codes and qubit reuse strategies.}
-\label{tab:sim_results}
-\end{table*}
+\fi
 
 
 
