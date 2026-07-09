@@ -1,4 +1,7 @@
+import random
+
 import networkx as nx
+from matplotlib import pyplot as plt
 
 from spidercat.circuit_extraction import expand_graph_and_forest, build_traversal_digraph, \
     resolve_dag_by_removing_missing_link
@@ -66,13 +69,25 @@ def well_ordered_ft_cat_state_data(n, t) -> tuple[nx.Graph, nx.Graph, dict[int, 
         roots = find_min_height_degree_3_roots(F_alt)
     D = build_traversal_digraph(G_alt, F_alt, roots[0])
 
-    # display_digraph(D, figsize=(6,6))
+    pos = nx.spring_layout(G_alt)
+    draw_forest_on_graph(G_alt, F_alt, figsize=(6, 6), pos=pos)
+    plt.savefig('cat_state_base.pdf')
+    display_digraph(D, figsize=(6, 6), pos=pos)
+    plt.savefig('digraph_base.pdf')
     _, edge, dependency_graph = resolve_dag_by_removing_missing_link(D)
+    display_digraph(dependency_graph, figsize=(6, 6), pos=pos)
+    plt.savefig('resolved_DAG.pdf')
+    display_digraph(dependency_graph, figsize=(10, 5))
+    plt.savefig('resolved_DAG_generational.pdf')
     assert nx.is_directed_acyclic_graph(dependency_graph)
 
     return G_alt, F_alt, roots, dependency_graph, edge[0][0] if len(edge) else e
 
 if __name__ == "__main__":
-    G_alt, F_alt, roots, dependency_graph, edge = well_ordered_ft_cat_state_data(7, 0)
-    draw_forest_on_graph(G_alt, F_alt, figsize=(7,7))
-    display_digraph(dependency_graph, figsize=(9,5))
+    random.seed(1)
+    from spidercat.circuit_extraction import CatStateExtractor, StimBuilder
+
+    G_alt, F_alt, roots, dependency_graph, edge = well_ordered_ft_cat_state_data(12, 3)
+    extractor = CatStateExtractor(StimBuilder(), verbose=False)
+    circ = extractor.extract(G_alt, F_alt, roots, dependency_graph)
+    print(circ)

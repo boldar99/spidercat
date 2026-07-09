@@ -302,7 +302,8 @@ def draw_spanning_forest_solution(
 def draw_forest_on_graph(
         G: nx.Graph,
         F: nx.Graph,
-        figsize: tuple[int, int] = (10, 8)
+        figsize: tuple[int, int] = (10, 8),
+        pos = None
 ) -> None:
     """
     Draws the spanning forest F over the graph G.
@@ -312,10 +313,11 @@ def draw_forest_on_graph(
 
     cmap = plt.cm.tab10
     colors = cmap.colors
+    colors = ((216 / 256, 248 / 256, 216 / 256, 1.),) * 3 + colors
 
     # 1. Compute a single, locked layout based on G
     # A fixed seed ensures the graph looks the same every time you run it
-    pos = nx.spring_layout(G)
+    pos = pos or nx.spring_layout(G)
 
     # 2. Map node colors based on the metadata we injected earlier
     node_colors = []
@@ -336,6 +338,7 @@ def draw_forest_on_graph(
         else:
             node_edge_colors.append("black")
 
+    colors = cmap.colors
 
     # 3. Draw the Background: Graph G
     # Draw the nodes first with our computed colors
@@ -381,13 +384,13 @@ def draw_forest_on_graph(
         font_weight="bold"
     )
 
-    plt.title("Spanning Forest F (Solid/Black) on Graph G (Dashed/Gray)")
+    # plt.title("Spanning Forest F (Solid/Black) on Graph G (Dashed/Gray)")
     plt.axis("off") # Hide the bounding box
     plt.tight_layout()
-    plt.show()
+    # plt.show()
 
 
-def display_digraph(di_graph: nx.DiGraph, figsize=(12, 12)):
+def display_digraph(di_graph: nx.DiGraph, figsize=(12, 12), pos=None):
     """
     Displays the directed graph, distinguishing between tree edges and cycle closures.
     """
@@ -403,14 +406,15 @@ def display_digraph(di_graph: nx.DiGraph, figsize=(12, 12)):
         # 3. Use the newly created "layer" attribute for the layout
         # align="horizontal" makes it a top-down tree.
         # (Remove align="horizontal" if you prefer left-to-right)
-        pos = nx.multipartite_layout(di_graph, subset_key="layer", align="vertical")
+        pos = pos or nx.multipartite_layout(di_graph, subset_key="layer", align="vertical")
     else:
-        plt.figure(figsize=(10, 8))
+        plt.figure(figsize=figsize)
         # Kamada-Kawai handles graphs with cycles by treating edges like springs
-        pos = nx.kamada_kawai_layout(di_graph)
+        pos = pos or nx.kamada_kawai_layout(di_graph)
 
     cmap = plt.cm.tab10
     colors = cmap.colors
+    colors = ((216 / 256, 248 / 256, 216 / 256, 1.),) * 3 + colors
     node_colors = []
     for node, data in di_graph.nodes(data=True):
         if data.get("is_flag"):
@@ -427,6 +431,7 @@ def display_digraph(di_graph: nx.DiGraph, figsize=(12, 12)):
         edgecolors="black" # Gives nodes a clean border
     )
     nx.draw_networkx_labels(di_graph, pos, font_size=10, font_weight='bold')
+    colors = cmap.colors
 
     # Filter edges by type
     tree_edges = [(u, v) for u, v, d in di_graph.edges(data=True) if d.get('edge_type') == 'tree']
@@ -440,7 +445,8 @@ def display_digraph(di_graph: nx.DiGraph, figsize=(12, 12)):
     nx.draw_networkx_edges(di_graph, pos, edgelist=missing_edges, edge_color='red', style='dashed', arrows=True, arrowsize=15)
     nx.draw_networkx_edges(di_graph, pos, edgelist=cnot_edges, edge_color='orange', style='dashed', arrows=True, arrowsize=15)
 
-    plt.title("Spanning Tree Traversal with Directed Cycle Closures")
+    # plt.title("Spanning Tree Traversal with Directed Cycle Closures")
+    plt.tight_layout()
     plt.axis('off')
-    plt.show()
+    # plt.show()
 

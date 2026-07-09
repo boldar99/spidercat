@@ -12,6 +12,7 @@
 \usepackage{multirow}
 \usepackage{booktabs}
 \usepackage{makecell}
+\usepackage{svg}
 
 \usepackage{amsmath}
 \usepackage{stmaryrd}
@@ -130,7 +131,7 @@ For example:
 \end{equation}
 This final ZX-diagram fault-tolerantly prepares the $\ket{\overline 0}$ state for the Steane code.
 
-\subsection{Circuit Extraction}
+\section{Circuit Extraction}
 
 Once a ZX-diagram is obtained, the only thing that remains is extracting a quantum circuit.
 However, this, in general, is computationally hard as the problem is closely related to finding a path-cover with $n$ paths on the ZX-diagram with additional constraints.
@@ -191,6 +192,27 @@ To reduce the resource requirements, we introduce two fault equivalent rewrites,
 While standard SpiderCat minimizes gate counts, it does not guarantee that extracted circuits satisfy \cref{prop:connection_overhead}.
 In particular, SpiderCat does not have conditions to satisfy the flag-delegation condition because the ordering of the CNOTs applied to the flag qubit can be arbitrary.
 
+\subsection{Constructing appropriate CAT states}
+
+We implement a modified version of SpiderCat that enables the application of \cref{prop:connection_overhead} for each spider.
+For this to be the case, all we need to ensure is that for all but one output qubits, whenever the last CNOT is between a flag and the qubit, this CNOT must be the first CNOT applied to the flag.
+
+To enable the extraction of such CAT states, we extend the SpiderCat pipeline with a DAG that dictates the order in which nodes are traversed during circuit extraction.
+In particular, the order in which we process nodes during circuit extraction is dictated by the topological generations of the DAG\@.
+Then, we can artificially insert directed edges that correspond to the constraint that the if the final CNOT gate on a qubit is applied to a flag, it should be the first CNOT of the flag.
+This artificial directed graph will not be a DAG, because the newly inserted edges can easily form a causal cycle.
+However, this can be salvaged by removing a flag CNOT constraint from the directed graph if it then forms a DAG\@.
+The edges from which the constraint is removed will serve es the output of the spider.
+
+\begin{figure}
+  \includegraphics[width=0.32\textwidth]{figures/cat_state_base}
+  \includegraphics[width=0.32\textwidth]{figures/digraph_base}
+  \includegraphics[width=0.32\textwidth]{figures/resolved_DAG}
+
+  \includegraphics[width=0.5\textwidth]{figures/resolved_DAG_generational}
+  \includegraphics[width=0.5\textwidth]{figures/well_ordered_cat_state.png}
+%  \includesvg[]{figures/well_ordered_cat_state.svg}
+\end{figure}
 
 
 \section{Simulation Results}
@@ -200,22 +222,22 @@ In particular, SpiderCat does not have conditions to satisfy the flag-delegation
 \scriptsize
 \begin{tabular}{l c c c c c c c c}
 \toprule
-\makecell[l]{QEC Code \\ \& State} & \makecell{CX \\ Count} & \makecell{Flag \\ Count} & \makecell{Reuse \\ Strategy} & \makecell{Sim.\@ \\ Qubits} & Depth & \makecell{Exp.\@ Circ.\@ \\ Volume} & \makecell{Log.\@ Error \\ Rate} & \makecell{Acc. \\ Rate} \\
+\makecell[l]{QEC Code \\ \& State} & \makecell{CX \\ Count} & \makecell{Flag \\ Count} & \makecell{Reuse \\ Strategy} & \makecell{Sim.\@ \\ Qubits} & Depth & \makecell{Exp.\@ Circ.\@ \\ Volume} & \makecell{Log.\@ Error \\ Rate} & \makecell{Acc.\@ \\ Rate} \\
 \midrule
 \multirow{2}{*}{\makecell[l]{$\code{7, 1, 3}$ Steane $\ket{\overline{0}}$}} & \multirow{2}{*}{17} & \multirow{2}{*}{4} & Naive & 11 & 5 & 55 & $2.40\! \times\! 10^{-5}$ & 98.31\% \\
  &  &  & Aggressive & 10 & 8 & 81 & $2.49\! \times\! 10^{-5}$ & 98.33\% \\
 \midrule
-\multirow{2}{*}{\makecell[l]{$\code{9, 1, 3}$ rot.\@ surface $\ket{\overline{0}}$}} & \multirow{2}{*}{12} & \multirow{2}{*}{2} & Naive & 11 & 5 & 55 & $1.64\! \times\! 10^{-5}$ & 99.13\% \\
- &  &  & Aggressive & 10 & 8 & 80 & $1.69\! \times\! 10^{-5}$ & 99.13\% \\
+\multirow{2}{*}{\makecell[l]{$\code{9, 1, 3}$ rot.\@ surface $\ket{\overline{0}}$}} & \multirow{2}{*}{12} & \multirow{2}{*}{2} & Naive & 11 & 5 & 55 & $1.63\! \times\! 10^{-5}$ & 99.13\% \\
+ &  &  & Aggressive & 10 & 8 & 80 & $1.68\! \times\! 10^{-5}$ & 99.13\% \\
 \midrule
-\multirow{2}{*}{\makecell[l]{$\code{17, 1, 5}$ color code $\ket{\overline{0}}$}} & \multirow{2}{*}{74} & \multirow{2}{*}{21} & Naive & 35 & 12 & 461 & $8.92\! \times\! 10^{-7}$ & 91.01\% \\
- &  &  & Aggressive & 27 & 41 & 1214 & $1.03\! \times\! 10^{-6}$ & 91.13\% \\
+\multirow{2}{*}{\makecell[l]{$\code{17, 1, 5}$ color code $\ket{\overline{0}}$}} & \multirow{2}{*}{74} & \multirow{2}{*}{21} & Naive & 35 & 13 & 499 & $9.22\! \times\! 10^{-7}$ & 91.03\% \\
+ &  &  & Aggressive & 27 & 35 & 1034 & $8.72\! \times\! 10^{-7}$ & 91.31\% \\
 \midrule
-\multirow{2}{*}{\makecell[l]{$\code{25, 1, 5}$ rot.\@ surface $\ket{\overline{0}}$}} & \multirow{2}{*}{78} & \multirow{2}{*}{21} & Naive & 46 & 8 & 406 & $6.95\! \times\! 10^{-7}$ & 90.62\% \\
- &  &  & Aggressive & 35 & 41 & 1574 & $7.61\! \times\! 10^{-7}$ & 91.12\% \\
+\multirow{2}{*}{\makecell[l]{$\code{25, 1, 5}$ rot.\@ surface $\ket{\overline{0}}$}} & \multirow{2}{*}{78} & \multirow{2}{*}{21} & Naive & 44 & 11 & 533 & $6.47\! \times\! 10^{-7}$ & 90.75\% \\
+ &  &  & Aggressive & 34 & 42 & 1566 & $7.98\! \times\! 10^{-7}$ & 91.14\% \\
 \midrule
-\multirow{2}{*}{\makecell[l]{$\code{20, 2, 6}$ self-dual $\ket{\overline{0}}$}} & \multirow{2}{*}{145} & \multirow{2}{*}{47} & Naive & 57 & 22 & 1557 & $4.84\! \times\! 10^{-8}$ & 80.51\% \\
- &  &  & Aggressive & 48 & 55 & 3261 & $3.83\! \times\! 10^{-8}$ & 80.94\% \\
+\multirow{2}{*}{\makecell[l]{$\code{20, 2, 6}$ self-dual $\ket{\overline{0}}$}} & \multirow{2}{*}{145} & \multirow{2}{*}{47} & Naive & 53 & 22 & 1443 & $3.10\! \times\! 10^{-8}$ & 80.77\% \\
+ &  &  & Aggressive & 48 & 63 & 3738 & $5.93\! \times\! 10^{-8}$ & 80.88\% \\
 \midrule
 \multirow{2}{*}{\makecell[l]{$\code{23, 1, 7}$ Golay $\ket{\overline{0}}$}} & \multirow{2}{*}{241} & \multirow{2}{*}{82} & Naive & 83 & 22 & 2727 & $2.67\! \times\! 10^{-7}$ & 66.96\% \\
  &  &  & Aggressive & 64 & 106 & 10035 & $3.21\! \times\! 10^{-7}$ & 67.60\% \\
@@ -223,14 +245,14 @@ In particular, SpiderCat does not have conditions to satisfy the flag-delegation
 \multirow{2}{*}{\makecell[l]{$\code{31, 1, 7}$ color code $\ket{\overline{0}}$}} & \multirow{2}{*}{211} & \multirow{2}{*}{69} & Naive & 79 & 23 & 2518 & $1.12\! \times\! 10^{-7}$ & 72.14\% \\
  &  &  & Aggressive & 63 & 90 & 7756 & $1.14\! \times\! 10^{-7}$ & 73.10\% \\
 \midrule
-\multirow{2}{*}{\makecell[l]{$\code{49, 1, 7}$ rot.\@ surface $\ket{\overline{0}}$}} & \multirow{2}{*}{240} & \multirow{2}{*}{74} & Naive & 93 & 23 & 3073 & $8.19\! \times\! 10^{-8}$ & 69.60\% \\
- &  &  & Aggressive & 82 & 78 & 9059 & $9.63\! \times\! 10^{-8}$ & 70.60\% \\
+\multirow{2}{*}{\makecell[l]{$\code{49, 1, 7}$ rot.\@ surface $\ket{\overline{0}}$}} & \multirow{2}{*}{228} & \multirow{2}{*}{70} & Naive & 87 & 23 & 2796 & $1.06\! \times\! 10^{-7}$ & 71.56\% \\
+ &  &  & Aggressive & 80 & 81 & 9005 & $1.39\! \times\! 10^{-7}$ & 71.95\% \\
 \midrule
-\multirow{2}{*}{\makecell[l]{$\code{49, 1, 9}$ color code $\ket{\overline{0}}$}} & \multirow{2}{*}{402} & \multirow{2}{*}{133} & Naive & 133 & 30 & 8263 & $3.73\! \times\! 10^{-8}$ & 48.28\% \\
- &  &  & Aggressive & 111 & 160 & 35142 & $5.74\! \times\! 10^{-8}$ & 50.54\% \\
+\multirow{2}{*}{\makecell[l]{$\code{49, 1, 9}$ color code $\ket{\overline{0}}$}} & \multirow{2}{*}{402} & \multirow{2}{*}{133} & Naive & 133 & 30 & 8208 & $3.09\! \times\! 10^{-8}$ & 48.61\% \\
+ &  &  & Aggressive & 113 & 149 & 33600 & $2.99\! \times\! 10^{-8}$ & 50.11\% \\
 \midrule
-\multirow{2}{*}{\makecell[l]{$\code{47, 1, 11}$ color code $\ket{\overline{0}}$}} & \multirow{2}{*}{955} & \multirow{2}{*}{349} & Naive & 247 & 49 & 121604 & $2.61\! \times\! 10^{-7}$ & 9.95\% \\
- &  &  & Aggressive & 206 & 439 & 828055 & $1.74\! \times\! 10^{-7}$ & 10.92\% \\
+\multirow{2}{*}{\makecell[l]{$\code{47, 1, 11}$ color code $\ket{\overline{0}}$}} & \multirow{2}{*}{955} & \multirow{2}{*}{349} & Naive & 233 & 53 & 116047 & $4.98\! \times\! 10^{-7}$ & 10.64\% \\
+ &  &  & Aggressive & 201 & 419 & 737540 & $1.49\! \times\! 10^{-7}$ & 11.42\% \\
 \midrule
 \bottomrule
 \end{tabular}

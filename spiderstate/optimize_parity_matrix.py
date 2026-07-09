@@ -94,13 +94,9 @@ def row_optimize_matrix(M: np.ndarray, t: int, max_basis_tries: int = 1_000) -> 
         best_row_op_M = M
         best_row_op_cost = cnot_cost(M, t)
 
-    valid_bases = 0
-    attempts = 0
-    
     cols_arr = np.arange(c)
 
-    while valid_bases < max_basis_tries and attempts < max_basis_tries * 5:
-        attempts += 1
+    for _ in range(max_basis_tries):
         np.random.shuffle(cols_arr)
         
         A_perm = GF2(M[:, cols_arr]).row_reduce()
@@ -110,12 +106,10 @@ def row_optimize_matrix(M: np.ndarray, t: int, max_basis_tries: int = 1_000) -> 
         inv_cols[cols_arr] = np.arange(c)
         M_new = A_k_perm[:, inv_cols]
 
-        if has_unique_ones_property(M_new):
-            valid_bases += 1
-            cost = cnot_cost(M_new, t)
-            if cost < best_row_op_cost:
-                best_row_op_cost = cost
-                best_row_op_M = M_new.copy()
+        cost = cnot_cost(M_new, t)
+        if cost < best_row_op_cost:
+            best_row_op_cost = cost
+            best_row_op_M = M_new.copy()
 
     if best_row_op_M is None:
         raise ValueError("Could not find any valid matrix representation.")
