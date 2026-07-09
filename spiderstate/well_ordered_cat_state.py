@@ -70,15 +70,15 @@ def well_ordered_ft_cat_state_data(n, t) -> tuple[nx.Graph, nx.Graph, dict[int, 
     D = build_traversal_digraph(G_alt, F_alt, roots[0])
 
     pos = nx.spring_layout(G_alt)
-    draw_forest_on_graph(G_alt, F_alt, figsize=(6, 6), pos=pos)
-    plt.savefig('cat_state_base.pdf')
-    display_digraph(D, figsize=(6, 6), pos=pos)
-    plt.savefig('digraph_base.pdf')
+    # draw_forest_on_graph(G_alt, F_alt, figsize=(6, 6), pos=pos)
+    # plt.savefig('cat_state_base.pdf')
+    # display_digraph(D, figsize=(6, 6), pos=pos)
+    # plt.savefig('digraph_base.pdf')
     _, edge, dependency_graph = resolve_dag_by_removing_missing_link(D)
-    display_digraph(dependency_graph, figsize=(6, 6), pos=pos)
-    plt.savefig('resolved_DAG.pdf')
-    display_digraph(dependency_graph, figsize=(10, 5))
-    plt.savefig('resolved_DAG_generational.pdf')
+    # display_digraph(dependency_graph, figsize=(6, 6), pos=pos)
+    # plt.savefig('resolved_DAG.pdf')
+    # display_digraph(dependency_graph, figsize=(10, 5))
+    # plt.savefig('resolved_DAG_generational.pdf')
     assert nx.is_directed_acyclic_graph(dependency_graph)
 
     return G_alt, F_alt, roots, dependency_graph, edge[0][0] if len(edge) else e
