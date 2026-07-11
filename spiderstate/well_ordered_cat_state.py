@@ -62,7 +62,17 @@ def well_ordered_ft_cat_state_data(n, t) -> tuple[nx.Graph, nx.Graph, dict[int, 
         G_alt, F_alt, root = G_F_n_6()
         roots = {0: root}
     else:
-        grf, tree, M, matchings = load_solution_triplet(n, t, 1)
+        try:
+            grf, tree, M, matchings = load_solution_triplet(n, t, 1)
+        except TypeError:
+            if n == 26 and t == 7:
+                grf, tree, M, matchings = load_solution_triplet(27, 7, 1)
+            else:
+                grf, tree, M, matchings = load_solution_triplet({6: 21, 7: 24}.get(t), t, 1)
+            marks = [e for e, v in M.items() if v == 1]
+            for i in range(len(marks) - n):
+                M[marks[i]] = 0
+
         G_alt, _ = expand_graph_and_forest(grf, tree, M, matchings, expand_flags=False)
         F_alt = constrained_mdsf_generation(G_alt, 1, seed=9001, cooling_rate=0.995)
         F_alt = F_alt.copy()
@@ -70,12 +80,12 @@ def well_ordered_ft_cat_state_data(n, t) -> tuple[nx.Graph, nx.Graph, dict[int, 
     D = build_traversal_digraph(G_alt, F_alt, roots[0])
 
     pos = nx.spring_layout(G_alt)
-    # draw_forest_on_graph(G_alt, F_alt, figsize=(6, 6), pos=pos)
+    # draw_forest_on_graph(G_alt, F_alt, figsize=(4, 4), pos=pos)
     # plt.savefig('cat_state_base.pdf')
-    # display_digraph(D, figsize=(6, 6), pos=pos)
+    # display_digraph(D, figsize=(4, 4), pos=pos)
     # plt.savefig('digraph_base.pdf')
     _, edge, dependency_graph = resolve_dag_by_removing_missing_link(D)
-    # display_digraph(dependency_graph, figsize=(6, 6), pos=pos)
+    # display_digraph(dependency_graph, figsize=(4, 4), pos=pos)
     # plt.savefig('resolved_DAG.pdf')
     # display_digraph(dependency_graph, figsize=(10, 5))
     # plt.savefig('resolved_DAG_generational.pdf')
@@ -87,7 +97,7 @@ if __name__ == "__main__":
     random.seed(1)
     from spidercat.circuit_extraction import CatStateExtractor, StimBuilder
 
-    G_alt, F_alt, roots, dependency_graph, edge = well_ordered_ft_cat_state_data(12, 3)
+    G_alt, F_alt, roots, dependency_graph, edge = well_ordered_ft_cat_state_data(22, 7)
     extractor = CatStateExtractor(StimBuilder(), verbose=False)
     circ = extractor.extract(G_alt, F_alt, roots, dependency_graph)
     print(circ)
