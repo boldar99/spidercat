@@ -9,7 +9,7 @@ import numpy as np
 from tqdm import tqdm
 
 from spiderstate.fast_verification import fast_greedy_set_cover
-from spiderstate.fault_set import MixedFaultSet, compute_minimum_weight_representatives, PureFaultSet
+from spiderstate.fault_set import MixedFaultSet, PureFaultSet
 from spidercat.syndrome_measurement import cnot_cost
 
 logger = logging.getLogger(__name__)
@@ -150,9 +150,6 @@ def _solve_top_n_weighted_set_covers(
             
     return unique_covers
 
-def compute_effective_weights(faults: np.ndarray, stabs: np.ndarray) -> np.ndarray:
-    reps = compute_minimum_weight_representatives(faults, stabs)
-    return np.sum(reps, axis=1)
 
 def find_low_weight_verification_stabilizers(fault_sets: list[PureFaultSet], stabs: np.ndarray, max_combinations: int = 4, max_time_sec: int = 60) -> list[list[np.ndarray]]:
     logger.info("Finding low-weight verification stabilizers using Z3 ILP")

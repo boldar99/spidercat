@@ -5,7 +5,7 @@ import numpy as np
 from tqdm import tqdm
 import itertools
 from spiderstate.cnot_scheduler import DangerousFault
-
+from spiderstate.lut_decoder import LutDecoder
 
 class PureFaultSet:
     def __init__(self, num_qubits: int):
@@ -53,7 +53,7 @@ class PureFaultSet:
 
 
 class MWRCalculator:
-    def __init__(self, stabs: np.ndarray):
+    def __init__(self, stabs: np.ndarray, max_bfs_depth: int | None = None):
         self.num_qubits = stabs.shape[1] if stabs.shape[0] > 0 else 0
 
         GF2 = galois.GF(2)
@@ -63,49 +63,26 @@ class MWRCalculator:
             stabs_gf2 = GF2(stabs)
             self.H = np.array(stabs_gf2.null_space(), dtype=np.int8)
 
-        self.lut = {}
-        self.queue = deque([(np.zeros(self.num_qubits, dtype=np.int8), 0, 0)])
-
-        if self.H.shape[0] > 0:
-            zero_syn = tuple(np.zeros(self.H.shape[0], dtype=np.int8))
-            self.lut[zero_syn] = np.zeros(self.num_qubits, dtype=np.int8)
+        self.decoder = LutDecoder(self.H, verbose=True)
 
     def get_mwr(self, fault: np.ndarray) -> np.ndarray:
         if self.H.shape[0] == 0:
             return np.zeros(self.num_qubits, dtype=np.int8)
 
-        syn = tuple((self.H @ fault) % 2)
-
-        while syn not in self.lut and self.queue:
-            vec, wt, last_idx = self.queue.popleft()
-
-            for i in range(last_idx, self.num_qubits):
-                new_vec = vec.copy()
-                new_vec[i] ^= 1
-                new_syn = tuple((self.H @ new_vec) % 2)
-
-                if new_syn not in self.lut:
-                    self.lut[new_syn] = new_vec
-
-                self.queue.append((new_vec, wt + 1, i + 1))
-
-        if syn in self.lut:
-            return self.lut[syn]
-
-        raise RuntimeError(f"Syndrome {syn} not found in BFS space!")
+        syn = (self.H @ fault) % 2
+        return self.decoder.get_mwr(syn)
 
     def get_mwr_batch(self, faults: np.ndarray) -> np.ndarray:
         if len(faults) == 0:
             return np.zeros_like(faults)
-        reps = np.zeros_like(faults)
-        for i in range(len(faults)):
-            reps[i] = self.get_mwr(faults[i])
-        return reps
+        if self.H.shape[0] == 0:
+            return np.zeros_like(faults)
 
-
-def compute_minimum_weight_representatives(faults: np.ndarray, stabs: np.ndarray) -> np.ndarray:
-    calc = MWRCalculator(stabs)
-    return calc.get_mwr_batch(faults)
+        syndromes = (faults @ self.H.T) % 2
+        corrections, valid_mask = self.decoder.batch_decode_z(syndromes)
+        if not np.all(valid_mask):
+            raise RuntimeError("Some syndromes not found in LutDecoder space!")
+        return corrections.astype(np.int8)
 
 
 class MixedFaultSet:
@@ -120,7 +97,7 @@ class MixedFaultSet:
         self.N = single_faults.num_qubits
         self.track_origins = track_origins
 
-        self.mwr_calc = MWRCalculator(H_filter)
+        self.mwr_calc = MWRCalculator(H_filter, self.t)
 
         self.active_errors, self.targets, self.W_effs, self.fault_meta = self._generate(single_faults)
 
