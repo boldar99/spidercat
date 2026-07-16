@@ -49,6 +49,9 @@ class CircuitBuilder(ABC):
     @abstractmethod
     def permute_qubits(self, qubit_to_qubit_mapping: dict[int, int]): pass
 
+    @abstractmethod
+    def tick(self): pass
+
 
 class PyZXBuilder(CircuitBuilder):
     def __init__(self):
@@ -70,6 +73,8 @@ class PyZXBuilder(CircuitBuilder):
         self.circ.add_gate("PostSelect", q)
 
     def get_circuit(self): return self.circ
+
+    def tick(self): pass
 
 
 class StimBuilder(CircuitBuilder):
@@ -129,6 +134,9 @@ class StimBuilder(CircuitBuilder):
                     new_targets.append(t)
             new_circ.append(op.name, new_targets, op.gate_args_copy())
         self.circ = new_circ
+
+    def tick(self):
+        self.circ.append("TICK", [])
 
 
 def expand_graph_and_forest(
@@ -349,7 +357,7 @@ class CatStateExtractor:
         self.next_data_idx = 0
         self.next_flag_idx = N + num_data_flags
 
-        self.node_order = dependency_graph and flatten(list(nx.topological_generations(dependency_graph))) or []
+        self.node_order = dependency_graph and flatten([gen + ["TICK"] for gen in nx.topological_generations(dependency_graph)]) or []
 
         for root in roots.values():
             self._compute_depth(root, None, F)
@@ -368,6 +376,7 @@ class CatStateExtractor:
     def _grow_tree_bfs(self, roots, G_new, F_new):
         # 1. INITIALIZE ROOT
         self.init_roots(G_new, roots)
+        self.builder.tick()
 
         while self.queue:
             current_qubit, node, tree_id = self.pop_next_from_queue()
@@ -437,35 +446,35 @@ class CatStateExtractor:
         self.builder.init_ancilla(flag_qubit, spider_type)
         self.builder.add_cnot(c, n)
         self.flag_spider_types[flag_qubit] = spider_type
-        
+
         current = child
         previous = node
-        
+
         while current is not None and F.degree(current) == 0:
             assert G.nodes[current].get("is_mark")
             new_q = self._get_new_data_qubit()
             mark_spider_type = G.nodes[current].get("spider_type", "Z")
-            
+
             self.builder.init_ancilla(new_q, mark_spider_type)
             c_mark, n_mark = (flag_qubit, new_q) if spider_type == "Z" else (new_q, flag_qubit)
             self.builder.add_cnot(c_mark, n_mark)
-            
+
             self.tree_to_qubits[tree_id].add(new_q)
             self.node_to_tree[current] = tree_id
-            
+
             if self.verbose:
                 print(f"  Uncovered Mark on {current}: Spawned CNOT Q{flag_qubit} -> Q{new_q}")
-                
+
             neighbors = [n for n in G.neighbors(current) if n != previous]
             if not neighbors:
                 break
             previous = current
             current = neighbors[0]
-            
+
         final_edge = ed(previous, current)
         self.edge_to_flag_qubit[final_edge] = flag_qubit
         self.tree_to_qubits[tree_id].add(flag_qubit)
-        
+
         if self.verbose:
             print(f"  New flag initialised {edge} -> ends at {final_edge}: CNOT Q{c} -> Q{n}")
 
@@ -545,6 +554,9 @@ class CatStateExtractor:
     def pop_next_from_queue(self) -> tuple[int, int, int]:
         if len(self.node_order) > 0:
             node_to_process = self.node_order.pop(0)
+            if node_to_process == "TICK":
+                self.builder.tick()
+                node_to_process = self.node_order.pop(0)
             pop_index = [i for i, (parent, n, _) in enumerate(self.queue) if n == node_to_process][0]
         else:
             pop_index = 0

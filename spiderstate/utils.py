@@ -355,6 +355,17 @@ def FAO_simp_QECCS():
         "47_1_11",
     ]
 
+def hard_QECCS():
+    yield from [
+        "49_1_5",
+        "71_1_11",
+        "81_1_9",
+        "95_1_7",
+        "82_2_13",
+        "144_12_12",
+        "92_2_14",
+    ]
+
 
 def MQT_QECCS():
     root = get_project_root()

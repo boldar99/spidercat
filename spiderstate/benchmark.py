@@ -16,7 +16,7 @@ import galois
 from spiderstate.stim_utils import make_stim_circ_noisy
 from spidercat.simulate import _layer_cnot_circuit
 from spiderstate.cat_at_origin import row_optimized_cat_at_origin
-from spiderstate.utils import load_qecc, FAO_simp_QECCS
+from spiderstate.utils import load_qecc, FAO_simp_QECCS, hard_QECCS
 from spiderstate.qubit_reuse import (
     build_circuit_dag,
     inject_qubit_reuse,
@@ -30,6 +30,7 @@ import json
 from spiderstate.lut_decoder import LutDecoder
 
 # Globals to inherit via OS fork (Zero-Copy)
+_ESTIMATE_LER: bool = True
 _G_CIRC_STR: str = None
 _G_DECODER: LutDecoder = None
 _G_H_X: np.ndarray = None
@@ -57,6 +58,9 @@ def _simulate_batch(batch_size):
     g_raw = _GF(raw_measurements.astype(np.int8))
     syndromes = g_raw @ g_H_x_T
 
+    if not _ESTIMATE_LER:
+        return batch_size, int(num_flagged), 0, None
+
     corrections, valid_mask = _G_DECODER.batch_decode_z(syndromes)
 
     valid_corrections = corrections[valid_mask]
@@ -77,7 +81,7 @@ def _simulate_batch(batch_size):
     return batch_size, int(num_flagged), int(num_discarded), int(num_incorrect)
 
 
-def benchmark_CAO_state_prep(code: str, reuse_strategy, p=0.001, num_samples=100_000_000):
+def benchmark_CAO_state_prep(code: str, reuse_strategy, p=0.001, num_samples=100_000_000, estimate_ler=True):
     import random
     # Ensure deterministic circuit generation for this specific code
     # so the circuit hash matches across different script executions
@@ -148,9 +152,10 @@ def benchmark_CAO_state_prep(code: str, reuse_strategy, p=0.001, num_samples=100
     max_weight = None if bool(d % 2) else (d - 1) // 2
 
     # Build the LUT ONCE in the main thread
-    decoder = LutDecoder(H_x, max_decodable_weight=max_weight)
+    decoder = estimate_ler and LutDecoder(H_x, max_decodable_weight=max_weight)
 
-    global _G_DECODER, _G_CIRC_STR, _G_H_X, _G_L_X
+    global _G_DECODER, _G_CIRC_STR, _G_H_X, _G_L_X, _ESTIMATE_LER
+    _ESTIMATE_LER = estimate_ler
     _G_DECODER = decoder
     _G_CIRC_STR = circ_str
     _G_H_X = H_x
@@ -179,7 +184,7 @@ def benchmark_CAO_state_prep(code: str, reuse_strategy, p=0.001, num_samples=100
                     total_shots += b_size
                     total_flagged += n_flagged
                     total_discarded += n_discarded
-                    total_incorrect += n_incorrect
+                    total_incorrect = (total_incorrect + n_incorrect) if estimate_ler else None
 
                     # Update CSV incrementally
                     df_new = pd.DataFrame([{
@@ -205,7 +210,10 @@ def benchmark_CAO_state_prep(code: str, reuse_strategy, p=0.001, num_samples=100
 
     print(f"Discarded {total_discarded} uncorrectable shots.")
 
-    LER = total_incorrect / total_valid_corrections if total_valid_corrections > 0 else 0.0
+    if estimate_ler:
+        LER = total_incorrect / total_valid_corrections if total_valid_corrections > 0 else 0.0
+    else:
+        LER = None
 
     stats = {
         "code": code,
@@ -237,24 +245,48 @@ def benchmark_CAO_state_prep(code: str, reuse_strategy, p=0.001, num_samples=100
     return stats
 
 
-if __name__ == "__main__":
-    methods = {"MQT": FAO_simp_QECCS}
+def benchmark_with_lut(code_iterator):
     strategies = [
         PureAggressiveStrategy,
         DepthPreservingStrategy,
     ]
-    for method_name, code_iterator in methods.items():
-        for code in code_iterator():
-            for StrategyClass in strategies:
-                print(f"--- Benchmarking {code} with {StrategyClass.__name__} ---")
-                stats = benchmark_CAO_state_prep(
-                    code, reuse_strategy=StrategyClass(), num_samples=1_000_000_000
-                )
+    for code in code_iterator():
+        for StrategyClass in strategies:
+            print(f"--- Benchmarking {code} with {StrategyClass.__name__} ---")
+            stats = benchmark_CAO_state_prep(
+                code, reuse_strategy=StrategyClass(), num_samples=1_000_000_000
+            )
+            print(f"Logical Error Rate = {stats['logical_error_rate']:.4e}", end=";\t ")
+            print(f"Acceptance Rate = {stats['acceptance_rate']:.4f}", end=";\t ")
+            print(f"CXs = {stats['num_cx']}", end=";\t ")
+            print(f"Sim. Qubits = {stats['num_sim_qubits']}", end=";\t ")
+            print(f"Flags = {stats['num_flags']}", end=";\t ")
+            print(f"Depth = {stats['depth']}", end=";\t ")
+            print(f"Expected Circuit Volume = {stats['expected_circuit_volume']}")
+            print()
+
+
+def benchmark_without_lut(code_iterator):
+    strategies = [
+        PureAggressiveStrategy,
+        DepthPreservingStrategy,
+    ]
+    for code in code_iterator():
+        for StrategyClass in strategies:
+            print(f"--- Benchmarking {code} with {StrategyClass.__name__} ---")
+            stats = benchmark_CAO_state_prep(
+                code, reuse_strategy=StrategyClass(), num_samples=1_000_000_000, estimate_ler=False
+            )
+            if stats['logical_error_rate'] is not None:
                 print(f"Logical Error Rate = {stats['logical_error_rate']:.4e}", end=";\t ")
-                print(f"Acceptance Rate = {stats['acceptance_rate']:.4f}", end=";\t ")
-                print(f"CXs = {stats['num_cx']}", end=";\t ")
-                print(f"Sim. Qubits = {stats['num_sim_qubits']}", end=";\t ")
-                print(f"Flags = {stats['num_flags']}", end=";\t ")
-                print(f"Depth = {stats['depth']}", end=";\t ")
-                print(f"Expected Circuit Volume = {stats['expected_circuit_volume']}")
-                print()
+            print(f"Acceptance Rate = {stats['acceptance_rate']:.4f}", end=";\t ")
+            print(f"CXs = {stats['num_cx']}", end=";\t ")
+            print(f"Sim. Qubits = {stats['num_sim_qubits']}", end=";\t ")
+            print(f"Flags = {stats['num_flags']}", end=";\t ")
+            print(f"Depth = {stats['depth']}", end=";\t ")
+            print(f"Expected Circuit Volume = {stats['expected_circuit_volume']}")
+            print()
+
+
+if __name__ == "__main__":
+    benchmark_without_lut(hard_QECCS)
