@@ -1,4 +1,3 @@
-import z3
 import functools
 from dataclasses import dataclass
 
@@ -16,6 +15,8 @@ def schedule_all_verification_layers(
     layers: list[list[list[int]]], 
     dangerous_faults: list[DangerousFault]
 ) -> list[list[list[tuple[int, int]]]]:
+    import z3
+
     all_scheduled_layers = []
     all_violations = []
     

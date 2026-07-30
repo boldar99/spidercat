@@ -5,8 +5,6 @@ from typing import Literal, TYPE_CHECKING
 
 import pyzx as zx
 import stim
-import stimcirq
-from cirq.contrib.qasm_import import circuit_from_qasm
 
 from spiderstate.utils import flatten
 
@@ -20,6 +18,9 @@ SPECIAL_GATES = {"DETECTOR", "OBSERVABLE_INCLUDE", "SHIFT_COORDS", "QUBIT_COORDS
 
 
 def qasm_str_to_stim_circuit(qasm_str: str) -> stim.Circuit:
+    import stimcirq
+    from cirq.contrib.qasm_import import circuit_from_qasm
+
     cirq_circuit = circuit_from_qasm(qasm_str)
     return stimcirq.cirq_circuit_to_stim_circuit(cirq_circuit)
 
@@ -250,8 +251,88 @@ def layered_ops_to_noisy_stim_circuit(
     return circuit, measurement_mapping
 
 
+def _make_feedback_circuit_noisy(
+    circ: stim.Circuit,
+    p: float,
+) -> tuple[stim.Circuit, dict[int, int]]:
+    """Inject noise without reordering record-controlled corrections.
+
+    ``rec[-k]`` targets are relative to the point where an instruction is
+    emitted. The general re-layering helper predates classical feedback and
+    cannot move these instructions without rewriting their offsets. ZX
+    synthesis circuits already contain an ASAP ``TICK`` schedule, so preserve
+    that schedule and insert only non-measuring noise instructions.
+    """
+
+    noisy = stim.Circuit()
+    measurement_mapping: dict[int, int] = {}
+    measurement_count = 0
+    used_qubits: set[int] = set()
+
+    def finish_layer(*, append_tick: bool) -> None:
+        if p > 0 and used_qubits:
+            idle = sorted(set(range(circ.num_qubits)) - used_qubits)
+            if idle:
+                noisy.append("DEPOLARIZE1", idle, p / 100)
+        if append_tick:
+            noisy.append("TICK")
+        used_qubits.clear()
+
+    for instruction in circ.flattened():
+        name = instruction.name
+        targets = instruction.targets_copy()
+        qubits = [target.value for target in targets if target.is_qubit_target]
+
+        if name == "TICK":
+            finish_layer(append_tick=True)
+            continue
+
+        used_qubits.update(qubits)
+        if name in Z_MEASUREMENTS:
+            if p > 0:
+                noisy.append("X_ERROR", qubits, p)
+            for _ in qubits:
+                measurement_mapping[measurement_count] = measurement_count
+                measurement_count += 1
+        elif name in X_MEASUREMENTS:
+            if p > 0:
+                noisy.append("Z_ERROR", qubits, p)
+            for _ in qubits:
+                measurement_mapping[measurement_count] = measurement_count
+                measurement_count += 1
+
+        noisy.append(instruction)
+
+        has_record_control = any(
+            target.is_measurement_record_target for target in targets
+        )
+        if name in Z_INITIALIZATIONS | X_INITIALIZATIONS:
+            if p > 0:
+                noisy.append("DEPOLARIZE1", qubits, p)
+        elif name in TWO_QUBIT_GATES and not has_record_control:
+            if p > 0:
+                noisy.append("DEPOLARIZE2", qubits, p)
+        elif (
+            name not in SPECIAL_GATES
+            and name not in Z_MEASUREMENTS | X_MEASUREMENTS
+            and not has_record_control
+            and p > 0
+        ):
+            noisy.append("DEPOLARIZE1", qubits, p)
+
+    finish_layer(append_tick=False)
+    return noisy, measurement_mapping
+
+
 def make_stim_circ_noisy(circ: stim.Circuit, p: float, one_cnot_per_layer: bool=False) -> tuple[stim.Circuit, dict[int, int]]:
     """Properly utilizes the layer structure to construct the noisy circuit."""
+    if any(
+        target.is_measurement_record_target
+        for instruction in circ.flattened()
+        for target in instruction.targets_copy()
+    ):
+        return _make_feedback_circuit_noisy(circ, p)
+
     operations = [(op, targets) for (op, targets, _) in circ.flattened_operations() if op != "DETECTOR"]
 
     expanded_ops = _expand_stim_operation_list(operations)

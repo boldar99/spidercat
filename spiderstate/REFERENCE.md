@@ -54,7 +54,9 @@ The project is split into two main packages, `spidercat` and `spiderstate`.
     *   *(Note: `spiderstate.circuit_finder` and `spiderstate.between_shor_and_steane` contain methods for synthesizing particular syndrome measurement circuits, but they are not necessary for the main pipeline. We use `cnot_scheduler` instead.)*
 
 *   **State Generation (`spiderstate.cat_at_origin`)**
-    *   `cat_at_origin`: A "black box" method that takes the parity check matrix and distance, returning a `stim.Circuit` that always produces a provably FT state for any CSS state (though not necessarily optimally). -> cnot_cost and ancilla_cost calculates the cost for this method.
+    *   `spiderstate.stabiliser_decomposition`: Owns matrix-to-graph decomposition and returns a validated `StabiliserStateDecomposition` IR. It does not create circuits.
+    *   `spiderstate.circuit_extraction`: Consumes the IR, creates a circuit, measures actual resources, and can rank a portfolio of structural candidates using an `ExtractionPolicy`.
+    *   `cat_at_origin`: A compatibility orchestrator that takes the parity check matrix and distance, calls the two modules, and returns the resulting `stim.Circuit`.
     *   **`cat_at_origin_with_verification`**: The **primary end-to-end execution method** that combines state preparation and verification into a complete protocol.
 
 ## 4. Testing and Execution

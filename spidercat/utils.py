@@ -4,7 +4,6 @@ from pathlib import Path
 
 import networkx as nx
 import stim
-from qiskit import QuantumCircuit
 
 
 def graph_exists_with_girth(N, girth):
@@ -27,6 +26,8 @@ def qasm_to_stim(qasm_str: str) -> stim.Circuit:
         import qiskit.qasm2
         qc = qiskit.qasm2.loads(qasm_str)
     except (ImportError, AttributeError):
+        from qiskit import QuantumCircuit
+
         qc = QuantumCircuit.from_qasm_str(qasm_str)
 
     qubit_map = {q: i for i, q in enumerate(qc.qubits)}

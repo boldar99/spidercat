@@ -16,3 +16,4 @@ numpy~=2.2.6
 galois
 tesseract-decoder
 python-sat
+z3-solver

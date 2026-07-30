@@ -4,12 +4,12 @@ import json
 import math
 import typing
 import warnings
+from collections import defaultdict
 from joblib import delayed, Parallel
 from pathlib import Path
 
 import networkx as nx
 import numpy as np
-from mypy.checkexpr import defaultdict
 
 from spidercat.circuit_extraction import unflagged_cat, one_flagged_cat, \
     cat_state_6, extract_circuit_rooted

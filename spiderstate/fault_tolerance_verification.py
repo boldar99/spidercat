@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import itertools
 from typing import Union, List, Tuple, FrozenSet
 
-import mip
 import numpy as np
 import stim
 
@@ -100,6 +101,8 @@ def solve_ftsp_ilp(
     t: int
 ) -> Tuple[mip.OptimizationStatus, List[mip.Var], List[mip.Var]]:
     """Builds and solves the exact GF(2) parity requirements for FTSP failure."""
+    import mip
+
     model = mip.Model(sense=mip.MINIMIZE, solver_name=mip.CBC)
     model.verbose = 0
 
@@ -470,6 +473,8 @@ def verify_ftsp_primary_ilp(
     verbose: bool = False
 ) -> Union[bool, stim.Circuit]:
     """Verifies the primary FTSP error basis."""
+    import mip
+
     if verbose:
         print(f"\n  [Primary] Evaluating {basis_char}-basis (d={d}, t={t})...")
 

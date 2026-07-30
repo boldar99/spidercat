@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spiderstate"
+version = "0.1.0"
+description = "Fault-tolerant stabilizer-state synthesis with ZX diagrams and SpiderCat gadgets"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "galois==0.4.11",
+    "joblib==1.5.3",
+    "matplotlib==3.11.1",
+    "networkx==3.6.1",
+    "numpy==2.4.6",
+    "python-sat==1.9.dev5",
+    "pyzx==0.10.4",
+    "stim==1.16.0",
+    "sympy==1.14.0",
+    "z3-solver==5.0.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+]
+
+[tool.setuptools.packages.find]
+include = ["spidercat*", "spiderstab*", "spiderstate*"]
+namespaces = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

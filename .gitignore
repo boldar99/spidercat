@@ -1,6 +1,7 @@
 .idea
 .python-version
 __pycache__/
+*.egg-info/
 .ipynb_checkpoints/
 out/
 spiderstate/good_circuits/tmp_ft_circ.stim
