@@ -89,7 +89,10 @@ def benchmark_CAO_state_prep(code: str, reuse_strategy, p=0.001, num_samples=100
     random.seed(seed_val)
     np.random.seed(seed_val)
 
-    is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code, "FAO")
+    try:
+        is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code, "FAO")
+    except FileNotFoundError:
+        is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code)
     if code in ("49_1_5", "95_1_7"):
         print(f"State: |+> (Code {code})")
         H_x, H_z = H_z, H_x
@@ -206,7 +209,7 @@ def benchmark_CAO_state_prep(code: str, reuse_strategy, p=0.001, num_samples=100
     # Compute final metrics
     AR = 1.0 - (total_flagged / total_shots) if total_shots > 0 else 0.0
     total_valid_corrections = total_shots - total_flagged - total_discarded
-    total_AR = total_valid_corrections / total_shots if total_shots > 0 else 0.0
+    total_AR = total_valid_corrections / total_shots if total_shots > 0 else None
 
     print(f"Discarded {total_discarded} uncorrectable shots.")
 
@@ -224,7 +227,7 @@ def benchmark_CAO_state_prep(code: str, reuse_strategy, p=0.001, num_samples=100
         "total_discarded": total_discarded,
         "total_incorrect": total_incorrect,
         "logical_error_rate": LER,
-        "acceptance_rate": total_AR,
+        "acceptance_rate": total_AR ,
         "raw_acceptance_rate": AR,
         "num_cx": num_cx,
         "num_flags": num_flags,
@@ -232,7 +235,7 @@ def benchmark_CAO_state_prep(code: str, reuse_strategy, p=0.001, num_samples=100
         "num_sim_qubits": num_sim_qubits,
         "depth": depth,
         "circuit_volume": int(depth * num_sim_qubits),
-        "expected_circuit_volume": int(depth * num_sim_qubits / total_AR) if total_AR > 0 else 0,
+        "expected_circuit_volume": int(depth * num_sim_qubits / total_AR) if total_AR is not None and total_AR > 0 else 0,
         "circuit_hash": circ_hash,
         "perfect_stim": str(circ_with_reuse),
         "noisy_circuit": circ_str,
@@ -275,11 +278,12 @@ def benchmark_without_lut(code_iterator):
         for StrategyClass in strategies:
             print(f"--- Benchmarking {code} with {StrategyClass.__name__} ---")
             stats = benchmark_CAO_state_prep(
-                code, reuse_strategy=StrategyClass(), num_samples=1_000_000_000, estimate_ler=False
+                code, reuse_strategy=StrategyClass(), num_samples=0, estimate_ler=False
             )
             if stats['logical_error_rate'] is not None:
                 print(f"Logical Error Rate = {stats['logical_error_rate']:.4e}", end=";\t ")
-            print(f"Acceptance Rate = {stats['acceptance_rate']:.4f}", end=";\t ")
+            if stats['acceptance_rate'] is not None:
+                print(f"Acceptance Rate = {stats['acceptance_rate']:.4f}", end=";\t ")
             print(f"CXs = {stats['num_cx']}", end=";\t ")
             print(f"Sim. Qubits = {stats['num_sim_qubits']}", end=";\t ")
             print(f"Flags = {stats['num_flags']}", end=";\t ")
