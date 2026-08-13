@@ -1,3 +1,4 @@
+import itertools
 import json
 from pathlib import Path
 
@@ -55,7 +56,8 @@ def ed(v1: int, v2: int) -> tuple[int, int]:
     return (v1, v2) if v1 < v2 else (v2, v1)
 
 def load_solution_triplet(n, t, p):
-    file = Path.cwd().parent.joinpath("spidercat", "circuits_data", f"cat_state_t{t}_n{n}_p{p}.json")
+    root = get_project_root()
+    file = root.joinpath( "circuits_data", f"cat_state_t{t}_n{n}_p{p}.json")
     if not file.exists():
         return None
     json_object = json.loads(file.read_text())
@@ -71,6 +73,41 @@ def load_solution_triplet(n, t, p):
     matching = {int(k): [tuple(l) for l in v] for k, v in json_object["matching"].items()}
 
     return G, forest, dict(M), matching
+
+
+def get_project_root() -> Path:
+    return Path(__file__).parent
+
+
+def flatten(ls: list) -> list:
+    return list(itertools.chain(*ls))
+
+
+def offset_circuit_by(circ: stim.Circuit, offset: int) -> stim.Circuit:
+    new_circ = stim.Circuit()
+    for op in circ:
+        new_targets = []
+        for t in op.targets_copy():
+            if t.is_qubit_target:
+                new_targets.append(stim.GateTarget(t.value + offset))
+            elif t.is_x_target:
+                new_targets.append(stim.target_x(t.value + offset))
+            elif t.is_y_target:
+                new_targets.append(stim.target_y(t.value + offset))
+            elif t.is_z_target:
+                new_targets.append(stim.target_z(t.value + offset))
+            else:
+                new_targets.append(t)
+        new_circ.append(stim.CircuitInstruction(op.name, new_targets, op.gate_args_copy()))
+    return new_circ
+
+
+def load_stim_circuit(n: int, t: int):
+    my_file = get_project_root().joinpath("circuits", f"cat_state_t{t}_n{n}_p1.stim")
+    if not my_file.is_file():
+        return None
+
+    return stim.Circuit(my_file.read_text())
 
 
 if __name__ == "__main__":
