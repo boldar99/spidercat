@@ -1,0 +1,475 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=27mm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+
+\newtheorem{definition}{Definition}[section]
+\newtheorem{proposition}[definition]{Proposition}
+\newtheorem{criterion}[definition]{Criterion}
+\theoremstyle{remark}
+\newtheorem{remark}[definition]{Remark}
+
+\newcommand{\cC}{\mathcal C}
+\newcommand{\cS}{\mathcal S}
+\newcommand{\cE}{\mathcal E}
+\newcommand{\cN}{\mathcal N}
+\newcommand{\wt}{\operatorname{wt}}
+
+\title{Frame-Aware Fault Tolerance for Transversal Phase Gates\\
+\large Exact syndromes, noisy records, and a finite decoder test}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+CSS fault-tolerant circuits often guarantee more structure than a bound on
+the total support of the residual error: the two CSS components may each be
+correctable even when their union is not.  A transversal phase gate changes
+an $XZ$-structured error into a $YZ$-structured error, so decoding the two
+CSS syndrome channels independently is no longer justified.  This note
+gives circuit-level definitions of strict and frame-aware CSS fault
+tolerance, proves that exact \emph{joint} syndrome decoding after a valid
+transversal logical phase gate is always possible, and separates that
+code-capacity statement from the harder problem of noisy syndrome
+extraction.  A finite checker implementing the resulting ambiguity tests is
+provided and evaluated on the $[[7,1,3]]$ Steane code and the $[[17,1,5]]$
+colour code.
+\end{abstract}
+
+\paragraph{Main conclusion.}
+There is no code-capacity counterexample under the intended hypotheses.  If
+the incoming $XZ$ componentwise error set is correctable and the physical
+transversal $S$ or $S^\dagger$ preserves the code, then the outgoing $YZ$
+set is correctable by unitary conjugation.  Measuring all $Z$- and $X$-type
+checks and decoding the two records jointly is therefore sufficient in the
+ideal-syndrome model.  What remains nontrivial is the \emph{gadget-level}
+question: faults in the two extraction circuits can corrupt both the data
+and the records.  That enlarged, circuit-derived fault set must pass the
+same finite ambiguity test.
+
+\section{CSS notation and two notions of fault tolerance}
+
+Let $\cC$ be an $[[n,k,d]]$ CSS code with stabiliser group $\cS$ and
+$t=\lfloor(d-1)/2\rfloor$.  Let the rows of binary matrices $H_X$ and $H_Z$
+specify its $X$- and $Z$-type stabiliser generators, so
+$H_XH_Z^{\mathsf T}=0$.  If $A\subseteq\{1,\ldots,n\}$ and
+$R\in\{X,Y,Z\}$, define
+\[
+ R_A:=\prod_{i\in A}R_i.
+\]
+Equivalently, for the indicator vector $a$ of $A$, one may write $R(a)$.
+Thus the symbols $X_A$ and $Z_B$ are Pauli operators, while $A$ and $B$ are
+sets of qubit positions.  For $E=X_AZ_B$, the complete CSS syndrome is
+\[
+ s(E)=\bigl(H_Za^{\mathsf T},\,H_Xb^{\mathsf T}\bigr),
+ \tag{1}
+\]
+where the first component is the record from the $Z$-type checks and the
+second is the record from the $X$-type checks.  Phases of Pauli operators
+are ignored unless a stabiliser sign is relevant.
+
+\subsection{Strict fault tolerance}
+
+The definitions below apply to arbitrary gadgets, including logical gates,
+error correction, measurement, and preparation.  Preparation is simply the
+case with no encoded input.
+
+\begin{definition}[Strict fault tolerance]
+Consider a gadget $G$ with an ideal encoded operation $G_0$.  The gadget is
+\emph{strictly $t$-fault tolerant} if, for all $s,r\geq0$ with
+$s+r\leq t$, an input residual Pauli of total weight at most $s$ together
+with at most $r$ internal faults produces, relative to $G_0$, an output
+residual Pauli of total weight at most $s+r$.  For several blocks, weight is
+counted globally across the participating blocks.  For a postselected
+gadget the condition is imposed conditional on acceptance; erroneous
+classical output bits are included in the same fault budget.
+\end{definition}
+
+This is the familiar ``errors plus faults do not proliferate'' condition
+used in fault-tolerant gadget analyses \cite{AGP}.  It is deliberately a
+property of the whole circuit, not only of its state-preparation subroutine.
+For a preparation gadget, $s=0$ and the definition reduces to the statement
+that $r$ accepted faults leave an error of weight at most $r$.
+
+\subsection{Frame-aware CSS fault tolerance}
+
+Let $F=(P,Q)$ be an ordered pair of distinct Pauli axes.  Define
+\[
+ \cE_F(r):=\{P_AQ_B: |A|\leq r,\ |B|\leq r\}.
+ \tag{2}
+\]
+We call $\cE_F(r)$ the set of \emph{$F$-admissible errors of order $r$}.
+This replaces the less precise language of an ``error promise''.  The
+$F$-component weight of $P_AQ_B$ is
+\[
+ \wt_F(P_AQ_B):=\max(|A|,|B|).
+\]
+For a fixed ordered pair $F$, the sets $A$ and $B$ are unique up to the
+irrelevant overall Pauli phase.
+
+For several blocks with frames $F_j=(P_j,Q_j)$, use the global component
+weight
+\[
+ \wt_{\boldsymbol F}\!\left(\prod_j(P_j)_{A_j}(Q_j)_{B_j}\right)
+ :=\max\!\left(\sum_j|A_j|,\sum_j|B_j|\right).
+ \tag{3}
+\]
+The global definition is important: allowing every input block to saturate
+an independent weight-$t$ budget would permit a transversal two-block gate
+to combine them into a weight-$2t$ component on one output.
+
+\begin{definition}[Frame-aware CSS fault tolerance]
+A gadget with prescribed input and output frames is
+\emph{$\boldsymbol F$--CSS-$t$-fault tolerant} if, whenever the input has
+global component weight at most $s$ and the gadget contains at most $r$
+faults with $s+r\leq t$, its residual output error has component weight at
+most $s+r$ in the prescribed output frames, up to a known Pauli-frame
+update.  Postselection and classical outputs are treated as in the strict
+definition.
+\end{definition}
+
+Strict fault tolerance bounds the union of the two component supports.
+Frame-aware CSS fault tolerance bounds them separately.  For example,
+$X_AZ_B\in\cE_{XZ}(r)$ can have total support $2r$.
+
+\begin{proposition}[Why the $XZ$ model is correctable]
+Let $d_X$ and $d_Z$ be the minimum weights of nontrivial pure-$X$ and
+pure-$Z$ logical operators.  If $2t<\min(d_X,d_Z)$, then
+$\cE_{XZ}(t)$ is a correctable error set.
+\end{proposition}
+
+\begin{proof}
+For $E=X_AZ_B$ and $E'=X_{A'}Z_{B'}$ in $\cE_{XZ}(t)$, the pure-$X$ and
+pure-$Z$ components of $E^\dagger E'$ each have weight at most $2t$.  If
+$E^\dagger E'$ has zero syndrome, the CSS form implies that these two
+components separately normalise $\cS$.  The pure-distance bounds force each
+component to be a stabiliser.  Hence $E^\dagger E'$ is not a nontrivial
+logical operator, and the Knill--Laflamme condition proves correctability
+\cite{KnillLaflamme}.
+\end{proof}
+
+\section{What transversal \texorpdfstring{$S$}{S} changes}
+
+Ignoring phases,
+\[
+ H:(X,Z)\mapsto(Z,X),\qquad
+ S^{\pm1}:(X,Z)\mapsto(Y,Z),\qquad
+ HSH:(X,Z)\mapsto(X,Y).
+ \tag{4}
+\]
+Thus $H$ preserves the unordered $XZ$ frame, $S$ or $S^\dagger$ maps it to
+$YZ$, and $HSH$ maps it to $XY$.
+
+There are two sound responses.
+
+\paragraph{Route A: use strict fault tolerance.}
+A tensor product of single-qubit Clifford gates changes Pauli axes but not
+their support.  Therefore a strictly fault-tolerant input remains within
+the same total-weight bound after transversal $S$.  This is the original
+strict-preparation solution, now viewed as the preparation instance of a
+general circuit property.
+
+\paragraph{Route B: retain the frame and decode jointly.}
+The usual independent CSS decoder is justified for $XZ$ errors by the
+previous proposition.  After $S$, the $Y$ component contributes to both
+binary syndrome channels, so those two records must be interpreted as one
+joint record.  This is not an appeal to a small maximum-likelihood
+improvement; it is a change in the set that the decoder is required to
+correct.
+
+The central point is the following elementary theorem.
+
+\begin{proposition}[The ideal joint decoder always exists]
+Let $U$ be the physical transversal $S$ or $S^\dagger$ used by the protocol,
+and assume that $U\cC=\cC$ (so $U$ implements a valid logical Clifford on
+the code).  If $\cE_{XZ}(t)$ is correctable, then
+\[
+ \cE_U(t):=U\cE_{XZ}(t)U^\dagger
+ \tag{5}
+\]
+is correctable on the same code.  For uniform transversal $S^{\pm1}$,
+$\cE_U(t)=\cE_{YZ}(t)$ up to phases.
+\end{proposition}
+
+\begin{proof}
+Conjugate the Knill--Laflamme equations, or a recovery channel for
+$\cE_{XZ}(t)$, by $U$.  Because $U$ preserves the code space, the conjugated
+recovery acts on the same code.
+\end{proof}
+
+Many two-dimensional colour codes implement the Clifford group
+transversally \cite{BombinColor}; depending on conventions and code length,
+the physical $S$ or $S^\dagger$ may realise logical $S$ or $S^\dagger$.
+Only the code-preserving physical operation actually used by the protocol
+matters here.  We do not consider codes for which the proposed transversal
+phase operation has no valid logical action.
+
+\begin{remark}[No ideal counterexample under the hypotheses]
+An ideal-syndrome counterexample consisting of two post-$S$ errors with the
+same syndrome and different logical actions cannot exist under the
+proposition's assumptions.  Such a pair would violate correctability of
+$U\cE_{XZ}(t)U^\dagger$, and conjugating it back would violate
+correctability of $\cE_{XZ}(t)$.  A counterexample must therefore leave the
+hypotheses: the physical $S$ does not preserve the code, the incoming fault
+set is larger than the certified $XZ$ set, or the syndrome record is noisy
+or incomplete.
+\end{remark}
+
+\section{Joint syndrome measurement and frame reset}
+
+\begin{proposition}[Two CSS channels are the full syndrome]
+Suppose every $Z$-type and every $X$-type stabiliser generator is measured
+exactly, and no data fault occurs between the two groups of measurements.
+Measuring the $Z$-type checks and then the $X$-type checks, or in the reverse
+order, returns precisely the full syndrome in Eq.~(1).  Hence a joint lookup
+table on the two records implements an ideal decoder for $\cE_U(t)$.
+\end{proposition}
+
+\begin{proof}
+All stabilisers commute.  The first group returns $H_Zx^{\mathsf T}$ and the
+second returns $H_Xz^{\mathsf T}$ for the same data Pauli $X(x)Z(z)$.  Their
+concatenation is $s(E)$, independent of measurement order.
+\end{proof}
+
+This is the clean, circuit-independent statement: ideal frame reset is
+nothing more than obtaining both CSS syndrome channels and decoding them
+together.  Steane error correction is one physical way to acquire these
+records.  It couples verified encoded $|0_L\rangle$ and $|+_L\rangle$
+ancillas transversally to the data \cite{SteaneEC}.  Other extraction
+circuits may provide the same information.
+
+The ideal equivalence does \emph{not} make all implementations equivalent
+under faults.  A fault between the two groups of measurements changes the
+data seen by the second group; an ancilla fault can both propagate to the
+data and corrupt a record; and a classical readout fault changes the record
+without changing the data.  These events must be analysed using the actual
+extraction circuit.
+
+\subsection{Noisy records: two different questions}
+
+Let a candidate fault event be a pair $(E,m)$, where $E$ is its effective
+data Pauli and $m$ is a binary error in the measured syndrome bits.  The
+decoder observes
+\[
+ \widetilde s(E,m)=s(E)\oplus m.
+ \tag{6}
+\]
+Let $\cN(\cS)$ denote the Pauli normaliser of the stabiliser group
+$\cS$; the quotient $\cN(\cS)/\cS$ is the logical Pauli group.
+
+\begin{criterion}[Logical ambiguity]
+For every pair of candidate events with the same observed record, require
+\[
+ \widetilde s(E,m)=\widetilde s(E',m')
+ \quad\Longrightarrow\quad
+ E^\dagger E'\notin\cN(\cS)\setminus\cS.
+ \tag{7}
+\]
+If this fails, the record is compatible with two events differing by a
+nontrivial logical Pauli.  No correlated decoder or subsequent recovery can
+correct both branches.
+\end{criterion}
+
+This is the Pauli form of the Knill--Laflamme condition applied to the
+conditional error set associated with one observed record.  It captures the
+fundamental question raised in the discussion.
+
+\begin{criterion}[Exact one-shot reset]
+A single Pauli correction chosen only from the observed record returns every
+candidate exactly to the same codespace state only if
+\[
+ \widetilde s(E,m)=\widetilde s(E',m')
+ \quad\Longrightarrow\quad E^\dagger E'\in\cS.
+ \tag{8}
+\]
+\end{criterion}
+
+With perfect syndrome bits, equal observed records imply equal true
+syndromes, so Eqs.~(7) and (8) are equivalent.  With measurement errors they
+differ.  Two events can share an observed record while $E^\dagger E'$ has a
+nonzero syndrome.  This prevents an exact one-shot reset, but it is a
+detectable residual error rather than an immediate logical ambiguity.  A
+fault-tolerance proof must then show that all such residuals stay within the
+allowed output error set.
+
+Code perfection does not remove either requirement.  In particular, a
+nondegenerate perfect code already assigns all available syndromes to
+correctable data errors; admitting independent errors in the syndrome bits
+creates competing data-versus-measurement explanations rather than
+eliminating them.
+
+\subsection{Destructive measurement and injection}
+
+A destructive $Z$-basis measurement is naturally compatible with an $XZ$
+or $YZ$ frame: only one frame component ($X$ or $Y$) flips its outcomes.  In
+an $XY$ frame both bounded components can flip outcomes, so their union can
+exceed the classical decoder's radius.  Measuring the complementary CSS
+syndrome first and decoding it jointly with the destructive record supplies
+the same two-channel information as a full ideal correction cycle.
+
+The same accounting applies to the usual $T$-state injection circuit in
+which the resource controls a CNOT into the input and the input is then
+measured destructively in $Z$.  The CNOT accepts an input target frame
+containing $X$ ($XZ$ or $XY$), while the measurement accepts a frame
+containing $Z$ ($XZ$ or $YZ$).  Their intersection is $XZ$.  For a $YZ$ or
+$XY$ input, the injection record supplies one syndrome channel and a
+complementary extraction can supply the other.  Whether the resulting noisy
+gadget is fault tolerant is again decided by Eqs.~(7) and (8), together with
+the required residual-weight bound.
+
+\section{A finite checker and concrete results}
+
+The script
+\begin{center}
+\path{spiderstate/correlated_frame_decoder.py}
+\end{center}
+implements both criteria for any CSS code accepted by
+\texttt{spiderstate.utils.load\_qecc}.  Its current code-capacity/readout
+model is deliberately explicit:
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+  \item enumerate every pre-$S$ error $X_AZ_B$;
+  \item assign it CSS component order $\max(|A|,|B|)$;
+  \item propagate it through $S$ as
+        $X_AZ_B\mapsto Y_AZ_B=X_AZ_{A\triangle B}$, up to phase;
+  \item optionally enumerate a syndrome-bit error $m$, with total order
+        $\max(|A|,|B|)+|m|\leq t$;
+  \item group events by the observed joint record $\widetilde s$;
+  \item count violations of the logical-ambiguity and exact-reset criteria.
+\end{enumerate}
+The script also checks, including stabiliser signs, that uniform transversal
+$S$ preserves the loaded code.  Correlated data-and-record faults from a
+specific extraction circuit are outside this simple model; they should be
+fed into the same grouping test once enumerated.
+
+The implementation was tested in the repository's \texttt{zxlive}
+environment with
+\begin{center}
+\small\texttt{conda run -n zxlive python -m unittest
+spiderstate.test\_correlated\_frame\_decoder -v}.
+\end{center}
+Both automated tests pass.  The exhaustive results are:
+
+\begin{center}
+\begin{tabular}{@{}llrrrr@{}}
+\toprule
+Code & record model & candidates & records & logical & exact reset \\
+\midrule
+$[[7,1,3]]$  & exact & 64    & 64    & 0 & 0 \\
+$[[17,1,5]]$ & exact & 23716 & 13456 & 0 & 0 \\
+$[[7,1,3]]$  & noisy & 70    & 64    & 0 & 6 \\
+$[[17,1,5]]$ & noisy & 29020 & 14074 & 0 & 3018 \\
+\bottomrule
+\end{tabular}
+\end{center}
+Here ``logical'' and ``exact reset'' count ambiguous observed-record
+buckets, not error pairs.  The exact-syndrome rows confirm the general
+conjugation theorem.  The noisy rows show that the tested model creates no
+logical ambiguity through order $t$, but a single Pauli selected from one
+noisy record cannot always perform an exact reset.
+
+For the $[[7,1,3]]$ code, one explicit order-one exact-reset collision is:
+\begin{align*}
+ &\text{event A: } E=I,\quad m=(1,0,\ldots,0),\\
+ &\text{event B: } E_{\rm before}=X_1Z_1,\quad
+   E_{\rm after\ }S=X_1,\quad m=0.
+\end{align*}
+The two events have the same observed record.  Their data errors differ by
+$X_1$, which is detectable rather than logical.  This example starts with
+an admissible $XZ$-structured first-order error and explicitly includes the
+transversal $S$, as required.  It shows why noisy extraction is not an exact
+code-capacity reset while also showing why that collision alone is not a
+logical failure.
+
+\section{Propagating frames through a Clifford circuit}
+
+For completeness, the useful two-block rules follow directly from Pauli
+propagation.  Under transversal CNOT, the control frame must contain $Z$ and
+the target frame must contain $X$:
+\[
+ F_{\rm control}\in\{XZ,YZ\},\qquad
+ F_{\rm target}\in\{XZ,XY\}.
+ \tag{9}
+\]
+An $X$ or $Y$ component on the control propagates $X$ to the target; a $Z$
+or $Y$ component on the target propagates $Z$ to the control.  Under
+controlled-$Y$, the analogous sufficient conditions are
+\[
+ F_{\rm control}\in\{XZ,YZ\},\qquad
+ F_{\rm target}\in\{YZ,XY\}.
+ \tag{10}
+\]
+These are axis-compatibility rules.  The global component budget in
+Eq.~(3) is still required to prevent two independently saturated inputs
+from accumulating on one output block.
+
+For a Clifford network whose gates obey these rules, the frame label records
+how the certified input error set is propagated.  The decoder need not know
+every earlier gate location in order to interpret an \emph{exact} full
+syndrome, provided the propagated set is determined by the current frame.
+For a noisy correction gadget, however, the decoder must additionally know
+the effective data-and-record events generated by faults in that gadget.
+
+\section{What is proved, and what remains}
+
+\begin{enumerate}[leftmargin=*,itemsep=3pt]
+  \item \textbf{Proved for arbitrary gadgets:} strict and frame-aware CSS
+        fault tolerance are circuit properties; preparation is a special
+        case.
+  \item \textbf{Proved for exact syndromes:} after a code-preserving
+        transversal logical $S$ or $S^\dagger$, the transformed admissible
+        set is correctable.  Jointly measuring the two CSS syndrome channels
+        is sufficient, and no logical collision can occur within that set.
+  \item \textbf{Checked exhaustively:} the exact joint decoder passes for
+        the $[[7,1,3]]$ Steane and $[[17,1,5]]$ colour codes through their
+        full correction radii.
+  \item \textbf{Also checked in a simple noisy-record model:} neither code
+        has a logical ambiguity through order $t$, but both have one-shot
+        exact-reset ambiguities.
+  \item \textbf{Still gadget dependent:} a complete fault-tolerance proof
+        for Steane EC, a partial extraction followed by destructive
+        measurement, or magic-state injection must enumerate the actual
+        propagated data errors and record corruptions.  The finite test in
+        Eq.~(7) then decides logical ambiguity, while the desired strict or
+        frame-aware output bound decides whether detectable residuals are
+        acceptable.
+\end{enumerate}
+
+The conceptual payoff is that the ideal correlated-decoding question is
+settled positively and generally.  The remaining work is concrete rather
+than philosophical: derive the fault table of the chosen extraction gadget
+and pass it through the same record-by-record logical-coset test.
+
+\begin{thebibliography}{9}
+
+\bibitem{KnillLaflamme}
+E.~Knill and R.~Laflamme,
+``A theory of quantum error-correcting codes,''
+\emph{Physical Review A} \textbf{55}, 900 (1997),
+\href{https://arxiv.org/abs/quant-ph/9604034}{arXiv:quant-ph/9604034}.
+
+\bibitem{SteaneEC}
+A.~M.~Steane,
+``Active stabilisation, quantum computation and quantum state synthesis,''
+\emph{Physical Review Letters} \textbf{78}, 2252 (1997),
+\href{https://arxiv.org/abs/quant-ph/9611027}{arXiv:quant-ph/9611027}.
+
+\bibitem{AGP}
+P.~Aliferis, D.~Gottesman, and J.~Preskill,
+``Quantum accuracy threshold for concatenated distance-3 codes,''
+\emph{Quantum Information \& Computation} \textbf{6}, 97--165 (2006),
+\href{https://arxiv.org/abs/quant-ph/0504218}{arXiv:quant-ph/0504218}.
+
+\bibitem{BombinColor}
+H.~Bombin and M.~A.~Martin-Delgado,
+``Topological quantum distillation,''
+\emph{Physical Review Letters} \textbf{97}, 180501 (2006),
+\href{https://arxiv.org/abs/quant-ph/0605138}{arXiv:quant-ph/0605138}.
+
+\end{thebibliography}
+
+\end{document}
