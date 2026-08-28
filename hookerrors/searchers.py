@@ -14,8 +14,6 @@ class ExhaustiveSearcher:
         max_size = w // 2 if self.max_split_size is None else min(w // 2, self.max_split_size)
         
         for split_size in range(1, max_size + 1):
-            if split_size < 2:
-                continue
             for subset in itertools.combinations(support, split_size):
                 # Avoid redundant complementary splits if exactly at halfway
                 if split_size == w // 2 and subset[0] != support[0]:
@@ -41,8 +39,6 @@ class EarlyExitSearcher(ExhaustiveSearcher):
         max_size = w // 2 if self.max_split_size is None else min(w // 2, self.max_split_size)
         
         for split_size in range(1, max_size + 1):
-            if split_size < 2:
-                continue
             for subset in itertools.combinations(support, split_size):
                 if split_size == w // 2 and subset[0] != support[0]:
                     continue

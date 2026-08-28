@@ -98,16 +98,17 @@ class LookupStrategy:
             self.H = np.eye(n, dtype=int)
         self.table = build_syndrome_table(self.H, 2 * t)
         
-    def check_tier1(self, E):
+    def check_tier1(self, E, threshold=1):
         s = tuple((self.H @ E) % 2)
-        return self.table.get(s, np.inf) <= 1
+        return self.table.get(s, np.inf) <= threshold
         
-    def check_tier3(self, E, L_cosets):
+    def check_tier3(self, E, L_cosets, threshold=None):
+        if threshold is None: threshold = 2 * self.t
         for L_c in L_cosets:
             v = (E + L_c) % 2
             s = tuple((self.H @ v) % 2)
             w = self.table.get(s, np.inf)
-            if w < 2 * self.t:
+            if w < threshold:
                 return False
         return True
 
@@ -134,18 +135,24 @@ class TieredStrategy:
         else:
             self.bposd = None
         
-    def check_tier1(self, E):
-        if is_in_row_space_fast(E, self.M_rref):
-            return True
-        n = len(E)
-        for i in range(n):
-            e1 = np.zeros(n, dtype=int)
-            e1[i] = 1
-            if is_in_row_space_fast((E + e1) % 2, self.M_rref):
-                return True
-        return False
+    def check_tier1(self, E, threshold=1):
+        # RREF fast check only works easily for threshold=0 or 1
+        # For threshold > 1, we fallback to MILP or just do full iteration if small
+        if threshold == 1:
+            if is_in_row_space_fast(E, self.M_rref): return True
+            n = len(E)
+            for i in range(n):
+                e1 = np.zeros(n, dtype=int)
+                e1[i] = 1
+                if is_in_row_space_fast((E + e1) % 2, self.M_rref): return True
+            return False
+        else:
+            n = len(E)
+            w = solve_milp_coset(E, self.M_prep, n)
+            return w <= threshold
         
-    def check_tier3(self, E, L_cosets):
+    def check_tier3(self, E, L_cosets, threshold=None):
+        if threshold is None: threshold = 2 * self.t
         n = len(E)
         for L_c in L_cosets:
             v = (E + L_c) % 2
@@ -157,12 +164,12 @@ class TieredStrategy:
                 guess = self.bposd.osdw_decoding
                 w_heuristic = np.sum((v + guess) % 2)
                 
-                if w_heuristic < 2 * self.t:
+                if w_heuristic < threshold:
                     return False
                     
             # Tier 3: Exact MILP
             w_exact = solve_milp_coset(v, self.M_prep, n)
-            if w_exact < 2 * self.t:
+            if w_exact < threshold:
                 return False
                 
         return True
@@ -173,17 +180,18 @@ class MILPStrategy:
         self.M_prep = M_prep
         self.t = t
         
-    def check_tier1(self, E):
+    def check_tier1(self, E, threshold=1):
         n = len(E)
         w = solve_milp_coset(E, self.M_prep, n)
-        return w <= 1
+        return w <= threshold
         
-    def check_tier3(self, E, L_cosets):
+    def check_tier3(self, E, L_cosets, threshold=None):
+        if threshold is None: threshold = 2 * self.t
         n = len(E)
         for L_c in L_cosets:
             v = (E + L_c) % 2
             w = solve_milp_coset(v, self.M_prep, n)
-            if w < 2 * self.t:
+            if w < threshold:
                 return False
         return True
 
@@ -213,18 +221,28 @@ class HeuristicOnlyStrategy:
         else:
             raise ImportError("bposd is required for HeuristicOnlyStrategy")
 
-    def check_tier1(self, E):
-        if is_in_row_space_fast(E, self.M_rref):
-            return True
-        n = len(E)
-        for i in range(n):
-            e1 = np.zeros(n, dtype=int)
-            e1[i] = 1
-            if is_in_row_space_fast((E + e1) % 2, self.M_rref):
+    def check_tier1(self, E, threshold=1):
+        if threshold == 1:
+            if is_in_row_space_fast(E, self.M_rref):
                 return True
-        return False
+            n = len(E)
+            for i in range(n):
+                e1 = np.zeros(n, dtype=int)
+                e1[i] = 1
+                if is_in_row_space_fast((E + e1) % 2, self.M_rref):
+                    return True
+            return False
+        else:
+            # Fallback for higher thresholds in heuristic mode:
+            # We can use bposd to find the min weight of the syndrome
+            s = (self.H @ E) % 2
+            self.bposd.decode(s)
+            guess = self.bposd.osdw_decoding
+            w_heuristic = np.sum((E + guess) % 2)
+            return w_heuristic <= threshold
         
-    def check_tier3(self, E, L_cosets):
+    def check_tier3(self, E, L_cosets, threshold=None):
+        if threshold is None: threshold = 2 * self.t
         for L_c in L_cosets:
             v = (E + L_c) % 2
             s = (self.H @ v) % 2
@@ -233,6 +251,6 @@ class HeuristicOnlyStrategy:
             w_heuristic = np.sum((v + guess) % 2)
             
             # Since this is HeuristicOnly, we completely trust the heuristic bound.
-            if w_heuristic < 2 * self.t:
+            if w_heuristic < threshold:
                 return False
         return True

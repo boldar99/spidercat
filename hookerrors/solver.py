@@ -10,8 +10,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from spiderstate.utils import load_qecc
 from hookerrors.filters import MILPStrategy, LookupStrategy, TieredStrategy, HeuristicOnlyStrategy
 from hookerrors.searchers import ExhaustiveSearcher, EarlyExitSearcher
+from hookerrors.combinations import find_globally_safe_assignment
 
-def analyze_hook_errors(H_x, H_z, L_x, L_z, d, prep_basis='Z', method='tiered', searcher_type='exhaustive', max_splits=1, max_weight=None):
+def analyze_hook_errors(H_x, H_z, L_x, L_z, d, prep_basis='Z', method='tiered', searcher_type='exhaustive', max_splits=1, max_weight=None, find_assignment=False):
     n = H_x.shape[1]
     k_x = L_x.shape[0] if len(L_x) > 0 else 0
     k_z = L_z.shape[0] if len(L_z) > 0 else 0
@@ -71,6 +72,9 @@ def analyze_hook_errors(H_x, H_z, L_x, L_z, d, prep_basis='Z', method='tiered', 
         raise ValueError("searcher_type must be 'exhaustive' or 'early_exit'")
     
     safe_splits = {}
+    raw_safe_candidates = {"X": {}, "Z": {}}
+    gens_x = []
+    gens_z = []
     
     # Define evaluators for X and Z hook errors
     def evaluate_x_hook(subset):
@@ -99,23 +103,40 @@ def analyze_hook_errors(H_x, H_z, L_x, L_z, d, prep_basis='Z', method='tiered', 
     for row_idx, gen in enumerate(H_x):
         support = np.where(gen == 1)[0]
         gen_str = f"X({', '.join(map(str, support))})"
+        gens_x.append(gen_str)
         
         valid_subsets = searcher.search(support, evaluate_x_hook)
+        raw_safe_candidates["X"][gen_str] = valid_subsets
         safe_splits[gen_str] = [f"X({', '.join(map(str, s))})" for s in valid_subsets]
 
     # 2. Analyze Z generators (produce Z-type hook errors)
     for row_idx, gen in enumerate(H_z):
         support = np.where(gen == 1)[0]
         gen_str = f"Z({', '.join(map(str, support))})"
+        gens_z.append(gen_str)
         
         valid_subsets = searcher.search(support, evaluate_z_hook)
+        raw_safe_candidates["Z"][gen_str] = valid_subsets
         safe_splits[gen_str] = [f"Z({', '.join(map(str, s))})" for s in valid_subsets]
 
-    return safe_splits
+    global_assignment = None
+    if find_assignment:
+        assignment_x = find_globally_safe_assignment(gens_x, raw_safe_candidates["X"], n, t, strategy_x, L_cosets_x)
+        assignment_z = find_globally_safe_assignment(gens_z, raw_safe_candidates["Z"], n, t, strategy_z, L_cosets_z)
+        if assignment_x is not None and assignment_z is not None:
+            global_assignment = {}
+            for g, chain in assignment_x.items():
+                formatted_chain = ", ".join(f"({', '.join(map(str, s))})" for s in chain)
+                global_assignment[g] = f"X({formatted_chain})"
+            for g, chain in assignment_z.items():
+                formatted_chain = ", ".join(f"({', '.join(map(str, s))})" for s in chain)
+                global_assignment[g] = f"Z({formatted_chain})"
+                
+    return safe_splits, global_assignment
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analyze safe hook errors for a given QECC.")
-    parser.add_argument("--code", type=str, nargs='*', default=["23_1_7"],
+    parser.add_argument("--code", type=str, nargs='*', default=["9_1_3"],
                         help="The name of the QECC to load (e.g., 7_1_3, 9_1_3, 17_1_5)")
     parser.add_argument("--basis", type=str, choices=['X', 'Z'], default='Z',
                         help="The logical state being prepared (X or Z). Defaults to Z.")
@@ -129,6 +150,8 @@ if __name__ == "__main__":
                         help="Maximum weight of the split to consider (e.g., 2 or 3).")
     parser.add_argument("--verbose", action="store_true", default=True,
                         help="Print the full mapping of all generators and their safe splits.")
+    parser.add_argument("--find-assignment", action="store_true", default=True,
+                        help="Find a globally safe assignment where all combinations of k<=t hooks are safe.")
     args = parser.parse_args()
     
     for code_name in args.code:
@@ -140,13 +163,14 @@ if __name__ == "__main__":
             continue
             
         t0 = time.time()
-        safe_splits = analyze_hook_errors(
+        safe_splits, global_assignment = analyze_hook_errors(
             H_x, H_z, L_x, L_z, d, 
             prep_basis=args.basis, 
             method=args.method,
             searcher_type=args.searcher,
             max_splits=args.max_splits,
-            max_weight=args.max_weight
+            max_weight=args.max_weight,
+            find_assignment=args.find_assignment
         )
         t1 = time.time()
         
@@ -161,4 +185,11 @@ if __name__ == "__main__":
         if args.verbose:
             print("\nGenerators and their Safe Splits Mapping:")
             print(json.dumps(safe_splits, indent=2))
+            
+        if args.find_assignment:
+            print("\nGlobally Safe Assignment:")
+            if global_assignment:
+                print(json.dumps(global_assignment, indent=2))
+            else:
+                print("Could not find a globally safe assignment from the candidates.")
         print()

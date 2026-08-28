@@ -71,3 +71,20 @@ The main executable script tying the system together.
 1.  **Asymmetric Safety (Basis Dependence):** If `--basis Z` is chosen, the target state is $|0\rangle_L$, so $L_z \in \mathcal{S}_{\text{prep}}$. As a result, Z-type hook errors are generally benign (or trivially safe), while X-type hook errors consume distance. The solver correctly reflects this extreme asymmetry in the output counts.
 2.  **Missing Logical Cosets:** If a hook error acts entirely in a basis that has no non-trivial logical operators left to test (e.g., testing Z-errors during Z-basis prep), the solver identifies that `len(L_cosets) == 0`. It instantly returns `True` since a logical failure in that basis is impossible.
 3.  **Formatting:** Subsets and generators are parsed into human-readable tuples, e.g., `"X(4, 5, 6, 7)"`.
+
+---
+
+## 5. Global Assignments (Combinations of Hooks)
+
+Safe hook errors do not form a basis, and their combinations are highly non-linear. The safety of individual hooks $h_1$ and $h_2$ does not guarantee the safety of their product $h_1 \cdot h_2$.
+
+If a combination of $k$ independent safe hooks (where $k \le t$) occurs, they consume $k$ physical faults. The adversary has $t-k$ faults remaining. The maximum weight of the remaining faults plus the decoder's guess is $(t-k) + t = 2t - k$.
+**Combination Condition:** A specific combination of $k$ hooks $\{h_1, \dots, h_k\}$ is safe if and only if:
+1. **Trivially Safe:** $\min_{S \in \mathcal{S}_{\text{prep}}} \text{weight}\left(\prod_{i=1}^k h_i \cdot S\right) \le k$ 
+2. **Decoder-Benign:** $\min_{L \notin \mathcal{S}_{\text{prep}}, S \in \mathcal{S}_{\text{prep}}} \text{weight}\left(\prod_{i=1}^k h_i \cdot L \cdot S\right) \ge 2t - k + 1$
+
+### `hookerrors/combinations.py`
+This module computes a **Globally Safe Assignment** by finding a set of algebraic splits that are jointly safe.
+*   **Maximal Multi-Splittings (Chains):** A single generator can be split into multiple pieces (e.g., partitioning a degree-8 spider into 5 smaller spiders). This corresponds to a chain of nested safe hook errors (e.g., $S_1 \subset S_2 \subset S_3 \dots$). The algorithm first finds the longest valid chain of nested safe splits (the maximal multi-splitting) for each generator using a DAG longest-path formulation.
+*   **Greedy Global Assignment:** It then sorts the generators by their maximal chain length and greedily attempts to add each generator's entire chain to the global assignment. A chain is added only if ALL possible combinations (up to size $k \le t$) involving the new hook errors and the previously assigned hook errors satisfy the Combination Condition. This maximizes the total number of internal edges safely introduced into the circuit.
+*   **$d=3$ Triviality:** For distance-3 codes ($t=1$), the adversary is capped at $k=1$ faults. They can never trigger multiple hook errors simultaneously. Therefore, *any* valid individual assignment is automatically globally safe.
