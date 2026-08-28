@@ -118,8 +118,8 @@ def draw_path_cover(ax, G_base, pos, cover_paths, markings=None, matching=None, 
                     color=path_color, linewidth=4, linestyle='-')
 
 
-def visualize_cat_state_base(G, ham_path, markings, pos=None):
-    plt.figure(figsize=(5, 5))
+def visualize_cat_state_base(G, ham_path, markings, pos=None, figsize=(10, 10)):
+    plt.figure(figsize=figsize)
     pos = pos or nx.spring_layout(G)  # Kamada-Kawai usually looks best for regular graphs
     nx.draw(G, pos, with_labels=True)
     nx.draw_networkx_edge_labels(G, pos, edge_labels={e: "  |  " * num_marks for e, num_marks in markings.items()},
