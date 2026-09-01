@@ -8,7 +8,7 @@ import time
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from spiderstate.utils import load_qecc
-from hookerrors.filters import MILPStrategy, LookupStrategy, TieredStrategy, HeuristicOnlyStrategy
+from hookerrors.filters import MILPStrategy, LookupStrategy, TieredStrategy, HeuristicOnlyStrategy, AlgebraicStrategy
 from hookerrors.searchers import ExhaustiveSearcher, EarlyExitSearcher
 from hookerrors.combinations import find_globally_safe_assignment
 
@@ -60,8 +60,11 @@ def analyze_hook_errors(H_x, H_z, L_x, L_z, d, prep_basis='Z', method='tiered', 
     elif method == 'heuristic':
         strategy_x = HeuristicOnlyStrategy(Mx_prep, t)
         strategy_z = HeuristicOnlyStrategy(Mz_prep, t)
+    elif method == 'algebraic':
+        strategy_x = AlgebraicStrategy(Mx_prep, t, max_weight=t)
+        strategy_z = AlgebraicStrategy(Mz_prep, t, max_weight=t)
     else:
-        raise ValueError("method must be 'milp', 'tiered', 'lookup', or 'heuristic'")
+        raise ValueError("method must be 'milp', 'tiered', 'lookup', 'heuristic', or 'algebraic'")
         
     # 2. Initialize the Searcher (Pruning)
     if searcher_type == 'exhaustive':
@@ -136,12 +139,12 @@ def analyze_hook_errors(H_x, H_z, L_x, L_z, d, prep_basis='Z', method='tiered', 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analyze safe hook errors for a given QECC.")
-    parser.add_argument("--code", type=str, nargs='*', default=["9_1_3"],
+    parser.add_argument("--code", type=str, nargs='*', default=["15_7_3"],
                         help="The name of the QECC to load (e.g., 7_1_3, 9_1_3, 17_1_5)")
     parser.add_argument("--basis", type=str, choices=['X', 'Z'], default='Z',
                         help="The logical state being prepared (X or Z). Defaults to Z.")
-    parser.add_argument("--method", type=str, choices=['milp', 'tiered', 'lookup', 'heuristic'], default='lookup',
-                        help="Solver method: milp (exact only), tiered (fast heuristics + exact), lookup (BFS dict), heuristic (BP-OSD only).")
+    parser.add_argument('--method', type=str, choices=['tiered', 'lookup', 'milp', 'heuristic', 'algebraic'], default='algebraic',
+                        help='Which oracle to use. lookup is best for small codes, heuristic for large codes, algebraic for purely decoder-independent verification.')
     parser.add_argument("--searcher", type=str, choices=['exhaustive', 'early_exit'], default='exhaustive',
                         help="Search pruning method: exhaustive (all combinations), early_exit (stop after finding max-splits).")
     parser.add_argument("--max-splits", type=int, default=1,

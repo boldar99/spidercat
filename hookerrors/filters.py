@@ -175,6 +175,54 @@ class TieredStrategy:
         return True
 
 
+class AlgebraicStrategy:
+    """
+    A strictly polynomial, decoder-independent strategy.
+    It builds a lookup table of syndromes for all errors up to a fixed max_weight.
+    This guarantees w_min* <= k algebraically without using BP-OSD or ILP.
+    Perfect for scaling to high distances where perfect decoding is not assumed.
+    """
+    def __init__(self, S_prep, t, max_weight=1):
+        self.S_prep = S_prep
+        self.t = t
+        self.n = S_prep.shape[1]
+        self.max_weight = max_weight
+        
+        # Build syndrome lookup table for errors up to max_weight
+        self.syndromes = {}
+        import galois
+        GF = galois.GF(2)
+        H_check = GF(self.S_prep).null_space()
+        
+        def backtrack(idx, current_weight, current_err):
+            if current_weight <= self.max_weight:
+                syn = tuple((H_check @ current_err).tolist())
+                if syn not in self.syndromes or current_weight < self.syndromes[syn]:
+                    self.syndromes[syn] = current_weight
+                    
+            if current_weight == self.max_weight or idx == self.n:
+                return
+                
+            backtrack(idx + 1, current_weight, current_err)
+            current_err[idx] = 1
+            backtrack(idx + 1, current_weight + 1, current_err)
+            current_err[idx] = 0
+
+        backtrack(0, 0, GF.Zeros(self.n))
+        self.H_check = H_check
+        self.GF = galois.GF(2)
+
+    def check_tier1(self, E, threshold=1):
+        """Checks if w_min*(E) <= threshold using the syndrome lookup table."""
+        e_galois = self.GF(E)
+        syn = tuple((self.H_check @ e_galois).tolist())
+        return syn in self.syndromes and self.syndromes[syn] <= threshold
+        
+    def check_tier3(self, E, L_cosets):
+        # We strictly rely on Tier 1 for algebraic safety.
+        return False
+
+
 class MILPStrategy:
     def __init__(self, M_prep, t):
         self.M_prep = M_prep
