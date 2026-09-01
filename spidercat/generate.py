@@ -227,8 +227,8 @@ def process_cell(n, t, ps, cwd, replace=False):
         all_exists = all_exists and Path(
             f"{cwd}/circuits/cat_state_t{t}_n{n}_p{p}.stim"
         ).is_file()
-    if not replace and all_exists:
-        return " X "
+    # if not replace and all_exists:
+    #     return " X "
 
     # Generate circuit
     circs = cat_state_FT(n, t, ps, run_verification=False, replace=replace)
@@ -265,8 +265,8 @@ if __name__ == "__main__":
     init_circuits_folder()
 
     PS = (1,)
-    N = 100
-    TS = [2]
+    N = 50
+    TS = [5]
 
     print("Generating cat-state preparation circuits with optimal number of flags for given n and t")
     print()
@@ -286,7 +286,7 @@ if __name__ == "__main__":
     for t in TS:
         print(f"t={t} |", end=' ', flush=True)
 
-        results_generator = (process_cell(n, t, PS, cwd, replace=True) for n in ns)
+        results_generator = (process_cell(n, t, PS, cwd, replace=False) for n in ns)
 
         # results_generator = Parallel(n_jobs=-3, return_as="generator")(delayed(process_cell)(n, t, PS, cwd, replace=False) for n in ns)
         for cell_str in results_generator:

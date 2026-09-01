@@ -244,10 +244,11 @@ class CatStateExtractor:
             print(f"Init Root {root_node} (Tree {tree_id}) -> Q{root_qubit}")
 
         # Queue stores: (node, current_qubit)
-        queue = [(root_node, root_qubit)]
+        queue = [root_node]
 
         while queue:
-            node, current_qubit = queue.pop(0)
+            node = queue.pop(0)
+            current_qubit = self.node_to_qubit[node]
             self.tree_of_node[node] = tree_id
 
             children = [n for n in F_new.neighbors(node) if n not in self.node_to_qubit]
@@ -284,6 +285,8 @@ class CatStateExtractor:
                 self.tree_to_qubits[tree_id].add(new_q)
                 if self.verbose:
                     print(f"  Mark on {node}: Spawned CNOT Q{current_qubit} -> Q{new_q}")
+                self.node_to_qubit[node] = new_q
+                current_qubit = new_q
 
 
             # Sort children by depth to identify the primary branch
@@ -306,7 +309,7 @@ class CatStateExtractor:
                 if self.verbose:
                     print(f"  Node {node} -> Branch {child}: Spawned CNOT Q{current_qubit} -> Q{new_q}")
 
-                queue.append((child, new_q))
+                queue.append(child)
 
             # 4. PRIMARY CHILD (Inherit current qubit)
             self.node_to_qubit[primary] = current_qubit
@@ -316,7 +319,7 @@ class CatStateExtractor:
             if self.verbose:
                 print(f"  Node {node} -> Primary {primary} (Inherits Q{current_qubit})")
 
-            queue.append((primary, current_qubit))
+            queue.append(primary)
 
     def _record_meas(self, t1, t2, m_idx):
         if t1 == t2: self.builder.add_detector(m_idx)
@@ -451,7 +454,7 @@ if __name__ == "__main__":
     from spidercat.utils import load_solution_triplet
     from spidercat.spanning_tree import find_min_height_roots, match_forest_leaves_to_marked_edges
 
-    grf, forest, M, matchings = load_solution_triplet(12, 2, 3)
+    grf, forest, M, matchings = load_solution_triplet(12, 2, 1)
     roots = find_min_height_roots(forest)
     draw_spanning_forest_solution(grf, forest, M, matchings, roots)
     extract_circuit_rooted(grf, forest, roots, M, matchings, verbose=False)
