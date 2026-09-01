@@ -292,9 +292,13 @@ def build_traversal_digraph(G: nx.Graph, F: nx.Graph, root) -> nx.DiGraph:
 
 # --- 2. The Main Extractor Class ---
 class CatStateExtractor:
-    def __init__(self, builder: CircuitBuilder, verbose=False):
+    def __init__(self, builder: CircuitBuilder, verbose=False, record=False):
         self.builder = builder
         self.verbose = verbose
+        self.record = record
+        self.frames = []
+        self.processed_nodes_history = set()
+        self.layout_pos = None
 
         self.node_to_qubit = {}
         # Maps an edge to the flag qubit that it corresponds to
@@ -313,6 +317,104 @@ class CatStateExtractor:
         self.processed = set()
         self.processed_cnots = set()
         self.primary_paths = {}
+
+    def _capture_frame(self, G, F, current_nodes=None, current_edge=None):
+        if not self.record: return
+        import matplotlib.pyplot as plt
+        import io
+        from PIL import Image
+        import cairosvg
+        from spidercat.draw import draw_forest_on_graph_state, display_digraph
+
+        if self.layout_pos is None:
+            self.layout_pos = nx.spring_layout(G)
+            
+        current_nodes = current_nodes or []
+
+        fig_graph, ax_graph = plt.subplots(figsize=(12, 9.6))
+        draw_forest_on_graph_state(
+            G, F, 
+            pos=self.layout_pos, 
+            processed_nodes=self.processed_nodes_history, 
+            current_nodes=current_nodes, 
+            processed_edges=getattr(self, 'processed_edges_history', set()),
+            current_edge=current_edge,
+            ax=ax_graph
+        )
+        
+        buf_graph = io.BytesIO()
+        fig_graph.savefig(buf_graph, format="png", bbox_inches='tight')
+        plt.close(fig_graph)
+        buf_graph.seek(0)
+        graph_img = Image.open(buf_graph)
+
+        digraph_img = None
+        if getattr(self, 'dependency_graph', None) is not None:
+            fig_digraph, ax_digraph = plt.subplots(figsize=(12, 9.6))
+            # We don't have edges in digraph to highlight because it's slightly different edge set,
+            # but we could map them if needed. For now just pass nodes.
+            display_digraph(self.dependency_graph, pos=self.digraph_pos, ax=ax_digraph, processed_nodes=self.processed_nodes_history, current_nodes=current_nodes)
+            buf_digraph = io.BytesIO()
+            fig_digraph.savefig(buf_digraph, format="png", bbox_inches='tight')
+            plt.close(fig_digraph)
+            buf_digraph.seek(0)
+            digraph_img = Image.open(buf_digraph)
+
+        circ = self.builder.get_circuit()
+        try:
+            svg_data = str(circ.diagram('timeline-svg'))
+            png_data = cairosvg.svg2png(bytestring=svg_data.encode('utf-8'), background_color="white")
+            circ_img = Image.open(io.BytesIO(png_data))
+        except Exception as e:
+            fig, ax = plt.subplots(figsize=(6, 8))
+            ax.text(0.1, 0.9, str(circ), family='monospace', va='top', wrap=True)
+            ax.axis("off")
+            buf_text = io.BytesIO()
+            plt.savefig(buf_text, format="png", bbox_inches='tight')
+            plt.close(fig)
+            buf_text.seek(0)
+            circ_img = Image.open(buf_text)
+
+        self.frames.append((graph_img, digraph_img, circ_img))
+
+    def export_gif(self, filename="extraction.gif"):
+        if not self.frames:
+            print("No frames recorded.")
+            return
+
+        from PIL import Image
+        import imageio
+        import numpy as np
+
+        stitched_frames = []
+        max_top_width = max(
+            graph_img.width + (digraph_img.width if digraph_img else 0)
+            for graph_img, digraph_img, circ_img in self.frames
+        )
+        max_top_height = max(
+            max(graph_img.height, digraph_img.height if digraph_img else 0)
+            for graph_img, digraph_img, circ_img in self.frames
+        )
+        max_bottom_width = max(circ_img.width for graph_img, digraph_img, circ_img in self.frames)
+        max_bottom_height = max(circ_img.height for graph_img, digraph_img, circ_img in self.frames)
+
+        max_width = max(max_top_width, max_bottom_width)
+        max_height = max_top_height + max_bottom_height
+
+        for graph_img, digraph_img, circ_img in self.frames:
+            stitched = Image.new('RGB', (max_width, max_height), (255, 255, 255))
+            
+            stitched.paste(graph_img, (0, 0))
+            if digraph_img:
+                stitched.paste(digraph_img, (graph_img.width, 0))
+            
+            circ_x = (max_width - circ_img.width) // 2
+            stitched.paste(circ_img, (circ_x, max_top_height))
+            
+            stitched_frames.append(np.array(stitched))
+
+        imageio.mimsave(filename, stitched_frames, fps=2.0)
+        print(f"Exported GIF to {filename}")
 
     def _get_new_data_qubit(self):
         q = self.next_data_idx; self.next_data_idx += 1; return q
@@ -364,23 +466,48 @@ class CatStateExtractor:
             self._compute_branch_marking_values(root, None, G, F)
         self.primary_paths = {tree_id: ls[1:] for tree_id, ls in primary_paths.items()} if primary_paths is not None else {}
 
+        if self.record:
+            self.dependency_graph = dependency_graph
+            self.processed_nodes_history = set()
+            self.processed_edges_history = set()
+            self.layout_pos = nx.spring_layout(G)
+            if dependency_graph is not None:
+                if nx.is_directed_acyclic_graph(dependency_graph):
+                    for layer, nodes in enumerate(nx.topological_generations(dependency_graph)):
+                        for node in nodes:
+                            dependency_graph.nodes[node]["layer"] = layer
+                    self.digraph_pos = nx.multipartite_layout(dependency_graph, subset_key="layer", align="vertical")
+                else:
+                    self.digraph_pos = nx.kamada_kawai_layout(dependency_graph)
+            else:
+                self.digraph_pos = None
+
+            self._capture_frame(G, F, None)
+
         # PASS 1: Grow Trees Level-by-Level
         self._grow_tree_bfs(roots, G, F)
 
         self._generate_detectors()
         self._generate_feedback()
+
+        if self.record:
+            self._capture_frame(G, F, None)
+            
         # PASS 2: Close Gaps
         return self.builder.get_circuit()
 
 
     def _grow_tree_bfs(self, roots, G_new, F_new):
         # 1. INITIALIZE ROOT
-        self.init_roots(G_new, roots)
+        self.init_roots(G_new, F_new, roots)
         self.builder.tick()
 
         while self.queue:
             current_qubit, node, tree_id = self.pop_next_from_queue()
             self.node_to_tree[node] = tree_id
+            
+            if self.record:
+                self.processed_nodes_history.add(node)
 
             tree_children = [n for n in F_new.neighbors(node) if n not in self.node_to_qubit]
             non_tree_children = [n for n in G_new.neighbors(node) if n not in F_new.neighbors(node)]
@@ -390,6 +517,10 @@ class CatStateExtractor:
             for child in non_tree_children:
                 edge = ed(node, child)
                 is_cnot_edge = G_new.edges[edge].get("edge_type", "") == "cnot"
+                is_processed_cnot = is_cnot_edge and edge in self.processed_cnots
+
+                if self.record and not is_processed_cnot:
+                    self._capture_frame(G_new, F_new, current_nodes=[node], current_edge=edge)
 
                 if is_cnot_edge:
                     self.process_cnot_edge(G_new, node, child, edge)
@@ -399,12 +530,19 @@ class CatStateExtractor:
                     self.take_role_of_flag(G_new, node, edge)
                 else:
                     self.initialize_flag(G_new, F_new, node, child, edge)
+                    
+                if self.record and not is_processed_cnot:
+                    self.processed_edges_history.add(edge)
 
             if is_flag_node:
+                if self.record and not non_tree_children:
+                    self._capture_frame(G_new, F_new, current_nodes=[node])
                 assert not tree_children
                 continue
 
             if not tree_children:
+                if self.record and not non_tree_children:
+                    self._capture_frame(G_new, F_new, current_nodes=[node])
                 # assert is_mark
                 if self.verbose:
                     print(f"  Node {node} serves as a sink point for Q{current_qubit}")
@@ -417,7 +555,14 @@ class CatStateExtractor:
 
             # 3. SECONDARY CHILDREN (Spawn new qubits)
             for child in secondaries:
+                edge = ed(node, child)
+                if self.record:
+                    self._capture_frame(G_new, F_new, current_nodes=[node], current_edge=edge)
+                    
                 self.process_branching(G_new, node, child)
+                
+                if self.record:
+                    self.processed_edges_history.add(edge)
 
             # Gather all newly discovered nodes and their assigned qubits
             new_nodes = [(tree_id, child, new_q) for child, new_q in
@@ -426,12 +571,20 @@ class CatStateExtractor:
             self.queue += new_nodes
 
             # 4. PRIMARY CHILD (Inherit current qubit)
-            self.node_to_tree[primary] = tree_id
-            self.node_to_qubit[primary] = current_qubit
-            self.tree_to_qubits[tree_id].add(current_qubit)
+            if primary is not None:
+                edge = ed(node, primary)
+                if self.record:
+                    self._capture_frame(G_new, F_new, current_nodes=[node], current_edge=edge)
+                    
+                self.node_to_tree[primary] = tree_id
+                self.node_to_qubit[primary] = current_qubit
+                self.tree_to_qubits[tree_id].add(current_qubit)
 
-            if self.verbose:
-                print(f"  Node {node} -> Primary {primary} (Inherits Q{current_qubit})")
+                if self.verbose:
+                    print(f"  Node {node} -> Primary {primary} (Inherits Q{current_qubit})")
+                    
+                if self.record:
+                    self.processed_edges_history.add(edge)
 
             if (tree_id, primary, current_qubit) not in self.queue:
                 self.queue.append((tree_id, primary, current_qubit))
@@ -563,7 +716,7 @@ class CatStateExtractor:
         tree_id, node, current_qubit = self.queue.pop(pop_index)
         return current_qubit, node, tree_id
 
-    def init_roots(self, G_new, roots):
+    def init_roots(self, G_new, F_new, roots):
         for tree_id, root_node in roots.items():
             root_qubit = self._get_new_data_qubit()
             spider_type = G_new.nodes[root_node].get("spider_type", "Z")
@@ -578,6 +731,10 @@ class CatStateExtractor:
 
             self.queue.append((tree_id, root_node, root_qubit))
             self.processed.add((tree_id, root_node, root_qubit))
+            
+            if self.record:
+                self.processed_nodes_history.add(root_node)
+                self._capture_frame(G_new, F_new, current_nodes=[root_node])
 
     def split_primary_secondaries(self, children: list[int]) -> tuple[int, list[int]]:
         # Sort children by depth to identify the primary branch
@@ -638,14 +795,14 @@ class CatStateExtractor:
                 for q in self.tree_to_qubits[t]: self.builder.add_feedback_x(m, q)
 
 
-def extract_circuit_rooted(G, forest, roots, markings, matches, verbose=False) -> stim.Circuit:
-    extractor = CatStateExtractor(StimBuilder(), verbose)
+def extract_circuit_rooted(G, forest, roots, markings, matches, verbose=False, record=False) -> stim.Circuit:
+    extractor = CatStateExtractor(StimBuilder(), verbose, record)
     G_exp, F_exp = expand_graph_and_forest(G, forest, markings, matches)
     return extractor.extract(G_exp, F_exp, roots)
 
 
-def extract_from_expanded_graph(G_exp, F_exp, roots, dependency_graph=None, verbose=False) -> stim.Circuit:
-    extractor = CatStateExtractor(StimBuilder(), verbose)
+def extract_from_expanded_graph(G_exp, F_exp, roots, dependency_graph=None, verbose=False, record=False) -> stim.Circuit:
+    extractor = CatStateExtractor(StimBuilder(), verbose, record)
     return extractor.extract(G_exp, F_exp, roots, dependency_graph)
 
 

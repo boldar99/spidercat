@@ -299,17 +299,34 @@ def draw_spanning_forest_solution(
     plt.close()
 
 
-def draw_forest_on_graph(
+def draw_forest_on_graph_state(
         G: nx.Graph,
         F: nx.Graph,
         figsize: tuple[int, int] = (10, 8),
-        pos = None
+        pos = None,
+        processed_nodes: set = None,
+        current_nodes: list = None,
+        processed_edges: set = None,
+        current_edge: tuple = None,
+        ax = None
 ) -> None:
     """
     Draws the spanning forest F over the graph G.
     Differentiates original nodes, marked nodes, and flagged nodes by color.
+    Can also highlight processed nodes/edges and the current node/edge.
     """
-    plt.figure(figsize=figsize)
+    if ax is None:
+        fig = plt.figure(figsize=figsize)
+    else:
+        fig = ax.get_figure()
+
+    processed_nodes = processed_nodes or set()
+    processed_edges = processed_edges or set()
+    current_nodes = current_nodes or []
+    # Normalize edges to handle undirected properly
+    processed_edges = {tuple(sorted(e)) for e in processed_edges}
+    if current_edge is not None:
+        current_edge = tuple(sorted(current_edge))
 
     cmap = plt.cm.tab10
     colors = cmap.colors
@@ -322,16 +339,23 @@ def draw_forest_on_graph(
     # 2. Map node colors based on the metadata we injected earlier
     node_colors = []
     for node, data in G.nodes(data=True):
-        if data.get("is_flag"):
+        if node in current_nodes:
+            node_colors.append("yellow")
+        elif node in processed_nodes:
+            node_colors.append("#e0e0e0")  # Very light gray
+        elif data.get("is_flag"):
             node_colors.append(colors[1])    # Implicit Flags (edge_diff)
         elif data.get("is_mark"):
             node_colors.append(colors[2])       # Explicit Marks
         else:
             node_colors.append(colors[0]) # Original Forest/Graph Nodes
+            
     node_edge_colors = []
     for node, data in G.nodes(data=True):
         spider_type = data.get("spider_type")
-        if spider_type == "X":
+        if node in processed_nodes and node not in current_nodes:
+            node_edge_colors.append("#b0b0b0")
+        elif spider_type == "X":
             node_edge_colors.append("red")
         elif spider_type == "Z":
             node_edge_colors.append("green")
@@ -348,55 +372,113 @@ def draw_forest_on_graph(
         node_size=400,
         edgecolors=node_edge_colors,
         linewidths=3,
+        ax=ax
     )
+    
+    if current_nodes:
+        nx.draw_networkx_nodes(
+            G, pos,
+            nodelist=current_nodes,
+            node_size=1000,
+            node_color='none',
+            edgecolors='magenta',
+            linewidths=4,
+            ax=ax
+        )
 
-    # Draw G's edges faintly in the background
+    # Prepare edges for G (dashed gray)
+    g_edges = [e for e in G.edges(data=True) if not e[2].get('edge_type') == 'cnot']
+    g_edge_colors = []
+    for u, v, _ in g_edges:
+        edge = tuple(sorted((u, v)))
+        if edge == current_edge:
+            g_edge_colors.append("magenta")
+        elif edge in processed_edges:
+            g_edge_colors.append("#e0e0e0")
+        else:
+            g_edge_colors.append("gray")
+
     nx.draw_networkx_edges(
         G, pos,
-        edge_color="gray",
+        edgelist=[(u, v) for u, v, _ in g_edges],
+        edge_color=g_edge_colors,
         width=1.5,
         alpha=0.8,
-        style="dashed" # Helps distinguish from F
+        style="dashed", # Helps distinguish from F
+        ax=ax
     )
+
+    cnot_edges = [(u, v) for u, v, d in G.edges(data=True) if d.get('edge_type') == 'cnot']
+    cnot_edge_colors = []
+    for u, v in cnot_edges:
+        edge = tuple(sorted((u, v)))
+        if edge == current_edge:
+            cnot_edge_colors.append("magenta")
+        elif edge in processed_edges:
+            cnot_edge_colors.append("#ffe0b2") # Light orange
+        else:
+            cnot_edge_colors.append("orange")
+            
     nx.draw_networkx_edges(
         G, pos,
-        edgelist=[(u, v) for u, v, d in G.edges(data=True) if d.get('edge_type') == 'cnot'],
-        edge_color="orange",
+        edgelist=cnot_edges,
+        edge_color=cnot_edge_colors,
         width=3.0,
         alpha=0.5,
+        ax=ax
     )
 
     # 4. Draw the Foreground: Forest F
+    f_edges = list(F.edges())
+    f_edge_colors = []
+    for u, v in f_edges:
+        edge = tuple(sorted((u, v)))
+        if edge == current_edge:
+            f_edge_colors.append("magenta")
+        elif edge in processed_edges:
+            f_edge_colors.append("#a0c4ff") # Light blue (assuming colors[0] is blue)
+        else:
+            f_edge_colors.append(colors[0])
+
     # Draw F's edges thickly and prominently
     nx.draw_networkx_edges(
         F, pos,
-        edge_color=(colors[0], ),
+        edgelist=f_edges,
+        edge_color=f_edge_colors,
         width=3.0,
-        alpha=0.8
+        alpha=0.8,
+        ax=ax
     )
 
     # 5. Add Labels
-    # For a cleaner look, you might only want to label original nodes,
-    # but here we label everything to help you debug.
     nx.draw_networkx_labels(
         G, pos,
         font_size=8,
-        font_weight="bold"
+        font_weight="bold",
+        ax=ax
     )
 
-    # plt.title("Spanning Forest F (Solid/Black) on Graph G (Dashed/Gray)")
-    plt.axis("off") # Hide the bounding box
-    plt.tight_layout()
-    # plt.show()
+    if ax is None:
+        plt.axis("off") # Hide the bounding box
+        plt.tight_layout()
+
+def draw_forest_on_graph(G: nx.Graph, F: nx.Graph, figsize: tuple[int, int] = (10, 8), pos=None) -> None:
+    draw_forest_on_graph_state(G, F, figsize, pos)
 
 
-def display_digraph(di_graph: nx.DiGraph, figsize=(12, 12), pos=None):
+def display_digraph(di_graph: nx.DiGraph, figsize=(12, 12), pos=None, ax=None, processed_nodes: set = None, current_nodes: list = None):
     """
     Displays the directed graph, distinguishing between tree edges and cycle closures.
     """
+    if ax is None:
+        fig = plt.figure(figsize=figsize)
+    else:
+        fig = ax.get_figure()
+
+    processed_nodes = processed_nodes or set()
+    current_nodes = current_nodes or []
 
     if nx.is_directed_acyclic_graph(di_graph):
-        plt.figure(figsize=figsize)
         # 1. Calculate the hierarchical layers mathematically
         for layer, nodes in enumerate(nx.topological_generations(di_graph)):
             for node in nodes:
@@ -408,7 +490,6 @@ def display_digraph(di_graph: nx.DiGraph, figsize=(12, 12), pos=None):
         # (Remove align="horizontal" if you prefer left-to-right)
         pos = pos or nx.multipartite_layout(di_graph, subset_key="layer", align="vertical")
     else:
-        plt.figure(figsize=figsize)
         # Kamada-Kawai handles graphs with cycles by treating edges like springs
         pos = pos or nx.kamada_kawai_layout(di_graph)
 
@@ -417,20 +498,43 @@ def display_digraph(di_graph: nx.DiGraph, figsize=(12, 12), pos=None):
     colors = ((216 / 256, 248 / 256, 216 / 256, 1.),) * 3 + colors
     node_colors = []
     for node, data in di_graph.nodes(data=True):
-        if data.get("is_flag"):
+        if node in current_nodes:
+            node_colors.append("yellow")
+        elif node in processed_nodes:
+            node_colors.append("#e0e0e0")  # Very light gray
+        elif data.get("is_flag"):
             node_colors.append(colors[1])    # Implicit Flags (edge_diff)
         elif data.get("is_mark"):
             node_colors.append(colors[2])       # Explicit Marks
         else:
             node_colors.append(colors[0]) # Original Forest/Graph Nodes
+            
+    node_edge_colors = []
+    for node, data in di_graph.nodes(data=True):
+        if node in processed_nodes and node not in current_nodes:
+            node_edge_colors.append("#b0b0b0")
+        else:
+            node_edge_colors.append("black")
 
     nx.draw_networkx_nodes(
         di_graph, pos,
         node_color=node_colors,
         node_size=400,
-        edgecolors="black" # Gives nodes a clean border
+        edgecolors=node_edge_colors, # Gives nodes a clean border
+        ax=ax
     )
-    nx.draw_networkx_labels(di_graph, pos, font_size=10, font_weight='bold')
+    
+    if current_nodes:
+        nx.draw_networkx_nodes(
+            di_graph, pos,
+            nodelist=current_nodes,
+            node_size=1000,
+            node_color='none',
+            edgecolors='magenta',
+            linewidths=4,
+            ax=ax
+        )
+    nx.draw_networkx_labels(di_graph, pos, font_size=10, font_weight='bold', ax=ax)
     colors = cmap.colors
 
     # Filter edges by type
@@ -439,14 +543,14 @@ def display_digraph(di_graph: nx.DiGraph, figsize=(12, 12), pos=None):
     cnot_edges = [(u, v) for u, v, d in di_graph.edges(data=True) if d.get('edge_type') == 'cnot']
 
     # Draw tree edges (Solid Black)
-    nx.draw_networkx_edges(di_graph, pos, edgelist=tree_edges, edge_color='black', arrows=True, arrowsize=15)
+    nx.draw_networkx_edges(di_graph, pos, edgelist=tree_edges, edge_color='black', arrows=True, arrowsize=15, ax=ax)
 
     # Draw cycle closure edges (Dashed Red, l -> t)
-    nx.draw_networkx_edges(di_graph, pos, edgelist=missing_edges, edge_color='red', style='dashed', arrows=True, arrowsize=15)
-    nx.draw_networkx_edges(di_graph, pos, edgelist=cnot_edges, edge_color='orange', style='dashed', arrows=True, arrowsize=15)
+    nx.draw_networkx_edges(di_graph, pos, edgelist=missing_edges, edge_color='red', style='dashed', arrows=True, arrowsize=15, ax=ax)
+    nx.draw_networkx_edges(di_graph, pos, edgelist=cnot_edges, edge_color='orange', style='dashed', arrows=True, arrowsize=15, ax=ax)
 
-    # plt.title("Spanning Tree Traversal with Directed Cycle Closures")
-    plt.tight_layout()
-    plt.axis('off')
+    if ax is None:
+        plt.tight_layout()
+        plt.axis('off')
     # plt.show()
 

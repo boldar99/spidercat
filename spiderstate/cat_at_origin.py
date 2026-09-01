@@ -19,23 +19,23 @@ from spiderstate.circuit_merger import synthesize_and_merge_layer
 
 
 
-def col_reduced_cat_at_origin(H: np.ndarray, d: int, max_col_ops: int = 0, max_basis_tries: int = 5000):
+def col_reduced_cat_at_origin(H: np.ndarray, d: int, max_col_ops: int = 0, max_basis_tries: int = 5000, record: bool = False):
     t = (d - 1) // 2
     _, final_matrix_after_col_ops, col_ops_performed = optimize_fault_tolerant_matrix(H, t, max_col_ops, max_basis_tries)
-    circ = cat_at_origin(final_matrix_after_col_ops, d)
+    circ = cat_at_origin(final_matrix_after_col_ops, d, record=record)
     for (c, n) in col_ops_performed:
         circ.append("CX", [c, n])
 
     return circ
 
 
-def row_optimized_cat_at_origin(H: np.ndarray, d: int, max_basis_tries: int = 10_000):
+def row_optimized_cat_at_origin(H: np.ndarray, d: int, max_basis_tries: int = 10_000, record: bool = False):
     t = (d - 1) // 2
     best_row_op_cost, matrix_after_row_ops = row_optimize_matrix(H, t, max_basis_tries)
-    return cat_at_origin(matrix_after_row_ops, d)
+    return cat_at_origin(matrix_after_row_ops, d, record=record)
 
 
-def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False) -> stim.Circuit:
+def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False, record=False) -> stim.Circuit:
     if not has_unique_ones_property(H):
         raise ValueError(f"H is not representing a bipartite graph state.")
 
@@ -157,11 +157,14 @@ def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False) -> stim.Circuit:
             global_D.add_edge(x_node_mapping[(x_graph, u)], z_node_mapping[(z_graph, z_val)], edge_type="cnot")
 
     # Extract circuit using the global graphs
-    extractor = CatStateExtractor(StimBuilder(), verbose=False)
+    extractor = CatStateExtractor(StimBuilder(), verbose=False, record=record)
     if draw_solutions:
         draw_forest_on_graph(global_G, global_F, figsize=(8, 8))
         display_digraph(global_D, figsize=(8, 8))
     circ = extractor.extract(global_G, global_F, global_roots, global_D, global_primary_paths)
+    if record:
+        print("Exporting...")
+        extractor.export_gif("cat_at_origin.gif")
     return circ
 
 
@@ -229,9 +232,9 @@ def _synthesize_verification_layer(
 
 def _evaluate_configuration(
     final_M, col_ops, H_x, stabs_x, stabs_z, H_reduce_x, H_reduce_z, 
-    t, d, top_n, first_layer, verbose, non_ft_penalty_factor
+    t, d, top_n, first_layer, verbose, non_ft_penalty_factor, record=False
 ):
-    circ = cat_at_origin(final_M, d)
+    circ = cat_at_origin(final_M, d, record=record)
     circ.append("TICK", [])
     for c, n in col_ops:
         circ.append("CX", [c, n])
@@ -296,7 +299,7 @@ def cat_at_origin_with_verification(
     state: str = "0", max_col_ops: int = 100, top_n: int = 50, max_basis_tries: int = 10_000,
     first_layer: Literal["X", "Z", "none"] = "none", verbose: bool = False,
     heuristic: str = "overlap", non_ft_penalty_factor: float = 0.01,
-    num_circuits: int = 1
+    num_circuits: int = 1, record: bool = False
 ) -> stim.Circuit:
     t = d // 2
 
@@ -355,7 +358,7 @@ def cat_at_origin_with_verification(
             
         circ = _evaluate_configuration(
             final_M, col_ops, H_x, stabs_x, stabs_z, H_reduce_x, H_reduce_z, 
-            t, d, top_n, first_layer, verbose, non_ft_penalty_factor
+            t, d, top_n, first_layer, verbose, non_ft_penalty_factor, record=record
         )
         
         if max_col_ops == 0:
@@ -373,14 +376,12 @@ def cat_at_origin_with_verification(
 
 if __name__ == "__main__":
     code = "12_2_4"
-    max_col_ops = 100
 
     print(f"Loading QECC: {code}")
     is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code)
 
-    final_circ = cat_at_origin_with_verification(
-        H_x=H_x, H_z=H_z, L_x=L_x, L_z=L_z, d=d,
-        max_col_ops=max_col_ops, verbose=True
+    final_circ = row_optimized_cat_at_origin(
+        H_z, d=d, record=True
     )
 
     print("\n--- Final Fault Tolerant Verification Circuit ---")
