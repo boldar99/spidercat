@@ -362,22 +362,13 @@ def extract_circuit_rooted(G, forest, roots, markings, matches, verbose=False) -
 
 def implement_CNOT_circuit(cnots, num_qubits, p_2, p_mem):
     circ = stim.Circuit()
-    all_qubits = set(range(num_qubits + 1))
-    free_qubits = all_qubits.copy()
+    all_qubits = range(num_qubits + 1)
     for c, n in cnots:
-        if c in free_qubits and n in free_qubits:
-            free_qubits -= {c, n}
-        else:
-            if p_mem > 0:
-                circ.append("Z_ERROR", free_qubits, p_mem)
-                circ.append("TICK")
-                free_qubits = all_qubits.copy() - {c, n}
         circ.append("CNOT", [c, n])
-
         if p_2 > 0 and not c.is_measurement_record_target:
             circ.append("DEPOLARIZE2", [c, n], p_2)
-    if p_mem > 0:
-        circ.append("Z_ERROR", free_qubits, p_mem)
+        if p_mem > 0:
+            circ.append("DEPOLARIZE1", all_qubits, p_mem)
     return circ
 
 

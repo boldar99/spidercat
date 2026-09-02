@@ -202,7 +202,7 @@ def visualise_clean_stacked_comparison(methods_data_dict):
 
 def visualise_pk_per_n(df, t):
     # Filter for only 1 <= k <= 5
-    df_filtered = df[(df['n'] >= 8) & (df['t'] == t) & df['k'].between(1, 10)].copy()
+    df_filtered = df[(df['n'] >= 8) & (df['t'] == t) & df['k'].between(0, t+2)].copy()
 
     if df_filtered.empty:
         print("No data found for 1 <= k <= 5.")
@@ -235,7 +235,7 @@ def visualise_pk_per_n(df, t):
     )
 
     # Y-Axis Log Scale
-    plt.yscale('log')
+    # plt.yscale('log')
 
     # Axis Labels
     plt.xlabel("Cat State Size", fontsize=12)
@@ -525,7 +525,7 @@ def visualise_method_comparison(methods_data_dict, t):
         for n, group in scope_df.groupby('n'):
             # Metric 1: Probability of success (k < t)
             # Sum probability of all k where k < t
-            success_prob = group[group['k'] <= t]['probability'].sum()
+            success_prob = group[group['k'] < 1]['probability'].sum()
             if 1.0 - success_prob < 1e-8:
                 continue
 
@@ -760,6 +760,8 @@ if __name__ == '__main__':
         df_sc_tree = pd.DataFrame(json.load(f))
     with open(f"simulation_data/simulation_results_t_n_spider-cat-opt_p1.json", "r") as f:
         df_sc_tree_opt = pd.DataFrame(json.load(f))
+    with open(f"simulation_data/simulation_results_t_n_spider-cat-opt_p1_X.json", "r") as f:
+        z_errors = pd.DataFrame(json.load(f))
     # with open(f"simulation_data/simulation_results_t_n_spider-cat_p5.json", "r") as f:
     #     df_sc_p5 = pd.DataFrame(json.load(f))
     # with open(f"simulation_data/simulation_results_t_n_spider-cat_p10.json", "r") as f:
@@ -771,10 +773,11 @@ if __name__ == '__main__':
     with open(f"simulation_data/simulation_results_t_n_MQT_p1.json", "r") as f:
         df_MQT = pd.DataFrame(json.load(f))
     methods = {
-        "Smart SpiderCat": df_sc_tree_opt,
-        "SpiderCat": df_sc_tree,
-        "MQT": df_MQT,
-        "Flag at Origin": df_FAO,
+        "SpiderCat": z_errors,
+        # "Smart SpiderCat": df_sc_tree_opt,
+        # "SpiderCat": df_sc_tree,
+        # "MQT": df_MQT,
+        # "Flag at Origin": df_FAO,
         # "SpiderCat (H-Path)": df_sc_ham,
         # "SpiderCat (T≈13)": (df_sc_inf, math.inf),
         # "SpiderCat (Prime Inv.)": (df_sc_inf_prime, math.inf),
@@ -795,14 +798,18 @@ if __name__ == '__main__':
         # "SpiderCat (10 forest)": df_sc_p10,
         # "SpiderCat (20 forest)": df_sc_p20,
     }
+    # visualise_method_comparison(methods, t=0)
     # visualise_method_comparison(methods, t=1)
     # visualise_method_comparison(methods, t=2)
-    visualise_failure_distance(methods, t=2)
-    visualise_failure_distance(methods, t=3)
-    visualise_failure_distance(methods, t=4)
-    visualise_failure_distance(methods, t=5)
-    visualise_failure_distance(methods, t=6)
-    visualise_failure_distance(methods, t=7)
+    # visualise_method_comparison(methods, t=3)
+    # visualise_pk_per_n(df_sc_tree_opt, 5)
+    visualise_pk_per_n(z_errors, 5)
+    # visualise_failure_distance(methods, t=2)
+    # visualise_failure_distance(methods, t=3)
+    # visualise_failure_distance(methods, t=4)
+    # visualise_failure_distance(methods, t=5)
+    # visualise_failure_distance(methods, t=6)
+    # visualise_failure_distance(methods, t=7)
     # visualise_method_comparison(methods, t=4)
     # visualise_method_comparison(methods, t=5)
     # visualise_method_comparison(methods, t=6)
