@@ -226,7 +226,7 @@ def simulate_t_n(ts, ns, method='spider-cat', num_paths=1):
                                     num_paths=num_paths) for t in ts for n in ns
     )
     collected_data = [item for sublist in parallel_results for item in sublist]
-    with open(f"simulation_data/simulation_results_t_n_{method}_p{num_paths}.json", "w") as f:
+    with open(f"simulation_data/simulation_results_t_n_{method}-opt_p{num_paths}.json", "w") as f:
         json.dump(collected_data, f, indent=4)
     print("Simulation complete")
     print()
@@ -249,16 +249,17 @@ if __name__ == "__main__":
     start_time = time.time()
 
     N = 50
-    T = 2
+    T = 7
     # simulate_t_n(range(2, T+1), range(8, N + 1), method="spider-cat", num_paths=1)
+    simulate_t_n(range(2, T+1), range(10, N + 1), method="spider-cat", num_paths=1)
     # simulate_t_n(range(3, 7), range(8, N + 1), method="spider-cat", num_paths=2)
     # simulate_t_n(range(3, 7), range(8, N + 1), method="spider-cat", num_paths=3)
     # simulate_t_n(range(3, 7), range(8, N + 1), method="spider-cat", num_paths=4)
     # simulate_t_n(range(3, T + 1), range(8, N + 1), method="spider-cat", num_paths=5)
     # simulate_t_n(range(3, T+1), range(8, N + 1), method="spider-cat", num_paths=10)
     # simulate_t_n(range(3, T + 1), range(8, N + 1), method="spider-cat", num_paths=20)
-    simulate_t_n(range(2, T+1), range(8, N + 1), method="flag-at-origin")
-    simulate_t_n(range(2, T+1), range(8, N + 1), method="MQT")
+    # simulate_t_n(range(2, T+1), range(8, N + 1), method="flag-at-origin")
+    # simulate_t_n(range(2, T+1), range(8, N + 1), method="MQT")
     # simulate_t_p(range(3, 8), (10 ** np.linspace(-0.3, -2, 18)).tolist(), n=24)
     # simulate_t_p(range(3, 8), (10 ** np.linspace(-0.3, -2, 18)).tolist(), n=50)
     # simulate_t_p(range(3, 8), (10 ** np.linspace(-0.3, -2, 18)).tolist(), n=80)

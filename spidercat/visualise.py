@@ -390,6 +390,108 @@ def visualise_pk_per_t_2(df, n):
     plt.close()
 
 
+def visualise_failure_distance(methods_data_dict, t):
+    """
+    Compares how different methods scale with n, using the metric 'Expected distance from error':
+    sum all w P(fault has weight w) * max(t - w, 0)
+    """
+    results = []
+
+    # 1. Data Aggregation
+    for method_name, raw_data in methods_data_dict.items():
+
+        if isinstance(raw_data, tuple):
+            t_extra = raw_data[1]
+            raw_data = raw_data[0]
+            df = pd.DataFrame(raw_data)
+            scope_df = df[df['n'].between(10, 50) & (df['t'] == (t + t_extra))]
+        else:
+            df = pd.DataFrame(raw_data)
+            scope_df = df[df['n'].between(10, 50) & (df['t'] == t)]
+
+        if scope_df.empty:
+            print(f"Warning: No data for method '{method_name}' at t={t}")
+            continue
+
+        for n, group in scope_df.groupby('n'):
+            cost_of_error = np.maximum(t - group['k'] + 1, 0)
+            expected_distance = (group['probability'] * cost_of_error).sum()
+
+            acc_rate = group['acceptance_rate'].iloc[0]
+            num_flags = group['num_flags'].iloc[0]
+            num_cx = group['num_cx'].iloc[0]
+            # depth = group['depth'].iloc[0]
+
+            results.append({
+                'n': n,
+                'method': method_name,
+                'expected_distance': expected_distance,
+                'acceptance_rate': acc_rate,
+                'num_flags': num_flags,
+                'num_cx': num_cx,
+                # 'depth': depth,
+            })
+
+    if not results:
+        print("No valid data found to plot.")
+        return
+
+    plot_df = pd.DataFrame(results)
+
+    # 2. Setup Plot
+    fig, ax1 = plt.subplots(figsize=(10, 7), dpi=120)
+    ax2 = ax1.twinx()  # Create secondary Y-axis
+
+    unique_methods = plot_df['method'].unique()
+    palette = sns.color_palette("bright", len(unique_methods))
+    method_colors = dict(zip(unique_methods, palette))
+
+    # 3. Plotting Loop
+    for method in unique_methods:
+        subset = plot_df[plot_df['method'] == method].sort_values('n')
+        color = method_colors[method]
+
+        ax1.plot(
+            subset['n'], subset['expected_distance'],
+            color=color, linestyle='-', linewidth=2, marker='o',
+            label=method
+        )
+
+        ax2.plot(
+            subset['n'], subset['acceptance_rate'],
+            color=color, linestyle=':', linewidth=1.5, marker='x', alpha=0.7
+        )
+
+    # 4. Styling & Legends
+    ax1.set_ylabel("Expected Distance from Error", fontsize=12)
+    ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+    ax1.set_xlabel("Cat State Size (n)", fontsize=12)
+    ax1.grid(True, which="both", ls="--", color='lightgrey', alpha=0.5)
+
+    ax2.set_ylabel("Acceptance Rate", fontsize=12, rotation=270, labelpad=15)
+    ax2.set_yscale('log')
+    ax2.invert_yaxis()
+
+    handles, labels = ax1.get_legend_handles_labels()
+    legend1 = ax1.legend(handles, labels, title="Method", loc='upper center')
+    ax1.add_artist(legend1) 
+
+    style_lines = [
+        Line2D([0], [0], color='black', lw=2, linestyle='-', marker='o'),
+        Line2D([0], [0], color='black', lw=1.5, linestyle=':', marker='x')
+    ]
+
+    style_labels = ['Expected Distance from Error', "Expected Circuit Volume"]
+    ax1.legend(style_lines, style_labels, loc='lower center')
+
+    plt.title(f"Method Comparison: Expected Distance vs CAT state size (t={t})", fontsize=14)
+    plt.tight_layout()
+    plt.savefig(f"simulation_data/expected_distance_per_n_at_t{t}.png")
+    # plt.show()
+    plt.close()
+
+
 def visualise_method_comparison(methods_data_dict, t):
     """
     Compares multiple methods for a fixed fault distance t with Dual Axis.
@@ -432,7 +534,7 @@ def visualise_method_comparison(methods_data_dict, t):
             acc_rate = group['acceptance_rate'].iloc[0]
             num_flags = group['num_flags'].iloc[0]
             num_cx = group['num_cx'].iloc[0]
-            depth = group['depth'].iloc[0]
+            # depth = group['depth'].iloc[0]
 
             results.append({
                 'n': n,
@@ -442,7 +544,7 @@ def visualise_method_comparison(methods_data_dict, t):
                 'acceptance_rate': acc_rate,
                 'num_flags': num_flags,
                 'num_cx': num_cx,
-                'depth': depth,
+                # 'depth': depth,
             })
 
     if not results:
@@ -476,7 +578,7 @@ def visualise_method_comparison(methods_data_dict, t):
 
         # --- Secondary Axis (Right): Acceptance Rate ---
         ax2.plot(
-            subset['n'], (subset['n'] + subset['num_flags']) * subset['depth'] / subset['acceptance_rate'],
+            subset['n'], subset['acceptance_rate'],
             color=color, linestyle=':', linewidth=1.5, marker='x', alpha=0.7
         )
 
@@ -656,6 +758,8 @@ if __name__ == '__main__':
 
     with open(f"simulation_data/simulation_results_t_n_spider-cat_p1.json", "r") as f:
         df_sc_tree = pd.DataFrame(json.load(f))
+    with open(f"simulation_data/simulation_results_t_n_spider-cat-opt_p1.json", "r") as f:
+        df_sc_tree_opt = pd.DataFrame(json.load(f))
     # with open(f"simulation_data/simulation_results_t_n_spider-cat_p5.json", "r") as f:
     #     df_sc_p5 = pd.DataFrame(json.load(f))
     # with open(f"simulation_data/simulation_results_t_n_spider-cat_p10.json", "r") as f:
@@ -667,6 +771,7 @@ if __name__ == '__main__':
     with open(f"simulation_data/simulation_results_t_n_MQT_p1.json", "r") as f:
         df_MQT = pd.DataFrame(json.load(f))
     methods = {
+        "Smart SpiderCat": df_sc_tree_opt,
         "SpiderCat": df_sc_tree,
         "MQT": df_MQT,
         "Flag at Origin": df_FAO,
@@ -692,7 +797,12 @@ if __name__ == '__main__':
     }
     # visualise_method_comparison(methods, t=1)
     # visualise_method_comparison(methods, t=2)
-    visualise_method_comparison(methods, t=2)
+    visualise_failure_distance(methods, t=2)
+    visualise_failure_distance(methods, t=3)
+    visualise_failure_distance(methods, t=4)
+    visualise_failure_distance(methods, t=5)
+    visualise_failure_distance(methods, t=6)
+    visualise_failure_distance(methods, t=7)
     # visualise_method_comparison(methods, t=4)
     # visualise_method_comparison(methods, t=5)
     # visualise_method_comparison(methods, t=6)

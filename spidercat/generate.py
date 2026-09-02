@@ -180,17 +180,18 @@ def cat_state_FT(
 
     E, N = minimum_E_and_V(n, T)
 
+    solution_triplet = None
     if not replace and Path(f"{cwd}/circuits_data/cat_state_t{t}_n{n}_p1.json").is_file():
         G, _, M, _ = load_solution_triplet(n, t, 1)
         forest = build_trivial_spanning_forest(G, M)
         spacing_trees = {p: build_min_diameter_spanning_tree(G, forest, M, p) for p in ps}
         solution_triplet = G, spacing_trees, M
-    elif t == math.inf:
-        solution_triplet = cat_state_FT_prime_inverse(n * 2 + 3, ps)
-    else:
-        solution_triplet = cat_state_FT_circular(n, N, T, ps, max_new_graphs=50, max_iter_graph=1_000)
-        if solution_triplet is None:
-            solution_triplet = cat_state_FT_random(n, N, T, ps, max_new_graphs=500)
+    # elif t == math.inf:
+    #     solution_triplet = cat_state_FT_prime_inverse(n * 2 + 3, ps)
+    # else:
+    #     solution_triplet = cat_state_FT_circular(n, N, T, ps, max_new_graphs=50, max_iter_graph=1_000)
+    #     if solution_triplet is None:
+    #         solution_triplet = cat_state_FT_random(n, N, T, ps, max_new_graphs=500)
     if solution_triplet is None:
         return {}
 
@@ -266,7 +267,7 @@ if __name__ == "__main__":
 
     PS = (1,)
     N = 50
-    TS = [5]
+    TS = [6, 7]
 
     print("Generating cat-state preparation circuits with optimal number of flags for given n and t")
     print()
