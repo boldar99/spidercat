@@ -30,7 +30,7 @@ def col_reduced_cat_at_origin(H: np.ndarray, d: int, max_col_ops: int = 0, max_b
 
 
 def row_optimized_cat_at_origin(H: np.ndarray, d: int, max_basis_tries: int = 10_000, record: bool = False):
-    t = (d - 1) // 2
+    t = d // 2
     best_row_op_cost, matrix_after_row_ops = row_optimize_matrix(H, t, max_basis_tries)
     return cat_at_origin(matrix_after_row_ops, d, record=record)
 
@@ -82,8 +82,6 @@ def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False, record=False) -> 
         for layer in nx.topological_generations(D):
             cands.extend([l for l in layer if l != e and G.nodes[l].get("is_mark", False)])
         x_candidates.append(cands)
-
-    matched_edges = match_edges(H, non_pivots, z_digraphs, x_digraphs, z_candidates, x_candidates)
 
     # Build global graphs
     z_node_mapping: dict[tuple[int, int], int] = {}
@@ -138,6 +136,8 @@ def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False, record=False) -> 
             i += 1
         else:
             j += 1
+
+    matched_edges = match_edges(H, non_pivots, z_digraphs, x_digraphs, z_candidates, x_candidates, record, global_G, global_F, global_D, z_node_mapping, x_node_mapping)
 
     # Phase 1: Connecting the cat states in the global graphs
     while matched_edges:
@@ -375,7 +375,7 @@ def cat_at_origin_with_verification(
 
 
 if __name__ == "__main__":
-    code = "12_2_4"
+    code = "20_2_6"
 
     print(f"Loading QECC: {code}")
     is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code)

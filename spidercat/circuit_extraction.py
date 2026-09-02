@@ -327,7 +327,7 @@ class CatStateExtractor:
         from spidercat.draw import draw_forest_on_graph_state, display_digraph
 
         if self.layout_pos is None:
-            self.layout_pos = nx.spring_layout(G)
+            self.layout_pos = nx.spring_layout(G, weight="weight")
             
         current_nodes = current_nodes or []
 

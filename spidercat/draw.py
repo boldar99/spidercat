@@ -334,7 +334,29 @@ def draw_forest_on_graph_state(
 
     # 1. Compute a single, locked layout based on G
     # A fixed seed ensures the graph looks the same every time you run it
-    pos = pos or nx.spring_layout(G)
+    pos = pos or nx.spring_layout(G, weight="weight")
+
+    import matplotlib.patches as patches
+    import numpy as np
+    
+    current_ax = ax if ax is not None else plt.gca()
+    
+    groups = {}
+    for node, data in G.nodes(data=True):
+        grp = data.get("spider_group")
+        if grp:
+            groups.setdefault(grp, []).append(node)
+            
+    for grp, nodes in groups.items():
+        if not nodes: continue
+        pts = np.array([pos[n] for n in nodes])
+        center = np.mean(pts, axis=0)
+        radius = max(np.linalg.norm(pts - center, axis=1)) + 0.15 if len(nodes) > 1 else 0.15
+        spider_type = G.nodes[nodes[0]].get("spider_type", "Z")
+        color = "#a0ffa0" if spider_type == "Z" else "#ffa0a0" # light green / red
+        
+        circle = patches.Circle((center[0], center[1]), radius=radius, color=color, alpha=0.3, zorder=0, ec='none')
+        current_ax.add_patch(circle)
 
     # 2. Map node colors based on the metadata we injected earlier
     node_colors = []
