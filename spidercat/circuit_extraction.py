@@ -470,17 +470,36 @@ class CatStateExtractor:
             self.dependency_graph = dependency_graph
             self.processed_nodes_history = set()
             self.processed_edges_history = set()
-            self.layout_pos = nx.spring_layout(G)
             if dependency_graph is not None:
                 if nx.is_directed_acyclic_graph(dependency_graph):
-                    for layer, nodes in enumerate(nx.topological_generations(dependency_graph)):
+                    layers = list(nx.topological_generations(dependency_graph))
+                    for layer, nodes in enumerate(layers):
                         for node in nodes:
                             dependency_graph.nodes[node]["layer"] = layer
                     self.digraph_pos = nx.multipartite_layout(dependency_graph, subset_key="layer", align="vertical")
+                    
+                    for layer_nodes in layers:
+                        visited = set()
+                        ordered = []
+                        for node in layer_nodes:
+                            if node in visited: continue
+                            visited.add(node)
+                            ordered.append(node)
+                            for neighbor in G.neighbors(node):
+                                if neighbor in layer_nodes and neighbor not in visited:
+                                    visited.add(neighbor)
+                                    ordered.append(neighbor)
+                                    
+                        y_coords = sorted([self.digraph_pos[n][1] for n in layer_nodes])
+                        for n, y in zip(ordered, y_coords):
+                            self.digraph_pos[n][1] = y
                 else:
                     self.digraph_pos = nx.kamada_kawai_layout(dependency_graph)
+                    
+                self.layout_pos = self.digraph_pos
             else:
                 self.digraph_pos = None
+                self.layout_pos = nx.spring_layout(G)
 
             self._capture_frame(G, F, None)
 

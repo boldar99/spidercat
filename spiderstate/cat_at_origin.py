@@ -35,7 +35,7 @@ def row_optimized_cat_at_origin(H: np.ndarray, d: int, max_basis_tries: int = 10
     return cat_at_origin(matrix_after_row_ops, d, record=record)
 
 
-def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False, record=False) -> stim.Circuit:
+def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False, record=True) -> stim.Circuit:
     if not has_unique_ones_property(H):
         raise ValueError(f"H is not representing a bipartite graph state.")
 
@@ -137,12 +137,16 @@ def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False, record=False) -> 
         else:
             j += 1
 
+    sinks = [n for n in global_D.nodes() if global_D.out_degree(n) == 0]
+    for n in sinks:
+        global_G.nodes[n]["is_primary_output"] = True
+
     matched_edges = match_edges(H, non_pivots, z_digraphs, x_digraphs, z_candidates, x_candidates, record, global_G, global_F, global_D, z_node_mapping, x_node_mapping)
 
     # Phase 1: Connecting the cat states in the global graphs
     while matched_edges:
         (z_graph, x_graph), (z_val, x_val) = matched_edges.pop(0)
-        global_G.add_edge(z_node_mapping[(z_graph, z_val)], x_node_mapping[(x_graph, x_val)], edge_type="cnot")
+        global_G.add_edge(z_node_mapping[(z_graph, z_val)], x_node_mapping[(x_graph, x_val)], edge_type="cnot", weight=0.1)
         global_G.nodes[z_node_mapping[(z_graph, z_val)]]["is_mark"] = False
         global_G.nodes[x_node_mapping[(x_graph, x_val)]]["is_mark"] = False
 
@@ -232,7 +236,7 @@ def _synthesize_verification_layer(
 
 def _evaluate_configuration(
     final_M, col_ops, H_x, stabs_x, stabs_z, H_reduce_x, H_reduce_z, 
-    t, d, top_n, first_layer, verbose, non_ft_penalty_factor, record=False
+    t, d, top_n, first_layer, verbose, non_ft_penalty_factor, record=True
 ):
     circ = cat_at_origin(final_M, d, record=record)
     circ.append("TICK", [])
@@ -375,7 +379,7 @@ def cat_at_origin_with_verification(
 
 
 if __name__ == "__main__":
-    code = "20_2_6"
+    code = "7_1_3"
 
     print(f"Loading QECC: {code}")
     is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code)

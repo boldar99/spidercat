@@ -363,6 +363,8 @@ def draw_forest_on_graph_state(
     for node, data in G.nodes(data=True):
         if node in current_nodes:
             node_colors.append("yellow")
+        elif data.get("is_primary_output"):
+            node_colors.append("#222222")  # Very dark color for primary output qubits
         elif node in processed_nodes:
             node_colors.append("#e0e0e0")  # Very light gray
         elif data.get("is_flag"):

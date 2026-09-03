@@ -35,14 +35,32 @@ class MatchEdgesRecorder:
         final_G = self.G
         final_D = self.D
         
-        layout_pos = nx.spring_layout(final_G, weight="weight")
         if nx.is_directed_acyclic_graph(final_D):
-            for layer, nodes in enumerate(nx.topological_generations(final_D)):
+            layers = list(nx.topological_generations(final_D))
+            for layer, nodes in enumerate(layers):
                 for node in nodes:
                     final_D.nodes[node]["layer"] = layer
             digraph_pos = nx.multipartite_layout(final_D, subset_key="layer", align="vertical")
+            
+            for layer_nodes in layers:
+                visited = set()
+                ordered = []
+                for node in layer_nodes:
+                    if node in visited: continue
+                    visited.add(node)
+                    ordered.append(node)
+                    for neighbor in final_G.neighbors(node):
+                        if neighbor in layer_nodes and neighbor not in visited:
+                            visited.add(neighbor)
+                            ordered.append(neighbor)
+                            
+                y_coords = sorted([digraph_pos[n][1] for n in layer_nodes])
+                for n, y in zip(ordered, y_coords):
+                    digraph_pos[n][1] = y
         else:
             digraph_pos = nx.kamada_kawai_layout(final_D)
+            
+        layout_pos = digraph_pos
 
         rendered_frames = []
         print(f"Rendering {len(self.frames_data)} frames for match_edges...")
