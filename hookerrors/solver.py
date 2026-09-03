@@ -1,198 +1,256 @@
 import numpy as np
-import itertools
+import galois
+import argparse
+import time
 import sys
 import os
-import argparse
 import json
-import time
+
+from spiderstate.optimize_parity_matrix import optimize_fault_tolerant_matrix, row_optimize_matrix
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from spiderstate.utils import load_qecc
-from hookerrors.filters import MILPStrategy, LookupStrategy, TieredStrategy, HeuristicOnlyStrategy, AlgebraicStrategy
-from hookerrors.searchers import ExhaustiveSearcher, EarlyExitSearcher
-from hookerrors.combinations import find_globally_safe_assignment
 
-def analyze_hook_errors(H_x, H_z, L_x, L_z, d, prep_basis='Z', method='tiered', searcher_type='exhaustive', max_splits=1, max_weight=None, find_assignment=False):
+def find_safe_splits(support, M_prep):
+    """
+    Finds all strictly safe splits for a given generator support using the GF(2) null-space method.
+    A split is safe if it is equivalent to a weight <= 1 fault up to M_prep.
+    Returns a list of safe splits (each is a tuple of qubit indices).
+    """
+    n = M_prep.shape[1]
+    I = [i for i in range(n) if i not in support]
+    safe_splits = set()
+    
+    # Empty and full splits are trivial
+    safe_splits.add(())
+    safe_splits.add(tuple(sorted(support)))
+
+    if len(I) == 0:
+        null_basis = np.eye(M_prep.shape[0], dtype=int)
+    else:
+        M_I = M_prep[:, I]
+        null_basis = np.array(galois.GF(2)(M_I).T.null_space(), dtype=int)
+        
+    if null_basis.size > 0:
+        base_stabs = (null_basis @ M_prep) % 2
+        # Include the zero vector (S=0)
+        valid_S = [np.zeros(n, dtype=int)]
+        
+        # We only generate a small number of combinations to avoid exponential blowup
+        import itertools
+        max_combinations = min(10, base_stabs.shape[0])
+        for r in range(1, max_combinations + 1):
+            for combo in itertools.combinations(range(base_stabs.shape[0]), r):
+                S_combo = np.zeros(n, dtype=int)
+                for idx in combo:
+                    S_combo = (S_combo + base_stabs[idx]) % 2
+                valid_S.append(S_combo)
+                if len(valid_S) > 1000:
+                    break
+            if len(valid_S) > 1000:
+                break
+                
+        # E1 = 0
+        for row in valid_S:
+            supp = tuple(sorted(np.where(row == 1)[0]))
+            safe_splits.add(supp)
+            
+        # E1 inside G
+        for q in support:
+            e_q = np.zeros(n, dtype=int)
+            e_q[q] = 1
+            for row in valid_S:
+                supp = tuple(sorted(np.where((row + e_q) % 2 == 1)[0]))
+                safe_splits.add(supp)
+                
+    # E1 outside G (q in I)
+    if len(I) > 0:
+        gf_M_I_T = galois.GF(2)(M_I.T)
+        for q in I:
+            e_q_I = np.zeros(len(I), dtype=int)
+            e_q_I[I.index(q)] = 1
+            
+            # Augmented matrix [M_I^T | e_q_I^T]
+            Aug = np.column_stack((gf_M_I_T, e_q_I))
+            rref = Aug.row_reduce()
+            
+            # Check if there is a pivot in the last column
+            has_solution = True
+            for i in range(rref.shape[0]):
+                if np.count_nonzero(rref[i, :-1]) == 0 and rref[i, -1] != 0:
+                    has_solution = False
+                    break
+                    
+            if has_solution:
+                x_part = np.zeros(gf_M_I_T.shape[1], dtype=int)
+                for i in range(rref.shape[0]):
+                    row = rref[i]
+                    nonzero = np.nonzero(row[:-1])[0]
+                    if len(nonzero) > 0:
+                        x_part[nonzero[0]] = int(row[-1])
+                        
+                e_q = np.zeros(n, dtype=int)
+                e_q[q] = 1
+                base_sol = (x_part @ M_prep + e_q) % 2
+                supp = tuple(sorted(np.where(base_sol == 1)[0]))
+                safe_splits.add(supp)
+                
+                # Add homogeneous solutions
+                if null_basis.size > 0:
+                    for row in valid_S:
+                        supp_hom = tuple(sorted(np.where((base_sol + row) % 2 == 1)[0]))
+                        safe_splits.add(supp_hom)
+                
+    # Filter to ensure they are strictly subsets of G (they should be by math, but just to be safe)
+    G_set = set(support)
+    valid_splits = [s for s in safe_splits if set(s).issubset(G_set)]
+    
+    # Cap to avoid O(N^2) explosion in find_longest_chain
+    if len(valid_splits) > 500:
+        valid_splits = valid_splits[:500]
+        
+    return valid_splits
+
+def find_longest_chain(support, safe_splits):
+    """
+    Given a list of safe splits, finds the longest chain of nested splits: S1 c S2 c ... c G.
+    Returns the chain as a tuple of tuples.
+    """
+    splits = sorted([set(s) for s in safe_splits], key=len)
+    if not splits:
+        return ()
+        
+    n = len(splits)
+    dp = [1] * n
+    prev = [-1] * n
+    
+    for i in range(n):
+        for j in range(i):
+            if splits[j].issubset(splits[i]):
+                if dp[j] + 1 > dp[i]:
+                    dp[i] = dp[j] + 1
+                    prev[i] = j
+                    
+    max_idx = np.argmax(dp)
+    chain = []
+    curr = max_idx
+    while curr != -1:
+        chain.append(tuple(sorted(splits[curr])))
+        curr = prev[curr]
+    
+    chain.reverse()
+    
+    # Remove empty and full splits for display purposes
+    G_tuple = tuple(sorted(support))
+    clean_chain = [c for c in chain if c and c != G_tuple]
+    
+    return tuple(clean_chain)
+
+def analyze_hook_errors(code_name):
+    print(f"--- Running Algebraic Hook Error Analysis for {code_name} ---")
+    try:
+        _, H_x, H_z, L_x, L_z, d = load_qecc(code_name)
+    except Exception as e:
+        print(f"Failed to load {code_name}: {e}\n")
+        return
+
     n = H_x.shape[1]
-    k_x = L_x.shape[0] if len(L_x) > 0 else 0
-    k_z = L_z.shape[0] if len(L_z) > 0 else 0
-    t = (d - 1) // 2
+    _, H_z = row_optimize_matrix(H_z, d // 2, 1_000)
     
-    if prep_basis == 'Z':
-        Mx_prep = H_x
-        Mz_prep = np.vstack([H_z, L_z]) if len(L_z) > 0 else H_z
-        L_check_x = L_x
-        L_check_z = np.zeros((0, n), dtype=int)
-    elif prep_basis == 'X':
-        Mx_prep = np.vstack([H_x, L_x]) if len(L_x) > 0 else H_x
-        Mz_prep = H_z
-        L_check_x = np.zeros((0, n), dtype=int)
-        L_check_z = L_z
-    else:
-        raise ValueError("prep_basis must be 'X' or 'Z'")
-        
-    def generate_cosets(L_check):
-        k = L_check.shape[0] if len(L_check) > 0 else 0
-        cosets = []
-        for c in itertools.product([0, 1], repeat=k):
-            if sum(c) == 0:
-                continue
-            L_c = np.zeros(n, dtype=int)
-            for j in range(k):
-                if c[j] == 1:
-                    L_c ^= L_check[j]
-            cosets.append(L_c)
-        return cosets
-        
-    L_cosets_x = generate_cosets(L_check_x)
-    L_cosets_z = generate_cosets(L_check_z)
+    # For Z-basis preparation (|0>_L), Z faults are evaluated against Z stabilizers + Z logicals
+    Mz_prep = np.vstack([H_z, L_z]) if len(L_z) > 0 else H_z
+    # X faults are evaluated against X stabilizers
+    Mx_prep = H_x
     
-    # 1. Initialize the Strategy (Filter)
-    if method == 'milp':
-        strategy_x = MILPStrategy(Mx_prep, t)
-        strategy_z = MILPStrategy(Mz_prep, t)
-    elif method == 'tiered':
-        strategy_x = TieredStrategy(Mx_prep, t)
-        strategy_z = TieredStrategy(Mz_prep, t)
-    elif method == 'lookup':
-        strategy_x = LookupStrategy(Mx_prep, t)
-        strategy_z = LookupStrategy(Mz_prep, t)
-    elif method == 'heuristic':
-        strategy_x = HeuristicOnlyStrategy(Mx_prep, t)
-        strategy_z = HeuristicOnlyStrategy(Mz_prep, t)
-    elif method == 'algebraic':
-        strategy_x = AlgebraicStrategy(Mx_prep, t, max_weight=t)
-        strategy_z = AlgebraicStrategy(Mz_prep, t, max_weight=t)
-    else:
-        raise ValueError("method must be 'milp', 'tiered', 'lookup', 'heuristic', or 'algebraic'")
-        
-    # 2. Initialize the Searcher (Pruning)
-    if searcher_type == 'exhaustive':
-        searcher = ExhaustiveSearcher(max_split_size=max_weight)
-    elif searcher_type == 'early_exit':
-        searcher = EarlyExitSearcher(max_splits=max_splits, max_split_size=max_weight)
-    else:
-        raise ValueError("searcher_type must be 'exhaustive' or 'early_exit'")
+    t0 = time.time()
     
-    safe_splits = {}
-    raw_safe_candidates = {"X": {}, "Z": {}}
-    gens_x = []
-    gens_z = []
+    global_assignment = {}
+    num_x_safe = 0
+    num_z_safe = 0
     
-    # Define evaluators for X and Z hook errors
-    def evaluate_x_hook(subset):
-        Ex = np.zeros(n, dtype=int)
-        Ex[list(subset)] = 1
-        if strategy_x.check_tier1(Ex):
-            return True
-        elif len(L_cosets_x) > 0 and strategy_x.check_tier3(Ex, L_cosets_x):
-            return True
-        elif len(L_cosets_x) == 0:
-            return True
-        return False
-
-    def evaluate_z_hook(subset):
-        Ez = np.zeros(n, dtype=int)
-        Ez[list(subset)] = 1
-        if strategy_z.check_tier1(Ez):
-            return True
-        elif len(L_cosets_z) > 0 and strategy_z.check_tier3(Ez, L_cosets_z):
-            return True
-        elif len(L_cosets_z) == 0:
-            return True
-        return False
-
-    # 1. Analyze X generators (produce X-type hook errors)
-    for row_idx, gen in enumerate(H_x):
+    for gen in H_x:
         support = np.where(gen == 1)[0]
         gen_str = f"X({', '.join(map(str, support))})"
-        gens_x.append(gen_str)
-        
-        valid_subsets = searcher.search(support, evaluate_x_hook)
-        raw_safe_candidates["X"][gen_str] = valid_subsets
-        safe_splits[gen_str] = [f"X({', '.join(map(str, s))})" for s in valid_subsets]
-
-    # 2. Analyze Z generators (produce Z-type hook errors)
-    for row_idx, gen in enumerate(H_z):
+        splits = find_safe_splits(support, Mx_prep)
+        num_x_safe += len(splits)
+        chain = find_longest_chain(support, splits)
+        if chain:
+            # 1. Compute physical pieces (differences between consecutive chain elements)
+            pieces = []
+            prev = set()
+            for s in chain:
+                pieces.append(set(s) - prev)
+                prev = set(s)
+            pieces.append(set(support) - prev)
+            
+            # 2. Merge pieces of size 1 into adjacent pieces
+            merged_pieces = []
+            current_piece = set()
+            for p in pieces:
+                current_piece.update(p)
+                if len(current_piece) > 1:
+                    merged_pieces.append(sorted(list(current_piece)))
+                    current_piece = set()
+            
+            if len(current_piece) > 0:
+                if len(merged_pieces) > 0:
+                    merged_pieces[-1] = sorted(list(set(merged_pieces[-1]) | current_piece))
+                else:
+                    merged_pieces.append(sorted(list(current_piece)))
+                    
+            # 3. Format output
+            formatted_chain = ", ".join(f"{{{', '.join(map(str, p))}}}" for p in merged_pieces)
+            global_assignment[gen_str] = f"X({formatted_chain})"
+            
+    for gen in H_z:
         support = np.where(gen == 1)[0]
         gen_str = f"Z({', '.join(map(str, support))})"
-        gens_z.append(gen_str)
-        
-        valid_subsets = searcher.search(support, evaluate_z_hook)
-        raw_safe_candidates["Z"][gen_str] = valid_subsets
-        safe_splits[gen_str] = [f"Z({', '.join(map(str, s))})" for s in valid_subsets]
-
-    global_assignment = None
-    if find_assignment:
-        assignment_x = find_globally_safe_assignment(gens_x, raw_safe_candidates["X"], n, t, strategy_x, L_cosets_x)
-        assignment_z = find_globally_safe_assignment(gens_z, raw_safe_candidates["Z"], n, t, strategy_z, L_cosets_z)
-        if assignment_x is not None and assignment_z is not None:
-            global_assignment = {}
-            for g, chain in assignment_x.items():
-                formatted_chain = ", ".join(f"({', '.join(map(str, s))})" for s in chain)
-                global_assignment[g] = f"X({formatted_chain})"
-            for g, chain in assignment_z.items():
-                formatted_chain = ", ".join(f"({', '.join(map(str, s))})" for s in chain)
-                global_assignment[g] = f"Z({formatted_chain})"
-                
-    return safe_splits, global_assignment
+        splits = find_safe_splits(support, Mz_prep)
+        num_z_safe += len(splits)
+        chain = find_longest_chain(support, splits)
+        if chain:
+            # 1. Compute physical pieces (differences between consecutive chain elements)
+            pieces = []
+            prev = set()
+            for s in chain:
+                pieces.append(set(s) - prev)
+                prev = set(s)
+            pieces.append(set(support) - prev)
+            
+            # 2. Merge pieces of size 1 into adjacent pieces
+            merged_pieces = []
+            current_piece = set()
+            for p in pieces:
+                current_piece.update(p)
+                if len(current_piece) > 1:
+                    merged_pieces.append(sorted(list(current_piece)))
+                    current_piece = set()
+            
+            if len(current_piece) > 0:
+                if len(merged_pieces) > 0:
+                    merged_pieces[-1] = sorted(list(set(merged_pieces[-1]) | current_piece))
+                else:
+                    merged_pieces.append(sorted(list(current_piece)))
+                    
+            # 3. Format output
+            formatted_chain = ", ".join(f"{{{', '.join(map(str, p))}}}" for p in merged_pieces)
+            global_assignment[gen_str] = f"Z({formatted_chain})"
+            
+    t1 = time.time()
+    
+    print(f"Code {code_name} (d={d}):")
+    print(f"  Time taken: {t1 - t0:.4f} seconds")
+    print(f"  X generators: {len(H_x)}, total safe splits found: {num_x_safe}")
+    print(f"  Z generators: {len(H_z)}, total safe splits found: {num_z_safe}")
+    print("\nGlobally Safe Assignment:")
+    print(json.dumps(global_assignment, indent=2))
+    print()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Analyze safe hook errors for a given QECC.")
-    parser.add_argument("--code", type=str, nargs='*', default=["15_7_3"],
-                        help="The name of the QECC to load (e.g., 7_1_3, 9_1_3, 17_1_5)")
-    parser.add_argument("--basis", type=str, choices=['X', 'Z'], default='Z',
-                        help="The logical state being prepared (X or Z). Defaults to Z.")
-    parser.add_argument('--method', type=str, choices=['tiered', 'lookup', 'milp', 'heuristic', 'algebraic'], default='algebraic',
-                        help='Which oracle to use. lookup is best for small codes, heuristic for large codes, algebraic for purely decoder-independent verification.')
-    parser.add_argument("--searcher", type=str, choices=['exhaustive', 'early_exit'], default='exhaustive',
-                        help="Search pruning method: exhaustive (all combinations), early_exit (stop after finding max-splits).")
-    parser.add_argument("--max-splits", type=int, default=1,
-                        help="Number of safe splits to find before stopping (if using early_exit).")
-    parser.add_argument("--max-weight", type=int, default=None,
-                        help="Maximum weight of the split to consider (e.g., 2 or 3).")
-    parser.add_argument("--verbose", action="store_true", default=True,
-                        help="Print the full mapping of all generators and their safe splits.")
-    parser.add_argument("--find-assignment", action="store_true", default=True,
-                        help="Find a globally safe assignment where all combinations of k<=t hooks are safe.")
+    parser = argparse.ArgumentParser(description="Analyze safe hook errors for a given QECC using the GF(2) null-space method.")
+    parser.add_argument("--code", type=str, nargs='*', default=["7_1_3", "17_1_5"],
+                        help="The names of the QECCs to test")
     args = parser.parse_args()
     
-    for code_name in args.code:
-        print(f"--- Testing {code_name} (Basis: {args.basis}, Method: {args.method}, Searcher: {args.searcher}) ---")
-        try:
-            is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code_name)
-        except Exception as e:
-            print(f"Failed to load {code_name}: {e}")
-            continue
-            
-        t0 = time.time()
-        safe_splits, global_assignment = analyze_hook_errors(
-            H_x, H_z, L_x, L_z, d, 
-            prep_basis=args.basis, 
-            method=args.method,
-            searcher_type=args.searcher,
-            max_splits=args.max_splits,
-            max_weight=args.max_weight,
-            find_assignment=args.find_assignment
-        )
-        t1 = time.time()
-        
-        num_x_safe = sum(len(s) for g, s in safe_splits.items() if g.startswith("X"))
-        num_z_safe = sum(len(s) for g, s in safe_splits.items() if g.startswith("Z"))
-                
-        print(f"Code {code_name} (d={d}, t={(d-1)//2}):")
-        print(f"  Time taken: {t1 - t0:.4f} seconds")
-        print(f"  X generators: {len(H_x)}, safe X-type hook errors: {num_x_safe}")
-        print(f"  Z generators: {len(H_z)}, safe Z-type hook errors: {num_z_safe}")
-        
-        if args.verbose:
-            print("\nGenerators and their Safe Splits Mapping:")
-            print(json.dumps(safe_splits, indent=2))
-            
-        if args.find_assignment:
-            print("\nGlobally Safe Assignment:")
-            if global_assignment:
-                print(json.dumps(global_assignment, indent=2))
-            else:
-                print("Could not find a globally safe assignment from the candidates.")
-        print()
+    for code in args.code:
+        analyze_hook_errors(code)

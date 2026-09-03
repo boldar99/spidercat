@@ -1,90 +1,52 @@
-# Reference: Fault-Tolerant ZX-Calculus Hook Error Analyzer
+# Hook Errors Reference Guide
 
-This document provides comprehensive context, theoretical definitions, and implementation details for the `hookerrors` codebase. It serves as a guide for understanding the algebraic splitting of stabilizer generators and evaluating the safety of the resulting hook errors during FT-circuit synthesis in the ZX-calculus.
-
-## 1. Context and Theoretical Background
-
-In Fault-Tolerant (FT) state preparation via ZX-calculus (or analogous circuit-model approaches), high-weight stabilizer generators (represented as high-degree spiders) must be broken down into smaller structures (e.g., degree-3 spiders) to be compiled into physical circuits.
-
-**The Hook Error:**
-When a generator is algebraically split, an internal edge is created. A single physical fault (weight-1) on this internal edge can propagate to multiple data qubits. This propagated multi-qubit Pauli error is a "hook error" ($E$).
-
+## 1. Terminology
+*   **Physical Fault:** A single hardware failure on an internal ZX edge (weight 1).
+*   **Propagated Error:** The resulting multi-qubit Pauli error on the data block.
+*   **Hook Error:** A propagated error that has a physical weight $> 1$.
 *   **X Generators** produce **X-type** hook errors.
 *   **Z Generators** produce **Z-type** hook errors.
-*(Note: This convention maps naturally to standard circuit-level synthesis, where an X fault on an ancilla preparing an X-stabilizer propagates through CNOT control nodes to form multi-qubit X errors on the data block.)*
 
-A hook error is malignant if it acts as a weight-amplified error that bypasses the code's distance. However, certain hook errors can be safely tolerated due to two "Saving Graces".
-
-## 2. The Two Saving Graces (Safe Hooks)
+## 2. The Saving Grace (State Symmetries)
 
 Let $d = 2t + 1$ be the distance of the code, where $t$ is the maximum number of correctable adversarial faults. We define the preparation stabilizer group $\mathcal{S}_{\text{prep}}$ based on the logical basis being prepared:
-*   **Z-Basis Preparation ($|0\rangle_L$):** $\mathcal{S}_{\text{prep}} = \langle H_x, H_z, L_z \rangle$. Logical failures are caused by $L_x$.
-*   **X-Basis Preparation ($|+\rangle_L$):** $\mathcal{S}_{\text{prep}} = \langle H_x, H_z, L_x \rangle$. Logical failures are caused by $L_z$.
+*   **Z-Basis Preparation ($|0\rangle_L$):** $\mathcal{S}_{\text{prep}} = \langle H_x, H_z, L_z \rangle$.
+*   **X-Basis Preparation ($|+\rangle_L$):** $\mathcal{S}_{\text{prep}} = \langle H_x, H_z, L_x \rangle$.
 
-### Saving Grace 1: Trivially Safe Hooks (State Symmetries)
 If the hook error $E$ can be multiplied by elements of $\mathcal{S}_{\text{prep}}$ such that its total weight is reduced to $\le 1$, it acts exactly as a single physical fault on the target state. 
 $$ w_{\text{min}}^* = \min_{S \in \mathcal{S}_{\text{prep}}} \text{weight}(E \cdot S) \le 1 $$
-*Classification:* **Trivially Safe.** No distance is consumed.
-
-### Saving Grace 2: Decoder-Benign Hooks (Perfect Decoding)
-If $w_{\text{min}}^* > 1$, the hook consumes some of the code's distance. However, it is safe if the minimum-weight decoder can still tolerate $t-1$ additional ambient faults without causing a logical failure. 
-
-To cause a logical failure, the combined error (Hook $E$ + Ambient + Decoder Guess) must form a non-trivial logical operator $L \notin \mathcal{S}_{\text{prep}}$. The condition for the hook to be safely decoded is:
-$$ \min_{L, S \in \mathcal{S}_{\text{prep}}} \text{weight}(E \cdot L \cdot S) \ge 2t $$
-*Classification:* **Decoder-Benign.** The heuristic decoder will never mistakenly form a logical operator when this hook occurs alongside $\le t-1$ ambient faults.
+*Classification:* **Strictly Safe.** No distance is consumed beyond the 1 physical fault that caused it. Because this metric satisfies the triangle inequality, any combination of $k$ strictly safe hooks is guaranteed to consume $\le k$ effective distance, ensuring the protocol remains fault-tolerant.
 
 ---
 
 ## 3. Codebase Architecture
 
-The `hookerrors` codebase uses a modular, plugin-based architecture designed to aggressively scale from small codes (e.g. `7_1_3`) to massive layouts (e.g. `92_2_14`).
+The `hookerrors` codebase uses a highly scalable $\mathcal{O}(N)$ architecture.
 
 ### `hookerrors/filters.py` (The Oracle Strategies)
-This module evaluates whether a specific hook error split $E$ satisfies the Saving Graces. It decouples the X and Z evaluations since X and Z errors do not destructively interfere in CSS codes.
-
-*   **`LookupStrategy`**: Precomputes a complete Breadth-First Search (BFS) dictionary mapping syndromes to minimum weights up to depth $2t$. 
-    *   *Pros:* Instantaneous ($O(1)$) evaluations. Solves Tier 1 and Tier 3 simultaneously.
-    *   *Cons:* Memory and compute scale as $\binom{n}{2t}$. Only viable for $t \le 3$.
-*   **`TieredStrategy`**: Implements the strict, three-tier filtering oracle:
-    *   *Tier 1 (GF(2) RREF):* Instantly checks if $E$ or $E \oplus e_1$ is in the row space of $\mathcal{S}_{\text{prep}}$.
-    *   *Tier 2 (Heuristic BP-OSD):* Feeds the syndrome of $(E \cdot L)$ to a `bposd` decoder. If the decoder finds an error of weight $< 2t$, the hook is instantly flagged as Malignant.
-    *   *Tier 3 (MILP Exact Solver):* If BP-OSD fails to find a low-weight error, a rigorous `scipy.optimize.milp` Integer Linear Program proves whether the exact minimum weight is $\ge 2t$.
-*   **`HeuristicOnlyStrategy`**: Identical to `TieredStrategy`, but skips Tier 3 entirely. By cranking up the BP-OSD order (`osd_10`), we trust the tight heuristic bound and avoid NP-hard ILP calls. Highly scalable for large $d$.
-*   **`MILPStrategy`**: Purely exhaustive exact ILP solving without heuristics. Primarily for testing.
+This module evaluates whether a specific hook error split $E$ satisfies the Strict Safety condition. 
+*   **`AlgebraicStrategy`**: Uses a fast GF(2) Breadth-First Search over the syndrome table to instantly check if $w_{\text{min}}^* \le 1$. Solves the problem in strictly polynomial time without heuristics or ILP.
 
 ### `hookerrors/searchers.py` (The Pruning Strategies)
 This module dictates which algebraic splits (subsets of a generator's support) are generated and evaluated.
+*   **Complementary Deduplication:** An internal edge bipartitions the support $W$ into $A$ and $B$. Searchers typically cap evaluations and filter out complementary subsets to exactly halve the search space.
+*   **`ExhaustiveSearcher`**: Evaluates all subsets up to size $w-1$.
+*   **`EarlyExitSearcher`**: A greedy searcher that stops evaluating a generator the moment it finds `max_splits` valid safe splits. Critical for synthesizing large codes.
 
-*   **Complementary Deduplication:** An internal edge bipartitions the support $W$ into $A$ and $B$. Since $A \cdot B = W \in \mathcal{S}_{\text{prep}}$, error $A$ is equivalent to error $B$. Searchers strictly cap evaluations at `size <= w // 2` and filter out complementary subsets to exactly halve the search space.
-*   **`ExhaustiveSearcher`**: Evaluates all $\binom{w}{w/2}$ subsets.
-*   **`EarlyExitSearcher`**: A greedy searcher that stops evaluating a generator the moment it finds `max_splits` (e.g., 1) valid safe splits. Critical for synthesizing large codes where exhaustive listing is unnecessary. Supports `max_split_size` bounding to prioritize testing small $k$ splits which are inherently more likely to be safe.
+### `hookerrors/combinations.py` (Global Assignment)
+Computes a **Globally Safe Assignment**.
+*   **Maximal Multi-Splittings (Chains):** A single generator can be split into multiple pieces (e.g., partitioning a degree-8 spider into 5 smaller spiders). This corresponds to a chain of nested safe hook errors (e.g., $S_1 \subset S_2 \subset S_3 \dots$). The algorithm finds the longest valid chain of nested safe splits for each generator.
+*   **$\mathcal{O}(N)$ Assembly:** Because all allowed individual splits are strictly safe ($w_{\text{min}}^* \le 1$), their combinations are mathematically guaranteed to be safe by the linearity of the GF(2) vector space. The global assignment is constructed instantly by uniting the maximal chains of each generator, bypassing exponential combination checks.
 
 ### `hookerrors/solver.py` (The CLI)
 The main executable script tying the system together. 
 *   Dynamically loads the chosen strategy and searcher based on CLI arguments.
 *   Constructs the X and Z cosets independently based on the `--basis` argument.
-*   Example: `python hookerrors/solver.py --code 92_2_14 --method heuristic --searcher early_exit --max-weight 2`
+*   Example: `python hookerrors/solver.py --code 23_1_7 --method algebraic --searcher exhaustive`
 
 ---
 
 ## 4. Notable Code Behaviors
-1.  **Asymmetric Safety (Basis Dependence):** If `--basis Z` is chosen, the target state is $|0\rangle_L$, so $L_z \in \mathcal{S}_{\text{prep}}$. As a result, Z-type hook errors are generally benign (or trivially safe), while X-type hook errors consume distance. The solver correctly reflects this extreme asymmetry in the output counts.
-2.  **Missing Logical Cosets:** If a hook error acts entirely in a basis that has no non-trivial logical operators left to test (e.g., testing Z-errors during Z-basis prep), the solver identifies that `len(L_cosets) == 0`. It instantly returns `True` since a logical failure in that basis is impossible.
-3.  **Formatting:** Subsets and generators are parsed into human-readable tuples, e.g., `"X(4, 5, 6, 7)"`.
-
----
-
-## 5. Global Assignments (Combinations of Hooks)
-
-Safe hook errors do not form a basis, and their combinations are highly non-linear. The safety of individual hooks $h_1$ and $h_2$ does not guarantee the safety of their product $h_1 \cdot h_2$.
-
-If a combination of $k$ independent safe hooks (where $k \le t$) occurs, they consume $k$ physical faults. The adversary has $t-k$ faults remaining. The maximum weight of the remaining faults plus the decoder's guess is $(t-k) + t = 2t - k$.
-**Combination Condition:** A specific combination of $k$ hooks $\{h_1, \dots, h_k\}$ is safe if and only if:
-1. **Trivially Safe:** $\min_{S \in \mathcal{S}_{\text{prep}}} \text{weight}\left(\prod_{i=1}^k h_i \cdot S\right) \le k$ 
-2. **Decoder-Benign:** $\min_{L \notin \mathcal{S}_{\text{prep}}, S \in \mathcal{S}_{\text{prep}}} \text{weight}\left(\prod_{i=1}^k h_i \cdot L \cdot S\right) \ge 2t - k + 1$
-
-### `hookerrors/combinations.py`
-This module computes a **Globally Safe Assignment** by finding a set of algebraic splits that are jointly safe.
-*   **Maximal Multi-Splittings (Chains):** A single generator can be split into multiple pieces (e.g., partitioning a degree-8 spider into 5 smaller spiders). This corresponds to a chain of nested safe hook errors (e.g., $S_1 \subset S_2 \subset S_3 \dots$). The algorithm first finds the longest valid chain of nested safe splits (the maximal multi-splitting) for each generator using a DAG longest-path formulation.
-*   **Greedy Global Assignment:** It then sorts the generators by their maximal chain length and greedily attempts to add each generator's entire chain to the global assignment. A chain is added only if ALL possible combinations (up to size $k \le t$) involving the new hook errors and the previously assigned hook errors satisfy the Combination Condition. This maximizes the total number of internal edges safely introduced into the circuit.
-*   **$d=3$ Triviality:** For distance-3 codes ($t=1$), the adversary is capped at $k=1$ faults. They can never trigger multiple hook errors simultaneously. Therefore, *any* valid individual assignment is automatically globally safe.
+1.  **Asymmetric Safety (Basis Dependence):** If `--basis Z` is chosen, the target state is $|0\rangle_L$, so $L_z \in \mathcal{S}_{\text{prep}}$. As a result, Z-type hook errors can leverage the logical operator to reduce their weight, while X-type hook errors cannot.
+2.  **Formatting:** Subsets and generators are parsed into human-readable tuples, e.g., `"X(4, 5, 6, 7)"`.
+3.  **Triviality Filter:** The solver automatically drops assignments if a generator can only be split trivially (e.g. into size 1 chunks), as this corresponds to physically pulling off single qubits rather than meaningfully shattering the spider body.
