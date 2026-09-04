@@ -148,13 +148,15 @@ def find_longest_chain(support, safe_splits):
 
     return tuple(clean_chain)
 
-def analyze_hook_errors(H_z, L_z):
-    Mz_prep = np.vstack([H_z, L_z]) if len(L_z) > 0 else H_z
+def analyze_hook_errors_(H_z, L_z):
+    return analyze_hook_errors(np.vstack([H_z, L_z]))
 
+
+def analyze_hook_errors(Mz_prep):
     global_assignment = {}
     num_z_safe = 0
 
-    for gen in H_z:
+    for gen in Mz_prep:
         support = tuple(np.where(gen == 1)[0].tolist())
         splits = find_safe_splits(support, Mz_prep)
         chain = find_longest_chain(support, splits)
@@ -203,7 +205,7 @@ if __name__ == "__main__":
 
         t0 = time.time()
         print(f"  Code: {code}")
-        global_assignment = analyze_hook_errors(H_z, L_z)
+        global_assignment = analyze_hook_errors_(H_z, L_z)
         t1 = time.time()
         print(f"  Time taken: {t1 - t0:.4f} seconds")
         print("\nGlobally Safe Assignment:")

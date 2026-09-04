@@ -286,6 +286,22 @@ def find_pivots_in_matrix(parity_matrix):
     return pivots, rows_without_pivots
 
 
+def get_conj_M(M):
+    conj_M = np.zeros(shape=(M.shape[1] - M.shape[0], M.shape[1]), dtype=np.int8)
+    pivots, _ = find_pivots_in_matrix(M)
+    indices = list(pivots.values())
+
+    stab_i = 0
+    for i, row in enumerate(M.T):
+        if i in indices:
+            continue
+        s = sorted([indices[j] for j in np.where(row)[0]] + [i])
+        conj_M[stab_i, s] = 1
+        stab_i += 1
+
+    return conj_M
+
+
 def ed(v1: int, v2: int) -> tuple[int, int]:
     return (v1, v2) if v1 < v2 else (v2, v1)
 
