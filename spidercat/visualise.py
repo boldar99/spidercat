@@ -235,7 +235,7 @@ def visualise_pk_per_n(df, t):
     )
 
     # Y-Axis Log Scale
-    # plt.yscale('log')
+    plt.yscale('log')
 
     # Axis Labels
     plt.xlabel("Cat State Size", fontsize=12)
@@ -414,7 +414,7 @@ def visualise_failure_distance(methods_data_dict, t):
             continue
 
         for n, group in scope_df.groupby('n'):
-            cost_of_error = np.maximum(t - group['k'] + 1, 0)
+            cost_of_error = group['k']
             expected_distance = (group['probability'] * cost_of_error).sum()
 
             acc_rate = group['acceptance_rate'].iloc[0]
@@ -525,7 +525,7 @@ def visualise_method_comparison(methods_data_dict, t):
         for n, group in scope_df.groupby('n'):
             # Metric 1: Probability of success (k < t)
             # Sum probability of all k where k < t
-            success_prob = group[group['k'] < 1]['probability'].sum()
+            success_prob = group[group['k'] <= t]['probability'].sum()
             if 1.0 - success_prob < 1e-8:
                 continue
 
@@ -577,10 +577,10 @@ def visualise_method_comparison(methods_data_dict, t):
         )
 
         # --- Secondary Axis (Right): Acceptance Rate ---
-        ax2.plot(
-            subset['n'], subset['acceptance_rate'],
-            color=color, linestyle=':', linewidth=1.5, marker='x', alpha=0.7
-        )
+        # ax2.plot(
+        #     subset['n'], subset['acceptance_rate'],
+        #     color=color, linestyle=':', linewidth=1.5, marker='x', alpha=0.7
+        # )
 
     # 4. Styling & Legends
 
@@ -663,7 +663,7 @@ def visualise_two_panel_hybrid(methods_data_dict, t):
                 'failure_prob': 1.0 - success_prob,
                 'acceptance_rate': group['acceptance_rate'].iloc[0],
                 'num_flags': group['num_flags'].iloc[0],
-                'depth': group['depth'].iloc[0],
+                # 'depth': group['depth'].iloc[0],
             })
 
     if not results:
@@ -685,10 +685,11 @@ def visualise_two_panel_hybrid(methods_data_dict, t):
     ax2 = ax3.twinx()
 
     unique_methods = plot_df['method'].unique()
-    palette = sns.color_palette("colorblind", n_colors=4)
+    palette = sns.color_palette("colorblind", n_colors=5)
     method_colors = {
         "Flag at Origin": palette[2],
         "SpiderCat": palette[3],
+        "Stochastic Noise Optimized SpiderCat": palette[4],
         "MQT": palette[0],
     }
 
@@ -701,7 +702,7 @@ def visualise_two_panel_hybrid(methods_data_dict, t):
         ax1.plot(subset['n'], subset['failure_prob'] / subset['acceptance_rate'], color=color, linestyle='-', marker='o', label=method)
 
         # Bottom Panel (Left Axis): Acceptance Rate
-        ax3.plot(subset['n'], subset['depth'], color=color, linestyle='--', marker='s', alpha=0.8, markersize=5)
+        # ax3.plot(subset['n'], subset['depth'], color=color, linestyle='--', marker='s', alpha=0.8, markersize=5)
         ax2.plot(subset['n'], subset['acceptance_rate'], color=color, linestyle=':', marker='*', alpha=0.8)
         ax2.set_yscale("log")
 
@@ -805,14 +806,16 @@ if __name__ == '__main__':
     # visualise_pk_per_n(df_sc_tree_opt, 5)
     # visualise_pk_per_n(z_errors, 5)
     # visualise_failure_distance(methods, t=2)
-    visualise_failure_distance(methods, t=3)
-    visualise_failure_distance(methods, t=4)
-    visualise_failure_distance(methods, t=5)
-    visualise_failure_distance(methods, t=6)
-    visualise_failure_distance(methods, t=7)
-    # visualise_method_comparison(methods, t=4)
-    # visualise_method_comparison(methods, t=5)
-    # visualise_method_comparison(methods, t=6)
+    # visualise_failure_distance(methods, t=3)
+    # visualise_failure_distance(methods, t=4)
+    # visualise_failure_distance(methods, t=5)
+    # visualise_failure_distance(methods, t=6)
+    # visualise_failure_distance(methods, t=7)
+    visualise_method_comparison(methods, t=3)
+    visualise_method_comparison(methods, t=4)
+    visualise_method_comparison(methods, t=5)
+    visualise_method_comparison(methods, t=6)
+    visualise_method_comparison(methods, t=7)
     # visualise_method_comparison(methods, t=4, second_y_axis='num_flags')
     # visualise_two_panel_hybrid(methods, t=3)
     # visualise_two_panel_hybrid(methods, t=4)
