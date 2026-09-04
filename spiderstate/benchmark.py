@@ -100,7 +100,7 @@ def benchmark_CAO_state_prep(code: str, reuse_strategy, p=0.001, num_samples=100
     else:
         print(f"State: |0> (Code {code})")
 
-    original_circ = row_optimized_cat_at_origin(H_z, d, max_basis_tries=25_000)
+    original_circ = row_optimized_cat_at_origin(H_x, d, max_basis_tries=25_000)
 
     n_data = H_x.shape[1]
     dag = build_circuit_dag(original_circ)
@@ -113,11 +113,11 @@ def benchmark_CAO_state_prep(code: str, reuse_strategy, p=0.001, num_samples=100
 
     noisy_circ.append("M", range(H_x.shape[1]))
 
-    for i, H in enumerate(H_x):
+    for i, H in enumerate(H_z):
         qubit_indices = np.where(H == 1)[0]
         record_targets = [stim.target_rec(i - H_x.shape[1]) for i in qubit_indices]
         noisy_circ.append("DETECTOR", record_targets)
-    for i, L in enumerate(L_x):
+    for i, L in enumerate(L_z):
         qubit_indices = np.where(L == 1)[0]
         record_targets = [stim.target_rec(i - H_x.shape[1]) for i in qubit_indices]
         noisy_circ.append("OBSERVABLE_INCLUDE", record_targets, i)
@@ -155,14 +155,14 @@ def benchmark_CAO_state_prep(code: str, reuse_strategy, p=0.001, num_samples=100
     max_weight = None if bool(d % 2) else (d - 1) // 2
 
     # Build the LUT ONCE in the main thread
-    decoder = estimate_ler and LutDecoder(H_x, max_decodable_weight=max_weight)
+    decoder = estimate_ler and LutDecoder(H_z, max_decodable_weight=max_weight)
 
     global _G_DECODER, _G_CIRC_STR, _G_H_X, _G_L_X, _ESTIMATE_LER
     _ESTIMATE_LER = estimate_ler
     _G_DECODER = decoder
     _G_CIRC_STR = circ_str
-    _G_H_X = H_x
-    _G_L_X = L_x
+    _G_H_X = H_z
+    _G_L_X = L_z
 
     if remaining_samples > 0:
         batch_size = 1_000_000
@@ -278,7 +278,7 @@ def benchmark_without_lut(code_iterator):
         for StrategyClass in strategies:
             print(f"--- Benchmarking {code} with {StrategyClass.__name__} ---")
             stats = benchmark_CAO_state_prep(
-                code, reuse_strategy=StrategyClass(), num_samples=0, estimate_ler=False
+                code, reuse_strategy=StrategyClass(), num_samples=100_000_000, estimate_ler=True
             )
             if stats['logical_error_rate'] is not None:
                 print(f"Logical Error Rate = {stats['logical_error_rate']:.4e}", end=";\t ")
@@ -293,4 +293,4 @@ def benchmark_without_lut(code_iterator):
 
 
 if __name__ == "__main__":
-    benchmark_without_lut(hard_QECCS)
+    benchmark_without_lut(FAO_simp_QECCS)

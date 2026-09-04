@@ -526,7 +526,7 @@ def main(draw: bool = False) -> None:
     random.seed(1)
     from spidercat.circuit_extraction import CatStateExtractor, StimBuilder
 
-    ns, t = [4, 5], 3
+    ns, t = [4, 3, 4], 3
     print(f"Generating well-ordered composite cat state for ns={ns}, t={t}...")
     graph, forest, roots, dependency_dag, edge = well_ordered_composite_cat_state_data(ns, t, regenerate_graph=True, force_generate=True)
 
@@ -539,7 +539,7 @@ def main(draw: bool = False) -> None:
         display_digraph(dependency_dag)
         plt.show()
 
-    extractor = CatStateExtractor(StimBuilder(), verbose=True)
+    extractor = CatStateExtractor(StimBuilder(), verbose=False)
     circuit = extractor.extract(graph, forest, roots, dependency_dag)
     print(
         f"Successfully extracted circuit with {circuit.num_qubits} qubits and {len(circuit)} instructions."
