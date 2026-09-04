@@ -76,16 +76,12 @@ def build_base_t1_graph(n: int) -> tuple[nx.Graph, nx.Graph, int]:
         tuple of (interaction_graph, spanning_forest, root_node_id)
     """
     graph = nx.Graph()
-    graph.add_nodes_from([0])
-    graph.add_nodes_from(range(2, 2 + n), is_mark=True)
-    graph.add_edge(0, 2)
-    graph.add_edge(0, 3)
-    for i in range(n - 2):
-        graph.add_edge(2 + i, 4 + i)
-    graph.add_edge(n, n + 1)
+    graph.add_nodes_from(range(n), is_mark=True)
+    for i in range(n):
+        graph.add_edge(i, (i+1)%n)
 
     forest = graph.copy()
-    forest.remove_edge(n + 1, n)
+    forest.remove_edge(n // 2, n // 2 + 1)
     return graph, forest, 0
 
 
@@ -377,23 +373,16 @@ def well_ordered_composite_cat_state_data(
         else:
             chunk_size = n_logical + 2
 
-        if not(chunk_size <= 3 or t == 0) and (chunk_size <= 5 or t == 1):
-            graph_k, forest_k, root_k = build_base_t1_graph(n_logical)
-            dependency_dag_k, edge_k = _build_and_resolve_dependency_dag(
-                graph_k, forest_k, root_k
-            )
-            roots_k = [0]
-        else:
-            if chunk_size <= 3 or t == 0:
-                chunk_size -= chunk_size - n_logical
+        if chunk_size <= 3 or t == 0:
+            chunk_size -= chunk_size - n_logical
 
-            graph_k, forest_k, roots_k, dependency_dag_k, edge_k = well_ordered_ft_cat_state_data(
-                chunk_size,
-                t,
-                force_generate=force_generate,
-                regenerate_graph=regenerate_graph,
-                max_retries=max_retries,
-            )
+        graph_k, forest_k, roots_k, dependency_dag_k, edge_k = well_ordered_ft_cat_state_data(
+            chunk_size,
+            t,
+            force_generate=force_generate,
+            regenerate_graph=regenerate_graph,
+            max_retries=max_retries,
+        )
 
         if k == 0:
             root_k = roots_k[0]
@@ -418,9 +407,6 @@ def well_ordered_composite_cat_state_data(
         composite_forest = nx.compose(composite_forest, forest_k_rel)
         composite_dag = nx.compose(composite_dag, dag_k_rel)
 
-        draw_forest_on_graph(composite_graph, composite_forest)
-        plt.show()
-
         mapped_root = node_map[root_k]
         mapped_exit = node_map[exit_k]
 
@@ -428,6 +414,8 @@ def well_ordered_composite_cat_state_data(
             global_root = mapped_root
         else:
             assert prev_exit is not None
+            composite_graph.nodes[prev_exit]["is_mark"] = False
+            composite_graph.nodes[mapped_root]["is_mark"] = False
             composite_graph.add_edge(prev_exit, mapped_root)
             composite_forest.add_edge(prev_exit, mapped_root)
             composite_dag.add_edge(prev_exit, mapped_root, edge_type="tree")
@@ -538,7 +526,7 @@ def main(draw: bool = False) -> None:
     random.seed(1)
     from spidercat.circuit_extraction import CatStateExtractor, StimBuilder
 
-    ns, t = [4, 2], 3
+    ns, t = [4, 5], 3
     print(f"Generating well-ordered composite cat state for ns={ns}, t={t}...")
     graph, forest, roots, dependency_dag, edge = well_ordered_composite_cat_state_data(ns, t, regenerate_graph=True, force_generate=True)
 
@@ -548,8 +536,8 @@ def main(draw: bool = False) -> None:
 
         draw_forest_on_graph(graph, forest)
         plt.show()
-        # display_digraph(dependency_dag)
-        # plt.show()
+        display_digraph(dependency_dag)
+        plt.show()
 
     extractor = CatStateExtractor(StimBuilder(), verbose=True)
     circuit = extractor.extract(graph, forest, roots, dependency_dag)
