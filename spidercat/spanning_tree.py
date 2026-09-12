@@ -275,15 +275,15 @@ import networkx as nx
 from collections import deque
 
 
-def find_min_height_degree_3_roots(graph: nx.Graph) -> dict[int, int]:
+def find_min_height_degree_k_roots(graph: nx.Graph, degree=3) -> dict[int, int]:
     """
-    Identifies the ideal degree-3 root for each component to minimize height.
+    Identifies the ideal degree-k root for each component to minimize height.
 
     Args:
-        graph: A graph containing nodes of primarily degree 2 and 3.
+        graph: A graph containing nodes of primarily degree 2 and k.
 
     Returns:
-        dict: {Component_ID: Ideal_Degree_3_Root_Node}
+        dict: {Component_ID: Ideal_Degree_k_Root_Node}
     """
     ideal_roots = {}
 
@@ -292,11 +292,11 @@ def find_min_height_degree_3_roots(graph: nx.Graph) -> dict[int, int]:
         centers = nx.center(subgraph)
 
         # 1. Prefer centers that are ALREADY degree 3
-        deg_3_centers = [node for node in centers if subgraph.degree[node] >= 3]
+        deg_k_centers = [node for node in centers if subgraph.degree[node] == degree]
 
-        if deg_3_centers:
+        if deg_k_centers:
             # Tie-breaker: lowest ID among valid degree 3 centers
-            best_root = min(deg_3_centers)
+            best_root = min(deg_k_centers)
         else:
             # 2. If the center is degree 2, find the nearest degree 3 node.
             # We use BFS in case there are chains of degree 2 nodes.
@@ -310,7 +310,7 @@ def find_min_height_degree_3_roots(graph: nx.Graph) -> dict[int, int]:
                 current = queue.popleft()
 
                 # Found the closest degree 3 node
-                if subgraph.degree[current] >= 3:
+                if subgraph.degree[current] == degree:
                     best_root = current
                     break
 
@@ -320,7 +320,7 @@ def find_min_height_degree_3_roots(graph: nx.Graph) -> dict[int, int]:
                         queue.append(neighbor)
 
             # 3. Ultimate fallback: If the component is a pure cycle (only degree 2s),
-            # it has no degree 3 nodes. We must return the degree 2 center.
+            # it has no degree k nodes. We must return the degree 2 center.
             if best_root is None:
                 best_root = best_center
 
