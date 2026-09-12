@@ -17,19 +17,21 @@ from typing import Sequence
 
 import networkx as nx
 import numpy as np
+from matplotlib import pyplot as plt
 
 from spidercat.circuit_extraction import (
     build_traversal_digraph,
     expand_graph_and_forest,
     resolve_dag_by_removing_missing_link,
 )
+from spidercat.draw import draw_forest_on_graph
 from spidercat.generate import cat_state_FT_random, minimum_E_and_V
 from spidercat.markings import GraphMarker
 from spidercat.mdsf import constrained_mdsf_generation
 from spidercat.spanning_tree import (
     build_min_diameter_spanning_tree,
     build_trivial_spanning_forest,
-    find_min_height_degree_3_roots,
+    find_min_height_degree_k_roots,
     match_forest_leaves_to_marked_edges,
 )
 from spidercat.utils import ed, load_solution_triplet
@@ -44,7 +46,7 @@ MDSF_SEED_BASE: int = 9001
 FALLBACK_TRIPLET_SIZES: dict[int, int] = {6: 21, 7: 24}
 
 
-def build_base_chain_graph(n: int) -> tuple[nx.Graph, nx.Graph, int]:
+def build_base_chain_graph(n: int, rooted=False) -> tuple[nx.Graph, nx.Graph, int]:
     """
     Constructs a linear chain graph and spanning tree for t=0 or n<=3.
 
@@ -55,16 +57,18 @@ def build_base_chain_graph(n: int) -> tuple[nx.Graph, nx.Graph, int]:
         tuple of (interaction_graph, spanning_forest, root_node_id)
     """
     graph = nx.Graph()
-    graph.add_nodes_from([0])
-    graph.add_nodes_from(range(1, n + 1), is_mark=True)
-    for i in range(n):
+    rooted_offset = int(rooted)
+    if rooted:
+        graph.add_nodes_from([0])
+    graph.add_nodes_from(range(rooted_offset, n + rooted_offset), is_mark=True)
+    for i in range(n - 1 + rooted_offset):
         graph.add_edge(i, i + 1)
 
     forest = graph.copy()
     return graph, forest, 0
 
 
-def build_base_t1_graph(n: int) -> tuple[nx.Graph, nx.Graph, int]:
+def build_base_t1_graph(n: int, rooted=False) -> tuple[nx.Graph, nx.Graph, int]:
     """
     Constructs base graph and spanning tree for t=1 or n<=5.
 
@@ -75,16 +79,24 @@ def build_base_t1_graph(n: int) -> tuple[nx.Graph, nx.Graph, int]:
         tuple of (interaction_graph, spanning_forest, root_node_id)
     """
     graph = nx.Graph()
-    graph.add_nodes_from([0])
-    graph.add_nodes_from(range(2, 2 + n), is_mark=True)
-    graph.add_edge(0, 2)
-    graph.add_edge(0, 3)
-    for i in range(n - 2):
-        graph.add_edge(2 + i, 4 + i)
-    graph.add_edge(n, n + 1)
+    if rooted:
+        graph.add_nodes_from([0])
+        graph.add_nodes_from(range(2, 2 + n), is_mark=True)
+        graph.add_edge(0, 2)
+        graph.add_edge(0, 3)
+        for i in range(n - 2):
+            graph.add_edge(2 + i, 4 + i)
+        graph.add_edge(n, n + 1)
 
-    forest = graph.copy()
-    forest.remove_edge(n + 1, n)
+        forest = graph.copy()
+        forest.remove_edge(n + 1, n)
+    else:
+        graph.add_nodes_from(range(n), is_mark=True)
+        for i in range(n):
+            graph.add_edge(i, (i+1)%n)
+
+        forest = graph.copy()
+        forest.remove_edge(n // 2, n // 2 + 1)
     return graph, forest, 0
 
 
@@ -155,7 +167,7 @@ def load_state_data(
 
 
 def _build_base_case(
-    n: int, t: int
+    n: int, t: int, rooted=False
 ) -> tuple[nx.Graph, nx.Graph, dict[int, int], int] | None:
     """
     Constructs known analytical base cases for small n or t.
@@ -165,11 +177,11 @@ def _build_base_case(
         or None if general synthesis is required.
     """
     if n <= 3 or t == 0:
-        graph, forest, root = build_base_chain_graph(n)
-        return graph, forest, {0: root}, n
+        graph, forest, root = build_base_chain_graph(n, rooted=rooted)
+        return graph, forest, {0: root}, n - 1 + rooted
     if t == 1 or n <= 5:
-        graph, forest, root = build_base_t1_graph(n)
-        return graph, forest, {0: root}, n + 1
+        graph, forest, root = build_base_t1_graph(n, rooted=rooted)
+        return graph, forest, {0: root}, n + rooted
     if n == 6:
         graph, forest, root = build_base_n6_graph()
         return graph, forest, {0: root}, 0
@@ -276,7 +288,7 @@ def _synthesize_expanded_graphs(
         expanded_graph, 1, seed=MDSF_SEED_BASE + attempt, cooling_rate=cooling_rate
     )
     spanning_forest = spanning_forest.copy()
-    roots = find_min_height_degree_3_roots(spanning_forest)
+    roots = find_min_height_degree_k_roots(spanning_forest)
     return expanded_graph, spanning_forest, roots
 
 
@@ -305,16 +317,151 @@ def _build_and_resolve_dependency_dag(
     if dependency_dag is None or not nx.is_directed_acyclic_graph(dependency_dag):
         raise RuntimeError("Failed to resolve dependency graph into a directed acyclic graph (DAG)")
 
-    main_node = valid_edges[0][0] if len(valid_edges) > 0 else fallback_node
-    if main_node is None:
-        raise ValueError("No cycle closure edge found and no fallback node provided")
+    if len(valid_edges) > 0:
+        main_node = valid_edges[0][0]
+    elif fallback_node is not None:
+        main_node = fallback_node
+    else:
+        sink_nodes = [x for x in dependency_dag.nodes() if dependency_dag.out_degree(x) == 0]
+        if not sink_nodes:
+            raise ValueError("No cycle closure edge found and no sink node available")
+        main_node = sink_nodes[0]
 
     return dependency_dag, main_node
+
+
+def well_ordered_composite_cat_state_data(
+    ns: Sequence[int],
+    t: int,
+    force_generate: bool = False,
+    regenerate_graph: bool = False,
+    max_retries: int = DEFAULT_MAX_RETRIES,
+) -> tuple[nx.Graph, nx.Graph, dict[int, int], nx.DiGraph, int]:
+    """
+    Builds a well-ordered composite cat state for an ordered list of component sizes.
+
+    When an allowed hook error is safe within small components but would propagate
+    too widely on a single large cat state, the cat state can be partitioned into
+    a chain of smaller cat states connected via 1-1 outputs.
+
+    Args:
+        ns: Sequence of partition sizes, e.g. [5, 5] or [3, 2, 3].
+            The total logical cat state output size is sum(ns).
+        t: Fault-tolerance distance parameter.
+        force_generate: If True, bypasses cache and forces fresh generation.
+        regenerate_graph: If True, uses random graph synthesis instead of triplets.
+        max_retries: Maximum retry attempts.
+
+    Returns:
+        tuple of (composite_graph, composite_forest, roots_dict, composite_dag, last_exit_node)
+    """
+    if not ns:
+        raise ValueError("ns cannot be empty")
+
+    num_chunks = len(ns)
+    if num_chunks == 1:
+        return well_ordered_ft_cat_state_data(
+            ns[0],
+            t,
+            force_generate=force_generate,
+            regenerate_graph=regenerate_graph,
+            max_retries=max_retries,
+        )
+
+    composite_graph = nx.Graph()
+    composite_forest = nx.Graph()
+    composite_dag = nx.DiGraph()
+
+    node_offset = 0
+    prev_is_t0 = False
+    prev_exit: int | None = None
+    global_root: int | None = None
+
+    for k, n_logical in enumerate(ns):
+        # Calculate chunk size with connecting leg overhead:
+        # First chunk: n_0 + 1 (1 forward connection)
+        # Middle chunks: n_k + 2 (1 backward + 1 forward connection)
+        # Last chunk: n_{m-1} + 1 (1 backward connection)
+        if k == 0 or k == num_chunks - 1:
+            chunk_size = n_logical + 1
+        else:
+            chunk_size = n_logical + 2
+
+        current_is_t0 = chunk_size <= 3 or t == 0
+        if current_is_t0:
+            chunk_size -= chunk_size - n_logical
+
+        graph_k, forest_k, roots_k, dependency_dag_k, edge_k = well_ordered_ft_cat_state_data(
+            chunk_size,
+            t,
+            rooted=(k==0),
+            force_generate=force_generate,
+            regenerate_graph=regenerate_graph,
+            max_retries=max_retries,
+        )
+
+        if k == 0:
+            root_k = roots_k[0]
+            exit_k = edge_k
+        else:
+            # Find degree-2 root so adding inter-chunk edge maintains degree <= 3 in forest
+            deg2_roots = find_min_height_degree_k_roots(forest_k, degree=2)
+            root_k = next(iter(deg2_roots.values()))
+            dependency_dag_k, exit_k = _build_and_resolve_dependency_dag(
+                graph_k, forest_k, root_k
+            )
+
+
+
+        # Relabel nodes to guarantee disjoint continuous ranges
+        node_map = {old_node: node_offset + i for i, old_node in enumerate(graph_k.nodes())}
+        graph_k_rel = nx.relabel_nodes(graph_k, node_map, copy=True)
+        for node in graph_k_rel.nodes():
+            graph_k_rel.nodes[node]["chunk_idx"] = k
+        forest_k_rel = nx.relabel_nodes(forest_k, node_map, copy=True)
+        dag_k_rel = nx.relabel_nodes(dependency_dag_k, node_map, copy=True)
+
+        composite_graph = nx.compose(composite_graph, graph_k_rel)
+        composite_forest = nx.compose(composite_forest, forest_k_rel)
+        composite_dag = nx.compose(composite_dag, dag_k_rel)
+
+        mapped_root = node_map[root_k]
+        mapped_exit = node_map[exit_k]
+
+        if k == 0:
+            global_root = mapped_root
+        else:
+            assert prev_exit is not None
+            if not prev_is_t0:
+                composite_graph.nodes[prev_exit]["is_mark"] = False
+            if not current_is_t0:
+                composite_graph.nodes[mapped_root]["is_mark"] = False
+            composite_graph.add_edge(prev_exit, mapped_root)
+            composite_forest.add_edge(prev_exit, mapped_root)
+            composite_dag.add_edge(prev_exit, mapped_root, edge_type="tree")
+
+        prev_is_t0  = current_is_t0
+        prev_exit = mapped_exit
+        node_offset += len(graph_k)
+
+    if not nx.is_directed_acyclic_graph(composite_dag):
+        raise RuntimeError("Composite dependency graph is not a directed acyclic graph (DAG)")
+    if not nx.is_tree(composite_forest):
+        raise RuntimeError("Composite spanning forest is not a valid single tree")
+
+    assert global_root is not None
+    assert prev_exit is not None
+    return composite_graph, composite_forest, {0: global_root}, composite_dag, prev_exit
+
+
+# Alias for composite cat state data
+well_ordered_split_cat_state_data = well_ordered_composite_cat_state_data
 
 
 def well_ordered_ft_cat_state_data(
     n: int,
     t: int,
+    rooted: bool = True,
     force_generate: bool = False,
     regenerate_graph: bool = False,
     max_retries: int = DEFAULT_MAX_RETRIES,
@@ -330,7 +477,8 @@ def well_ordered_ft_cat_state_data(
         - edge: The source node of the resolved missing link or terminal fallback node.
 
     Args:
-        n: Number of marked qubits / logical spider legs.
+        n: Number of marked qubits / logical spider legs, or an ordered sequence
+           of partition sizes (e.g. [5, 5] or [3, 2, 3]).
         t: Fault-tolerance distance parameter.
         force_generate: If True, ignores cached state files and generates freshly.
         regenerate_graph: If True, uses random graph synthesis instead of precomputed triplets.
@@ -349,7 +497,7 @@ def well_ordered_ft_cat_state_data(
 
     for attempt in range(retries + 1):
         try:
-            base_case = _build_base_case(n, t)
+            base_case = _build_base_case(n, t, rooted)
             if base_case is not None:
                 graph, forest, roots, fallback_node = base_case
             else:
@@ -386,14 +534,24 @@ def well_ordered_ft_cat_state_data(
     ) from last_error
 
 
-def main() -> None:
-    """Demo extraction of a well-ordered cat state circuit."""
+def main(draw: bool = False) -> None:
+    """Demo extraction of a well-ordered composite cat state circuit."""
     random.seed(1)
     from spidercat.circuit_extraction import CatStateExtractor, StimBuilder
 
-    n, t = 22, 7
-    print(f"Generating / loading well-ordered FT cat state for n={n}, t={t}...")
-    graph, forest, roots, dependency_dag, edge = well_ordered_ft_cat_state_data(n, t)
+    ns, t = [10], 3
+    print(f"Generating well-ordered composite cat state for ns={ns}, t={t}...")
+    graph, forest, roots, dependency_dag, edge = well_ordered_composite_cat_state_data(ns, t, regenerate_graph=True, force_generate=True)
+
+    if draw:
+        from matplotlib import pyplot as plt
+        from spidercat.draw import display_digraph, draw_forest_on_graph
+
+        draw_forest_on_graph(graph, forest)
+        plt.show()
+        display_digraph(dependency_dag)
+        plt.show()
+
     extractor = CatStateExtractor(StimBuilder(), verbose=False)
     circuit = extractor.extract(graph, forest, roots, dependency_dag)
     print(
@@ -403,4 +561,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main(True)

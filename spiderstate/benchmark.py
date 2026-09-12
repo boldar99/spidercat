@@ -274,7 +274,7 @@ def benchmark_without_lut(code_iterator):
         PureAggressiveStrategy,
         DepthPreservingStrategy,
     ]
-    for code in list(code_iterator())[4:]:
+    for code in list(code_iterator()):
         for StrategyClass in strategies:
             print(f"--- Benchmarking {code} with {StrategyClass.__name__} ---")
             stats = benchmark_CAO_state_prep(

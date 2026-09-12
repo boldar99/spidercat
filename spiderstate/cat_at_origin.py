@@ -1,3 +1,6 @@
+import itertools
+
+import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import stim
@@ -7,9 +10,10 @@ from spidercat.circuit_extraction import CatStateExtractor, StimBuilder
 from spidercat.draw import draw_forest_on_graph, display_digraph
 from spiderstate.between_shor_and_steane import measure_stabilizers_scheme_B, measure_stabilizers_scheme_A
 from spiderstate.circuit_finder import find_circuit
+from spiderstate.hook_errors import analyze_hook_errors, find_safe_splits, get_valid_split_partitions, find_acyclic_partition_combination
 from spiderstate.spider_leg_matcher import match_edges
-from spiderstate.utils import find_pivots_in_matrix, load_qecc, count_operations, flatten
-from spiderstate.well_ordered_cat_state import well_ordered_ft_cat_state_data
+from spiderstate.utils import find_pivots_in_matrix, load_qecc, count_operations, flatten, get_conj_M
+from spiderstate.well_ordered_cat_state import well_ordered_ft_cat_state_data, well_ordered_composite_cat_state_data
 from spiderstate.optimize_parity_matrix import has_unique_ones_property, optimize_fault_tolerant_matrix, \
     row_optimize_matrix, minimum_number_of_flags, cnot_cost
 from spidercat.syndrome_measurement import fao_se_circuit, bare_se_circuit
@@ -35,7 +39,7 @@ def row_optimized_cat_at_origin(H: np.ndarray, d: int, max_basis_tries: int = 10
     return cat_at_origin(matrix_after_row_ops, d)
 
 
-def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False) -> stim.Circuit:
+def cat_at_origin(H: np.ndarray, d: int, draw_solutions=True, basis="Z") -> stim.Circuit:
     if not has_unique_ones_property(H):
         raise ValueError(f"H is not representing a bipartite graph state.")
 
@@ -47,21 +51,58 @@ def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False) -> stim.Circuit:
     non_pivots = [p for p in range(N) if p not in pivots.values()]
     assert len(rows_without_pivots) == 0
 
-    z_spiders = np.sum(H, axis=1)
-    x_spiders = np.sum(H[:, non_pivots], axis=0) + 1
+    M_prep = get_conj_M(H)
+    initial_splits = analyze_hook_errors(M_prep)
 
-    z_data = [well_ordered_ft_cat_state_data(zs, t) for zs in z_spiders]
-    x_data = [well_ordered_ft_cat_state_data(xs, t) for xs in x_spiders]
+    partition_options = []
+    for j, p in enumerate(non_pivots):
+        supp = tuple(np.where(M_prep[j] == 1)[0].tolist())
+        init_p = initial_splits[supp]
+        if len(init_p) > 1 and p not in init_p[-1]:
+            p_idx = next(idx for idx, piece in enumerate(init_p) if p in piece)
+            if len(init_p) == 2:
+                init_p = init_p[::-1]
+            else:
+                init_p = [piece for idx, piece in enumerate(init_p) if idx != p_idx] + [init_p[p_idx]]
+        ns = [len(piece) for piece in init_p]
+        safe = find_safe_splits(supp, M_prep)
+        valid_parts = get_valid_split_partitions(supp, ns, p, safe)
+        if not valid_parts:
+            valid_parts = [(tuple(sorted(supp)),)]
+        partition_options.append(valid_parts)
+
+    x_splits = [list(part) for part in find_acyclic_partition_combination(partition_options)]
+    x_spiders = [list(map(len, p)) for p in x_splits]
+    z_spiders = np.sum(H, axis=1)
+
+    ft_cache = {}
+    comp_cache = {}
+
+    def get_ft_cat(n, t):
+        if (n, t) not in ft_cache:
+            ft_cache[(n, t)] = well_ordered_ft_cat_state_data(n, t, force_generate=True)
+        G, F, roots, D, e = ft_cache[(n, t)]
+        return G.copy(), F.copy(), roots.copy(), D.copy(), e
+
+    def get_comp_cat(xs, t):
+        key = (tuple(xs), t)
+        if key not in comp_cache:
+            comp_cache[key] = well_ordered_composite_cat_state_data(xs, t, force_generate=True)
+        G, F, roots, D, e = comp_cache[key]
+        return G.copy(), F.copy(), roots.copy(), D.copy(), e
+
+    z_data = [get_ft_cat(zs, t) for zs in z_spiders]
+    x_data = [get_comp_cat(xs, t) for xs in x_spiders]
     z_graphs, x_graphs, z_trees, x_trees, z_mains, x_mains = [], [], [], [], [], []
     z_digraphs, x_digraphs = [], []
     z_candidates, x_candidates = [], []
     z_roots, x_roots = [], []
     for (G, F, roots, D, e) in z_data:
-        nx.set_node_attributes(G, "Z", 'spider_type')
-        z_graphs.append(G);
-        z_trees.append(F);
+        nx.set_node_attributes(G, basis, 'spider_type')
+        z_graphs.append(G)
+        z_trees.append(F)
         z_roots.append(roots)
-        z_digraphs.append(D);
+        z_digraphs.append(D)
         z_mains.append(e)
 
         # Flatten topological generations into prioritized 1D candidate pools
@@ -70,20 +111,46 @@ def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False) -> stim.Circuit:
             cands.extend([l for l in layer if l != e and G.nodes[l].get("is_mark", False)])
         z_candidates.append(cands)
 
-    for (G, F, roots, D, e) in x_data:
-        nx.set_node_attributes(G, "X", 'spider_type')
-        x_graphs.append(G);
-        x_trees.append(F);
+    for j, (G, F, roots, D, e) in enumerate(x_data):
+        nx.set_node_attributes(G, "X" if (basis == "Z") else "Z", 'spider_type')
+        x_graphs.append(G)
+        x_trees.append(F)
         x_roots.append(roots)
-        x_digraphs.append(D);
+        x_digraphs.append(D)
         x_mains.append(e)
 
-        cands = []
-        for layer in nx.topological_generations(D):
-            cands.extend([l for l in layer if l != e and G.nodes[l].get("is_mark", False)])
-        x_candidates.append(cands)
+        ns = x_spiders[j]
+        if len(ns) == 1:
+            cands = [l for layer in nx.topological_generations(D) for l in layer if l != e and G.nodes[l].get("is_mark", False)]
+            x_candidates.append([cands])
+        else:
+            spider_grouped_cands = []
+            for k, sz in enumerate(ns):
+                cands_k = [
+                    node for layer in nx.topological_generations(D) for node in layer
+                    if G.nodes[node].get("chunk_idx") == k and G.nodes[node].get("is_mark") and node != e
+                ]
+                req_edges = sz if k < len(ns) - 1 else sz - 1
+                if len(cands_k) < req_edges:
+                    cands_k = [
+                        node for layer in nx.topological_generations(D) for node in layer
+                        if G.nodes[node].get("chunk_idx") == k and node != e
+                    ]
+                spider_grouped_cands.append(cands_k)
+            x_candidates.append(spider_grouped_cands)
 
-    matched_edges = match_edges(H, non_pivots, z_digraphs, x_digraphs, z_candidates, x_candidates)
+    edge_groups = {}
+    for i, r in enumerate(H):
+        for j, x in enumerate(r[non_pivots]):
+            if x == 1:
+                pivot_q = pivots[i]
+                edge_groups[(i, j)] = next(
+                    k for k, piece in enumerate(x_splits[j]) if pivot_q in piece
+                )
+
+    matched_edges = match_edges(
+        H, non_pivots, z_digraphs, x_digraphs, z_candidates, x_candidates, edge_groups=edge_groups
+    )
 
     # Build global graphs
     z_node_mapping: dict[tuple[int, int], int] = {}
@@ -146,9 +213,9 @@ def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False) -> stim.Circuit:
         global_G.nodes[z_node_mapping[(z_graph, z_val)]]["is_mark"] = False
         global_G.nodes[x_node_mapping[(x_graph, x_val)]]["is_mark"] = False
 
-        if global_F.degree(z_node_mapping[(z_graph, z_val)]) == 1:
+        if global_F.degree(z_node_mapping[(z_graph, z_val)]) == 1 and global_D.in_degree(z_node_mapping[(z_graph, z_val)]) > 0:
             global_G.nodes[z_node_mapping[(z_graph, z_val)]]["is_flag"] = True
-        if global_F.degree(x_node_mapping[(x_graph, x_val)]) == 1:
+        if global_F.degree(x_node_mapping[(x_graph, x_val)]) == 1 and global_D.in_degree(x_node_mapping[(x_graph, x_val)]) > 0:
             global_G.nodes[x_node_mapping[(x_graph, x_val)]]["is_flag"] = True
 
         for u, _ in z_digraphs[z_graph].in_edges(z_val):
@@ -160,7 +227,9 @@ def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False) -> stim.Circuit:
     extractor = CatStateExtractor(StimBuilder(), verbose=False)
     if draw_solutions:
         draw_forest_on_graph(global_G, global_F, figsize=(8, 8))
+        plt.show()
         display_digraph(global_D, figsize=(8, 8))
+        plt.show()
     circ = extractor.extract(global_G, global_F, global_roots, global_D, global_primary_paths)
     return circ
 
@@ -372,15 +441,19 @@ def cat_at_origin_with_verification(
 
 
 if __name__ == "__main__":
-    code = "12_2_4"
+    code = "7_1_3"
     max_col_ops = 100
 
     print(f"Loading QECC: {code}")
     is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code)
 
-    final_circ = cat_at_origin_with_verification(
-        H_x=H_x, H_z=H_z, L_x=L_x, L_z=L_z, d=d,
-        max_col_ops=max_col_ops, verbose=True
+    # final_circ = cat_at_origin_with_verification(
+    #     H_x=H_x, H_z=H_z, L_x=L_x, L_z=L_z, d=d,
+    #     max_col_ops=max_col_ops, verbose=True
+    # )
+
+    final_circ = row_optimized_cat_at_origin(
+        H=H_x, d=d
     )
 
     print("\n--- Final Fault Tolerant Verification Circuit ---")
