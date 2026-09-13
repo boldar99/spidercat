@@ -32,6 +32,7 @@ from spidercat.spanning_tree import (
     build_min_diameter_spanning_tree,
     build_trivial_spanning_forest,
     find_min_height_degree_k_roots,
+    find_min_height_root_edges,
     match_forest_leaves_to_marked_edges,
 )
 from spidercat.utils import ed, load_solution_triplet
@@ -100,7 +101,7 @@ def build_base_t1_graph(n: int, rooted=False) -> tuple[nx.Graph, nx.Graph, int]:
     return graph, forest, 0
 
 
-def build_base_n6_graph() -> tuple[nx.Graph, nx.Graph, int]:
+def build_base_n6_graph(rooted=False) -> tuple[nx.Graph, nx.Graph, int]:
     """
     Constructs base bipartite graph and spanning tree for n=6.
 
@@ -118,6 +119,21 @@ def build_base_n6_graph() -> tuple[nx.Graph, nx.Graph, int]:
     forest = graph.copy()
     forest.remove_edge(0, 4)
     forest.remove_edge(1, 5)
+    
+    if rooted:
+        # Node 0 is connected to 2, 3 (4 is removed). It's an unmarked node.
+        # But we need a new root node of degree 2 inserted on an edge.
+        # The best edge for height is between 0 and 2.
+        new_node = 8
+        u, v = 0, 3
+        for g in [graph, forest]:
+            g.add_node(new_node)
+            g.remove_edge(u, v)
+            g.add_edge(u, new_node)
+            g.add_edge(v, new_node)
+
+        return graph, forest, new_node
+
     return graph, forest, 0
 
 
@@ -183,7 +199,7 @@ def _build_base_case(
         graph, forest, root = build_base_t1_graph(n, rooted=rooted)
         return graph, forest, {0: root}, n + rooted
     if n == 6:
-        graph, forest, root = build_base_n6_graph()
+        graph, forest, root = build_base_n6_graph(rooted=rooted)
         return graph, forest, {0: root}, 0
     return None
 
@@ -276,6 +292,7 @@ def _synthesize_expanded_graphs(
     matchings: dict[int, list[tuple[int, int]]],
     attempt: int,
     cooling_rate: float = DEFAULT_COOLING_RATE,
+    rooted: bool = False,
 ) -> tuple[nx.Graph, nx.Graph, dict[int, int]]:
     """
     Expands base graph and tree into interaction graph and spanning forest,
@@ -288,7 +305,36 @@ def _synthesize_expanded_graphs(
         expanded_graph, 1, seed=MDSF_SEED_BASE + attempt, cooling_rate=cooling_rate
     )
     spanning_forest = spanning_forest.copy()
-    roots = find_min_height_degree_k_roots(spanning_forest)
+
+    if rooted:
+        root_edges = find_min_height_root_edges(spanning_forest)
+        roots = {}
+        insertions = []
+        for comp_id, edge in root_edges.items():
+            if edge is not None:
+                new_node = max(expanded_graph.nodes()) + 1 + len(insertions)
+                insertions.append((comp_id, edge, new_node))
+                
+        for comp_id, edge, new_node in insertions:
+            u, v = edge
+            expanded_graph.remove_edge(u, v)
+            expanded_graph.add_edge(u, new_node)
+            expanded_graph.add_edge(v, new_node)
+            expanded_graph.nodes[new_node]["is_mark"] = False
+            
+            spanning_forest.remove_edge(u, v)
+            spanning_forest.add_edge(u, new_node)
+            spanning_forest.add_edge(v, new_node)
+            
+            roots[comp_id] = new_node
+            
+        for comp in nx.connected_components(spanning_forest):
+            comp_id = min(comp)
+            if comp_id not in roots:
+                roots[comp_id] = comp_id
+    else:
+        roots = find_min_height_degree_k_roots(spanning_forest)
+        
     return expanded_graph, spanning_forest, roots
 
 
@@ -510,7 +556,7 @@ def well_ordered_ft_cat_state_data(
                         spanning_tree, marked_edges, matchings = _permute_and_remark_graph(base_graph, n, t)
 
                 graph, forest, roots = _synthesize_expanded_graphs(
-                    base_graph, spanning_tree, marked_edges, matchings, attempt
+                    base_graph, spanning_tree, marked_edges, matchings, attempt, rooted=rooted
                 )
 
             dependency_dag, main_node = _build_and_resolve_dependency_dag(

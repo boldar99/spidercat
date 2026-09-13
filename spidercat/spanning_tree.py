@@ -271,6 +271,45 @@ def find_min_height_roots(forest: nx.Graph) -> dict[int, int]:
     return ideal_roots
 
 
+def find_min_height_root_edges(forest: nx.Graph) -> dict[int, tuple[int, int]]:
+    """
+    Identifies the ideal edge to insert a root into for each component to minimize height.
+
+    Args:
+        forest: The forest graph containing one or more trees.
+
+    Returns:
+        dict: {Tree_ID: Ideal_Root_Edge}
+    """
+    ideal_edges = {}
+
+    for component in nx.connected_components(forest):
+        tree = forest.subgraph(component)
+        if tree.number_of_edges() == 0:
+            continue
+
+        best_edge = None
+        min_ecc = float('inf')
+
+        for u, v in tree.edges():
+            tree_without_edge = tree.copy()
+            tree_without_edge.remove_edge(u, v)
+            comp_u = nx.node_connected_component(tree_without_edge, u)
+            comp_v = nx.node_connected_component(tree_without_edge, v)
+
+            ecc_u = nx.eccentricity(tree_without_edge.subgraph(comp_u), u) if len(comp_u) > 1 else 0
+            ecc_v = nx.eccentricity(tree_without_edge.subgraph(comp_v), v) if len(comp_v) > 1 else 0
+
+            ecc = max(ecc_u, ecc_v) + 1
+            if ecc < min_ecc:
+                min_ecc = ecc
+                best_edge = (u, v)
+
+        tree_id = min(component)
+        ideal_edges[tree_id] = best_edge
+
+    return ideal_edges
+
 import networkx as nx
 from collections import deque
 
