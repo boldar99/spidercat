@@ -450,7 +450,7 @@ def well_ordered_composite_cat_state_data(
             max_retries=max_retries,
         )
 
-        if k == 0:
+        if k == 0 or current_is_t0:
             root_k = roots_k[0]
             exit_k = edge_k
         else:
@@ -537,21 +537,12 @@ def well_ordered_ft_cat_state_data(
     Returns:
         tuple of (G, F, roots, D, edge)
     """
-    if not force_generate:
+    if not force_generate and not(n <= 5 or t <= 1 and not rooted):
         cached_data = load_state_data(n, t)
         if cached_data is not None:
             graph, forest, roots, dependency_dag, main_node = cached_data
             if rooted:
                 root_node = roots[0]
-                if not graph.nodes[root_node].get("is_root", False):
-                    base_case = _build_base_case(n, t, rooted=True)
-                    if base_case is not None:
-                        graph, forest, roots, fallback_node = base_case
-                        dependency_dag, main_node = _build_and_resolve_dependency_dag(
-                            graph, forest, roots[0], fallback_node=fallback_node
-                        )
-                        return graph, forest, roots, dependency_dag, main_node
-                
                 if graph.nodes[root_node].get("is_mark", False) or forest.degree[root_node] == 3:
                     root_edges = find_min_height_root_edges(forest)
                     insertions = []
@@ -566,7 +557,6 @@ def well_ordered_ft_cat_state_data(
                         graph.add_edge(u, new_node)
                         graph.add_edge(v, new_node)
                         graph.nodes[new_node]["is_mark"] = False
-                        graph.nodes[new_node]["is_root"] = True
                         
                         forest.remove_edge(u, v)
                         forest.add_edge(u, new_node)
@@ -626,9 +616,9 @@ def main(draw: bool = False) -> None:
     random.seed(1)
     from spidercat.circuit_extraction import CatStateExtractor, StimBuilder
 
-    ns, t = [10], 3
+    ns, t = [2,2], 3
     print(f"Generating well-ordered composite cat state for ns={ns}, t={t}...")
-    graph, forest, roots, dependency_dag, edge = well_ordered_composite_cat_state_data(ns, t, regenerate_graph=True, force_generate=True)
+    graph, forest, roots, dependency_dag, edge = well_ordered_composite_cat_state_data(ns, t)
 
     if draw:
         from matplotlib import pyplot as plt
