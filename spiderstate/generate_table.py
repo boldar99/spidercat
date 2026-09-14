@@ -56,7 +56,7 @@ def main():
             try:
                 stats = json.load(file)
                 code_raw = stats.get("code", "")
-                code_data = load_qecc_data(code_raw, "FAO")
+                code_data = load_qecc_data(code_raw, "FAO" if code_raw in BASELINE_DATA else None)
                 stats["n"] = code_data["n"]
                 stats["k"] = code_data["k"]
                 stats["d"] = code_data["d"]
@@ -81,8 +81,9 @@ def main():
     print("\\midrule")
     
     for code_raw, group in grouped_data:
+        has_baseline = code_raw in BASELINE_DATA
         num_strategy_rows = len(group)
-        num_rows = num_strategy_rows + 1  # 1 for Flag at Origin + N for CSSCat
+        num_rows = num_strategy_rows + (1 if has_baseline else 0)
         
         first_row = group[0]
         n, k, d = first_row["n"], first_row["k"], first_row["d"]
@@ -180,8 +181,10 @@ def main():
         base_depth_str = str(base_depth)
         if base_depth != "-" and is_best(int(base_depth), best_depth): base_depth_str = wrap_bold(base_depth_str)
         
-        # Print the Flag at Origin row
-        print(f"{multirow_code} & Flag at Origin & {base_cx_str} & {base_flags_str} &   & {base_sim_str} & {base_depth_str} & {base_ler} & {base_ar} \\\\")
+        if has_baseline:
+            # Print the Flag at Origin row
+            print(f"{multirow_code} & Flag at Origin & {base_cx_str} & {base_flags_str} &   & {base_sim_str} & {base_depth_str} & {base_ler} & {base_ar} \\\\")
+            print("\\cmidrule{2-9}")
         
         cxs_str = wrap_bold(str(cxs)) if is_best(cxs, best_cx) else str(cxs)
         flags_str = wrap_bold(str(flags)) if is_best(flags, best_flags) else str(flags)
@@ -238,7 +241,9 @@ def main():
             cx_col = multirow_cx if i == 0 else ""
             flag_col = multirow_flags if i == 0 else ""
             
-            print(f" & {method_col} & {cx_col} & {flag_col} & {strategy} & {sim_qubits_str} & {depth_str} & {ler_latex} & {ar_latex} \\\\")
+            code_col = multirow_code if (i == 0 and not has_baseline) else ""
+            
+            print(f"{code_col} & {method_col} & {cx_col} & {flag_col} & {strategy} & {sim_qubits_str} & {depth_str} & {ler_latex} & {ar_latex} \\\\")
             
         # Optional line between different codes for clean grouping
         print("\\midrule")

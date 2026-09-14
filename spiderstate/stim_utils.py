@@ -239,7 +239,7 @@ def layered_ops_to_noisy_stim_circuit(
 
             append_gate(op_name, targets)
 
-            if (op_name in Z_MEASUREMENTS or op_name in Z_INITIALIZATIONS) and p_meas > 0:
+            if (op_name in X_INITIALIZATIONS or op_name in Z_INITIALIZATIONS) and p_init > 0:
                 append_gate("DEPOLARIZE1", targets, p_init)
             elif op_name in TWO_QUBIT_GATES and p_2 > 0:
                 append_gate("DEPOLARIZE2", targets, p_2)

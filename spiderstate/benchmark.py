@@ -286,7 +286,7 @@ def benchmark_simple_codes():
         PureAggressiveStrategy(),
         DepthPreservingStrategy(),
     ]
-    return benchmark(FAO_simp_QECCS, True, strategies, num_samples=lambda d: 100_000_000, estimate_ler=True)
+    return benchmark(FAO_simp_QECCS, True, strategies, num_samples=lambda d: 250_000_000, estimate_ler=True)
 
 
 def benchmark_hard_codes():
@@ -294,7 +294,7 @@ def benchmark_hard_codes():
         PureAggressiveStrategy(),
         DepthPreservingStrategy(),
     ]
-    return benchmark(FAO_hard_QECCS, True, strategies, num_samples=lambda d: 1_000_000, estimate_ler=False)
+    return benchmark(FAO_hard_QECCS, False, strategies, num_samples=lambda d: 10_000_000, estimate_ler=False)
 
 
 def benchmark_very_hard_codes():
@@ -302,8 +302,10 @@ def benchmark_very_hard_codes():
         PureAggressiveStrategy(),
         DepthPreservingStrategy(),
     ]
-    return benchmark(very_hard_QECCS, False, strategies, num_samples=lambda d: 10_000_000, estimate_ler=False)
+    return benchmark(very_hard_QECCS, False, strategies, num_samples=lambda d: 1_000_000, estimate_ler=False)
 
 
 if __name__ == "__main__":
+    benchmark_simple_codes()
+    benchmark_hard_codes()
     benchmark_very_hard_codes()
