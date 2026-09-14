@@ -207,7 +207,7 @@ def main():
             
             n_samples = row.get("num_samples", 0)
             ler = row.get("logical_error_rate", None)
-            if ler is None or ler <= 0:
+            if ler is None:
                 ler_latex = "-"
             else:
                 ar_temp = row.get("acceptance_rate", 1.0)

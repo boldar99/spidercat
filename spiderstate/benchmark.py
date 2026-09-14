@@ -103,7 +103,7 @@ def benchmark_CAO_state_prep(code: str, reuse_strategies: list, p=0.001, num_sam
     if d > 5:
         num_samples *= 2
 
-    original_circ = row_optimized_cat_at_origin(H_x, d, max_basis_tries=10_000)
+    original_circ = row_optimized_cat_at_origin(H_x, d, max_basis_tries=10_000, analyze_hook_errors=True)
 
     n_data = H_x.shape[1]
 
@@ -267,10 +267,10 @@ def benchmark(code_iterator, estimate_ler=True):
         PureAggressiveStrategy(),
         DepthPreservingStrategy(),
     ]
-    for code in list(code_iterator()):
+    for code in ["49_1_9"]:
         print(f"--- Benchmarking {code} ---")
         all_stats = benchmark_CAO_state_prep(
-            code, reuse_strategies=strategies, num_samples=100_000_000, estimate_ler=estimate_ler
+            code, reuse_strategies=strategies, num_samples=500_000_000, estimate_ler=estimate_ler
         )
         for stats in all_stats:
             print(f"--- Results for {stats['strategy']} ---")

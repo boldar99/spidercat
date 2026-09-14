@@ -10,7 +10,7 @@ from spidercat.circuit_extraction import CatStateExtractor, StimBuilder
 from spidercat.draw import draw_forest_on_graph, display_digraph
 from spiderstate.between_shor_and_steane import measure_stabilizers_scheme_B, measure_stabilizers_scheme_A
 from spiderstate.circuit_finder import find_circuit
-from spiderstate.hook_errors import analyze_hook_errors, find_safe_splits, get_valid_split_partitions, find_acyclic_partition_combination
+from spiderstate.hook_errors import find_safe_logical_hook_errors, find_safe_splits, get_valid_split_partitions, find_acyclic_partition_combination
 from spiderstate.spider_leg_matcher import match_edges
 from spiderstate.utils import find_pivots_in_matrix, load_qecc, count_operations, flatten, get_conj_M
 from spiderstate.well_ordered_cat_state import well_ordered_ft_cat_state_data, well_ordered_composite_cat_state_data
@@ -23,23 +23,23 @@ from spiderstate.circuit_merger import synthesize_and_merge_layer
 
 
 
-def col_reduced_cat_at_origin(H: np.ndarray, d: int, max_col_ops: int = 0, max_basis_tries: int = 5000):
+def col_reduced_cat_at_origin(H: np.ndarray, d: int, max_col_ops: int = 0, max_basis_tries: int = 5000, analyze_hook_errors=False):
     t = (d - 1) // 2
     _, final_matrix_after_col_ops, col_ops_performed = optimize_fault_tolerant_matrix(H, t, max_col_ops, max_basis_tries)
-    circ = cat_at_origin(final_matrix_after_col_ops, d)
+    circ = cat_at_origin(final_matrix_after_col_ops, d, analyze_hook_errors=analyze_hook_errors)
     for (c, n) in col_ops_performed:
         circ.append("CX", [c, n])
 
     return circ
 
 
-def row_optimized_cat_at_origin(H: np.ndarray, d: int, max_basis_tries: int = 10_000):
+def row_optimized_cat_at_origin(H: np.ndarray, d: int, max_basis_tries: int = 10_000, analyze_hook_errors=False):
     t = (d - 1) // 2
     best_row_op_cost, matrix_after_row_ops = row_optimize_matrix(H, t, max_basis_tries)
-    return cat_at_origin(matrix_after_row_ops, d)
+    return cat_at_origin(matrix_after_row_ops, d, analyze_hook_errors=analyze_hook_errors)
 
 
-def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False, basis="Z") -> stim.Circuit:
+def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False, basis="Z", analyze_hook_errors=False) -> stim.Circuit:
     if not has_unique_ones_property(H):
         raise ValueError(f"H is not representing a bipartite graph state.")
 
@@ -52,22 +52,26 @@ def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False, basis="Z") -> sti
     assert len(rows_without_pivots) == 0
 
     M_prep = get_conj_M(H)
-    initial_splits = analyze_hook_errors(M_prep)
+    if analyze_hook_errors:
+        initial_splits = find_safe_logical_hook_errors(M_prep)
 
     partition_options = []
     for j, p in enumerate(non_pivots):
         supp = tuple(np.where(M_prep[j] == 1)[0].tolist())
-        init_p = initial_splits[supp]
-        if len(init_p) > 1 and p not in init_p[-1]:
-            p_idx = next(idx for idx, piece in enumerate(init_p) if p in piece)
-            if len(init_p) == 2:
-                init_p = init_p[::-1]
-            else:
-                init_p = [piece for idx, piece in enumerate(init_p) if idx != p_idx] + [init_p[p_idx]]
-        ns = [len(piece) for piece in init_p]
-        safe = find_safe_splits(supp, M_prep)
-        valid_parts = get_valid_split_partitions(supp, ns, p, safe)
-        if not valid_parts:
+        if analyze_hook_errors:
+            init_p = initial_splits[supp]
+            if len(init_p) > 1 and p not in init_p[-1]:
+                p_idx = next(idx for idx, piece in enumerate(init_p) if p in piece)
+                if len(init_p) == 2:
+                    init_p = init_p[::-1]
+                else:
+                    init_p = [piece for idx, piece in enumerate(init_p) if idx != p_idx] + [init_p[p_idx]]
+            ns = [len(piece) for piece in init_p]
+            safe = find_safe_splits(supp, M_prep)
+            valid_parts = get_valid_split_partitions(supp, ns, p, safe)
+            if not valid_parts:
+                valid_parts = [(tuple(sorted(supp)),)]
+        else:
             valid_parts = [(tuple(sorted(supp)),)]
         partition_options.append(valid_parts)
 

@@ -152,7 +152,7 @@ def analyze_hook_errors_(H_z, L_z):
     return analyze_hook_errors(np.vstack([H_z, L_z]))
 
 
-def analyze_hook_errors(Mz_prep):
+def find_safe_logical_hook_errors(Mz_prep):
     global_assignment = {}
     num_z_safe = 0
 
