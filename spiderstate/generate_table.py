@@ -104,6 +104,42 @@ def main():
         base_ler_bounds = BASELINE_DATA.get(code_raw, {}).get("ler_bounds", None)
         base_ar_bounds = BASELINE_DATA.get(code_raw, {}).get("ar_bounds", None)
         
+        # Calculate best values for bolding
+        best_cx = min([cxs] + ([int(base_cx)] if base_cx != "-" else []))
+        best_flags = min([flags] + ([int(base_flags)] if base_flags != "-" else []))
+        best_sim = min([r.get("num_sim_qubits", float('inf')) for r in group] + ([int(base_sim)] if base_sim != "-" else []))
+        best_depth = min([r.get("depth", float('inf')) for r in group] + ([int(base_depth)] if base_depth != "-" else []))
+        
+        ler_vals = []
+        if base_ler_bounds:
+            ler_vals.append(((base_ler_bounds[0] + base_ler_bounds[1]) / 2) * 10**base_ler_bounds[2])
+        for r in group:
+            l = r.get("logical_error_rate")
+            if l is not None and l > 0:
+                ler_vals.append(l)
+        best_ler = min(ler_vals) if ler_vals else float('inf')
+        
+        ar_vals = []
+        if base_ar_bounds:
+            ar_vals.append((base_ar_bounds[0] + base_ar_bounds[1]) / 2)
+        for r in group:
+            a = r.get("acceptance_rate")
+            if a is not None:
+                ar_vals.append(a)
+        best_ar = max(ar_vals) if ar_vals else float('-inf')
+
+        def is_best(val, best_val):
+            if best_val in (float('inf'), float('-inf')): return False
+            if isinstance(val, (int, float)) and isinstance(best_val, (int, float)):
+                if best_val == 0: return val == 0
+                return abs(val - best_val) / abs(best_val) < 1e-4
+            return val == best_val
+
+        def wrap_bold(s, math=False):
+            if math and s.startswith('$') and s.endswith('$'):
+                return f"$\\mathbf{{{s[1:-1]}}}$"
+            return f"\\textbf{{{s}}}"
+
         all_lers = [r.get("logical_error_rate") for r in group if r.get("logical_error_rate") and r.get("logical_error_rate") > 0]
         if base_ler_bounds:
             all_lers.append(base_ler_bounds[0] * 10**base_ler_bounds[2])
@@ -120,20 +156,39 @@ def main():
             adj_low = low * factor
             adj_high = high * factor
             base_ler = f"$[{format_float(adj_low, 1)}, \\,\\, {format_float(adj_high, 1)}]\\! \\times\\! 10^{{{shared_exp}}}$"
+            base_ler_val = ((low + high) / 2) * 10**orig_exp
+            if is_best(base_ler_val, best_ler): base_ler = wrap_bold(base_ler, math=True)
         else:
             base_ler = "-"
             
         if base_ar_bounds:
             base_ar = f"$[{base_ar_bounds[0]:.4f}, \\,\\, {base_ar_bounds[1]:.4f}]$"
+            base_ar_val = (base_ar_bounds[0] + base_ar_bounds[1]) / 2
+            if is_best(base_ar_val, best_ar): base_ar = wrap_bold(base_ar, math=True)
         else:
             base_ar = "-"
         
-        # Print the Flag at Origin row
-        print(f"{multirow_code} & Flag at Origin & {base_cx} & {base_flags} &   & {base_sim} & {base_depth} & {base_ler} & {base_ar} \\\\")
+        base_cx_str = str(base_cx)
+        if base_cx != "-" and is_best(int(base_cx), best_cx): base_cx_str = wrap_bold(base_cx_str)
         
+        base_flags_str = str(base_flags)
+        if base_flags != "-" and is_best(int(base_flags), best_flags): base_flags_str = wrap_bold(base_flags_str)
+        
+        base_sim_str = str(base_sim)
+        if base_sim != "-" and is_best(int(base_sim), best_sim): base_sim_str = wrap_bold(base_sim_str)
+        
+        base_depth_str = str(base_depth)
+        if base_depth != "-" and is_best(int(base_depth), best_depth): base_depth_str = wrap_bold(base_depth_str)
+        
+        # Print the Flag at Origin row
+        print(f"{multirow_code} & Flag at Origin & {base_cx_str} & {base_flags_str} &   & {base_sim_str} & {base_depth_str} & {base_ler} & {base_ar} \\\\")
+        
+        cxs_str = wrap_bold(str(cxs)) if is_best(cxs, best_cx) else str(cxs)
+        flags_str = wrap_bold(str(flags)) if is_best(flags, best_flags) else str(flags)
+
         multirow_method = f"\\multirow{{{num_strategy_rows}}}{{*}}{{CSSCat}}"
-        multirow_cx = f"\\multirow{{{num_strategy_rows}}}{{*}}{{{cxs}}}"
-        multirow_flags = f"\\multirow{{{num_strategy_rows}}}{{*}}{{{flags}}}"
+        multirow_cx = f"\\multirow{{{num_strategy_rows}}}{{*}}{{{cxs_str}}}"
+        multirow_flags = f"\\multirow{{{num_strategy_rows}}}{{*}}{{{flags_str}}}"
         
         for i, row in enumerate(group):
             strategy = row.get("strategy", "Unknown").replace("Strategy", "")
@@ -145,7 +200,10 @@ def main():
                 strategy = r"Volume"
                 
             sim_qubits = row.get("num_sim_qubits", 0)
+            sim_qubits_str = wrap_bold(str(sim_qubits)) if is_best(sim_qubits, best_sim) else str(sim_qubits)
+
             depth = row.get("depth", 0)
+            depth_str = wrap_bold(str(depth)) if is_best(depth, best_depth) else str(depth)
             
             n_samples = row.get("num_samples", 0)
             ler = row.get("logical_error_rate", None)
@@ -166,18 +224,21 @@ def main():
                 else:
                     ler_latex = f"$[{format_float(low, 5)}, \\,\\, {format_float(high, 5)}]$"
                 
+                if is_best(ler, best_ler): ler_latex = wrap_bold(ler_latex, math=True)
+                
             ar = row.get("acceptance_rate", None)
             if ar is None:
                 ar_latex = "-"
             else:
                 ar_low, ar_high = wilson_score_interval(ar, n_samples)
                 ar_latex = f"$[{ar_low:.4f}, \\,\\, {ar_high:.4f}]$"
+                if is_best(ar, best_ar): ar_latex = wrap_bold(ar_latex, math=True)
             
             method_col = multirow_method if i == 0 else ""
             cx_col = multirow_cx if i == 0 else ""
             flag_col = multirow_flags if i == 0 else ""
             
-            print(f" & {method_col} & {cx_col} & {flag_col} & {strategy} & {sim_qubits} & {depth} & {ler_latex} & {ar_latex} \\\\")
+            print(f" & {method_col} & {cx_col} & {flag_col} & {strategy} & {sim_qubits_str} & {depth_str} & {ler_latex} & {ar_latex} \\\\")
             
         # Optional line between different codes for clean grouping
         print("\\midrule")
