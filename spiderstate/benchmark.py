@@ -16,7 +16,7 @@ import galois
 from spiderstate.stim_utils import make_stim_circ_noisy
 from spidercat.simulate import _layer_cnot_circuit
 from spiderstate.cat_at_origin import row_optimized_cat_at_origin
-from spiderstate.utils import load_qecc, FAO_simp_QECCS, hard_QECCS
+from spiderstate.utils import load_qecc, FAO_simp_QECCS, FAO_hard_QECCS, very_hard_QECCS
 from spiderstate.qubit_reuse import (
     build_circuit_dag,
     inject_qubit_reuse,
@@ -81,7 +81,7 @@ def _simulate_batch(batch_size):
     return batch_size, int(num_flagged), int(num_discarded), int(num_incorrect)
 
 
-def benchmark_CAO_state_prep(code: str, reuse_strategies: list, p=0.001, num_samples=100_000_000, estimate_ler=True):
+def benchmark_CAO_state_prep(code: str, analyze_hook_errors:bool, reuse_strategies: list, num_samples_fn=lambda _: 100_000_000, p=0.001, estimate_ler=True):
     import random
     # Ensure deterministic circuit generation for this specific code
     # so the circuit hash matches across different script executions
@@ -100,10 +100,9 @@ def benchmark_CAO_state_prep(code: str, reuse_strategies: list, p=0.001, num_sam
     else:
         print(f"State: |0> (Code {code})")
 
-    if d > 5:
-        num_samples *= 2
+    num_samples = num_samples_fn(d)
 
-    original_circ = row_optimized_cat_at_origin(H_x, d, max_basis_tries=10_000, analyze_hook_errors=True)
+    original_circ = row_optimized_cat_at_origin(H_x, d, max_basis_tries=10_000, analyze_hook_errors=analyze_hook_errors)
 
     n_data = H_x.shape[1]
 
@@ -262,15 +261,11 @@ def benchmark_CAO_state_prep(code: str, reuse_strategies: list, p=0.001, num_sam
     return all_stats
 
 
-def benchmark(code_iterator, estimate_ler=True):
-    strategies = [
-        PureAggressiveStrategy(),
-        DepthPreservingStrategy(),
-    ]
-    for code in ["49_1_9"]:
+def benchmark(code_iterator, analyze_hook_errors, strategies, num_samples, estimate_ler=True):
+    for code in code_iterator():
         print(f"--- Benchmarking {code} ---")
         all_stats = benchmark_CAO_state_prep(
-            code, reuse_strategies=strategies, num_samples=500_000_000, estimate_ler=estimate_ler
+            code, analyze_hook_errors, reuse_strategies=strategies, num_samples_fn=num_samples, estimate_ler=estimate_ler
         )
         for stats in all_stats:
             print(f"--- Results for {stats['strategy']} ---")
@@ -286,5 +281,28 @@ def benchmark(code_iterator, estimate_ler=True):
             print()
 
 
+def benchmark_simple_codes():
+    strategies = [
+        PureAggressiveStrategy(),
+        DepthPreservingStrategy(),
+    ]
+    return benchmark(FAO_simp_QECCS, True, strategies, num_samples=lambda d: 100_000_000, estimate_ler=True)
+
+
+def benchmark_hard_codes():
+    strategies = [
+        PureAggressiveStrategy(),
+        DepthPreservingStrategy(),
+    ]
+    return benchmark(FAO_hard_QECCS, True, strategies, num_samples=lambda d: 1_000_000, estimate_ler=False)
+
+
+def benchmark_very_hard_codes():
+    strategies = [
+        DepthPreservingStrategy(),
+    ]
+    return benchmark(very_hard_QECCS, False, strategies, num_samples=lambda d: 1_000_000, estimate_ler=False)
+
+
 if __name__ == "__main__":
-    benchmark(FAO_simp_QECCS)
+    benchmark_hard_codes()
