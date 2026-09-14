@@ -219,10 +219,6 @@ def layered_ops_to_noisy_stim_circuit(
 
     for i, ops in enumerate(layered_ops):
         used_qubits = set()
-        
-        grouped_ops = defaultdict(list)
-        meas_groups = defaultdict(list)
-        meas_og_ids = defaultdict(list)
 
         for item in ops:
             is_tagged_meas = isinstance(item[0], tuple)
@@ -233,38 +229,22 @@ def layered_ops_to_noisy_stim_circuit(
 
             if is_tagged_meas:
                 _, og_meas_id = item[0]
-                meas_groups[op_name].extend(targets)
-                for _ in targets:
-                    meas_og_ids[op_name].append(og_meas_id)
-            else:
-                grouped_ops[op_name].extend(targets)
+                measurement_mapping[meas_id] = og_meas_id
+                meas_id += 1
 
-        # 1. Non-measurement operations
-        for op_name, targets in grouped_ops.items():
-            append_gate(op_name, targets)
-            
-            if (op_name in Z_INITIALIZATIONS) and p_meas > 0:
-                append_gate("DEPOLARIZE1", targets, p_init)
-            elif op_name in TWO_QUBIT_GATES and p_2 > 0:
-                append_gate("DEPOLARIZE2", targets, p_2)
-            elif op_name not in SPECIAL_GATES and p_1 > 0:
-                append_gate("DEPOLARIZE1", targets, p_1)
-
-        # 2. Measurements
-        for op_name, targets in meas_groups.items():
             if op_name in Z_MEASUREMENTS and p_meas > 0:
                 append_gate("X_ERROR", targets, p_meas)
             elif op_name in X_MEASUREMENTS and p_meas > 0:
                 append_gate("Z_ERROR", targets, p_meas)
 
             append_gate(op_name, targets)
-            
-            for og_id in meas_og_ids[op_name]:
-                measurement_mapping[meas_id] = og_id
-                meas_id += 1
 
-            if op_name in Z_MEASUREMENTS and p_meas > 0:
+            if (op_name in Z_MEASUREMENTS or op_name in Z_INITIALIZATIONS) and p_meas > 0:
                 append_gate("DEPOLARIZE1", targets, p_init)
+            elif op_name in TWO_QUBIT_GATES and p_2 > 0:
+                append_gate("DEPOLARIZE2", targets, p_2)
+            elif op_name not in SPECIAL_GATES and p_1 > 0:
+                append_gate("DEPOLARIZE1", targets, p_1)
 
         if i != len(layered_ops) - 1 and p_mem > 0:
             unused_qubits = [q for q in range(num_qubits) if q not in used_qubits]

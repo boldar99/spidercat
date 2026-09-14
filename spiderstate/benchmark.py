@@ -299,9 +299,10 @@ def benchmark_hard_codes():
 
 def benchmark_very_hard_codes():
     strategies = [
+        PureAggressiveStrategy(),
         DepthPreservingStrategy(),
     ]
-    return benchmark(very_hard_QECCS, False, strategies, num_samples=lambda d: 1_000_000, estimate_ler=False)
+    return benchmark(very_hard_QECCS, False, strategies, num_samples=lambda d: 10_000_000, estimate_ler=False)
 
 
 if __name__ == "__main__":
