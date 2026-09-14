@@ -81,7 +81,7 @@ def _simulate_batch(batch_size):
     return batch_size, int(num_flagged), int(num_discarded), int(num_incorrect)
 
 
-def benchmark_CAO_state_prep(code: str, reuse_strategy, p=0.001, num_samples=100_000_000, estimate_ler=True):
+def benchmark_CAO_state_prep(code: str, reuse_strategies: list, p=0.001, num_samples=100_000_000, estimate_ler=True):
     import random
     # Ensure deterministic circuit generation for this specific code
     # so the circuit hash matches across different script executions
@@ -100,186 +100,180 @@ def benchmark_CAO_state_prep(code: str, reuse_strategy, p=0.001, num_samples=100
     else:
         print(f"State: |0> (Code {code})")
 
+    if d > 5:
+        num_samples *= 2
+
     original_circ = row_optimized_cat_at_origin(H_x, d, max_basis_tries=10_000)
 
     n_data = H_x.shape[1]
-    dag = build_circuit_dag(original_circ)
-    mod_dag, _, _ = inject_qubit_reuse(dag, n_data, reuse_strategy)
-    compressed_dag = apply_logical_qubit_merge_and_compress(mod_dag, n_data)
-    circ_with_reuse, _ = dag_to_circuit(compressed_dag)
 
-    noisy_circ, _ = make_stim_circ_noisy(circ_with_reuse, p, one_cnot_per_layer=True)
-    # print(noisy_circ)
-
-    noisy_circ.append("M", range(H_x.shape[1]))
-
-    for i, H in enumerate(H_z):
-        qubit_indices = np.where(H == 1)[0]
-        record_targets = [stim.target_rec(i - H_x.shape[1]) for i in qubit_indices]
-        noisy_circ.append("DETECTOR", record_targets)
-    for i, L in enumerate(L_z):
-        qubit_indices = np.where(L == 1)[0]
-        record_targets = [stim.target_rec(i - H_x.shape[1]) for i in qubit_indices]
-        noisy_circ.append("OBSERVABLE_INCLUDE", record_targets, i)
-
-    # Compute circuit properties
-    raw_cnots = [l for (name, l, _) in circ_with_reuse.flattened_operations() if name == "CX"]
-    cnots = [(ops[i], ops[i + 1]) for ops in raw_cnots for i in range(0, len(ops), 2)]
-    num_cx = len(cnots)
-    num_flags = original_circ.num_detectors
-    num_qubits = noisy_circ.num_qubits
-    depth = len(_layer_cnot_circuit(cnots))
-    num_sim_qubits = noisy_circ.num_qubits
-
-    # Compute circuit hash and setup CSV caching
-    circ_str = str(noisy_circ)
-    circ_hash = hashlib.sha256(circ_str.encode()).hexdigest()[:16]
-
-    os.makedirs("simulation_results", exist_ok=True)
-    csv_file = f"simulation_results/{code}_{circ_hash}.csv"
-
-    total_shots = 0
-    total_flagged = 0
-    total_discarded = 0
-    total_incorrect = 0
-
-    if os.path.exists(csv_file):
-        df = pd.read_csv(csv_file)
-        if not df.empty:
-            total_shots = int(df['total_shots'].sum())
-            total_flagged = int(df['num_flagged'].sum())
-            total_discarded = int(df['num_discarded'].sum())
-            total_incorrect = int(df['num_incorrect'].sum())
-
-    remaining_samples = max(0, num_samples - total_shots)
     max_weight = None if bool(d % 2) else (d - 1) // 2
 
-    # Build the LUT ONCE in the main thread
-    decoder = estimate_ler and LutDecoder(H_z, max_decodable_weight=max_weight)
+    # Build the LUT lazily in the main thread
+    decoder = None
 
     global _G_DECODER, _G_CIRC_STR, _G_H_X, _G_L_X, _ESTIMATE_LER
     _ESTIMATE_LER = estimate_ler
-    _G_DECODER = decoder
-    _G_CIRC_STR = circ_str
+    _G_DECODER = None
     _G_H_X = H_z
     _G_L_X = L_z
 
-    if remaining_samples > 0:
-        batch_size = 1_000_000
-        num_full_batches = remaining_samples // batch_size
-        remainder = remaining_samples % batch_size
-        batches = [batch_size] * num_full_batches
-        if remainder > 0:
-            batches.append(remainder)
+    all_stats = []
 
-        print(f"Running {remaining_samples} additional samples (Total existing: {total_shots})...")
+    for reuse_strategy in reuse_strategies:
+        dag = build_circuit_dag(original_circ)
+        mod_dag, _, _ = inject_qubit_reuse(dag, n_data, reuse_strategy)
+        compressed_dag = apply_logical_qubit_merge_and_compress(mod_dag, n_data)
+        circ_with_reuse, _ = dag_to_circuit(compressed_dag)
 
-        num_cores = max(1, mp.cpu_count() - 2)
-        with ProcessPoolExecutor(max_workers=num_cores) as executor:
-            futures = [
-                executor.submit(_simulate_batch, b_size)
-                for b_size in batches
-            ]
+        noisy_circ, _ = make_stim_circ_noisy(circ_with_reuse, p, one_cnot_per_layer=True)
 
-            with tqdm(total=remaining_samples, desc=f"Simulating {code}") as pbar:
-                for future in as_completed(futures):
-                    b_size, n_flagged, n_discarded, n_incorrect = future.result()
-                    total_shots += b_size
-                    total_flagged += n_flagged
-                    total_discarded += n_discarded
-                    total_incorrect = (total_incorrect + n_incorrect) if estimate_ler else None
+        noisy_circ.append("M", range(H_x.shape[1]))
 
-                    # Update CSV incrementally
-                    df_new = pd.DataFrame([{
-                        "total_shots": b_size,
-                        "num_flagged": n_flagged,
-                        "num_discarded": n_discarded,
-                        "num_incorrect": n_incorrect
-                    }])
+        for i, H in enumerate(H_z):
+            qubit_indices = np.where(H == 1)[0]
+            record_targets = [stim.target_rec(i - H_x.shape[1]) for i in qubit_indices]
+            noisy_circ.append("DETECTOR", record_targets)
+        for i, L in enumerate(L_z):
+            qubit_indices = np.where(L == 1)[0]
+            record_targets = [stim.target_rec(i - H_x.shape[1]) for i in qubit_indices]
+            noisy_circ.append("OBSERVABLE_INCLUDE", record_targets, i)
 
-                    if os.path.exists(csv_file):
-                        df_new.to_csv(csv_file, mode='a', header=False, index=False)
-                    else:
-                        df_new.to_csv(csv_file, index=False)
+        # Compute circuit properties
+        raw_cnots = [l for (name, l, _) in circ_with_reuse.flattened_operations() if name == "CX"]
+        cnots = [(ops[i], ops[i + 1]) for ops in raw_cnots for i in range(0, len(ops), 2)]
+        num_cx = len(cnots)
+        num_flags = original_circ.num_detectors
+        num_qubits = noisy_circ.num_qubits
+        depth = len(_layer_cnot_circuit(cnots))
+        num_sim_qubits = noisy_circ.num_qubits
 
-                    pbar.update(b_size)
-    else:
-        print(f"Using {total_shots} cached samples from {csv_file}")
+        # Compute circuit hash and setup CSV caching
+        circ_str = str(noisy_circ)
+        circ_hash = hashlib.sha256(circ_str.encode()).hexdigest()[:16]
 
-    # Compute final metrics
-    AR = 1.0 - (total_flagged / total_shots) if total_shots > 0 else 0.0
-    total_valid_corrections = total_shots - total_flagged - total_discarded
-    total_AR = total_valid_corrections / total_shots if total_shots > 0 else None
+        os.makedirs("simulation_results", exist_ok=True)
+        csv_file = f"simulation_results/{code}_{circ_hash}.csv"
 
-    print(f"Discarded {total_discarded} uncorrectable shots.")
+        total_shots = 0
+        total_flagged = 0
+        total_discarded = 0
+        total_incorrect = 0
 
-    if estimate_ler:
-        LER = total_incorrect / total_valid_corrections if total_valid_corrections > 0 else 0.0
-    else:
-        LER = None
+        if os.path.exists(csv_file):
+            df = pd.read_csv(csv_file)
+            if not df.empty:
+                total_shots = int(df['total_shots'].sum())
+                total_flagged = int(df['num_flagged'].sum())
+                total_discarded = int(df['num_discarded'].sum())
+                total_incorrect = int(df['num_incorrect'].sum())
 
-    stats = {
-        "code": code,
-        "strategy": reuse_strategy.__class__.__name__,
-        "p": p,
-        "num_samples": total_shots,
-        "total_flagged": total_flagged,
-        "total_discarded": total_discarded,
-        "total_incorrect": total_incorrect,
-        "logical_error_rate": LER,
-        "acceptance_rate": total_AR ,
-        "raw_acceptance_rate": AR,
-        "num_cx": num_cx,
-        "num_flags": num_flags,
-        "num_qubits_original": num_qubits,
-        "num_sim_qubits": num_sim_qubits,
-        "depth": depth,
-        "circuit_volume": int(depth * num_sim_qubits),
-        "expected_circuit_volume": int(depth * num_sim_qubits / total_AR) if total_AR is not None and total_AR > 0 else 0,
-        "circuit_hash": circ_hash,
-        "perfect_stim": str(circ_with_reuse),
-        "noisy_circuit": circ_str,
-    }
+        remaining_samples = max(0, num_samples - total_shots)
 
-    json_file = f"simulation_results/{code}_{reuse_strategy.__class__.__name__}_{circ_hash}.json"
-    with open(json_file, "w") as f:
-        json.dump(stats, f, indent=4)
+        _G_CIRC_STR = circ_str
 
-    return stats
+        if remaining_samples > 0:
+            if estimate_ler and decoder is None:
+                decoder = LutDecoder(H_z, max_decodable_weight=max_weight)
+                _G_DECODER = decoder
+
+            batch_size = 1_000_000
+            num_full_batches = remaining_samples // batch_size
+            remainder = remaining_samples % batch_size
+            batches = [batch_size] * num_full_batches
+            if remainder > 0:
+                batches.append(remainder)
+
+            print(f"Running {remaining_samples} additional samples (Total existing: {total_shots})...")
+
+            num_cores = max(1, mp.cpu_count() - 2)
+            with ProcessPoolExecutor(max_workers=num_cores) as executor:
+                futures = [
+                    executor.submit(_simulate_batch, b_size)
+                    for b_size in batches
+                ]
+
+                with tqdm(total=remaining_samples, desc=f"Simulating {code} with {reuse_strategy.__class__.__name__}") as pbar:
+                    for future in as_completed(futures):
+                        b_size, n_flagged, n_discarded, n_incorrect = future.result()
+                        total_shots += b_size
+                        total_flagged += n_flagged
+                        total_discarded += n_discarded
+                        total_incorrect = (total_incorrect + n_incorrect) if estimate_ler else None
+
+                        # Update CSV incrementally
+                        df_new = pd.DataFrame([{
+                            "total_shots": b_size,
+                            "num_flagged": n_flagged,
+                            "num_discarded": n_discarded,
+                            "num_incorrect": n_incorrect
+                        }])
+
+                        if os.path.exists(csv_file):
+                            df_new.to_csv(csv_file, mode='a', header=False, index=False)
+                        else:
+                            df_new.to_csv(csv_file, index=False)
+
+                        pbar.update(b_size)
+        else:
+            print(f"Using {total_shots} cached samples from {csv_file}")
+
+        # Compute final metrics
+        AR = 1.0 - (total_flagged / total_shots) if total_shots > 0 else 0.0
+        total_valid_corrections = total_shots - total_flagged - total_discarded
+        total_AR = total_valid_corrections / total_shots if total_shots > 0 else None
+
+        print(f"Discarded {total_discarded} uncorrectable shots.")
+
+        if estimate_ler:
+            LER = total_incorrect / total_valid_corrections if total_valid_corrections > 0 else 0.0
+        else:
+            LER = None
+
+        stats = {
+            "code": code,
+            "strategy": reuse_strategy.__class__.__name__,
+            "p": p,
+            "num_samples": total_shots,
+            "total_flagged": total_flagged,
+            "total_discarded": total_discarded,
+            "total_incorrect": total_incorrect,
+            "logical_error_rate": LER,
+            "acceptance_rate": total_AR ,
+            "raw_acceptance_rate": AR,
+            "num_cx": num_cx,
+            "num_flags": num_flags,
+            "num_qubits_original": num_qubits,
+            "num_sim_qubits": num_sim_qubits,
+            "depth": depth,
+            "circuit_volume": int(depth * num_sim_qubits),
+            "expected_circuit_volume": int(depth * num_sim_qubits / total_AR) if total_AR is not None and total_AR > 0 else 0,
+            "circuit_hash": circ_hash,
+            "perfect_stim": str(circ_with_reuse),
+            "noisy_circuit": circ_str,
+        }
+
+        json_file = f"simulation_results/{code}_{reuse_strategy.__class__.__name__}_{circ_hash}.json"
+        with open(json_file, "w") as f:
+            json.dump(stats, f, indent=4)
+
+        all_stats.append(stats)
+
+    return all_stats
 
 
-def benchmark_with_lut(code_iterator):
+def benchmark(code_iterator, estimate_ler=True):
     strategies = [
-        PureAggressiveStrategy,
-        DepthPreservingStrategy,
-    ]
-    for code in code_iterator():
-        for StrategyClass in strategies:
-            print(f"--- Benchmarking {code} with {StrategyClass.__name__} ---")
-            stats = benchmark_CAO_state_prep(
-                code, reuse_strategy=StrategyClass(), num_samples=1_000_000_000
-            )
-            print(f"Logical Error Rate = {stats['logical_error_rate']:.4e}", end=";\t ")
-            print(f"Acceptance Rate = {stats['acceptance_rate']:.4f}", end=";\t ")
-            print(f"CXs = {stats['num_cx']}", end=";\t ")
-            print(f"Sim. Qubits = {stats['num_sim_qubits']}", end=";\t ")
-            print(f"Flags = {stats['num_flags']}", end=";\t ")
-            print(f"Depth = {stats['depth']}", end=";\t ")
-            print(f"Expected Circuit Volume = {stats['expected_circuit_volume']}")
-            print()
-
-
-def benchmark_without_lut(code_iterator):
-    strategies = [
-        PureAggressiveStrategy,
-        DepthPreservingStrategy,
+        PureAggressiveStrategy(),
+        DepthPreservingStrategy(),
     ]
     for code in list(code_iterator()):
-        for StrategyClass in strategies:
-            print(f"--- Benchmarking {code} with {StrategyClass.__name__} ---")
-            stats = benchmark_CAO_state_prep(
-                code, reuse_strategy=StrategyClass(), num_samples=100_000_000, estimate_ler=False
-            )
+        print(f"--- Benchmarking {code} ---")
+        all_stats = benchmark_CAO_state_prep(
+            code, reuse_strategies=strategies, num_samples=100_000_000, estimate_ler=estimate_ler
+        )
+        for stats in all_stats:
+            print(f"--- Results for {stats['strategy']} ---")
             if stats['logical_error_rate'] is not None:
                 print(f"Logical Error Rate = {stats['logical_error_rate']:.4e}", end=";\t ")
             if stats['acceptance_rate'] is not None:
@@ -293,4 +287,4 @@ def benchmark_without_lut(code_iterator):
 
 
 if __name__ == "__main__":
-    benchmark_with_lut(FAO_simp_QECCS)
+    benchmark(FAO_simp_QECCS)

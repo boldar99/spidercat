@@ -115,7 +115,7 @@ def main():
             ler_vals.append(((base_ler_bounds[0] + base_ler_bounds[1]) / 2) * 10**base_ler_bounds[2])
         for r in group:
             l = r.get("logical_error_rate")
-            if l is not None and l > 0:
+            if l is not None:
                 ler_vals.append(l)
         best_ler = min(ler_vals) if ler_vals else float('inf')
         
