@@ -5,7 +5,7 @@
     "num_samples": 1000000,
     "total_flagged": 896872,
     "total_discarded": 0,
-    "total_incorrect": null,
+    "total_incorrect": 0,
     "logical_error_rate": null,
     "acceptance_rate": 0.103128,
     "raw_acceptance_rate": 0.103128,

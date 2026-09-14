@@ -149,7 +149,7 @@ def find_longest_chain(support, safe_splits):
     return tuple(clean_chain)
 
 def analyze_hook_errors_(H_z, L_z):
-    return analyze_hook_errors(np.vstack([H_z, L_z]))
+    return find_safe_logical_hook_errors(np.vstack([H_z, L_z]))
 
 
 def find_safe_logical_hook_errors(Mz_prep):

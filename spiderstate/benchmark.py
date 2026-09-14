@@ -22,7 +22,7 @@ from spiderstate.qubit_reuse import (
     inject_qubit_reuse,
     apply_logical_qubit_merge_and_compress,
     dag_to_circuit,
-    DepthPreservingStrategy, PureAggressiveStrategy
+    DepthPreservingStrategy, PureAggressiveStrategy, NoReuseStrategy
 )
 import json
 
@@ -305,4 +305,4 @@ def benchmark_very_hard_codes():
 
 
 if __name__ == "__main__":
-    benchmark_hard_codes()
+    benchmark_very_hard_codes()
