@@ -100,7 +100,7 @@ def benchmark_CAO_state_prep(code: str, reuse_strategy, p=0.001, num_samples=100
     else:
         print(f"State: |0> (Code {code})")
 
-    original_circ = row_optimized_cat_at_origin(H_x, d, max_basis_tries=25_000)
+    original_circ = row_optimized_cat_at_origin(H_x, d, max_basis_tries=10_000)
 
     n_data = H_x.shape[1]
     dag = build_circuit_dag(original_circ)
@@ -278,7 +278,7 @@ def benchmark_without_lut(code_iterator):
         for StrategyClass in strategies:
             print(f"--- Benchmarking {code} with {StrategyClass.__name__} ---")
             stats = benchmark_CAO_state_prep(
-                code, reuse_strategy=StrategyClass(), num_samples=100_000_000, estimate_ler=True
+                code, reuse_strategy=StrategyClass(), num_samples=100_000_000, estimate_ler=False
             )
             if stats['logical_error_rate'] is not None:
                 print(f"Logical Error Rate = {stats['logical_error_rate']:.4e}", end=";\t ")
@@ -293,4 +293,4 @@ def benchmark_without_lut(code_iterator):
 
 
 if __name__ == "__main__":
-    benchmark_without_lut(FAO_simp_QECCS)
+    benchmark_with_lut(FAO_simp_QECCS)

@@ -39,7 +39,7 @@ def row_optimized_cat_at_origin(H: np.ndarray, d: int, max_basis_tries: int = 10
     return cat_at_origin(matrix_after_row_ops, d)
 
 
-def cat_at_origin(H: np.ndarray, d: int, draw_solutions=True, basis="Z") -> stim.Circuit:
+def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False, basis="Z") -> stim.Circuit:
     if not has_unique_ones_property(H):
         raise ValueError(f"H is not representing a bipartite graph state.")
 
@@ -75,24 +75,8 @@ def cat_at_origin(H: np.ndarray, d: int, draw_solutions=True, basis="Z") -> stim
     x_spiders = [list(map(len, p)) for p in x_splits]
     z_spiders = np.sum(H, axis=1)
 
-    ft_cache = {}
-    comp_cache = {}
-
-    def get_ft_cat(n, t):
-        if (n, t) not in ft_cache:
-            ft_cache[(n, t)] = well_ordered_ft_cat_state_data(n, t, force_generate=True)
-        G, F, roots, D, e = ft_cache[(n, t)]
-        return G.copy(), F.copy(), roots.copy(), D.copy(), e
-
-    def get_comp_cat(xs, t):
-        key = (tuple(xs), t)
-        if key not in comp_cache:
-            comp_cache[key] = well_ordered_composite_cat_state_data(xs, t, force_generate=True)
-        G, F, roots, D, e = comp_cache[key]
-        return G.copy(), F.copy(), roots.copy(), D.copy(), e
-
-    z_data = [get_ft_cat(zs, t) for zs in z_spiders]
-    x_data = [get_comp_cat(xs, t) for xs in x_spiders]
+    z_data = [well_ordered_ft_cat_state_data(zs, t) for zs in z_spiders]
+    x_data = [well_ordered_composite_cat_state_data(xs, t) for xs in x_spiders]
     z_graphs, x_graphs, z_trees, x_trees, z_mains, x_mains = [], [], [], [], [], []
     z_digraphs, x_digraphs = [], []
     z_candidates, x_candidates = [], []

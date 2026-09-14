@@ -60,7 +60,7 @@ def build_base_chain_graph(n: int, rooted=False) -> tuple[nx.Graph, nx.Graph, in
     graph = nx.Graph()
     rooted_offset = int(rooted)
     if rooted:
-        graph.add_nodes_from([0])
+        graph.add_nodes_from([0], is_mark=False, is_root=True)
     graph.add_nodes_from(range(rooted_offset, n + rooted_offset), is_mark=True)
     for i in range(n - 1 + rooted_offset):
         graph.add_edge(i, i + 1)
@@ -81,7 +81,7 @@ def build_base_t1_graph(n: int, rooted=False) -> tuple[nx.Graph, nx.Graph, int]:
     """
     graph = nx.Graph()
     if rooted:
-        graph.add_nodes_from([0])
+        graph.add_nodes_from([0], is_mark=False, is_root=True)
         graph.add_nodes_from(range(2, 2 + n), is_mark=True)
         graph.add_edge(0, 2)
         graph.add_edge(0, 3)
@@ -131,6 +131,9 @@ def build_base_n6_graph(rooted=False) -> tuple[nx.Graph, nx.Graph, int]:
             g.remove_edge(u, v)
             g.add_edge(u, new_node)
             g.add_edge(v, new_node)
+        
+        graph.nodes[new_node]["is_mark"] = False
+        graph.nodes[new_node]["is_root"] = True
 
         return graph, forest, new_node
 
@@ -321,6 +324,7 @@ def _synthesize_expanded_graphs(
             expanded_graph.add_edge(u, new_node)
             expanded_graph.add_edge(v, new_node)
             expanded_graph.nodes[new_node]["is_mark"] = False
+            expanded_graph.nodes[new_node]["is_root"] = True
             
             spanning_forest.remove_edge(u, v)
             spanning_forest.add_edge(u, new_node)
@@ -536,7 +540,44 @@ def well_ordered_ft_cat_state_data(
     if not force_generate:
         cached_data = load_state_data(n, t)
         if cached_data is not None:
-            return cached_data
+            graph, forest, roots, dependency_dag, main_node = cached_data
+            if rooted:
+                root_node = roots[0]
+                if not graph.nodes[root_node].get("is_root", False):
+                    base_case = _build_base_case(n, t, rooted=True)
+                    if base_case is not None:
+                        graph, forest, roots, fallback_node = base_case
+                        dependency_dag, main_node = _build_and_resolve_dependency_dag(
+                            graph, forest, roots[0], fallback_node=fallback_node
+                        )
+                        return graph, forest, roots, dependency_dag, main_node
+                
+                if graph.nodes[root_node].get("is_mark", False) or forest.degree[root_node] == 3:
+                    root_edges = find_min_height_root_edges(forest)
+                    insertions = []
+                    for comp_id, edge in root_edges.items():
+                        if edge is not None:
+                            new_node = max(graph.nodes()) + 1 + len(insertions)
+                            insertions.append((comp_id, edge, new_node))
+                            
+                    for comp_id, edge, new_node in insertions:
+                        u, v = edge
+                        graph.remove_edge(u, v)
+                        graph.add_edge(u, new_node)
+                        graph.add_edge(v, new_node)
+                        graph.nodes[new_node]["is_mark"] = False
+                        graph.nodes[new_node]["is_root"] = True
+                        
+                        forest.remove_edge(u, v)
+                        forest.add_edge(u, new_node)
+                        forest.add_edge(v, new_node)
+                        
+                        roots[comp_id] = new_node
+                        
+                    dependency_dag, main_node = _build_and_resolve_dependency_dag(
+                        graph, forest, roots[0], fallback_node=None
+                    )
+            return graph, forest, roots, dependency_dag, main_node
 
     retries = max_retries if force_generate else 0
     last_error: Exception | None = None
