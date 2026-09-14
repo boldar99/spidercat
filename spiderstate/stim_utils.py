@@ -204,50 +204,77 @@ def layered_ops_to_noisy_stim_circuit(
     p_meas: float,
     p_mem: float
 ) -> tuple[stim.Circuit, dict[int, int]]:
-    circuit = stim.Circuit()
+    
     measurement_mapping = {}
     meas_id = 0
+    circuit_str_lines = []
+
+    def append_gate(name, t_list, p=0.0):
+        if not t_list: return
+        t_str = " ".join(map(str, t_list))
+        if p > 0:
+            circuit_str_lines.append(f"{name}({p}) {t_str}")
+        else:
+            circuit_str_lines.append(f"{name} {t_str}")
 
     for i, ops in enumerate(layered_ops):
-        # We can now safely subtract ints from ints
-        unused_qubits = set(range(num_qubits))
+        used_qubits = set()
+        
+        grouped_ops = defaultdict(list)
+        meas_groups = defaultdict(list)
+        meas_og_ids = defaultdict(list)
 
         for item in ops:
             is_tagged_meas = isinstance(item[0], tuple)
             op_name = item[0][0] if is_tagged_meas else item[0]
             targets = item[1]
 
-            unused_qubits -= set(targets)
+            used_qubits.update(targets)
 
             if is_tagged_meas:
                 _, og_meas_id = item[0]
-                measurement_mapping[meas_id] = og_meas_id
+                meas_groups[op_name].extend(targets)
+                for _ in targets:
+                    meas_og_ids[op_name].append(og_meas_id)
+            else:
+                grouped_ops[op_name].extend(targets)
+
+        # 1. Non-measurement operations
+        for op_name, targets in grouped_ops.items():
+            append_gate(op_name, targets)
+            
+            if (op_name in Z_INITIALIZATIONS) and p_meas > 0:
+                append_gate("DEPOLARIZE1", targets, p_init)
+            elif op_name in TWO_QUBIT_GATES and p_2 > 0:
+                append_gate("DEPOLARIZE2", targets, p_2)
+            elif op_name not in SPECIAL_GATES and p_1 > 0:
+                append_gate("DEPOLARIZE1", targets, p_1)
+
+        # 2. Measurements
+        for op_name, targets in meas_groups.items():
+            if op_name in Z_MEASUREMENTS and p_meas > 0:
+                append_gate("X_ERROR", targets, p_meas)
+            elif op_name in X_MEASUREMENTS and p_meas > 0:
+                append_gate("Z_ERROR", targets, p_meas)
+
+            append_gate(op_name, targets)
+            
+            for og_id in meas_og_ids[op_name]:
+                measurement_mapping[meas_id] = og_id
                 meas_id += 1
 
             if op_name in Z_MEASUREMENTS and p_meas > 0:
-                circuit.append("X_ERROR", targets, p_meas)
-            elif op_name in X_MEASUREMENTS and p_meas > 0:
-                circuit.append("Z_ERROR", targets, p_meas)
+                append_gate("DEPOLARIZE1", targets, p_init)
 
-            circuit.append(op_name, targets)
+        if i != len(layered_ops) - 1 and p_mem > 0:
+            unused_qubits = [q for q in range(num_qubits) if q not in used_qubits]
+            if unused_qubits:
+                append_gate("DEPOLARIZE1", unused_qubits, p_mem)
 
-            # if op_name in X_INITIALIZATIONS and p_init > 0:
-            #     circuit.append("Z_ERROR", targets, p_init)
-            # elif op_name in Z_INITIALIZATIONS and p_init > 0:
-            #     circuit.append("X_ERROR", targets, p_init)
-            if (op_name in Z_MEASUREMENTS or op_name in Z_INITIALIZATIONS) and p_meas > 0:
-                circuit.append("DEPOLARIZE1", targets, p_init)
-            elif op_name in TWO_QUBIT_GATES and p_2 > 0:
-                circuit.append("DEPOLARIZE2", targets, p_2)
-            elif op_name not in SPECIAL_GATES and p_1 > 0:
-                circuit.append("DEPOLARIZE1", targets, p_1)
+        circuit_str_lines.append("TICK")
 
-        if i != len(layered_ops) - 1 and p_mem > 0 and unused_qubits:
-            circuit.append("DEPOLARIZE1", sorted(list(unused_qubits)), p_mem)
-
-        circuit.append("TICK", [])
-
-    return circuit, measurement_mapping
+    circuit_str = "\n".join(circuit_str_lines)
+    return stim.Circuit(circuit_str), measurement_mapping
 
 
 def make_stim_circ_noisy(circ: stim.Circuit, p: float, one_cnot_per_layer: bool=False) -> tuple[stim.Circuit, dict[int, int]]:

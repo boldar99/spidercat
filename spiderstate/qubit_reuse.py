@@ -24,6 +24,39 @@ class RoutingState:
     death_node: dict[int, int]
     data_birth: dict[int, int]
     data_death: dict[int, int]
+    
+    tentative_edge: tuple[int, int] | None = None
+    longest_path_to: dict[int, int] | None = None
+    longest_path_from: dict[int, int] | None = None
+    current_longest_path: int | None = None
+    
+    def get_current_depth(self) -> int:
+        if self.tentative_edge is not None:
+            u, v = self.tentative_edge
+            if self.longest_path_to is not None and self.longest_path_from is not None:
+                return max(self.current_longest_path, self.longest_path_to[u] + 1 + self.longest_path_from[v])
+        return nx.dag_longest_path_length(self.dag)
+
+
+def compute_dag_longest_paths(dag: nx.DiGraph) -> tuple[dict[int, int], dict[int, int], int]:
+    topo_order = list(nx.topological_sort(dag))
+    
+    longest_path_to = dict.fromkeys(dag.nodes, 0)
+    pred = dag.pred
+    for n in topo_order:
+        p_dict = pred[n]
+        if p_dict:
+            longest_path_to[n] = max(longest_path_to[p] for p in p_dict) + 1
+            
+    longest_path_from = dict.fromkeys(dag.nodes, 0)
+    succ = dag.succ
+    for n in reversed(topo_order):
+        s_dict = succ[n]
+        if s_dict:
+            longest_path_from[n] = max(longest_path_from[s] for s in s_dict) + 1
+            
+    current_longest_path = max(longest_path_to.values()) if longest_path_to else 0
+    return longest_path_to, longest_path_from, current_longest_path
 
 
 class ReuseStrategy(Protocol):
@@ -72,7 +105,7 @@ class AggressiveDepthAwareStrategy:
         pass
 
     def evaluate_candidate(self, state: RoutingState) -> float:
-        return float(nx.dag_longest_path_length(state.dag))
+        return float(state.get_current_depth())
 
     def commit_edge(self, state: RoutingState) -> None:
         # Stateless evaluation: no cached baselines to update
@@ -98,10 +131,10 @@ class DepthPreservingStrategy:
 
     def setup(self, state: RoutingState) -> None:
         # The baseline is the original depth before ANY routing occurs
-        self.baseline_depth = nx.dag_longest_path_length(state.dag)
+        self.baseline_depth = state.get_current_depth()
 
     def evaluate_candidate(self, state: RoutingState) -> float:
-        current_depth = nx.dag_longest_path_length(state.dag)
+        current_depth = state.get_current_depth()
         if current_depth > self.baseline_depth:
             return float('inf')  # Outright reject
         return 0.0
@@ -138,7 +171,7 @@ class VolumeOptimizingReuseStrategy:
 
     @staticmethod
     def _compute_total_volume(state: RoutingState) -> int:
-        depth = nx.dag_longest_path_length(state.dag)
+        depth = state.get_current_depth()
         
         # Count number of hardware qubits: data qubits + roots of ancilla chains
         num_hw_qubits = state.n_data
@@ -359,18 +392,22 @@ def inject_qubit_reuse(dag: nx.DiGraph, n_data: int, strategy: ReuseStrategy):
     # We want to find the best Qubit A to feed into Qubit B
     candidates_by_target = {qB: [] for qB in ancillas}
 
-    for qA in ancillas:
-        for qB in ancillas:
+    for qB in ancillas:
+        bB = birth_node[qB]
+        reachable_from_bB = nx.descendants(mod_dag, bB)
+        for qA in ancillas:
             if qA == qB:
                 continue
             dA = death_node[qA]
-            bB = birth_node[qB]
 
             # Fast topological rejection
-            if not nx.has_path(mod_dag, bB, dA):
-                candidates_by_target[qB].append((qA, dA, bB))
+            if dA == bB or dA in reachable_from_bB:
+                continue
+                
+            candidates_by_target[qB].append((qA, dA, bB))
 
     # Evaluate best-fit for each target qubit
+    graph_changed = True
     for qB, sources in candidates_by_target.items():
         if qB in state.prev_q:
             continue
@@ -380,17 +417,24 @@ def inject_qubit_reuse(dag: nx.DiGraph, n_data: int, strategy: ReuseStrategy):
         best_dA = None
         best_bB = None
 
+        reachable_from_bB = nx.descendants(state.dag, birth_node[qB])
+        
+        # Precompute path lengths for O(1) depth evaluation in strategies
+        if graph_changed:
+            state.longest_path_to, state.longest_path_from, state.current_longest_path = compute_dag_longest_paths(state.dag)
+            graph_changed = False
+
         for qA, dA, bB in sources:
             if qA in state.next_q:
                 continue
 
+            # 1. Hardware Constraint (Cycle Check)
+            if dA == bB or dA in reachable_from_bB:
+                continue
+
             # Tentatively apply the edge
             state.dag.add_edge(dA, bB)
-
-            # 1. Hardware Constraint
-            if not nx.is_directed_acyclic_graph(state.dag):
-                state.dag.remove_edge(dA, bB)
-                continue
+            state.tentative_edge = (dA, bB)
 
             # 2. Update tracking state for accurate strategy evaluation
             state.next_q[qA] = qB
@@ -407,18 +451,20 @@ def inject_qubit_reuse(dag: nx.DiGraph, n_data: int, strategy: ReuseStrategy):
 
             # Revert the tentative changes to test the next source
             state.dag.remove_edge(dA, bB)
+            state.tentative_edge = None
             del state.next_q[qA]
             del state.prev_q[qB]
 
-            # If we found at least one valid, non-rejected source, commit the best one permanently
-            if best_qA is not None and best_cost != float('inf'):
-                state.dag.add_edge(best_dA, best_bB)
-                state.next_q[best_qA] = qB
-                state.prev_q[qB] = best_qA
+        # If we found at least one valid, non-rejected source, commit the best one permanently
+        if best_qA is not None and best_cost != float('inf'):
+            state.dag.add_edge(best_dA, best_bB)
+            state.next_q[best_qA] = qB
+            state.prev_q[qB] = best_qA
+            graph_changed = True
 
-                # ---> ADD THESE TWO LINES <---
-                # Notify the strategy that the graph architecture has permanently changed
-                strategy.commit_edge(state)
+            # ---> ADD THESE TWO LINES <---
+            # Notify the strategy that the graph architecture has permanently changed
+            strategy.commit_edge(state)
 
     # Hardware Allocation Mapping
     logical_to_physical = {q: q for q in range(n_data)}
