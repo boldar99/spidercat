@@ -81,7 +81,7 @@ def _simulate_batch(batch_size):
     return batch_size, int(num_flagged), int(num_discarded), int(num_incorrect)
 
 
-def benchmark_CAO_state_prep(code: str, analyze_hook_errors:bool, reuse_strategies: list, num_samples_fn=lambda _: 100_000_000, p=0.001, estimate_ler=True):
+def benchmark_CAO_state_prep(code: str, analyze_hook_errors:bool, reuse_strategies: list, p=0.001, num_samples_fn=lambda _: 100_000_000, estimate_ler=True):
     import random
     # Ensure deterministic circuit generation for this specific code
     # so the circuit hash matches across different script executions
@@ -261,11 +261,11 @@ def benchmark_CAO_state_prep(code: str, analyze_hook_errors:bool, reuse_strategi
     return all_stats
 
 
-def benchmark(code_iterator, analyze_hook_errors, strategies, num_samples, estimate_ler=True):
+def benchmark(code_iterator, analyze_hook_errors, strategies, p, num_samples, estimate_ler=True):
     for code in code_iterator():
         print(f"--- Benchmarking {code} ---")
         all_stats = benchmark_CAO_state_prep(
-            code, analyze_hook_errors, reuse_strategies=strategies, num_samples_fn=num_samples, estimate_ler=estimate_ler
+            code, analyze_hook_errors, strategies, p, num_samples_fn=num_samples, estimate_ler=estimate_ler
         )
         for stats in all_stats:
             print(f"--- Results for {stats['strategy']} ---")
@@ -286,7 +286,7 @@ def benchmark_simple_codes():
         PureAggressiveStrategy(),
         DepthPreservingStrategy(),
     ]
-    return benchmark(FAO_simp_QECCS, True, strategies, num_samples=lambda d: 250_000_000, estimate_ler=True)
+    return benchmark(FAO_simp_QECCS, True, strategies, 0.001, num_samples=lambda d: 250_000_000, estimate_ler=True)
 
 
 def benchmark_hard_codes():
@@ -294,7 +294,7 @@ def benchmark_hard_codes():
         PureAggressiveStrategy(),
         DepthPreservingStrategy(),
     ]
-    return benchmark(FAO_hard_QECCS, False, strategies, num_samples=lambda d: 10_000_000, estimate_ler=False)
+    return benchmark(FAO_hard_QECCS, False, strategies, 0.001, num_samples=lambda d: 10_000_000, estimate_ler=False)
 
 
 def benchmark_very_hard_codes():
@@ -302,10 +302,10 @@ def benchmark_very_hard_codes():
         PureAggressiveStrategy(),
         DepthPreservingStrategy(),
     ]
-    return benchmark(very_hard_QECCS, False, strategies, num_samples=lambda d: 1_000_000, estimate_ler=False)
+    return benchmark(very_hard_QECCS, False, strategies, 0.0001, num_samples=lambda d: 1_000_000, estimate_ler=False)
 
 
 if __name__ == "__main__":
-    benchmark_simple_codes()
-    benchmark_hard_codes()
+    # benchmark_simple_codes()
+    # benchmark_hard_codes()
     benchmark_very_hard_codes()
