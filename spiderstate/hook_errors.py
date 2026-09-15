@@ -90,13 +90,14 @@ def generate_safe_splits_poly(support, M_prep):
 def characterize_stabilizer_splits(Mz_prep):
     """
     Evaluates all stabilizers and classifies their optimal partition shape in polynomial time.
-    Returns a dict mapping support to a dictionary containing universal/partial lists and ratios.
+    Returns a dict mapping support to a dictionary containing universal/partial lists.
     Filters out stabilizers that can only be split trivially (i.e. partitions containing 1).
     """
     results = {}
     import math
     for gen in Mz_prep:
         support = tuple(np.where(gen == 1)[0].tolist())
+        N = len(support)
         n_qubits = Mz_prep.shape[1]
         I = [i for i in range(n_qubits) if i not in support]
         
@@ -107,27 +108,26 @@ def characterize_stabilizer_splits(Mz_prep):
                 for size in range(2, n - current_prefix + 1):
                     res.extend(get_all_parts(n, current_prefix + size, current_partition + [size]))
                 return res
-            univ = get_all_parts(len(support), 0, [])
+            univ = get_all_parts(N, 0, [])
             univ = [p for p in univ if len(p) > 1]
             univ.sort(key=lambda p: (min(p), -len(p)), reverse=True)
-            ratios = {L: (math.comb(len(support), L), math.comb(len(support), L)) for L in range(len(support)+1)}
             if univ:
-                results[support] = {"universal": univ, "partial": [], "ratios": ratios}
+                results[support] = {"universal": univ, "partial": []}
             continue
             
         safe_splits = generate_safe_splits_poly(support, Mz_prep)
         
-        sizes_present = {}
+        splits_by_size = {}
         for s in safe_splits:
             L = len(s)
-            sizes_present[L] = sizes_present.get(L, 0) + 1
-            
+            if 2 <= L <= N - 2:
+                if L not in splits_by_size:
+                    splits_by_size[L] = []
+                splits_by_size[L].append(set(s))
+                
         universal_sizes = set()
-        ratios = {}
-        for L, count in sizes_present.items():
-            total = math.comb(len(support), L)
-            ratios[L] = (count, total)
-            if count == total:
+        for L, splits in splits_by_size.items():
+            if len(splits) == math.comb(N, L):
                 universal_sizes.add(L)
                 
         def get_partitions_from_sizes(n, current_prefix, current_partition, valid_sizes):
@@ -135,28 +135,25 @@ def characterize_stabilizer_splits(Mz_prep):
             res = []
             for size in range(2, n - current_prefix + 1):
                 next_prefix = current_prefix + size
-                if next_prefix in valid_sizes:
+                if next_prefix in valid_sizes or next_prefix == n:
                     res.extend(get_partitions_from_sizes(n, next_prefix, current_partition + [size], valid_sizes))
             return res
             
-        univ_parts = get_partitions_from_sizes(len(support), 0, [], universal_sizes)
+        univ_parts = get_partitions_from_sizes(N, 0, [], universal_sizes)
         non_trivial_univ = [p for p in univ_parts if len(p) > 1]
         non_trivial_univ.sort(key=lambda p: (min(p), -len(p)), reverse=True)
         
-        splits_by_size = {}
-        for s in safe_splits:
-            L = len(s)
-            if L not in splits_by_size:
-                splits_by_size[L] = []
-            splits_by_size[L].append(set(s))
-            
         memo = {}
         def dfs(current_split, current_size):
-            if current_size == len(support): return [[]]
+            if current_size == N: return [[]]
             t_split = tuple(sorted(current_split))
             if t_split in memo: return memo[t_split]
                 
             valid_suffixes = []
+            
+            if N - current_size >= 2:
+                valid_suffixes.append([N - current_size])
+                
             for L in sorted(splits_by_size.keys()):
                 if L - current_size >= 2:
                     for next_split in splits_by_size[L]:
@@ -186,7 +183,6 @@ def characterize_stabilizer_splits(Mz_prep):
             results[support] = {
                 "universal": non_trivial_univ,
                 "partial": non_trivial_exist,
-                "ratios": ratios,
                 "splits_by_size": splits_by_size
             }
             
@@ -197,8 +193,11 @@ def explain_safe_splits(results, max_print_splits=25):
     """
     Pretty prints the safe splits analysis, showing partition shapes and their safety status.
     """
+    import math
+    print(results)
     for support, data in results.items():
-        print(f"Stabilizer Support: {support} (Weight {len(support)})")
+        N = len(support)
+        print(f"Stabilizer Support: {support} (Weight {N})")
         
         all_parts = []
         for p in data["universal"]:
@@ -221,7 +220,11 @@ def explain_safe_splits(results, max_print_splits=25):
                 min_sc = float('inf')
                 for chunk in p[:-1]:
                     current += chunk
-                    sc, tc = data["ratios"][current]
+                    if "splits_by_size" in data:
+                        sc = len(data["splits_by_size"].get(current, []))
+                    else:
+                        sc = math.comb(N, current)
+                    tc = math.comb(N, current)
                     prefix_ratios.append(f"{sc}/{tc}")
                     min_sc = min(min_sc, sc)
                 if status == "Partially Safe" and min_sc <= max_print_splits:
@@ -230,10 +233,14 @@ def explain_safe_splits(results, max_print_splits=25):
                 print(f"    {p}: {ratio_str} ({status})")
             else:
                 L = p[0]
-                safe_c, total_c = data["ratios"][L]
-                if status == "Partially Safe" and safe_c <= max_print_splits:
+                if "splits_by_size" in data:
+                    sc = len(data["splits_by_size"].get(L, []))
+                else:
+                    sc = math.comb(N, L)
+                tc = math.comb(N, L)
+                if status == "Partially Safe" and sc <= max_print_splits:
                     shapes_to_print.append(p)
-                print(f"    {p}: {safe_c:5d} / {total_c:5d} ({status})")
+                print(f"    {p}: {sc:5d} / {tc:5d} ({status})")
                 
         if shapes_to_print:
             print("  Exact Partially Safe Splits:")
@@ -246,13 +253,13 @@ def explain_safe_splits(results, max_print_splits=25):
                 for chunk in p[:-1]:
                     current += chunk
                     prefix_sizes.append(current)
-                prefix_sizes.append(len(support_set))
+                prefix_sizes.append(N)
                 
                 def backtrack(prefix_idx, current_split):
                     if prefix_idx == len(prefix_sizes):
                         return [[]]
                     L = prefix_sizes[prefix_idx]
-                    if L == len(support_set):
+                    if L == N:
                         return [[tuple(sorted(support_set - current_split))]]
                         
                     valid_chains = []
