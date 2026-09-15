@@ -333,7 +333,8 @@ def load_qecc_data(code: str, method: str | None = None) -> dict:
     code_file = f"{code}.json"
     if method is None:
         for lib in os.listdir(root.joinpath("qeccs")):
-            if code_file in os.listdir(root.joinpath("qeccs", lib)):
+            dir = root.joinpath("qeccs", lib)
+            if dir.is_dir() and code_file in os.listdir(dir) and os:
                 method = lib
                 break
         else:
@@ -345,9 +346,17 @@ def load_qecc_data(code: str, method: str | None = None) -> dict:
         return json.load(f)
 
 
+def get_n_k_d(filename: str):
+    match filename.split("_"):
+        case [n, k, dplus]:
+            return int(n), int(k), int(dplus[:-5])
+        case [n, k, d, *_]:
+            return int(n), int(k), int(d)
+
+
 def code_sort_key(code: str):
-    n, k, dplus = code.split("_")
-    return int(dplus[:-5]), int(n)
+    n, k, d = get_n_k_d(code)
+    return d, n
 
 
 def FAO_QECCS():
@@ -356,6 +365,17 @@ def FAO_QECCS():
     for file_name in sorted(os.listdir(fao), key=code_sort_key):
         yield file_name[:-5]
 
+def misc_QECCS():
+    root = get_project_root()
+    fao = root.joinpath("qeccs", "misc")
+    for file_name in sorted(os.listdir(fao), key=code_sort_key):
+        yield file_name[:-5]
+
+def MQT_QECCS():
+    root = get_project_root()
+    fao = root.joinpath("qeccs", "MQT")
+    for file_name in sorted(os.listdir(fao), key=code_sort_key):
+        yield file_name[:-5]
 
 def FAO_simp_QECCS():
     yield from [
