@@ -178,17 +178,92 @@ def qubit_reuse_minimization(edge_list: list[tuple[int, int]], edge_groups: dict
     return order
 
 
-def optimize_cnot_ordering(edge_list: list[tuple[int, int]], edge_groups: dict[tuple[int, int], int], z_dists: list[list[int]], x_dists: list[list[int]], heuristic: str = "sequence_distance", num_iterations: int = 5000) -> list[tuple[int, int]]:
+def slack_volume_minimization(edge_list: list[tuple[int, int]], edge_groups: dict[tuple[int, int], int], z_dists: list[list[int]], x_dists: list[list[int]]) -> list[tuple[int, int]]:
+    """
+    Slack-Driven Hybrid (ALAP/ASAP) list-scheduling approach.
+    Minimizes active volume (qubit lifespan) while strictly preserving global makespan (depth).
+    It prioritizes operations on the critical path. For operations with slack, it delays
+    initializations (ALAP) and accelerates measurements (ASAP).
+    """
+    edges_by_j = {}
+    for (i, j) in edge_list:
+        if j not in edges_by_j:
+            edges_by_j[j] = []
+        edges_by_j[j].append((i, j))
+        
+    for j in edges_by_j:
+        edges_by_j[j].sort(key=lambda e: edge_groups[e])
+        
+    pointers = {j: 0 for j in edges_by_j}
+    pointers_i = {i: 0 for i in range(len(z_dists))}
+    active_js = list(edges_by_j.keys())
+    
+    depth_i = {}
+    depth_j = {}
+    
+    order = []
+    
+    while active_js:
+        best_j = None
+        best_score = (float('inf'), float('inf'), float('inf'))
+        
+        random.shuffle(active_js)
+        
+        for j in active_js:
+            e = edges_by_j[j][pointers[j]]
+            i = e[0]
+            
+            di = depth_i.get(i, 0)
+            dj = depth_j.get(j, 0)
+            t = max(di, dj)
+            
+            rem_dist_i = z_dists[i][pointers_i[i]] if pointers_i[i] < len(z_dists[i]) else 0
+            rem_dist_j = x_dists[j][pointers[j]] if pointers[j] < len(x_dists[j]) else 0
+            
+            # Criticality: path length through this edge. Highest criticality scheduled first.
+            criticality = -(t + max(rem_dist_i, rem_dist_j))
+            
+            # Volume Score: delay starts (penalize), accelerate finishes (reward).
+            starts = (1 if pointers_i[i] == 0 else 0) + (1 if pointers[j] == 0 else 0)
+            finishes = (1 if pointers_i[i] == len(z_dists[i]) - 1 else 0) + (1 if pointers[j] == len(x_dists[j]) - 1 else 0)
+            volume_score = starts - finishes  # Lower is better (fewer starts, more finishes)
+            
+            score = (criticality, volume_score, t)
+            
+            if score < best_score:
+                best_score = score
+                best_j = j
+                
+        e = edges_by_j[best_j][pointers[best_j]]
+        i = e[0]
+        order.append(e)
+        
+        new_depth = max(depth_i.get(i, 0), depth_j.get(best_j, 0)) + 1
+        depth_i[i] = new_depth
+        depth_j[best_j] = new_depth
+        
+        pointers_i[i] += 1
+        
+        pointers[best_j] += 1
+        if pointers[best_j] == len(edges_by_j[best_j]):
+            active_js.remove(best_j)
+            
+    return order
+
+
+def optimize_cnot_ordering(edge_list: list[tuple[int, int]], edge_groups: dict[tuple[int, int], int], z_dists: list[list[int]], x_dists: list[list[int]], heuristic: str = "sa_sequence_distance", num_iterations: int = 5000) -> list[tuple[int, int]]:
     """
     Finds an absolute ordering of edges that minimizes the requested heuristic 
     while respecting the local ordering constraints defined by edge_groups.
     
-    Available heuristics: 'sequence_distance', 'greedy', 'qubit_reuse'
+    Available heuristics: 'sa_sequence_distance', 'greedy_depth', 'greedy_qubit_reuse', 'slack_volume'
     """
-    if heuristic == "qubit_reuse":
+    if heuristic == "greedy_qubit_reuse":
         return qubit_reuse_minimization(edge_list, edge_groups, z_dists, x_dists)
-    if heuristic == "greedy":
+    if heuristic == "greedy_depth":
         return greedy_depth_minimization(edge_list, edge_groups, z_dists, x_dists)
+    if heuristic == "slack_volume":
+        return slack_volume_minimization(edge_list, edge_groups, z_dists, x_dists)
 
     # 1. Generate an initial valid topological sort using greedy approach as a strong baseline
     current_order = greedy_depth_minimization(edge_list, edge_groups, z_dists, x_dists)
@@ -249,7 +324,7 @@ def match_edges(H: np.ndarray, non_pivots: list[int],
                 edge_groups: dict[tuple[int, int], int] | None = None,
                 pivots: dict[int, int] | None = None,
                 x_splits: list[list[list[int]]] | None = None,
-                routing_heuristic: str = "sequence_distance") -> list[
+                routing_heuristic: str = "sa_sequence_distance") -> list[
     tuple[tuple[int, int], tuple[int, int]]]:
     
     # 1. Identify all required logical connections

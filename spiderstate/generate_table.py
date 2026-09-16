@@ -258,5 +258,82 @@ def main():
     print("\\label{tab:sim_results}")
     print("\\end{table*}")
 
+    # Export to Excel
+    export_to_excel(data, grouped_data)
+
+def export_to_excel(data, grouped_data, filename="simulation_results.xlsx"):
+    try:
+        import pandas as pd
+    except ImportError:
+        import sys
+        print("\n% To export a real Excel file, please install pandas and openpyxl: pip install pandas openpyxl", file=sys.stderr)
+        return
+
+    if not data:
+        return
+        
+    # Gather all unique keys from data
+    keys = set()
+    for row in data:
+        keys.update(row.keys())
+    
+    # We want some columns to be first
+    drop_rows = ("circuit_hash", "perfect_stim", "noisy_circuit", "num_qubits_original", "raw_acceptance_rate")
+    first_cols = ["code", "Method", "n", "k", "d", "routing_heuristic", "strategy", "logical_error_rate", "acceptance_rate", "num_sim_qubits", "depth", "num_cx", "num_flags"]
+    other_cols = sorted([k for k in (keys - set(first_cols)) if k not in drop_rows])
+    headers = first_cols + other_cols
+    
+    rows = []
+    
+    for code_raw, group in grouped_data:
+        has_baseline = code_raw in BASELINE_DATA
+        if has_baseline:
+            base = BASELINE_DATA[code_raw]
+            base_row = {h: None for h in headers}
+            base_row["code"] = code_raw
+            base_row["Method"] = "Flag at Origin"
+            base_row["num_cx"] = base.get("cx", None)
+            base_row["num_flags"] = base.get("flags", None)
+            base_row["num_sim_qubits"] = int(base.get("sim_qubits")) if base.get("sim_qubits", "-") != "-" else None
+            base_row["depth"] = int(base.get("depth")) if base.get("depth", "-") != "-" else None
+            if base.get("ler_bounds"):
+                low, high, exp = base["ler_bounds"]
+                base_row["logical_error_rate"] = ((low + high) / 2) * (10**exp)
+            if base.get("ar_bounds"):
+                low, high = base["ar_bounds"]
+                base_row["acceptance_rate"] = (low + high) / 2
+                
+            # inherit n, k, d from the group's first element
+            if group:
+                first = group[0]
+                base_row["n"] = first.get("n", None)
+                base_row["k"] = first.get("k", None)
+                base_row["d"] = first.get("d", None)
+                base_row["label"] = first.get("label", None)
+            
+            rows.append(base_row)
+            
+        for row in group:
+            out_row = {}
+            for h in headers:
+                if h in drop_rows:
+
+                    continue
+                if h == "Method":
+                    out_row[h] = "CSSCat"
+                else:
+                    out_row[h] = row.get(h, None)
+            rows.append(out_row)
+            
+    df = pd.DataFrame(rows, columns=headers)
+    
+    try:
+        df.to_excel(filename, index=False)
+        import sys
+        print(f"\n% Exported spreadsheet data to {filename}", file=sys.stderr)
+    except ModuleNotFoundError:
+        import sys
+        print("\n% To export a real Excel file, please install openpyxl: pip install openpyxl", file=sys.stderr)
+
 if __name__ == "__main__":
     main()

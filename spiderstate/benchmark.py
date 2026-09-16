@@ -22,7 +22,7 @@ from spiderstate.qubit_reuse import (
     inject_qubit_reuse,
     apply_logical_qubit_merge_and_compress,
     dag_to_circuit,
-    DepthPreservingStrategy, PureAggressiveStrategy, NoReuseStrategy
+    DepthPreservingStrategy, PureAggressiveStrategy, NoReuseStrategy, VolumeOptimizingReuseStrategy, OptimalTightPackingStrategy, SimQubitsAndDepthStrategy
 )
 import json
 
@@ -69,7 +69,7 @@ def _simulate_batch(batch_size):
     valid_measurements = raw_measurements[valid_mask]
     # Fast bitwise XOR using NumPy
     corrected_measurements = valid_measurements ^ valid_corrections
-    
+
     # Fast GF(2) matrix multiplication for logicals
     g_corrected = _GF(corrected_measurements.astype(np.int8))
     predicted_logicals = g_corrected @ g_L_x_T
@@ -81,13 +81,9 @@ def _simulate_batch(batch_size):
     return batch_size, int(num_flagged), int(num_discarded), int(num_incorrect)
 
 
-def benchmark_CAO_state_prep(code: str, analyze_hook_errors:bool, reuse_strategies: list, p=0.001, num_samples_fn=lambda _: 100_000_000, estimate_ler=True):
+def benchmark_CAO_state_prep(code: str, analyze_hook_errors:bool, reuse_strategies: list, routing_heuristics: list, p=0.001, num_samples_fn=lambda _: 100_000_000, estimate_ler=True):
     import random
-    # Ensure deterministic circuit generation for this specific code
-    # so the circuit hash matches across different script executions
     seed_val = int(hashlib.sha256(code.encode()).hexdigest()[:8], 16)
-    random.seed(seed_val)
-    np.random.seed(seed_val)
 
     try:
         is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code, "FAO")
@@ -101,11 +97,7 @@ def benchmark_CAO_state_prep(code: str, analyze_hook_errors:bool, reuse_strategi
         print(f"State: |0> (Code {code})")
 
     num_samples = num_samples_fn(d)
-
-    original_circ = row_optimized_cat_at_origin(H_x, d, max_basis_tries=10_000, analyze_hook_errors=analyze_hook_errors)
-
     n_data = H_x.shape[1]
-
     max_weight = None if bool(d % 2) else (d - 1) // 2
 
     # Build the LUT lazily in the main thread
@@ -119,156 +111,148 @@ def benchmark_CAO_state_prep(code: str, analyze_hook_errors:bool, reuse_strategi
 
     all_stats = []
 
-    for reuse_strategy in reuse_strategies:
-        dag = build_circuit_dag(original_circ)
-        mod_dag, _, _ = inject_qubit_reuse(dag, n_data, reuse_strategy)
-        compressed_dag = apply_logical_qubit_merge_and_compress(mod_dag, n_data)
-        circ_with_reuse, _ = dag_to_circuit(compressed_dag)
+    for routing_heuristic in routing_heuristics:
+        # Re-seed per heuristic to ensure deterministic baseline comparisons
+        random.seed(seed_val)
+        np.random.seed(seed_val)
 
-        noisy_circ, _ = make_stim_circ_noisy(circ_with_reuse, p, one_cnot_per_layer=True)
+        original_circ = row_optimized_cat_at_origin(H_x, d, max_basis_tries=10_000, analyze_hook_errors=analyze_hook_errors, routing_heuristic=routing_heuristic)
 
-        noisy_circ.append("M", range(H_x.shape[1]))
+        for reuse_strategy in reuse_strategies:
+            dag = build_circuit_dag(original_circ)
+            mod_dag, _, _ = inject_qubit_reuse(dag, n_data, reuse_strategy)
+            compressed_dag = apply_logical_qubit_merge_and_compress(mod_dag, n_data)
+            circ_with_reuse, _ = dag_to_circuit(compressed_dag)
 
-        for i, H in enumerate(H_z):
-            qubit_indices = np.where(H == 1)[0]
-            record_targets = [stim.target_rec(i - H_x.shape[1]) for i in qubit_indices]
-            noisy_circ.append("DETECTOR", record_targets)
-        for i, L in enumerate(L_z):
-            qubit_indices = np.where(L == 1)[0]
-            record_targets = [stim.target_rec(i - H_x.shape[1]) for i in qubit_indices]
-            noisy_circ.append("OBSERVABLE_INCLUDE", record_targets, i)
+            noisy_circ, _ = make_stim_circ_noisy(circ_with_reuse, p, one_cnot_per_layer=True)
 
-        # Compute circuit properties
-        raw_cnots = [l for (name, l, _) in circ_with_reuse.flattened_operations() if name == "CX"]
-        cnots = [(ops[i], ops[i + 1]) for ops in raw_cnots for i in range(0, len(ops), 2)]
-        num_cx = len(cnots)
-        num_flags = original_circ.num_detectors
-        num_qubits = noisy_circ.num_qubits
-        depth = len(_layer_cnot_circuit(cnots))
-        num_sim_qubits = noisy_circ.num_qubits
+            noisy_circ.append("M", range(H_x.shape[1]))
 
-        # Compute circuit hash and setup CSV caching
-        circ_str = str(noisy_circ)
-        circ_hash = hashlib.sha256(circ_str.encode()).hexdigest()[:16]
+            for i, H in enumerate(H_z):
+                qubit_indices = np.where(H == 1)[0]
+                record_targets = [stim.target_rec(i - H_x.shape[1]) for i in qubit_indices]
+                noisy_circ.append("DETECTOR", record_targets)
+            for i, L in enumerate(L_z):
+                qubit_indices = np.where(L == 1)[0]
+                record_targets = [stim.target_rec(i - H_x.shape[1]) for i in qubit_indices]
+                noisy_circ.append("OBSERVABLE_INCLUDE", record_targets, i)
 
-        os.makedirs("simulation_results", exist_ok=True)
-        csv_file = f"simulation_results/{code}_{circ_hash}.csv"
+            # Compute circuit properties
+            raw_cnots = [l for (name, l, _) in circ_with_reuse.flattened_operations() if name == "CX"]
+            cnots = [(ops[i], ops[i + 1]) for ops in raw_cnots for i in range(0, len(ops), 2)]
+            num_cx = len(cnots)
+            num_flags = original_circ.num_detectors
+            num_qubits = noisy_circ.num_qubits
+            depth = len(_layer_cnot_circuit(cnots))
+            num_sim_qubits = noisy_circ.num_qubits
 
-        total_shots = 0
-        total_flagged = 0
-        total_discarded = 0
-        total_incorrect = 0
+            # Compute circuit hash and setup CSV caching
+            circ_str = str(noisy_circ)
+            circ_hash = hashlib.sha256(circ_str.encode()).hexdigest()[:16]
 
-        if os.path.exists(csv_file):
-            df = pd.read_csv(csv_file)
-            if not df.empty:
-                total_shots = int(df['total_shots'].sum())
-                total_flagged = int(df['num_flagged'].sum())
-                total_discarded = int(df['num_discarded'].sum())
-                total_incorrect = int(df['num_incorrect'].sum())
+            os.makedirs("simulation_results", exist_ok=True)
+            csv_file = f"simulation_results/{code}_{circ_hash}.csv"
 
-        remaining_samples = max(0, num_samples - total_shots)
+            total_shots = 0
+            total_flagged = 0
+            total_discarded = 0
+            total_incorrect = 0
 
-        _G_CIRC_STR = circ_str
+            if os.path.exists(csv_file):
+                df = pd.read_csv(csv_file)
+                if not df.empty:
+                    total_shots = int(df['total_shots'].sum())
+                    total_flagged = int(df['num_flagged'].sum())
+                    total_discarded = int(df['num_discarded'].sum())
+                    total_incorrect = int(df['num_incorrect'].sum())
 
-        if remaining_samples > 0:
-            if estimate_ler and decoder is None:
-                decoder = LutDecoder(H_z, max_decodable_weight=max_weight)
-                _G_DECODER = decoder
+            remaining_samples = max(0, num_samples - total_shots)
 
-            batch_size = 1_000_000
-            num_full_batches = remaining_samples // batch_size
-            remainder = remaining_samples % batch_size
-            batches = [batch_size] * num_full_batches
-            if remainder > 0:
-                batches.append(remainder)
+            _G_CIRC_STR = circ_str
 
-            print(f"Running {remaining_samples} additional samples (Total existing: {total_shots})...")
+            if remaining_samples > 0:
+                if estimate_ler and decoder is None:
+                    decoder = LutDecoder(H_z, max_decodable_weight=max_weight)
+                    _G_DECODER = decoder
 
-            num_cores = max(1, mp.cpu_count() - 2)
-            with ProcessPoolExecutor(max_workers=num_cores) as executor:
-                futures = [
-                    executor.submit(_simulate_batch, b_size)
-                    for b_size in batches
-                ]
+                batch_size = 1_000_000
+                num_full_batches = remaining_samples // batch_size
+                remainder = remaining_samples % batch_size
+                batches = [batch_size] * num_full_batches
+                if remainder > 0:
+                    batches.append(remainder)
 
-                with tqdm(total=remaining_samples, desc=f"Simulating {code} with {reuse_strategy.__class__.__name__}") as pbar:
-                    for future in as_completed(futures):
-                        b_size, n_flagged, n_discarded, n_incorrect = future.result()
-                        total_shots += b_size
-                        total_flagged += n_flagged
-                        total_discarded += n_discarded
-                        total_incorrect = (total_incorrect + n_incorrect) if estimate_ler else None
+                print(f"Running {remaining_samples} additional samples (Total existing: {total_shots})...")
 
-                        # Update CSV incrementally
-                        df_new = pd.DataFrame([{
-                            "total_shots": b_size,
-                            "num_flagged": n_flagged,
-                            "num_discarded": n_discarded,
-                            "num_incorrect": n_incorrect
-                        }])
+                num_cores = max(1, mp.cpu_count() - 2)
+                with ProcessPoolExecutor(max_workers=num_cores) as executor:
+                    futures = [
+                        executor.submit(_simulate_batch, b_size)
+                        for b_size in batches
+                    ]
 
-                        if os.path.exists(csv_file):
-                            df_new.to_csv(csv_file, mode='a', header=False, index=False)
-                        else:
-                            df_new.to_csv(csv_file, index=False)
+                    with tqdm(total=remaining_samples, desc=f"Simulating {code} with {routing_heuristic} + {reuse_strategy.__class__.__name__}") as pbar:
+                        for future in as_completed(futures):
+                            b_size, n_flagged, n_discarded, n_incorrect = future.result()
+                            total_shots += b_size
+                            total_flagged += n_flagged
+                            total_discarded += n_discarded
+                            total_incorrect = (total_incorrect + n_incorrect) if estimate_ler else None
 
-                        pbar.update(b_size)
-        else:
-            print(f"Using {total_shots} cached samples from {csv_file}")
+                            # Update CSV incrementally
+                            df_new = pd.DataFrame([{
+                                "total_shots": b_size,
+                                "num_flagged": n_flagged,
+                                "num_discarded": n_discarded,
+                                "num_incorrect": n_incorrect
+                            }])
 
-        # Compute final metrics
-        AR = 1.0 - (total_flagged / total_shots) if total_shots > 0 else 0.0
-        total_valid_corrections = total_shots - total_flagged - total_discarded
-        total_AR = total_valid_corrections / total_shots if total_shots > 0 else None
+                            if os.path.exists(csv_file):
+                                df_new.to_csv(csv_file, mode='a', header=False, index=False)
+                            else:
+                                df_new.to_csv(csv_file, index=False)
 
-        print(f"Discarded {total_discarded} uncorrectable shots.")
+                            pbar.update(b_size)
+            else:
+                print(f"Using {total_shots} cached samples from {csv_file}")
 
-        if estimate_ler:
-            LER = total_incorrect / total_valid_corrections if total_valid_corrections > 0 else 0.0
-        else:
-            LER = None
+            # Compute final metrics
+            AR = 1.0 - (total_flagged / total_shots) if total_shots > 0 else 0.0
+            total_valid_corrections = total_shots - total_flagged - total_discarded
+            total_AR = total_valid_corrections / total_shots if total_shots > 0 else None
 
-        stats = {
-            "code": code,
-            "strategy": reuse_strategy.__class__.__name__,
-            "p": p,
-            "num_samples": total_shots,
-            "total_flagged": total_flagged,
-            "total_discarded": total_discarded,
-            "total_incorrect": total_incorrect,
-            "logical_error_rate": LER,
-            "acceptance_rate": total_AR ,
-            "raw_acceptance_rate": AR,
-            "num_cx": num_cx,
-            "num_flags": num_flags,
-            "num_qubits_original": num_qubits,
-            "num_sim_qubits": num_sim_qubits,
-            "depth": depth,
-            "circuit_volume": int(depth * num_sim_qubits),
-            "expected_circuit_volume": int(depth * num_sim_qubits / total_AR) if total_AR is not None and total_AR > 0 else 0,
-            "circuit_hash": circ_hash,
-            "perfect_stim": str(circ_with_reuse),
-            "noisy_circuit": circ_str,
-        }
+            print(f"Discarded {total_discarded} uncorrectable shots.")
 
-        json_file = f"simulation_results/{code}_{reuse_strategy.__class__.__name__}_{circ_hash}.json"
-        with open(json_file, "w") as f:
-            json.dump(stats, f, indent=4)
+            if estimate_ler:
+                LER = total_incorrect / total_valid_corrections if total_valid_corrections > 0 else 0.0
+            else:
+                LER = None
 
-        all_stats.append(stats)
+            stats = {
+                "code": code,
+                "strategy": reuse_strategy.__class__.__name__,
+                "routing_heuristic": routing_heuristic,
+                "p": p,
+                "num_samples": total_shots,
+                "total_flagged": total_flagged,
+                "total_discarded": total_discarded,
+                "total_incorrect": total_incorrect,
+                "logical_error_rate": LER,
+                "acceptance_rate": total_AR ,
+                "raw_acceptance_rate": AR,
+                "num_cx": num_cx,
+                "num_flags": num_flags,
+                "num_qubits_original": num_qubits,
+                "num_sim_qubits": num_sim_qubits,
+                "depth": depth,
+                "circuit_volume": int(depth * num_sim_qubits),
+                "expected_circuit_volume": int(depth * num_sim_qubits / total_AR) if total_AR is not None and total_AR > 0 else 0,
+                "circuit_hash": circ_hash,
+                "perfect_stim": str(circ_with_reuse),
+                "noisy_circuit": circ_str,
+            }
 
-    return all_stats
-
-
-def benchmark(code_iterator, analyze_hook_errors, strategies, p, num_samples, estimate_ler=True):
-    for code in code_iterator:
-        print(f"--- Benchmarking {code} ---")
-        all_stats = benchmark_CAO_state_prep(
-            code, analyze_hook_errors, strategies, p, num_samples_fn=num_samples, estimate_ler=estimate_ler
-        )
-        for stats in all_stats:
-            print(f"--- Results for {stats['strategy']} ---")
+            print(f"--- Results for {stats['routing_heuristic']} + {stats['strategy']} ---")
             if stats['logical_error_rate'] is not None:
                 print(f"Logical Error Rate = {stats['logical_error_rate']:.4e}", end=";\t ")
             if stats['acceptance_rate'] is not None:
@@ -280,13 +264,30 @@ def benchmark(code_iterator, analyze_hook_errors, strategies, p, num_samples, es
             print(f"Expected Circuit Volume = {stats['expected_circuit_volume']}")
             print()
 
+            json_file = f"simulation_results/{code}_{routing_heuristic}_{reuse_strategy.__class__.__name__}_{circ_hash}.json"
+            with open(json_file, "w") as f:
+                json.dump(stats, f, indent=4)
+
+            all_stats.append(stats)
+
+    return all_stats
+
+
+def benchmark(code_iterator, analyze_hook_errors, strategies, heuristics, p, num_samples, estimate_ler=True):
+    for code in code_iterator:
+        print(f"--- Benchmarking {code} ---")
+        all_stats = benchmark_CAO_state_prep(
+            code, analyze_hook_errors, strategies, heuristics, p, num_samples_fn=num_samples, estimate_ler=estimate_ler
+        )
+
 
 def benchmark_simple_codes():
     strategies = [
         PureAggressiveStrategy(),
         DepthPreservingStrategy(),
     ]
-    return benchmark(FAO_simp_QECCS(), True, strategies, 0.001, num_samples=lambda d: 100_000_000, estimate_ler=True)
+    heuristics = ["sa_sequence_distance", "greedy_depth", "greedy_qubit_reuse", "slack_volume"]
+    return benchmark(FAO_simp_QECCS(), True, strategies, heuristics, 0.001, num_samples=lambda d: {3: 50_000_000, 5: 75_000_000,}[d] if d < 6 else 250_000_000, estimate_ler=True)
 
 
 def benchmark_hard_codes():
@@ -294,7 +295,8 @@ def benchmark_hard_codes():
         PureAggressiveStrategy(),
         DepthPreservingStrategy(),
     ]
-    return benchmark(FAO_hard_QECCS(), True, strategies, 0.001, num_samples=lambda d: 10_000_000, estimate_ler=False)
+    heuristics = ["sa_sequence_distance", "greedy_depth", "greedy_qubit_reuse", "slack_volume"]
+    return benchmark(FAO_hard_QECCS(), True, strategies, heuristics, 0.001, num_samples=lambda d: 10_000_000, estimate_ler=False)
 
 
 def benchmark_very_hard_codes():
@@ -302,7 +304,8 @@ def benchmark_very_hard_codes():
         PureAggressiveStrategy(),
         DepthPreservingStrategy(),
     ]
-    return benchmark(very_hard_QECCS(), True, strategies, 0.0001, num_samples=lambda d: 1_000_000, estimate_ler=False)
+    heuristics = ["sa_sequence_distance", "greedy_depth", "greedy_qubit_reuse", "slack_volume"]
+    return benchmark(very_hard_QECCS(), True, strategies, heuristics, 0.0001, num_samples=lambda d: 1_000_000, estimate_ler=False)
 
 
 if __name__ == "__main__":

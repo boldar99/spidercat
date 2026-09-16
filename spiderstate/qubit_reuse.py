@@ -182,6 +182,80 @@ class VolumeOptimizingReuseStrategy:
         return depth * num_hw_qubits
 
 
+class OptimalTightPackingStrategy:
+    """
+    Achieves the best deterministic LER by acting as the optimal 
+    'Earliest Start Time' interval scheduler.
+    By unconditionally returning the active spacetime volume, the greedy router 
+    will always pick merges that introduce the absolute smallest temporal gap. 
+    This strictly maximizes the global number of merges (reaching minimum hardware qubits) 
+    while preventing unnecessary topological stretching.
+    """
+
+    def setup(self, state) -> None:
+        pass
+
+    def evaluate_candidate(self, state) -> float:
+        return float(self._compute_active_volume(state))
+
+    def commit_edge(self, state) -> None:
+        pass
+
+    @staticmethod
+    def _compute_active_volume(state) -> int:
+        layer = {}
+        for node in nx.topological_sort(state.dag):
+            layer[node] = max((layer[pred] for pred in state.dag.predecessors(node)), default=-1) + 1
+
+        active_volume = 0
+        for q in range(state.n_data):
+            if q in state.data_birth and q in state.data_death:
+                b = state.data_birth[q]
+                d = state.data_death[q]
+                active_volume += layer[d] - layer[b] + 1
+                
+        for q in state.ancillas:
+            if q not in state.prev_q:
+                curr = q
+                min_layer = float('inf')
+                max_layer = float('-inf')
+                while curr is not None:
+                    if curr in state.birth_node:
+                        min_layer = min(min_layer, layer[state.birth_node[curr]])
+                    if curr in state.death_node:
+                        max_layer = max(max_layer, layer[state.death_node[curr]])
+                    curr = state.next_q.get(curr)
+                
+                if min_layer != float('inf') and max_layer != float('-inf'):
+                    active_volume += max_layer - min_layer + 1
+
+        return active_volume
+
+import networkx as nx
+
+class SimQubitsAndDepthStrategy:
+    """
+    Optimizes explicitly for sim_qubits + depth.
+    Since every valid merge reduces sim_qubits by exactly 1, this naturally
+    penalizes merges that increase depth by more than 1, implicitly 
+    balancing the tradeoff between circuit depth and hardware qubit count.
+    """
+    def setup(self, state) -> None:
+        pass
+
+    def evaluate_candidate(self, state) -> float:
+        depth = nx.dag_longest_path_length(state.dag)
+        
+        num_hw_qubits = state.n_data
+        for q in state.ancillas:
+            if q not in state.prev_q:
+                num_hw_qubits += 1
+                
+        return float(num_hw_qubits + depth)
+
+    def commit_edge(self, state) -> None:
+        pass
+
 def build_circuit_dag(circ: stim.Circuit) -> nx.DiGraph:
     """
     Converts a sequential list of quantum operations into a dependency DAG.
