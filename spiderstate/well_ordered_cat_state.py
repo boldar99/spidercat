@@ -455,7 +455,7 @@ def well_ordered_composite_cat_state_data(
             exit_k = edge_k
         else:
             # Find degree-2 root so adding inter-chunk edge maintains degree <= 3 in forest
-            deg2_roots = find_min_height_degree_k_roots(forest_k, degree=2)
+            deg2_roots = find_min_height_degree_k_roots(graph_k, degree=2)
             root_k = next(iter(deg2_roots.values()))
             dependency_dag_k, exit_k = _build_and_resolve_dependency_dag(
                 graph_k, forest_k, root_k
@@ -616,7 +616,7 @@ def main(draw: bool = False) -> None:
     random.seed(1)
     from spidercat.circuit_extraction import CatStateExtractor, StimBuilder
 
-    ns, t = [2,2], 3
+    ns, t = [5, 15], 6
     print(f"Generating well-ordered composite cat state for ns={ns}, t={t}...")
     graph, forest, roots, dependency_dag, edge = well_ordered_composite_cat_state_data(ns, t)
 
