@@ -2,6 +2,7 @@
     "code": "9_1_3",
     "strategy": "PureAggressiveStrategy",
     "routing_heuristic": "greedy_qubit_reuse",
+    "analyze_hook_errors": true,
     "p": 0.001,
     "num_samples": 150000000,
     "total_flagged": 1297829,

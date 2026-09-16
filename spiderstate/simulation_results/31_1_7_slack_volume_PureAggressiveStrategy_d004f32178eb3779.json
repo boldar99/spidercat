@@ -2,6 +2,7 @@
     "code": "31_1_7",
     "strategy": "PureAggressiveStrategy",
     "routing_heuristic": "slack_volume",
+    "analyze_hook_errors": true,
     "p": 0.001,
     "num_samples": 250000000,
     "total_flagged": 68832785,

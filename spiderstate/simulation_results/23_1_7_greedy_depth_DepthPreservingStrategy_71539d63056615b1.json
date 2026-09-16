@@ -2,6 +2,7 @@
     "code": "23_1_7",
     "strategy": "DepthPreservingStrategy",
     "routing_heuristic": "greedy_depth",
+    "analyze_hook_errors": true,
     "p": 0.001,
     "num_samples": 250000000,
     "total_flagged": 82915647,

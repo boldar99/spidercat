@@ -278,7 +278,7 @@ def export_to_excel(data, grouped_data, filename="simulation_results.xlsx"):
         keys.update(row.keys())
     
     # We want some columns to be first
-    drop_rows = ("circuit_hash", "perfect_stim", "noisy_circuit", "num_qubits_original", "raw_acceptance_rate")
+    drop_rows = ("circuit_hash", "perfect_stim", "noisy_circuit", "num_qubits_original", "raw_acceptance_rate", "label")
     first_cols = ["code", "Method", "n", "k", "d", "routing_heuristic", "strategy", "logical_error_rate", "acceptance_rate", "num_sim_qubits", "depth", "num_cx", "num_flags"]
     other_cols = sorted([k for k in (keys - set(first_cols)) if k not in drop_rows])
     headers = first_cols + other_cols

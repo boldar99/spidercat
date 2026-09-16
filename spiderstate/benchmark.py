@@ -232,6 +232,7 @@ def benchmark_CAO_state_prep(code: str, analyze_hook_errors:bool, reuse_strategi
                 "code": code,
                 "strategy": reuse_strategy.__class__.__name__,
                 "routing_heuristic": routing_heuristic,
+                "analyze_hook_errors": analyze_hook_errors,
                 "p": p,
                 "num_samples": total_shots,
                 "total_flagged": total_flagged,
@@ -287,7 +288,7 @@ def benchmark_simple_codes():
         DepthPreservingStrategy(),
     ]
     heuristics = ["sa_sequence_distance", "greedy_depth", "greedy_qubit_reuse", "slack_volume"]
-    return benchmark(FAO_simp_QECCS(), True, strategies, heuristics, 0.001, num_samples=lambda d: {3: 50_000_000, 5: 75_000_000,}[d] if d < 6 else 250_000_000, estimate_ler=True)
+    return benchmark(FAO_simp_QECCS(), False, strategies, heuristics, 0.001, num_samples=lambda d: {3: 50_000_000, 5: 75_000_000,}[d] if d < 6 else 250_000_000, estimate_ler=True)
 
 
 def benchmark_hard_codes():
