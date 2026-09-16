@@ -238,9 +238,6 @@ def benchmark_CAO_state_prep(code: str, analyze_hook_errors:bool, reuse_strategi
             else:
                 LER = None
 
-            print("analyze_hook_errors", None if hook_results == {} else analyze_hook_errors)
-            print(hook_results)
-
             stats = {
                 "code": code,
                 "strategy": reuse_strategy.__class__.__name__,
@@ -319,10 +316,10 @@ def benchmark_very_hard_codes():
         DepthPreservingStrategy(),
     ]
     heuristics = ["sa_sequence_distance", "greedy_depth", "greedy_qubit_reuse", "slack_volume"]
-    return benchmark(very_hard_QECCS(), False, strategies, heuristics, 0.0001, num_samples=lambda d: 1_000_000, estimate_ler=False)
+    return benchmark(very_hard_QECCS(), True, strategies, heuristics, 0.0001, num_samples=lambda d: 1_000_000, estimate_ler=False)
 
 
 if __name__ == "__main__":
     # benchmark_simple_codes()
-    # benchmark_hard_codes()
-    benchmark_very_hard_codes()
+    benchmark_hard_codes()
+    # benchmark_very_hard_codes()
