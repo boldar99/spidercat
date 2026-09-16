@@ -391,4 +391,14 @@ def match_edges(H: np.ndarray, non_pivots: list[int],
         
         final_matching.append((edge, (z_val, x_val)))
         
+    # 4. Verify that edge_groups chronological constraints are strictly respected
+    last_group_seen = {}
+    for edge, _ in final_matching:
+        j = edge[1]
+        grp = edge_groups[edge]
+        if j in last_group_seen:
+            assert grp >= last_group_seen[j], \
+                f"Constraint violated on X-spider {j}: group {grp} scheduled after group {last_group_seen[j]}"
+        last_group_seen[j] = grp
+        
     return final_matching
