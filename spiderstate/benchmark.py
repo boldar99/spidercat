@@ -1,5 +1,8 @@
 import os
 
+from spiderstate.hook_errors import characterize_stabilizer_splits
+from spiderstate.optimize_parity_matrix import row_optimize_matrix
+
 os.environ["KMP_WARNINGS"] = "0"
 import multiprocessing as mp
 
@@ -15,8 +18,8 @@ import galois
 
 from spiderstate.stim_utils import make_stim_circ_noisy
 from spidercat.simulate import _layer_cnot_circuit
-from spiderstate.cat_at_origin import row_optimized_cat_at_origin
-from spiderstate.utils import load_qecc, FAO_simp_QECCS, FAO_hard_QECCS, very_hard_QECCS
+from spiderstate.cat_at_origin import row_optimized_cat_at_origin, cat_at_origin
+from spiderstate.utils import load_qecc, FAO_simp_QECCS, FAO_hard_QECCS, very_hard_QECCS, get_conj_M
 from spiderstate.qubit_reuse import (
     build_circuit_dag,
     inject_qubit_reuse,
@@ -111,12 +114,19 @@ def benchmark_CAO_state_prep(code: str, analyze_hook_errors:bool, reuse_strategi
 
     all_stats = []
 
+    random.seed(seed_val)
+    np.random.seed(seed_val)
+
+    t = (d - 1) // 2
+    best_row_op_cost, matrix_after_row_ops = row_optimize_matrix(H_x, t, max_basis_tries=10_000)
+    hook_results = characterize_stabilizer_splits(get_conj_M(matrix_after_row_ops)) if analyze_hook_errors else None
+
     for routing_heuristic in routing_heuristics:
         # Re-seed per heuristic to ensure deterministic baseline comparisons
         random.seed(seed_val)
         np.random.seed(seed_val)
 
-        original_circ = row_optimized_cat_at_origin(H_x, d, max_basis_tries=10_000, analyze_hook_errors=analyze_hook_errors, routing_heuristic=routing_heuristic)
+        original_circ = cat_at_origin(matrix_after_row_ops, d, analyze_hook_errors=analyze_hook_errors, routing_heuristic=routing_heuristic, hook_results=hook_results)
 
         for reuse_strategy in reuse_strategies:
             dag = build_circuit_dag(original_circ)
@@ -228,11 +238,14 @@ def benchmark_CAO_state_prep(code: str, analyze_hook_errors:bool, reuse_strategi
             else:
                 LER = None
 
+            print("analyze_hook_errors", None if hook_results == {} else analyze_hook_errors)
+            print(hook_results)
+
             stats = {
                 "code": code,
                 "strategy": reuse_strategy.__class__.__name__,
                 "routing_heuristic": routing_heuristic,
-                "analyze_hook_errors": analyze_hook_errors,
+                "analyze_hook_errors": None if hook_results == {} else analyze_hook_errors,
                 "p": p,
                 "num_samples": total_shots,
                 "total_flagged": total_flagged,
@@ -288,7 +301,7 @@ def benchmark_simple_codes():
         DepthPreservingStrategy(),
     ]
     heuristics = ["sa_sequence_distance", "greedy_depth", "greedy_qubit_reuse", "slack_volume"]
-    return benchmark(FAO_simp_QECCS(), False, strategies, heuristics, 0.001, num_samples=lambda d: {3: 50_000_000, 5: 75_000_000,}[d] if d < 6 else 250_000_000, estimate_ler=True)
+    return benchmark(FAO_simp_QECCS(), True, strategies, heuristics, 0.001, num_samples=lambda d: {3: 50_000_000, 5: 75_000_000,}[d] if d < 6 else 250_000_000, estimate_ler=True)
 
 
 def benchmark_hard_codes():
@@ -297,7 +310,7 @@ def benchmark_hard_codes():
         DepthPreservingStrategy(),
     ]
     heuristics = ["sa_sequence_distance", "greedy_depth", "greedy_qubit_reuse", "slack_volume"]
-    return benchmark(FAO_hard_QECCS(), True, strategies, heuristics, 0.001, num_samples=lambda d: 1_000_000, estimate_ler=False)
+    return benchmark(FAO_hard_QECCS(), True, strategies, heuristics, 0.001, num_samples=lambda d: 10_000_000, estimate_ler=False)
 
 
 def benchmark_very_hard_codes():
@@ -306,10 +319,10 @@ def benchmark_very_hard_codes():
         DepthPreservingStrategy(),
     ]
     heuristics = ["sa_sequence_distance", "greedy_depth", "greedy_qubit_reuse", "slack_volume"]
-    return benchmark(very_hard_QECCS(), True, strategies, heuristics, 0.0001, num_samples=lambda d: 1_000_000, estimate_ler=False)
+    return benchmark(very_hard_QECCS(), False, strategies, heuristics, 0.0001, num_samples=lambda d: 1_000_000, estimate_ler=False)
 
 
 if __name__ == "__main__":
     # benchmark_simple_codes()
-    benchmark_hard_codes()
+    # benchmark_hard_codes()
     benchmark_very_hard_codes()

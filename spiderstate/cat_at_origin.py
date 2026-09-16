@@ -39,7 +39,7 @@ def row_optimized_cat_at_origin(H: np.ndarray, d: int, max_basis_tries: int = 10
     return cat_at_origin(matrix_after_row_ops, d, analyze_hook_errors=analyze_hook_errors, routing_heuristic=routing_heuristic)
 
 
-def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False, basis="Z", analyze_hook_errors=False, routing_heuristic="slack_volume") -> stim.Circuit:
+def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False, basis="Z", analyze_hook_errors=False, routing_heuristic="slack_volume", hook_results=None) -> stim.Circuit:
     if not has_unique_ones_property(H):
         raise ValueError(f"H is not representing a bipartite graph state.")
 
@@ -53,7 +53,7 @@ def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False, basis="Z", analyz
 
     M_prep = get_conj_M(H)
     if analyze_hook_errors:
-        hook_results = characterize_stabilizer_splits(M_prep)
+        hook_results = hook_results or characterize_stabilizer_splits(M_prep)
 
     x_splits = []
     for j, p in enumerate(non_pivots):
