@@ -2,7 +2,7 @@
     "code": "47_1_11",
     "strategy": "PureAggressiveStrategy",
     "routing_heuristic": "greedy_qubit_reuse",
-    "analyze_hook_errors": true,
+    "analyze_hook_errors": false,
     "p": 0.001,
     "num_samples": 250000000,
     "total_flagged": 224630561,

@@ -2,7 +2,7 @@
     "code": "49_1_9",
     "strategy": "DepthPreservingStrategy",
     "routing_heuristic": "sa_sequence_distance",
-    "analyze_hook_errors": true,
+    "analyze_hook_errors": false,
     "p": 0.001,
     "num_samples": 250000000,
     "total_flagged": 129961557,

@@ -319,7 +319,7 @@ def get_exact_partial_splits(support, shape, splits_by_size, required_last_eleme
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analyze safe hook errors for a given QECC using the GF(2) null-space method.")
-    parser.add_argument("--code", type=str, nargs='*', default=MQT_QECCS(),
+    parser.add_argument("--code", type=str, nargs='*', default=FAO_QECCS(),
                         help="The names of the QECCs to test")
     args = parser.parse_args()
     

@@ -2,7 +2,7 @@
     "code": "9_1_3",
     "strategy": "PureAggressiveStrategy",
     "routing_heuristic": "sa_sequence_distance",
-    "analyze_hook_errors": true,
+    "analyze_hook_errors": false,
     "p": 0.001,
     "num_samples": 150000000,
     "total_flagged": 1300531,

@@ -297,7 +297,7 @@ def benchmark_hard_codes():
         DepthPreservingStrategy(),
     ]
     heuristics = ["sa_sequence_distance", "greedy_depth", "greedy_qubit_reuse", "slack_volume"]
-    return benchmark(FAO_hard_QECCS(), True, strategies, heuristics, 0.001, num_samples=lambda d: 10_000_000, estimate_ler=False)
+    return benchmark(FAO_hard_QECCS(), True, strategies, heuristics, 0.001, num_samples=lambda d: 1_000_000, estimate_ler=False)
 
 
 def benchmark_very_hard_codes():
@@ -310,6 +310,6 @@ def benchmark_very_hard_codes():
 
 
 if __name__ == "__main__":
-    benchmark_simple_codes()
-    # benchmark_hard_codes()
-    # benchmark_very_hard_codes()
+    # benchmark_simple_codes()
+    benchmark_hard_codes()
+    benchmark_very_hard_codes()
