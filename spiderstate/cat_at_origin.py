@@ -10,7 +10,7 @@ from spidercat.circuit_extraction import CatStateExtractor, StimBuilder
 from spidercat.draw import draw_forest_on_graph, display_digraph
 from spiderstate.between_shor_and_steane import measure_stabilizers_scheme_B, measure_stabilizers_scheme_A
 from spiderstate.circuit_finder import find_circuit
-from spiderstate.hook_errors import find_safe_logical_hook_errors, find_safe_splits, get_valid_split_partitions, find_acyclic_partition_combination
+from spiderstate.hook_errors import characterize_stabilizer_splits, get_exact_partial_splits
 from spiderstate.spider_leg_matcher import match_edges
 from spiderstate.utils import find_pivots_in_matrix, load_qecc, count_operations, flatten, get_conj_M
 from spiderstate.well_ordered_cat_state import well_ordered_ft_cat_state_data, well_ordered_composite_cat_state_data
@@ -53,29 +53,38 @@ def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False, basis="Z", analyz
 
     M_prep = get_conj_M(H)
     if analyze_hook_errors:
-        initial_splits = find_safe_logical_hook_errors(M_prep)
+        hook_results = characterize_stabilizer_splits(M_prep)
 
-    partition_options = []
+    x_splits = []
     for j, p in enumerate(non_pivots):
         supp = tuple(np.where(M_prep[j] == 1)[0].tolist())
-        if analyze_hook_errors:
-            init_p = initial_splits[supp]
-            if len(init_p) > 1 and p not in init_p[-1]:
-                p_idx = next(idx for idx, piece in enumerate(init_p) if p in piece)
-                if len(init_p) == 2:
-                    init_p = init_p[::-1]
+        if analyze_hook_errors and supp in hook_results:
+            results = hook_results[supp]
+            if results.get("universal"):
+                # Pick the first universal shape
+                shape = results["universal"][0]
+                # Partition supp arbitrarily matching sizes, but ensure p is in the last chunk
+                supp_list = list(supp)
+                if p in supp_list:
+                    supp_list.remove(p)
+                
+                part = []
+                for chunk_size in shape[:-1]:
+                    part.append(tuple(sorted(supp_list[:chunk_size])))
+                    supp_list = supp_list[chunk_size:]
+                part.append(tuple(sorted(supp_list + [p])))
+                x_splits.append(list(part))
+            elif results.get("partial"):
+                shape = results["partial"][0]
+                exact_chain = get_exact_partial_splits(supp, shape, results.get("splits_by_size", {}), required_last_element=p)
+                if exact_chain:
+                    x_splits.append(list(exact_chain))
                 else:
-                    init_p = [piece for idx, piece in enumerate(init_p) if idx != p_idx] + [init_p[p_idx]]
-            ns = [len(piece) for piece in init_p]
-            safe = find_safe_splits(supp, M_prep)
-            valid_parts = get_valid_split_partitions(supp, ns, p, safe)
-            if not valid_parts:
-                valid_parts = [(tuple(sorted(supp)),)]
+                    x_splits.append([tuple(sorted(supp))])
+            else:
+                x_splits.append([tuple(sorted(supp))])
         else:
-            valid_parts = [(tuple(sorted(supp)),)]
-        partition_options.append(valid_parts)
-
-    x_splits = [list(part) for part in find_acyclic_partition_combination(partition_options)]
+            x_splits.append([tuple(sorted(supp))])
     x_spiders = [list(map(len, p)) for p in x_splits]
     z_spiders = np.sum(H, axis=1)
 
@@ -137,7 +146,7 @@ def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False, basis="Z", analyz
                 )
 
     matched_edges = match_edges(
-        H, non_pivots, z_digraphs, x_digraphs, z_candidates, x_candidates, edge_groups=edge_groups
+        H, non_pivots, z_digraphs, x_digraphs, z_candidates, x_candidates, edge_groups=edge_groups, routing_heuristic="qubit_reuse"
     )
 
     # Build global graphs
@@ -429,7 +438,7 @@ def cat_at_origin_with_verification(
 
 
 if __name__ == "__main__":
-    code = "7_1_3"
+    code = "49_1_5"
     max_col_ops = 100
 
     print(f"Loading QECC: {code}")
@@ -441,7 +450,7 @@ if __name__ == "__main__":
     # )
 
     final_circ = row_optimized_cat_at_origin(
-        H=H_x, d=d
+        H=H_x, d=d, analyze_hook_errors=True
     )
 
     print("\n--- Final Fault Tolerant Verification Circuit ---")

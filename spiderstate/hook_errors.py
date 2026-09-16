@@ -194,7 +194,6 @@ def explain_safe_splits(results, max_print_splits=25):
     Pretty prints the safe splits analysis, showing partition shapes and their safety status.
     """
     import math
-    print(results)
     for support, data in results.items():
         N = len(support)
         print(f"Stabilizer Support: {support} (Weight {N})")
@@ -279,140 +278,48 @@ def explain_safe_splits(results, max_print_splits=25):
         print("-" * 50)
 
 
-def get_valid_split_partitions(
-    support: tuple[int, ...] | list[int],
-    ns: list[int],
-    p: int,
-    safe_splits: list[tuple[int, ...]] | set[tuple[int, ...]],
-) -> list[tuple[tuple[int, ...], ...]]:
+def get_exact_partial_splits(support, shape, splits_by_size, required_last_element=None):
     """
-    Finds all ordered partitions (P_0, ..., P_{K-1}) of support matching chunk sizes ns such that:
-    1. len(P_k) == ns[k] for all k
-    2. p in P_{K-1} (non-pivot qubit p is at the terminal sink node)
-    3. Prefix unions U_{m=0}^k P_m are in safe_splits for all k < K-1.
+    Reconstructs an exact valid chain of subsets for a partially safe partition shape.
     """
     support_set = set(support)
-    safe_splits_set = set(safe_splits)
-    # Include stabilizer complements within support
-    for s in list(safe_splits_set):
-        safe_splits_set.add(tuple(sorted(support_set - set(s))))
+    N = len(support)
+    prefix_sizes = []
+    current = 0
+    for chunk in shape[:-1]:
+        current += chunk
+        prefix_sizes.append(current)
+    prefix_sizes.append(N)
+    
+    def backtrack(prefix_idx, current_split):
+        if prefix_idx == len(prefix_sizes):
+            return [[]]
+        L = prefix_sizes[prefix_idx]
+        if L == N:
+            return [[tuple(sorted(support_set - current_split))]]
+            
+        valid_chains = []
+        for next_split in splits_by_size.get(L, []):
+            if current_split.issubset(next_split):
+                chunk = tuple(sorted(next_split - current_split))
+                suffixes = backtrack(prefix_idx + 1, next_split)
+                for suf in suffixes:
+                    valid_chains.append([chunk] + suf)
+        return valid_chains
+        
+    chains = backtrack(0, set())
+    if required_last_element is not None:
+        valid_chains = [chain for chain in chains if required_last_element in chain[-1]]
+        if not valid_chains:
+            return None
+        return valid_chains[0]
+    return chains[0] if chains else None
 
-    K = len(ns)
-    if K == 1:
-        return [(tuple(sorted(support)),)]
-
-    valid_partitions = []
-
-    def search(k, current_prefix_set, current_pieces):
-        if k == K - 1:
-            last_piece = support_set - current_prefix_set
-            if p in last_piece and len(last_piece) == ns[-1]:
-                valid_partitions.append(tuple(current_pieces + [tuple(sorted(last_piece))]))
-            return
-
-        target_size = len(current_prefix_set) + ns[k]
-        for s in safe_splits_set:
-            s_set = set(s)
-            if (
-                len(s) == target_size
-                and p not in s_set
-                and s_set.issuperset(current_prefix_set)
-                and s_set.issubset(support_set)
-            ):
-                new_piece = tuple(sorted(s_set - current_prefix_set))
-                search(k + 1, s_set, current_pieces + [new_piece])
-
-    search(0, set(), [])
-    valid_partitions.sort(
-        key=lambda P: sum(1 for k in range(len(P) - 1) for u in P[k] for v in P[k + 1] if u > v)
-    )
-    return valid_partitions
-
-
-def find_acyclic_partition_combination(
-    partition_options: list[list[tuple[tuple[int, ...], ...]]]
-) -> list[tuple[tuple[int, ...], ...]]:
-    """
-    Finds a globally acyclic combination of split partitions across all non-pivot spiders.
-    Uses depth-first backtracking with early cycle pruning and topological alignment.
-    Falls back gracefully to unsplit partitions if cross-spider dependencies deadlock.
-    """
-    import networkx as nx
-
-    n = len(partition_options)
-    solution = [None] * n
-
-    # Pre-extract directed precedence edges for each partition option
-    partition_edges = []
-    for options in partition_options:
-        opt_edges = []
-        for part in options:
-            edges = []
-            for k in range(len(part) - 1):
-                for u in part[k]:
-                    for v in part[k + 1]:
-                        edges.append((u, v))
-            opt_edges.append(edges)
-        partition_edges.append(opt_edges)
-
-    def backtrack(idx, current_dag):
-        if idx == n:
-            return True
-        for opt_idx, part in enumerate(partition_options[idx]):
-            edges = partition_edges[idx][opt_idx]
-            conflict = False
-            for u, v in edges:
-                if u == v or (current_dag.has_node(u) and current_dag.has_node(v) and nx.has_path(current_dag, v, u)):
-                    conflict = True
-                    break
-            if conflict:
-                continue
-
-            current_dag.add_edges_from(edges)
-            if nx.is_directed_acyclic_graph(current_dag):
-                solution[idx] = part
-                if backtrack(idx + 1, current_dag):
-                    return True
-            current_dag.remove_edges_from(edges)
-
-        return False
-
-    dag = nx.DiGraph()
-    if backtrack(0, dag):
-        return solution
-
-    # Greedy fallback with unsplit fallback
-    fallback_solution = []
-    current_dag = nx.DiGraph()
-    for idx in range(n):
-        assigned = False
-        for opt_idx, part in enumerate(partition_options[idx]):
-            edges = partition_edges[idx][opt_idx]
-            if not edges:
-                fallback_solution.append(part)
-                assigned = True
-                break
-            conflict = any(
-                u == v or (current_dag.has_node(u) and current_dag.has_node(v) and nx.has_path(current_dag, v, u))
-                for u, v in edges
-            )
-            if not conflict:
-                current_dag.add_edges_from(edges)
-                if nx.is_directed_acyclic_graph(current_dag):
-                    fallback_solution.append(part)
-                    assigned = True
-                    break
-                current_dag.remove_edges_from(edges)
-        if not assigned:
-            unsplit_part = next((p for p in partition_options[idx] if len(p) == 1), partition_options[idx][-1])
-            fallback_solution.append(unsplit_part)
-
-    return fallback_solution
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Analyze safe hook errors for a given QECC using the GF(2) null-space method.")
-    parser.add_argument("--code", type=str, nargs='*', default=FAO_QECCS(),
+    parser.add_argument("--code", type=str, nargs='*', default=MQT_QECCS(),
                         help="The names of the QECCs to test")
     args = parser.parse_args()
     
