@@ -140,19 +140,19 @@ def main():
         
         multirow_code = f"\\multirow{{{num_rows}}}{{*}}{{\\makecell[l]{{{code_state}}}}}"
         
-        base_cx = BASELINE_DATA.get(code_raw, {}).get("cx", "-")
-        base_flags = BASELINE_DATA.get(code_raw, {}).get("flags", "-")
-        base_sim = BASELINE_DATA.get(code_raw, {}).get("sim_qubits", "-")
-        base_depth = BASELINE_DATA.get(code_raw, {}).get("depth", "-")
+        base_cx = BASELINE_DATA.get(code_raw, {}).get("cx", "$-$")
+        base_flags = BASELINE_DATA.get(code_raw, {}).get("flags", "$-$")
+        base_sim = BASELINE_DATA.get(code_raw, {}).get("sim_qubits", "$-$")
+        base_depth = BASELINE_DATA.get(code_raw, {}).get("depth", "$-$")
         
         base_ler_bounds = BASELINE_DATA.get(code_raw, {}).get("ler_bounds", None)
         base_ar_bounds = BASELINE_DATA.get(code_raw, {}).get("ar_bounds", None)
         
         # Calculate best values for bolding
-        best_cx = min([cxs] + ([int(base_cx)] if base_cx != "-" else []))
-        best_flags = min([flags] + ([int(base_flags)] if base_flags != "-" else []))
-        best_sim = min([r.get("num_sim_qubits", float('inf')) for r in group] + ([int(base_sim)] if base_sim != "-" else []))
-        best_depth = min([r.get("depth", float('inf')) for r in group] + ([int(base_depth)] if base_depth != "-" else []))
+        best_cx = min([cxs] + ([int(base_cx)] if base_cx != "$-$" else []))
+        best_flags = min([flags] + ([int(base_flags)] if base_flags != "$-$" else []))
+        best_sim = min([r.get("num_sim_qubits", float('inf')) for r in group] + ([int(base_sim)] if base_sim != "$-$" else []))
+        best_depth = min([r.get("depth", float('inf')) for r in group] + ([int(base_depth)] if base_depth != "$-$" else []))
         
         ler_vals = []
         if base_ler_bounds:
@@ -203,7 +203,7 @@ def main():
             base_ler_val = ((low + high) / 2) * 10**orig_exp
             if is_best(base_ler_val, best_ler): base_ler = wrap_bold(base_ler, math=True)
         else:
-            base_ler = "-"
+            base_ler = "$-$"
             
         if base_ar_bounds:
             base_ar = f"$[{base_ar_bounds[0]:.4f}, \\,\\, {base_ar_bounds[1]:.4f}]$"
@@ -212,23 +212,23 @@ def main():
             if group_p_0001:
                 base_ar = base_ar[:-1] + "^{*}$"
         else:
-            base_ar = "-"
+            base_ar = "$-$"
         
         base_cx_str = str(base_cx)
-        if base_cx != "-" and is_best(int(base_cx), best_cx): base_cx_str = wrap_bold(base_cx_str)
+        if base_cx != "$-$" and is_best(int(base_cx), best_cx): base_cx_str = wrap_bold(base_cx_str)
         
         base_flags_str = str(base_flags)
-        if base_flags != "-" and is_best(int(base_flags), best_flags): base_flags_str = wrap_bold(base_flags_str)
+        if base_flags != "$-$" and is_best(int(base_flags), best_flags): base_flags_str = wrap_bold(base_flags_str)
         
         base_sim_str = str(base_sim)
-        if base_sim != "-" and is_best(int(base_sim), best_sim): base_sim_str = wrap_bold(base_sim_str)
+        if base_sim != "$-$" and is_best(int(base_sim), best_sim): base_sim_str = wrap_bold(base_sim_str)
         
         base_depth_str = str(base_depth)
-        if base_depth != "-" and is_best(int(base_depth), best_depth): base_depth_str = wrap_bold(base_depth_str)
+        if base_depth != "$-$" and is_best(int(base_depth), best_depth): base_depth_str = wrap_bold(base_depth_str)
         
         if has_baseline:
             # Print the Flag at Origin row
-            print(f"{multirow_code} & Flag at Origin & {base_cx_str} & {base_flags_str} &   &   & {base_sim_str} & {base_depth_str} & {base_ler} & {base_ar} \\\\")
+            print(f"{multirow_code} & FaO & {base_cx_str} & {base_flags_str} &   &   & {base_sim_str} & {base_depth_str} & {base_ler} & {base_ar} \\\\")
             print("\\cmidrule{2-10}")
         
         cxs_str = wrap_bold(str(cxs)) if is_best(cxs, best_cx) else str(cxs)
@@ -256,7 +256,7 @@ def main():
             n_samples = row.get("num_samples", 0)
             ler = row.get("logical_error_rate", None)
             if ler is None:
-                ler_latex = "-"
+                ler_latex = "$-$"
             else:
                 ar_temp = row.get("acceptance_rate", 1.0)
                 n_ler = n_samples * ar_temp
@@ -276,7 +276,7 @@ def main():
                 
             ar = row.get("acceptance_rate", None)
             if ar is None:
-                ar_latex = "-"
+                ar_latex = "$-$"
             else:
                 ar_low, ar_high = wilson_score_interval(ar, n_samples)
                 ar_latex = f"$[{ar_low:.4f}, \\,\\, {ar_high:.4f}]$"
@@ -291,10 +291,10 @@ def main():
             code_col = multirow_code if (i == 0 and not has_baseline) else ""
             cnot_scheduler = row.get("routing_heuristic", "")
             cnot_scheduler_dict = {
-                "greedy_depth": "D",
-                "greedy_qubit_reuse": "Q",
-                "sa_sequence_distance": "SD",
-                "slack_volume": "SV",
+                "earliest_start_first": "Early Start",
+                "active_spider_first": "Active Spider",
+                "critical_path_first": r"Crit.\@ Path",
+                "sa_sequence_distance": r"Seq.\@ Dist.",
             }
             cnot_scheduler_str = cnot_scheduler_dict.get(cnot_scheduler)
 
@@ -307,7 +307,7 @@ def main():
     print("\\end{tabular*}")
     print("\\caption{")
     print("\tResource overhead, logical error rate, and acceptance rate for different CSS QECCs.")
-    print("\tColumns from left to right: QEC code and state, Method (CSSCat or Flag at Origin~\\cite{forlivesi2025flag}), number of CNOT gates in the circuit, number of flag measurements, optimization target of qubit reuse strategy, maximum simultaneous number of qubits necessary, circuit depth, and finally logical error rate and acceptance rates using Wilson confidence intervals of 95\\%.")
+    print("\tColumns from left to right: QEC code and state, Method (CSSCat or FaO, i.e.\\@ Flag at Origin~\\cite{forlivesi2025flag}), number of CNOT gates in the circuit, number of flag measurements, optimization target of qubit reuse strategy, maximum simultaneous number of qubits necessary, circuit depth, and finally logical error rate and acceptance rates using Wilson confidence intervals of 95\\%.")
     print("\tThe logical error rates of some codes were not estimated (marked $-$) as the lookup table was too large to store in memory.")
     print("\tFor largest 4 codes, values marked with $^*$ indicate simulations performed with a physical error rate of $p=0.0001$ instead of the usual $p=0.001$.")
     print("}")
@@ -347,11 +347,11 @@ def export_to_excel(data, grouped_data, filename="simulation_results.xlsx"):
             base = BASELINE_DATA[code_raw]
             base_row = {h: None for h in headers}
             base_row["code"] = code_raw
-            base_row["Method"] = "Flag at Origin"
+            base_row["Method"] = "FaO"
             base_row["num_cx"] = base.get("cx", None)
             base_row["num_flags"] = base.get("flags", None)
-            base_row["num_sim_qubits"] = int(base.get("sim_qubits")) if base.get("sim_qubits", "-") != "-" else None
-            base_row["depth"] = int(base.get("depth")) if base.get("depth", "-") != "-" else None
+            base_row["num_sim_qubits"] = int(base.get("sim_qubits")) if base.get("sim_qubits", "$-$") != "$-$" else None
+            base_row["depth"] = int(base.get("depth")) if base.get("depth", "$-$") != "$-$" else None
             if base.get("ler_bounds"):
                 low, high, exp = base["ler_bounds"]
                 base_row["logical_error_rate"] = ((low + high) / 2) * (10**exp)
