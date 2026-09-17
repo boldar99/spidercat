@@ -256,13 +256,13 @@ def optimize_cnot_ordering(edge_list: list[tuple[int, int]], edge_groups: dict[t
     Finds an absolute ordering of edges that minimizes the requested heuristic 
     while respecting the local ordering constraints defined by edge_groups.
     
-    Available heuristics: 'sa_sequence_distance', 'greedy_depth', 'greedy_qubit_reuse', 'slack_volume'
+    Available heuristics: 'sa_sequence_clustering', 'earliest_start_first', 'active_spider_first', 'critical_path_first'
     """
-    if heuristic == "greedy_qubit_reuse":
+    if heuristic == "active_spider_first":
         return qubit_reuse_minimization(edge_list, edge_groups, z_dists, x_dists)
-    if heuristic == "greedy_depth":
+    if heuristic == "earliest_start_first":
         return greedy_depth_minimization(edge_list, edge_groups, z_dists, x_dists)
-    if heuristic == "slack_volume":
+    if heuristic == "critical_path_first":
         return slack_volume_minimization(edge_list, edge_groups, z_dists, x_dists)
 
     # 1. Generate an initial valid topological sort using greedy approach as a strong baseline

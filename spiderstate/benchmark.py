@@ -297,8 +297,8 @@ def benchmark_simple_codes():
         PureAggressiveStrategy(),
         DepthPreservingStrategy(),
     ]
-    heuristics = ["sa_sequence_distance", "greedy_depth", "greedy_qubit_reuse", "slack_volume"]
-    return benchmark(FAO_simp_QECCS(), True, strategies, heuristics, 0.001, num_samples=lambda d: {3: 50_000_000, 5: 75_000_000,}[d] if d < 6 else 250_000_000, estimate_ler=True)
+    heuristics = ["sa_sequence_distance", "earliest_start_first", "active_spider_first", "critical_path_first"]
+    return benchmark(FAO_simp_QECCS(), True, strategies, heuristics, 0.001, num_samples=lambda d: 100_000_000, estimate_ler=True)
 
 
 def benchmark_hard_codes():
@@ -306,7 +306,7 @@ def benchmark_hard_codes():
         PureAggressiveStrategy(),
         DepthPreservingStrategy(),
     ]
-    heuristics = ["sa_sequence_distance", "greedy_depth", "greedy_qubit_reuse", "slack_volume"]
+    heuristics = ["sa_sequence_distance", "earliest_start_first", "active_spider_first", "critical_path_first"]
     return benchmark(FAO_hard_QECCS(), True, strategies, heuristics, 0.001, num_samples=lambda d: 10_000_000, estimate_ler=False)
 
 
@@ -315,11 +315,11 @@ def benchmark_very_hard_codes():
         PureAggressiveStrategy(),
         DepthPreservingStrategy(),
     ]
-    heuristics = ["sa_sequence_distance", "greedy_depth", "greedy_qubit_reuse", "slack_volume"]
+    heuristics = ["sa_sequence_distance", "earliest_start_first", "active_spider_first", "critical_path_first"]
     return benchmark(very_hard_QECCS(), True, strategies, heuristics, 0.0001, num_samples=lambda d: 1_000_000, estimate_ler=False)
 
 
 if __name__ == "__main__":
-    # benchmark_simple_codes()
-    benchmark_hard_codes()
+    benchmark_simple_codes()
+    # benchmark_hard_codes()
     # benchmark_very_hard_codes()

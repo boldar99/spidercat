@@ -24,6 +24,45 @@ BASELINE_DATA = {
     "71_1_11": {"cx": 829, "flags": 268, "sim_qubits": "177", "depth": "282", "ler_bounds": (4.4, 29.0, -8), "ar_bounds": (0.2140, 0.2150)},
 }
 
+selected_circuits = [
+    "9f62933f39bb908b",
+    "24a676e2350b5312",
+    "31dde03a6dd1d9a9",
+    "e24a83a6310dd7db",
+    "ced1a8ef7bb0c819",
+    "e196ca15d1045217",
+    "dc4685518a3ada33",
+    "a789e9e74e1c2b4a",
+    "ab2291fe404256ab",
+    "e98d11d3a2cd417f",
+    "011d6493e3b61b81",
+    "d1cf5886f4dd969a",
+    "7419d877bc04e8f8",
+    "c76012cc6bdc0a78",
+    "46cdc1110e92d549",
+    "ce60f666511985ae",
+    "03d0fb94e1f21156",
+    "c5cf57e0c61995e0",
+    "f6f3bfc6c41eea2a",
+    "642fe5b37116b90c",
+    "025b1b8cb859bdf2",
+    "7996ca8361d924e3",
+    "95555ea727ef3849",
+    "d80d1138925fad2f",
+    "ed63eefea95c918d",
+    "977eb81a3f59db60",
+    "564b0856a73d646b",
+    "9ab43bc8670152ad",
+    "12ae6e6a8a2f863d",
+    "ba3ffc6258aea636",
+    "8686a6e5e46fb1af",
+    "7edfeb86bf0efd65",
+    "aed2a6c4f76023cb",
+    "708bc3ac9a416d52",
+    "ad6da65fd5d0c83c",
+    "f37d70e7a4619010",
+]
+
 def get_state(code, k):
     if code in ("49_1_5", "95_1_7"):
         return r"$\ket{\overline{+}}$"
@@ -55,6 +94,8 @@ def main():
         with open(f, 'r') as file:
             try:
                 stats = json.load(file)
+                if stats.get("circuit_hash") not in selected_circuits:
+                    continue
                 code_raw = stats.get("code", "")
                 code_data = load_qecc_data(code_raw, "FAO" if code_raw in BASELINE_DATA else None)
                 stats["n"] = code_data["n"]
@@ -75,15 +116,17 @@ def main():
     print("\\begin{table*}[ht]")
     print("\\centering")
     print("\\scriptsize")
-    print("\\begin{tabular*}{\\textwidth}{@{\\extracolsep{\\fill}}l l c c c c c c c}")
+    print("\\begin{tabular*}{\\textwidth}{@{\\extracolsep{\\fill}}l l c c c c c c c c}")
     print("\\toprule")
-    print("\\makecell[l]{QEC Code \\\\ \\& State} & Method & \\makecell{CX \\\\ Count} & \\makecell{Flag \\\\ Count} & \\makecell{Qubit Reuse \\\\ Opt.\\@ Target} & \\makecell{Sim.\\@ \\\\ Qubits} & Depth & LER & AR \\\\")
+    print("\\makecell[l]{QEC Code \\\\ \\& State} & Method & \\makecell{CNOT \\\\ Count} & \\makecell{Flag \\\\ Count} & \\makecell{Qubit Reuse \\\\ Opt.\\@ Target} & \\makecell{CNOT \\\\ scheduler} & \\makecell{Sim.\\@ \\\\ Qubits} & Depth & LER & AR \\\\")
     print("\\midrule")
     
     for code_raw, group in grouped_data:
         has_baseline = code_raw in BASELINE_DATA
         num_strategy_rows = len(group)
         num_rows = num_strategy_rows + (1 if has_baseline else 0)
+        
+        group_p_0001 = any(any(r.get("p") == 0.0001 for k in ["p", "physical_error_rate", "error_rate"]) for r in group)
         
         first_row = group[0]
         n, k, d = first_row["n"], first_row["k"], first_row["d"]
@@ -166,6 +209,8 @@ def main():
             base_ar = f"$[{base_ar_bounds[0]:.4f}, \\,\\, {base_ar_bounds[1]:.4f}]$"
             base_ar_val = (base_ar_bounds[0] + base_ar_bounds[1]) / 2
             if is_best(base_ar_val, best_ar): base_ar = wrap_bold(base_ar, math=True)
+            if group_p_0001:
+                base_ar = base_ar[:-1] + "^{*}$"
         else:
             base_ar = "-"
         
@@ -183,8 +228,8 @@ def main():
         
         if has_baseline:
             # Print the Flag at Origin row
-            print(f"{multirow_code} & Flag at Origin & {base_cx_str} & {base_flags_str} &   & {base_sim_str} & {base_depth_str} & {base_ler} & {base_ar} \\\\")
-            print("\\cmidrule{2-9}")
+            print(f"{multirow_code} & Flag at Origin & {base_cx_str} & {base_flags_str} &   &   & {base_sim_str} & {base_depth_str} & {base_ler} & {base_ar} \\\\")
+            print("\\cmidrule{2-10}")
         
         cxs_str = wrap_bold(str(cxs)) if is_best(cxs, best_cx) else str(cxs)
         flags_str = wrap_bold(str(flags)) if is_best(flags, best_flags) else str(flags)
@@ -236,14 +281,24 @@ def main():
                 ar_low, ar_high = wilson_score_interval(ar, n_samples)
                 ar_latex = f"$[{ar_low:.4f}, \\,\\, {ar_high:.4f}]$"
                 if is_best(ar, best_ar): ar_latex = wrap_bold(ar_latex, math=True)
+                if group_p_0001:
+                    ar_latex = ar_latex[:-1] + "^{*}$"
             
             method_col = multirow_method if i == 0 else ""
             cx_col = multirow_cx if i == 0 else ""
             flag_col = multirow_flags if i == 0 else ""
             
             code_col = multirow_code if (i == 0 and not has_baseline) else ""
-            
-            print(f"{code_col} & {method_col} & {cx_col} & {flag_col} & {strategy} & {sim_qubits_str} & {depth_str} & {ler_latex} & {ar_latex} \\\\")
+            cnot_scheduler = row.get("routing_heuristic", "")
+            cnot_scheduler_dict = {
+                "greedy_depth": "D",
+                "greedy_qubit_reuse": "Q",
+                "sa_sequence_distance": "SD",
+                "slack_volume": "SV",
+            }
+            cnot_scheduler_str = cnot_scheduler_dict.get(cnot_scheduler)
+
+            print(f"{code_col} & {method_col} & {cx_col} & {flag_col} & {strategy} & {cnot_scheduler_str} & {sim_qubits_str} & {depth_str} & {ler_latex} & {ar_latex} \\\\")
             
         # Optional line between different codes for clean grouping
         print("\\midrule")
@@ -254,12 +309,13 @@ def main():
     print("\tResource overhead, logical error rate, and acceptance rate for different CSS QECCs.")
     print("\tColumns from left to right: QEC code and state, Method (CSSCat or Flag at Origin~\\cite{forlivesi2025flag}), number of CNOT gates in the circuit, number of flag measurements, optimization target of qubit reuse strategy, maximum simultaneous number of qubits necessary, circuit depth, and finally logical error rate and acceptance rates using Wilson confidence intervals of 95\\%.")
     print("\tThe logical error rates of some codes were not estimated (marked $-$) as the lookup table was too large to store in memory.")
+    print("\tFor largest 4 codes, values marked with $^*$ indicate simulations performed with a physical error rate of $p=0.0001$ instead of the usual $p=0.001$.")
     print("}")
     print("\\label{tab:sim_results}")
     print("\\end{table*}")
 
     # Export to Excel
-    export_to_excel(data, grouped_data)
+    # export_to_excel(data, grouped_data)
 
 def export_to_excel(data, grouped_data, filename="simulation_results.xlsx"):
     try:
@@ -278,7 +334,7 @@ def export_to_excel(data, grouped_data, filename="simulation_results.xlsx"):
         keys.update(row.keys())
     
     # We want some columns to be first
-    drop_rows = ("circuit_hash", "perfect_stim", "noisy_circuit", "num_qubits_original", "raw_acceptance_rate", "label")
+    drop_rows = ("perfect_stim", "noisy_circuit", "num_qubits_original", "raw_acceptance_rate", "label")
     first_cols = ["code", "Method", "n", "k", "d", "routing_heuristic", "strategy", "logical_error_rate", "acceptance_rate", "num_sim_qubits", "depth", "num_cx", "num_flags"]
     other_cols = sorted([k for k in (keys - set(first_cols)) if k not in drop_rows])
     headers = first_cols + other_cols

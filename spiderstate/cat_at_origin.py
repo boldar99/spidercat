@@ -33,13 +33,13 @@ def col_reduced_cat_at_origin(H: np.ndarray, d: int, max_col_ops: int = 0, max_b
     return circ
 
 
-def row_optimized_cat_at_origin(H: np.ndarray, d: int, max_basis_tries: int = 10_000, analyze_hook_errors=False, routing_heuristic="slack_volume"):
+def row_optimized_cat_at_origin(H: np.ndarray, d: int, max_basis_tries: int = 10_000, analyze_hook_errors=False, routing_heuristic="critical_path_first"):
     t = (d - 1) // 2
     best_row_op_cost, matrix_after_row_ops = row_optimize_matrix(H, t, max_basis_tries)
     return cat_at_origin(matrix_after_row_ops, d, analyze_hook_errors=analyze_hook_errors, routing_heuristic=routing_heuristic)
 
 
-def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False, basis="Z", analyze_hook_errors=False, routing_heuristic="slack_volume", hook_results=None) -> stim.Circuit:
+def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False, basis="Z", analyze_hook_errors=False, routing_heuristic="critical_path_first", hook_results=None) -> stim.Circuit:
     if not has_unique_ones_property(H):
         raise ValueError(f"H is not representing a bipartite graph state.")
 
@@ -450,7 +450,7 @@ if __name__ == "__main__":
     # )
 
     final_circ = row_optimized_cat_at_origin(
-        H=H_x, d=d, analyze_hook_errors=True, routing_heuristic="slack_volume"
+        H=H_x, d=d, analyze_hook_errors=True, routing_heuristic="critical_path_first"
     )
 
     print("\n--- Final Fault Tolerant Verification Circuit ---")
