@@ -189,6 +189,7 @@ def find_lookahead_verification_stabilizers(
     costs = np.array([cost_fn(w, t) for w in np.sum(candidate_stabs, axis=1)])
     print("Found {} stabilizers".format(len(candidate_stabs)))
 
+    print(H_filter)
     mixed_faults = MixedFaultSet(single_faults, t, H_filter, track_origins=False)
     active_errors = mixed_faults.active_errors
     targets = mixed_faults.targets

@@ -60,7 +60,7 @@ def build_base_chain_graph(n: int, rooted=False) -> tuple[nx.Graph, nx.Graph, in
     graph = nx.Graph()
     rooted_offset = int(rooted)
     if rooted:
-        graph.add_nodes_from([0], is_mark=False, is_root=True)
+        graph.add_nodes_from([0], is_mark=False)
     graph.add_nodes_from(range(rooted_offset, n + rooted_offset), is_mark=True)
     for i in range(n - 1 + rooted_offset):
         graph.add_edge(i, i + 1)
@@ -81,7 +81,7 @@ def build_base_t1_graph(n: int, rooted=False) -> tuple[nx.Graph, nx.Graph, int]:
     """
     graph = nx.Graph()
     if rooted:
-        graph.add_nodes_from([0], is_mark=False, is_root=True)
+        graph.add_nodes_from([0], is_mark=False)
         graph.add_nodes_from(range(2, 2 + n), is_mark=True)
         graph.add_edge(0, 2)
         graph.add_edge(0, 3)
@@ -133,7 +133,6 @@ def build_base_n6_graph(rooted=False) -> tuple[nx.Graph, nx.Graph, int]:
             g.add_edge(v, new_node)
         
         graph.nodes[new_node]["is_mark"] = False
-        graph.nodes[new_node]["is_root"] = True
 
         return graph, forest, new_node
 

@@ -24,45 +24,6 @@ BASELINE_DATA = {
     "71_1_11": {"cx": 829, "flags": 268, "sim_qubits": "177", "depth": "282", "ler_bounds": (4.4, 29.0, -8), "ar_bounds": (0.2140, 0.2150)},
 }
 
-selected_circuits = [
-    "9f62933f39bb908b",
-    "24a676e2350b5312",
-    "31dde03a6dd1d9a9",
-    "e24a83a6310dd7db",
-    "ced1a8ef7bb0c819",
-    "e196ca15d1045217",
-    "dc4685518a3ada33",
-    "a789e9e74e1c2b4a",
-    "ab2291fe404256ab",
-    "e98d11d3a2cd417f",
-    "011d6493e3b61b81",
-    "d1cf5886f4dd969a",
-    "7419d877bc04e8f8",
-    "c76012cc6bdc0a78",
-    "46cdc1110e92d549",
-    "ce60f666511985ae",
-    "03d0fb94e1f21156",
-    "c5cf57e0c61995e0",
-    "f6f3bfc6c41eea2a",
-    "642fe5b37116b90c",
-    "025b1b8cb859bdf2",
-    "7996ca8361d924e3",
-    "95555ea727ef3849",
-    "d80d1138925fad2f",
-    "ed63eefea95c918d",
-    "977eb81a3f59db60",
-    "564b0856a73d646b",
-    "9ab43bc8670152ad",
-    "12ae6e6a8a2f863d",
-    "ba3ffc6258aea636",
-    "8686a6e5e46fb1af",
-    "7edfeb86bf0efd65",
-    "aed2a6c4f76023cb",
-    "708bc3ac9a416d52",
-    "ad6da65fd5d0c83c",
-    "f37d70e7a4619010",
-]
-
 def get_state(code, k):
     if code in ("49_1_5", "95_1_7"):
         return r"$\ket{\overline{+}}$"
@@ -85,26 +46,46 @@ def wilson_score_interval(p, n, z=1.95996):
     spread = z * math.sqrt(p*(1-p)/n + z**2 / (4*n**2))
     return (center - spread) / denominator, (center + spread) / denominator
 
+def circuit_score(stats):
+    ler = stats.get("logical_error_rate")
+    qubits = stats.get("num_sim_qubits", float('inf'))
+    depth = stats.get("depth", float('inf'))
+    if ler is not None and ler > 0:
+        # Saving 1 qubit roughly offsets a 5% worse LER
+        # Saving 1 depth roughly offsets a 0.5% worse LER
+        return math.log(ler) + 0.05 * qubits + 0.005 * depth
+    else:
+        return qubits + 0.005 * depth
+
 def main():
     results_dir = "simulation_results"
     json_files = glob.glob(os.path.join(results_dir, "*.json"))
     
-    data = []
+    grouped_stats = {}
     for f in json_files:
         with open(f, 'r') as file:
             try:
                 stats = json.load(file)
-                if stats.get("circuit_hash") not in selected_circuits:
+                code_raw = stats.get("code")
+                strat = stats.get("strategy")
+                if not code_raw or not strat:
                     continue
-                code_raw = stats.get("code", "")
-                code_data = load_qecc_data(code_raw, "FAO" if code_raw in BASELINE_DATA else None)
-                stats["n"] = code_data["n"]
-                stats["k"] = code_data["k"]
-                stats["d"] = code_data["d"]
-                stats["label"] = code_data.get("abbr_name", "")
-                data.append(stats)
+                grouped_stats.setdefault((code_raw, strat), []).append(stats)
             except Exception:
                 continue
+                
+    data = []
+    for (code_raw, strat), group in grouped_stats.items():
+        best_stats = min(group, key=circuit_score)
+        try:
+            code_data = load_qecc_data(code_raw, "FAO" if code_raw in BASELINE_DATA else None)
+            best_stats["n"] = code_data["n"]
+            best_stats["k"] = code_data["k"]
+            best_stats["d"] = code_data["d"]
+            best_stats["label"] = code_data.get("abbr_name", "")
+            data.append(best_stats)
+        except Exception:
+            continue
                 
     # Sort by d then n
     data.sort(key=lambda x: (x["d"], x["n"], x.get("code", ""), len(x.get("strategy", ""))))
@@ -152,7 +133,7 @@ def main():
         best_cx = min([cxs] + ([int(base_cx)] if base_cx != "$-$" else []))
         best_flags = min([flags] + ([int(base_flags)] if base_flags != "$-$" else []))
         best_sim = min([r.get("num_sim_qubits", float('inf')) for r in group] + ([int(base_sim)] if base_sim != "$-$" else []))
-        best_depth = min([r.get("depth", float('inf')) for r in group] + ([int(base_depth)] if base_depth != "$-$" else []))
+        best_depth = min([r.get("depth", float('inf')) + 2 for r in group] + ([int(base_depth)] if base_depth != "$-$" else []))
         
         ler_vals = []
         if base_ler_bounds:
@@ -250,7 +231,7 @@ def main():
             sim_qubits = row.get("num_sim_qubits", 0)
             sim_qubits_str = wrap_bold(str(sim_qubits)) if is_best(sim_qubits, best_sim) else str(sim_qubits)
 
-            depth = row.get("depth", 0)
+            depth = row.get("depth", -2) + 2
             depth_str = wrap_bold(str(depth)) if is_best(depth, best_depth) else str(depth)
             
             n_samples = row.get("num_samples", 0)

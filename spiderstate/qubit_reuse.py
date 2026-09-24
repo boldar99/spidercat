@@ -298,17 +298,275 @@ def build_circuit_dag(circ: stim.Circuit) -> nx.DiGraph:
     return dag
 
 
-def dag_to_circuit(dag: nx.DiGraph) -> tuple[stim.Circuit, dict[int, int]]:
+import math
+import random
+
+def _compute_D_weights(dag: nx.DiGraph) -> dict[int, int]:
+    L = list(nx.topological_sort(dag))
+    
+    first_node_for_q = {}
+    last_meas_for_q = {}
+    
+    for node in L:
+        data = dag.nodes[node]
+        targets = data.get("targets", [])
+        if isinstance(targets, int): 
+            targets = [targets]
+        elif isinstance(targets, tuple): 
+            targets = list(targets)
+            
+        op_name = data.get("op_name", "")
+        is_meas = op_name in {"M", "MX", "MR", "MZ"}
+        
+        for q in targets:
+            if q not in first_node_for_q: 
+                first_node_for_q[q] = node
+            if is_meas: 
+                last_meas_for_q[q] = node
+                
+    D = {node: 0 for node in L}
+    for node in first_node_for_q.values(): 
+        D[node] -= 1
+    for node in last_meas_for_q.values(): 
+        D[node] += 1
+        
+    return D
+
+
+def _greedy_topological_insertion(dag: nx.DiGraph, num_passes: int = 15) -> list:
+    """
+    Minimizes the active lifetime of qubits by eagerly exploring the valid 
+    topological insertion window of each node and placing it at the position 
+    that minimizes the sum of all qubit lifetimes.
+    """
+    L = list(nx.topological_sort(dag))
+    if len(L) < 2: 
+        return L
+        
+    D = _compute_D_weights(dag)
+        
+    preds = {n: set(dag.predecessors(n)) for n in L}
+    succs = {n: set(dag.successors(n)) for n in L}
+    pos = {node: i for i, node in enumerate(L)}
+    
+    for pass_idx in range(num_passes):
+        changed = False
+        nodes = L.copy()
+        for v in nodes:
+            curr = pos[v]
+            
+            min_idx = max((pos[p] for p in preds[v]), default=-1) + 1
+            max_idx = min((pos[s] for s in succs[v]), default=len(L)) - 1
+            
+            best_j = curr
+            min_delta = 0
+            
+            current_delta = 0
+            for j in range(curr - 1, min_idx - 1, -1):
+                current_delta += D[L[j]] - D[v]
+                if current_delta < min_delta:
+                    min_delta = current_delta
+                    best_j = j
+                    
+            current_delta = 0
+            for j in range(curr + 1, max_idx + 1):
+                current_delta += D[v] - D[L[j]]
+                if current_delta < min_delta:
+                    min_delta = current_delta
+                    best_j = j
+                    
+            if best_j != curr:
+                changed = True
+                L.pop(curr)
+                L.insert(best_j, v)
+                
+                if best_j < curr:
+                    for i in range(best_j, curr + 1):
+                        pos[L[i]] = i
+                else:
+                    for i in range(curr, best_j + 1):
+                        pos[L[i]] = i
+                        
+        if not changed:
+            break
+            
+    return L
+
+def _hybrid_topological_optimization(dag: nx.DiGraph, greedy_passes: int = 15, greedy_restarts: int = 3, sa_steps: int = 100000) -> list:
+    """
+    Minimizes the active lifetime of qubits by eagerly exploring the valid 
+    topological insertion window of each node, followed by a Simulated Annealing 
+    polishing phase to escape any remaining local minima.
+    """
+    base_L = list(nx.topological_sort(dag))
+    if len(base_L) < 2: 
+        return base_L
+        
+    D = _compute_D_weights(dag)
+        
+    preds = {n: set(dag.predecessors(n)) for n in base_L}
+    succs = {n: set(dag.successors(n)) for n in base_L}
+    
+    def compute_energy(L):
+        pos = {node: i for i, node in enumerate(L)}
+        return sum(pos[n] * D[n] for n in L)
+
+    best_global_L = None
+    best_global_E = float('inf')
+
+    # Phase 1: Multi-start Greedy Insertion
+    for restart in range(greedy_restarts):
+        L = base_L.copy()
+        pos = {node: i for i, node in enumerate(L)}
+        
+        for pass_idx in range(greedy_passes):
+            changed = False
+            nodes = L.copy()
+            random.shuffle(nodes)
+            
+            for v in nodes:
+                curr = pos[v]
+                min_idx = max((pos[p] for p in preds[v]), default=-1) + 1
+                max_idx = min((pos[s] for s in succs[v]), default=len(L)) - 1
+                
+                best_j = curr
+                min_delta = 0
+                
+                current_delta = 0
+                for j in range(curr - 1, min_idx - 1, -1):
+                    current_delta += D[L[j]] - D[v]
+                    if current_delta < min_delta:
+                        min_delta = current_delta
+                        best_j = j
+                        
+                current_delta = 0
+                for j in range(curr + 1, max_idx + 1):
+                    current_delta += D[v] - D[L[j]]
+                    if current_delta < min_delta:
+                        min_delta = current_delta
+                        best_j = j
+                        
+                if best_j != curr:
+                    changed = True
+                    L.pop(curr)
+                    L.insert(best_j, v)
+                    
+                    if best_j < curr:
+                        for i in range(best_j, curr + 1):
+                            pos[L[i]] = i
+                    else:
+                        for i in range(curr, best_j + 1):
+                            pos[L[i]] = i
+                            
+            if not changed:
+                break
+                
+        final_E = compute_energy(L)
+        if final_E < best_global_E:
+            best_global_E = final_E
+            best_global_L = L
+
+    # Phase 2: Simulated Annealing Polishing (O(1) state transitions)
+    L = best_global_L.copy()
+    current_energy = best_global_E
+    edges = set(dag.edges())
+    temp = 2.0
+    cooling_rate = (0.01 / temp) ** (1.0 / sa_steps) if sa_steps > 0 else 0.99
+    
+    for step in range(sa_steps):
+        i = random.randint(0, len(L) - 2)
+        v = L[i]
+        w = L[i+1]
+        
+        if (v, w) in edges:
+            continue
+            
+        delta = D[v] - D[w]
+        
+        if delta < 0 or random.random() < math.exp(-delta / max(temp, 1e-5)):
+            L[i], L[i+1] = w, v
+            current_energy += delta
+            if current_energy < best_global_E:
+                best_global_E = current_energy
+                best_global_L = L.copy()
+                
+        temp *= cooling_rate
+
+    return best_global_L
+
+
+def _exact_topological_optimization(dag: nx.DiGraph, max_time_seconds: float = 15.0) -> list:
+    """
+    Finds the mathematically optimal topological ordering that minimizes 
+    active qubit lifetimes using Constraint Programming (OR-Tools CP-SAT).
+    """
+    try:
+        from ortools.sat.python import cp_model
+    except ImportError:
+        raise ImportError("ortools is required for exact optimization. Run `pip install ortools`.")
+        
+    L = list(nx.topological_sort(dag))
+    if len(L) < 2:
+        return L
+        
+    D = _compute_D_weights(dag)
+        
+    model = cp_model.CpModel()
+    N = len(L)
+    
+    pos = {n: model.NewIntVar(0, N - 1, f"pos_{n}") for n in L}
+    
+    model.AddAllDifferent(pos.values())
+    
+    for u, v in dag.edges():
+        model.Add(pos[u] < pos[v])
+        
+    objective_expr = sum(pos[n] * D[n] for n in L if D[n] != 0)
+    model.Minimize(objective_expr)
+    
+    solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = max_time_seconds
+    
+    # Provide the hybrid solver's solution as a hint to accelerate the search
+    hint_L = _hybrid_topological_optimization(dag)
+    for i, n in enumerate(hint_L):
+        model.AddHint(pos[n], i)
+    
+    status = solver.Solve(model)
+    
+    if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        return sorted(L, key=lambda n: solver.Value(pos[n]))
+        
+    return hint_L
+
+
+def dag_to_circuit(dag: nx.DiGraph, heuristic: str | None = "exact") -> tuple[stim.Circuit, dict[int, int]]:
     """
     Converts a circuit dependency DAG back into a Stim circuit and a measurement map.
     Extraction MUST be done in topological order to respect causality constraints.
+    heuristic options:
+      - None or 'none': standard topological sort
+      - 'greedy': standard greedy insertion (single pass, deterministic)
+      - 'hybrid': greedy multi-start + simulated annealing
+      - 'exact': exact optimization using OR-Tools CP-SAT
     """
     circuit = stim.Circuit()
     measurement_map: dict[int, int] = {}
     next_measurement_index = 0
 
+    if heuristic is None or heuristic == "none":
+        sorted_nodes = list(nx.topological_sort(dag))
+    elif heuristic == "greedy":
+        sorted_nodes = _greedy_topological_insertion(dag)
+    elif heuristic == "hybrid":
+        sorted_nodes = _hybrid_topological_optimization(dag)
+    elif heuristic == "exact":
+        sorted_nodes = _exact_topological_optimization(dag)
+    else:
+        raise ValueError(f"Unknown heuristic: {heuristic}")
+
     # Ensure operations are ordered correctly respecting the DAG's causal flow
-    for node in nx.topological_sort(dag):
+    for node in sorted_nodes:
         data = dag.nodes[node]
         op_name = data.get("op_name")
         targets = data.get("targets")

@@ -33,13 +33,13 @@ def col_reduced_cat_at_origin(H: np.ndarray, d: int, max_col_ops: int = 0, max_b
     return circ
 
 
-def row_optimized_cat_at_origin(H: np.ndarray, d: int, max_basis_tries: int = 10_000, analyze_hook_errors=False, routing_heuristic="critical_path_first"):
+def row_optimized_cat_at_origin(H: np.ndarray, d: int, basis="Z", max_basis_tries: int = 10_000, analyze_hook_errors=False, routing_heuristic="critical_path_first", is_perfect_code=False):
     t = (d - 1) // 2
     best_row_op_cost, matrix_after_row_ops = row_optimize_matrix(H, t, max_basis_tries)
-    return cat_at_origin(matrix_after_row_ops, d, analyze_hook_errors=analyze_hook_errors, routing_heuristic=routing_heuristic)
+    return cat_at_origin(matrix_after_row_ops, d, basis=basis, analyze_hook_errors=analyze_hook_errors, routing_heuristic=routing_heuristic, is_perfect_code=is_perfect_code)
 
 
-def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False, basis="Z", analyze_hook_errors=False, routing_heuristic="critical_path_first", hook_results=None) -> stim.Circuit:
+def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False, basis="Z", analyze_hook_errors=False, routing_heuristic="critical_path_first", hook_results=None, is_perfect_code=False) -> stim.Circuit:
     if not has_unique_ones_property(H):
         raise ValueError(f"H is not representing a bipartite graph state.")
 
@@ -88,8 +88,10 @@ def cat_at_origin(H: np.ndarray, d: int, draw_solutions=False, basis="Z", analyz
     x_spiders = [list(map(len, p)) for p in x_splits]
     z_spiders = np.sum(H, axis=1)
 
+    x_t = t - 1 if is_perfect_code else t
+
     z_data = [well_ordered_ft_cat_state_data(zs, t) for zs in z_spiders]
-    x_data = [well_ordered_composite_cat_state_data(xs, t) for xs in x_spiders]
+    x_data = [well_ordered_composite_cat_state_data(xs, x_t) for xs in x_spiders]
     z_graphs, x_graphs, z_trees, x_trees, z_mains, x_mains = [], [], [], [], [], []
     z_digraphs, x_digraphs = [], []
     z_candidates, x_candidates = [], []
@@ -448,9 +450,13 @@ if __name__ == "__main__":
     #     H_x=H_x, H_z=H_z, L_x=L_x, L_z=L_z, d=d,
     #     max_col_ops=max_col_ops, verbose=True
     # )
+    basis = "X" if code in ("49_1_5", "95_1_7") else "Z"
+    if basis == "X":
+        H_x, H_z = H_z, H_x
+        L_x, L_z = L_z, L_x
 
     final_circ = row_optimized_cat_at_origin(
-        H=H_x, d=d, analyze_hook_errors=True, routing_heuristic="critical_path_first"
+        H=H_x, d=d, basis=basis, analyze_hook_errors=True, routing_heuristic="critical_path_first"
     )
 
     print("\n--- Final Fault Tolerant Verification Circuit ---")

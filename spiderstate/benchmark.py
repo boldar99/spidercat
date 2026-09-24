@@ -92,12 +92,15 @@ def benchmark_CAO_state_prep(code: str, analyze_hook_errors:bool, reuse_strategi
         is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code, "FAO")
     except FileNotFoundError:
         is_self_dual, H_x, H_z, L_x, L_z, d = load_qecc(code)
-    if code in ("49_1_5", "95_1_7"):
+
+    basis = "X" if code in ("15_1_3", "49_1_5", "95_1_7") else "Z"
+    if basis == "X":
         print(f"State: |+> (Code {code})")
         H_x, H_z = H_z, H_x
         L_x, L_z = L_z, L_x
     else:
         print(f"State: |0> (Code {code})")
+    is_perfect_code = code in ("7_1_3", "23_1_7")
 
     num_samples = num_samples_fn(d)
     n_data = H_x.shape[1]
@@ -119,14 +122,20 @@ def benchmark_CAO_state_prep(code: str, analyze_hook_errors:bool, reuse_strategi
 
     t = (d - 1) // 2
     best_row_op_cost, matrix_after_row_ops = row_optimize_matrix(H_x, t, max_basis_tries=10_000)
-    hook_results = characterize_stabilizer_splits(get_conj_M(matrix_after_row_ops)) if analyze_hook_errors else None
+    hook_results = None
+    if analyze_hook_errors:
+        hook_results = characterize_stabilizer_splits(get_conj_M(matrix_after_row_ops))
 
     for routing_heuristic in routing_heuristics:
         # Re-seed per heuristic to ensure deterministic baseline comparisons
         random.seed(seed_val)
         np.random.seed(seed_val)
 
-        original_circ = cat_at_origin(matrix_after_row_ops, d, analyze_hook_errors=analyze_hook_errors, routing_heuristic=routing_heuristic, hook_results=hook_results)
+        original_circ = cat_at_origin(
+            matrix_after_row_ops, d, basis=basis,
+            analyze_hook_errors=analyze_hook_errors, routing_heuristic=routing_heuristic,
+            hook_results=hook_results, is_perfect_code=is_perfect_code
+        )
 
         for reuse_strategy in reuse_strategies:
             dag = build_circuit_dag(original_circ)
@@ -136,7 +145,7 @@ def benchmark_CAO_state_prep(code: str, analyze_hook_errors:bool, reuse_strategi
 
             noisy_circ, _ = make_stim_circ_noisy(circ_with_reuse, p, one_cnot_per_layer=True)
 
-            noisy_circ.append("M", range(H_x.shape[1]))
+            noisy_circ.append("M" + basis, range(H_x.shape[1]))
 
             for i, H in enumerate(H_z):
                 qubit_indices = np.where(H == 1)[0]
@@ -182,7 +191,7 @@ def benchmark_CAO_state_prep(code: str, analyze_hook_errors:bool, reuse_strategi
 
             if remaining_samples > 0:
                 if estimate_ler and decoder is None:
-                    decoder = LutDecoder(H_z, max_decodable_weight=max_weight)
+                    decoder = LutDecoder(H_z, max_decodable_weight=max_weight, verbose=True)
                     _G_DECODER = decoder
 
                 batch_size = 1_000_000
@@ -296,9 +305,10 @@ def benchmark_simple_codes():
     strategies = [
         PureAggressiveStrategy(),
         DepthPreservingStrategy(),
+        # NoReuseStrategy()
     ]
     heuristics = ["sa_sequence_distance", "earliest_start_first", "active_spider_first", "critical_path_first"]
-    return benchmark(FAO_simp_QECCS(), True, strategies, heuristics, 0.001, num_samples=lambda d: 100_000_000, estimate_ler=True)
+    return benchmark(FAO_simp_QECCS(), True, strategies, heuristics, 0.001, num_samples=lambda d: (50_000_000 if d < 5 else 100_000_000) if d < 6 else 100_000_000, estimate_ler=True)
 
 
 def benchmark_hard_codes():
@@ -320,6 +330,6 @@ def benchmark_very_hard_codes():
 
 
 if __name__ == "__main__":
-    benchmark_simple_codes()
-    # benchmark_hard_codes()
-    # benchmark_very_hard_codes()
+    # benchmark_simple_codes()
+    benchmark_hard_codes()
+    benchmark_very_hard_codes()
