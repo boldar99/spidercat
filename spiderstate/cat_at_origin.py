@@ -347,7 +347,7 @@ def _evaluate_configuration(
             circ, ver_z_stabs_layers, ticks_z, violations_z, num_qubits, 0, "X", "Z", verbose
         )
         circ = _synthesize_verification_layer(
-            circ, ver_x_stabs_layers, ticks_x, violations_x, num_qubits, t, "Z", "X", verbose
+            circ, ver_x_stabs_layers, ticks_x, violations_x, num_qubits, 0, "Z", "X", verbose
         )
     else:
         circ = _synthesize_verification_layer(
@@ -401,6 +401,7 @@ def cat_at_origin_with_verification(
             stabs_X=stabs_z, stabs_Z=stabs_x,  # stabs_X expects X-type, stabs_Z expects Z-type
             H_reduce_X=H_reduce_x, H_reduce_Z=H_reduce_z, heuristic=heuristic
         )
+        print(row_M, final_M, col_ops)
         
         m_tup = tuple(final_M.flatten())
         if m_tup not in unique_matrices:

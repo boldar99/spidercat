@@ -124,14 +124,14 @@ def optimize_fault_tolerant_matrix(
     H_x: np.ndarray = None,
     H_z: np.ndarray = None,
     max_basis_tries: int = 5000,
-    beam_width: int = 5,
+    beam_width: int = 25,
     return_portfolio: bool = False,
     stabs_X: np.ndarray = None,
     stabs_Z: np.ndarray = None,
     H_reduce_X: np.ndarray = None,
     H_reduce_Z: np.ndarray = None,
     heuristic: str = "overlap",
-    patience: int = 10
+    patience: int = 100
 ):
     """
     Returns:
@@ -155,8 +155,8 @@ def optimize_fault_tolerant_matrix(
     if stabs_Z is not None:
         candidate_stabs_Z = _generate_candidate_stabilizers(stabs_Z, 0)
         
-    costs_X = np.array([se_cnot_cost(w, t) for w in np.sum(candidate_stabs_X, axis=1)]) if candidate_stabs_X is not None else None
-    costs_Z = np.array([se_cnot_cost(w, t) for w in np.sum(candidate_stabs_Z, axis=1)]) if candidate_stabs_Z is not None else None
+    costs_X = np.array([se_cnot_cost(w, 0) for w in np.sum(candidate_stabs_X, axis=1)]) if candidate_stabs_X is not None else None
+    costs_Z = np.array([se_cnot_cost(w, 0) for w in np.sum(candidate_stabs_Z, axis=1)]) if candidate_stabs_Z is not None else None
 
     base_tracker = TrueBackwardTracker(
         t, candidate_stabs_X, candidate_stabs_Z, H_reduce_X, H_reduce_Z, costs_X, costs_Z, heuristic=heuristic
