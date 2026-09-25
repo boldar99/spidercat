@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
-from mypy.checkexpr import defaultdict
+from collections import defaultdict
 from networkx.utils import UnionFind
 
 from spidercat.draw import draw_spanning_forest_solution
@@ -271,6 +271,102 @@ def find_min_height_roots(forest: nx.Graph) -> dict[int, int]:
     return ideal_roots
 
 
+def find_min_height_root_edges(forest: nx.Graph) -> dict[int, tuple[int, int]]:
+    """
+    Identifies the ideal edge to insert a root into for each component to minimize height.
+
+    Args:
+        forest: The forest graph containing one or more trees.
+
+    Returns:
+        dict: {Tree_ID: Ideal_Root_Edge}
+    """
+    ideal_edges = {}
+
+    for component in nx.connected_components(forest):
+        tree = forest.subgraph(component)
+        if tree.number_of_edges() == 0:
+            continue
+
+        best_edge = None
+        min_ecc = float('inf')
+
+        for u, v in tree.edges():
+            tree_without_edge = tree.copy()
+            tree_without_edge.remove_edge(u, v)
+            comp_u = nx.node_connected_component(tree_without_edge, u)
+            comp_v = nx.node_connected_component(tree_without_edge, v)
+
+            ecc_u = nx.eccentricity(tree_without_edge.subgraph(comp_u), u) if len(comp_u) > 1 else 0
+            ecc_v = nx.eccentricity(tree_without_edge.subgraph(comp_v), v) if len(comp_v) > 1 else 0
+
+            ecc = max(ecc_u, ecc_v) + 1
+            if ecc < min_ecc:
+                min_ecc = ecc
+                best_edge = (u, v)
+
+        tree_id = min(component)
+        ideal_edges[tree_id] = best_edge
+
+    return ideal_edges
+
+import networkx as nx
+from collections import deque
+
+
+def find_min_height_degree_k_roots(graph: nx.Graph, degree=3) -> dict[int, int]:
+    """
+    Identifies the ideal degree-k root for each component to minimize height.
+
+    Args:
+        graph: A graph containing nodes of primarily degree 2 and k.
+
+    Returns:
+        dict: {Component_ID: Ideal_Degree_k_Root_Node}
+    """
+    ideal_roots = {}
+
+    for component in nx.connected_components(graph):
+        subgraph = graph.subgraph(component)
+        centers = nx.center(subgraph)
+
+        # 1. Prefer centers that are ALREADY degree 3
+        deg_k_centers = [node for node in centers if subgraph.degree[node] == degree]
+
+        if deg_k_centers:
+            # Tie-breaker: lowest ID among valid degree 3 centers
+            best_root = min(deg_k_centers)
+        else:
+            # 2. If the center is degree 2, find the nearest degree 3 node.
+            # We use BFS in case there are chains of degree 2 nodes.
+            best_center = min(centers)
+            best_root = None
+
+            queue = deque([best_center])
+            visited = {best_center}
+
+            while queue:
+                current = queue.popleft()
+
+                # Found the closest degree 3 node
+                if subgraph.degree[current] == degree:
+                    best_root = current
+                    break
+
+                for neighbor in subgraph.neighbors(current):
+                    if neighbor not in visited:
+                        visited.add(neighbor)
+                        queue.append(neighbor)
+
+            # 3. Ultimate fallback: If the component is a pure cycle (only degree 2s),
+            # it has no degree k nodes. We must return the degree 2 center.
+            if best_root is None:
+                best_root = best_center
+
+        component_id = min(component)
+        ideal_roots[component_id] = best_root
+
+    return ideal_roots
 
 
 if __name__ == "__main__":

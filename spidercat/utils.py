@@ -83,6 +83,65 @@ def flatten(ls: list) -> list:
     return list(itertools.chain(*ls))
 
 
+def implement_CNOT_circuit(cnots, num_qubits, p_2, p_mem):
+    circ = stim.Circuit()
+    all_qubits = set(range(num_qubits + 1))
+    free_qubits = all_qubits.copy()
+    for c, n in cnots:
+        if c in free_qubits and n in free_qubits:
+            free_qubits -= {c, n}
+        else:
+            if p_mem > 0:
+                circ.append("DEPOLARIZE1", free_qubits, p_mem)
+                circ.append("TICK")
+                free_qubits = all_qubits.copy() - {c, n}
+        circ.append("CNOT", [c, n])
+
+        if p_2 > 0 and not c.is_measurement_record_target:
+            circ.append("DEPOLARIZE2", [c, n], p_2)
+    if p_mem > 0:
+        circ.append("Z_ERROR", free_qubits, p_mem)
+    return circ
+
+
+def make_stim_circ_noisy(circ: stim.Circuit, p_1=0., p_2=0., p_mem=0., p_meas=0., p_init=0.) -> stim.Circuit:
+    noisy_circ = stim.Circuit()
+    num_qubits = circ.num_qubits
+
+    if p_init > 0:
+        noisy_circ.append("DEPOLARIZE1", range(num_qubits), p_init)
+
+    for instruction in circ:
+        gate_name = instruction.name
+        targets = instruction.targets_copy()
+
+        if gate_name in ("CNOT", "CX", "CZ", "SWAP"):
+            split_targets = [
+                (targets[i], targets[i+1])
+                for i in range(0, len(targets), 2)
+            ]
+            noisy_circ += implement_CNOT_circuit(split_targets, num_qubits, p_2, p_mem)
+
+        elif gate_name in ("H", "X", "Y", "Z", "I"):
+            noisy_circ.append(gate_name, targets)
+            if p_1 > 0:
+                noisy_circ.append("DEPOLARIZE1", targets, p_1)
+
+        elif gate_name in ("M", "MZ", "MR", "R", "RX", "RY"):
+            if gate_name in ("M", "MZ", "MR") and p_meas > 0:
+                noisy_circ.append("DEPOLARIZE1", targets, p_meas)
+
+            noisy_circ.append(gate_name, targets)
+
+            if gate_name in ("R", "RX", "RY", "MR") and p_init > 0:
+                noisy_circ.append("DEPOLARIZE1", targets, p_init)
+
+        else:
+            noisy_circ.append(gate_name, targets, instruction.gate_args_copy())
+
+    return noisy_circ
+
+
 def offset_circuit_by(circ: stim.Circuit, offset: int) -> stim.Circuit:
     new_circ = stim.Circuit()
     for op in circ:
