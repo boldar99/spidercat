@@ -649,67 +649,6 @@ def extract_from_expanded_graph(G_exp, F_exp, roots, dependency_graph=None, verb
     return extractor.extract(G_exp, F_exp, roots, dependency_graph)
 
 
-def implement_CNOT_circuit(cnots, num_qubits, p_2, p_mem):
-    circ = stim.Circuit()
-    all_qubits = set(range(num_qubits + 1))
-    free_qubits = all_qubits.copy()
-    for c, n in cnots:
-        if c in free_qubits and n in free_qubits:
-            free_qubits -= {c, n}
-        else:
-            if p_mem > 0:
-                circ.append("DEPOLARIZE1", free_qubits, p_mem)
-                circ.append("TICK")
-                free_qubits = all_qubits.copy() - {c, n}
-        circ.append("CNOT", [c, n])
-
-        if p_2 > 0 and not c.is_measurement_record_target:
-            circ.append("DEPOLARIZE2", [c, n], p_2)
-    if p_mem > 0:
-        circ.append("Z_ERROR", free_qubits, p_mem)
-    return circ
-
-
-
-
-def make_stim_circ_noisy(circ: stim.Circuit, p_1=0., p_2=0., p_mem=0., p_meas=0., p_init=0.) -> stim.Circuit:
-    noisy_circ = stim.Circuit()
-    num_qubits = circ.num_qubits
-
-    if p_init > 0:
-        noisy_circ.append("DEPOLARIZE1", range(num_qubits), p_init)
-
-    for instruction in circ:
-        gate_name = instruction.name
-        targets = instruction.targets_copy()
-
-        if gate_name in ("CNOT", "CX", "CZ", "SWAP"):
-            split_targets = [
-                (targets[i], targets[i+1])
-                for i in range(0, len(targets), 2)
-            ]
-            noisy_circ += implement_CNOT_circuit(split_targets, num_qubits, p_2, p_mem)
-
-        elif gate_name in ("H", "X", "Y", "Z", "I"):
-            noisy_circ.append(gate_name, targets)
-            if p_1 > 0:
-                noisy_circ.append("DEPOLARIZE1", targets, p_1)
-
-        elif gate_name in ("M", "MZ", "MR", "R", "RX", "RY"):
-            if gate_name in ("M", "MZ", "MR") and p_meas > 0:
-                noisy_circ.append("DEPOLARIZE1", targets, p_meas)
-
-            noisy_circ.append(gate_name, targets)
-
-            if gate_name in ("R", "RX", "RY", "MR") and p_init > 0:
-                noisy_circ.append("DEPOLARIZE1", targets, p_init)
-
-        else:
-            noisy_circ.append(gate_name, targets, instruction.gate_args_copy())
-
-    return noisy_circ
-
-
 def unflagged_cat(n):
     circ = stim.Circuit()
     circ.append("H", 0)
@@ -742,59 +681,6 @@ def cat_state_6():
         M 7
         DETECTOR rec[-1]
     """)
-
-
-def find_mdst(G):
-    """
-    Finds the Absolute Center and Minimum Diameter Spanning Tree of an unweighted graph.
-    """
-    # 1. Compute All-Pairs Shortest Paths (APSP)/
-    # Using dictionary comprehension for $O(n^2)$ lookup efficiency
-    apsp = dict(nx.all_pairs_shortest_path_length(G))
-
-    min_radius = float('inf')
-    absolute_center = None
-    is_edge_center = False
-
-    # 2. Check all vertices for their eccentricity
-    for v in G.nodes():
-        eccentricity = max(apsp[v].values())
-        if eccentricity < min_radius:
-            min_radius = eccentricity
-            absolute_center = v
-            is_edge_center = False
-
-    # 3. Check all edge midpoints for their eccentricity
-    for u, v in G.edges():
-        # Distance from an edge midpoint to any node w is min(d(u,w), d(v,w)) + 0.5
-        edge_eccentricity = max(min(apsp[u][w], apsp[v][w]) + 0.5 for w in G.nodes())
-        if edge_eccentricity < min_radius:
-            min_radius = edge_eccentricity
-            absolute_center = (u, v)
-            is_edge_center = True
-
-    # 4. Construct the Spanning Tree
-    if not is_edge_center:
-        # If the center is a vertex, a simple BFS tree suffices
-        mdst = nx.bfs_tree(G, absolute_center).to_undirected()
-    else:
-        # If the center is on an edge, we subdivide the edge with a dummy node,
-        # run BFS from the dummy node, and then replace the dummy with the original edge.
-        u, v = absolute_center
-        G_temp = G.copy()
-        G_temp.remove_edge(u, v)
-        dummy_node = 'TEMP_CENTER'
-        G_temp.add_edge(u, dummy_node)
-        G_temp.add_edge(v, dummy_node)
-
-        mdst_temp = nx.bfs_tree(G_temp, dummy_node).to_undirected()
-
-        # Clean up the dummy node to restore the original graph structure in the tree
-        mdst_temp.remove_node(dummy_node)
-        mdst_temp.add_edge(u, v)
-        mdst = mdst_temp
-
-    return mdst, absolute_center, min_radius
 
 
 if __name__ == "__main__":

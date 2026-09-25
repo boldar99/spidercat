@@ -9,8 +9,7 @@ from joblib import Parallel, delayed
 from mypy.checkexpr import defaultdict
 from scipy.stats import norm
 
-from spidercat.circuit_extraction import make_stim_circ_noisy
-from spidercat.utils import qasm_to_stim
+from spidercat.utils import qasm_to_stim, make_stim_circ_noisy
 
 cwd = Path.cwd()
 

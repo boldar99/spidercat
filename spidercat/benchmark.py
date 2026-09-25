@@ -3,8 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import stim
 
-from spidercat.circuit_extraction import extract_circuit_rooted, make_stim_circ_noisy
+from spidercat.circuit_extraction import extract_circuit_rooted
 from spidercat.simulate import add_measurements, process_samples
+from spidercat.utils import make_stim_circ_noisy
 
 
 def benchmark_solution(
