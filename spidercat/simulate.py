@@ -11,7 +11,7 @@ from scipy.stats import norm
 
 from spidercat.utils import qasm_to_stim, make_stim_circ_noisy
 
-cwd = Path.cwd()
+cwd = Path(__file__).parent
 
 
 def init_data_folder():

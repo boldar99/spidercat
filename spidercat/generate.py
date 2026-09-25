@@ -27,8 +27,7 @@ from spidercat.utils import load_solution_triplet
 if typing.TYPE_CHECKING:
     import stim
 
-cwd = Path.cwd().joinpath("spidercat")
-cwd = Path.cwd()
+cwd = Path(__file__).parent
 
 
 def init_circuits_folder():

@@ -25,9 +25,11 @@ The core code for generating $\textsf{CAT}$ states is located in the `spidercat`
  - `graphs_circular.py`: Methods for generating solutions based on Hamiltonian graphs.
  - `graphs_random.py`: Implements the hill-climbing algorithm described in the paper to generate graphs with no non-local cuts.
  - `markings.py`: Methods to find valid markings for a given $t$ on a graph.
+ - `mdsf.py`: Algorithms for minimum degree/diameter spanning forests and approximate k-centers.
  - `nonlocal_cut.py`: A SAT-solver-based approach to quickly check for the presence of a non-local $t$-cut.
  - `path_cover.py`: An experimental method to extract circuits using path covers or Hamiltonian paths via SAT solvers.
  - `spanning_tree.py`: Functions for finding spanning trees and forests as described in the paper.
+ - `syndrome_measurement.py`: Methods to build and extract syndrome measurement circuits for fault-tolerant error correction.
  - `utils.py`: General utility functions.
 
 ### Scripts:
@@ -38,5 +40,12 @@ The core code for generating $\textsf{CAT}$ states is located in the `spidercat`
 ### Notebooks:
 Some demos and experimental ideas can be found in the `notebooks` folder:
  - `cat_state_density_lower_bound.ipynb`: Simple implementation of the lower bounds on the number of CNOTs and flags required to implement a $\textsf{CAT}$ state.
- - `circuit_extraction_demo.ipynb`: A demonstration of the circuit extraction process.
+ - `circ_to_dag.ipynb`: Converts circuits to DAG representations for analysis.
+ - `circuit_extract_demo.ipynb`: A demonstration of the circuit extraction process.
  - `decoding.ipynb`: A proof-of-concept implementation and test of decoding using Tesseract.
+ - `demo.ipynb`: General demonstration of the repository's capabilities.
+ - `estimate_logical_error_rate.ipynb`: Estimates logical error rates for extracted circuits.
+ - `random.ipynb`: Experiments with random graph constructions.
+ - `shor_syndrome_measurement.ipynb`: Explores Shor-style syndrome measurement.
+ - `syndrome_measurement.ipynb`: Demonstrates syndrome measurement techniques.
+ - `test_split_cat.ipynb`: Tests for splitting cat states.

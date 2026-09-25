@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spidercat"
+version = "0.1.0"
+description = "Optimal Fault-Tolerant Cat State Preparation"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pyzx",
+    "numpy~=2.2.6",
+    "scipy",
+    "matplotlib",
+    "networkx",
+    "pytket",
+    "python-sat",
+    "stim~=1.16.dev",
+    "joblib",
+    "seaborn",
+    "pandas",
+    "qiskit",
+    "sinter~=1.16.dev",
+    "galois",
+    "tesseract-decoder",
+]
+
+[project.urls]
+Homepage = "https://github.com/boldar99/spidercat"
+
+[tool.setuptools]
+packages = ["spidercat"]
