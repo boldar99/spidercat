@@ -6,8 +6,8 @@ import numpy as np
 import pyzx as zx
 import stim
 
-from spidercat.draw import draw_spanning_forest_solution, draw_forest_on_graph
-from spidercat.utils import ed, flatten
+from spidercat.draw import draw_spanning_forest_solution
+from spidercat.utils import ed
 
 
 class CircuitBuilder(ABC):
@@ -18,12 +18,12 @@ class CircuitBuilder(ABC):
     def add_cnot(self, control, target): pass
 
     @abstractmethod
-    def init_ancilla(self, qubit, basis):
+    def init_ancilla(self, qubit):
         """Inits ancilla and applies H for your specific extraction logic."""
         pass
 
     @abstractmethod
-    def post_select(self, qubit, basis):
+    def post_select(self, qubit):
         """Applies H and post-selects (or measures) for your logic."""
         pass
 
@@ -46,12 +46,6 @@ class CircuitBuilder(ABC):
     @abstractmethod
     def get_circuit(self): pass
 
-    @abstractmethod
-    def permute_qubits(self, qubit_to_qubit_mapping: dict[int, int]): pass
-
-    @abstractmethod
-    def tick(self): pass
-
 
 class PyZXBuilder(CircuitBuilder):
     def __init__(self):
@@ -61,20 +55,15 @@ class PyZXBuilder(CircuitBuilder):
 
     def add_cnot(self, c, t): self.circ.add_gate("CNOT", c, t)
 
-    def init_ancilla(self, q, basis):
-        if basis == "X":
-            self.circ.add_gate("H", q)
+    def init_ancilla(self, q):
         self.circ.add_gate("InitAncilla", q)
         self.add_h(q)
 
-    def post_select(self, q, basis):
-        if basis == "Z":
-            self.add_h(q)
+    def post_select(self, q):
+        self.add_h(q)
         self.circ.add_gate("PostSelect", q)
 
     def get_circuit(self): return self.circ
-
-    def tick(self): pass
 
 
 class StimBuilder(CircuitBuilder):
@@ -88,18 +77,13 @@ class StimBuilder(CircuitBuilder):
     def add_cnot(self, c, t):
         self.circ.append("CNOT", [c, t])
 
-    def init_ancilla(self, q, basis):
-        if basis == "X":
-            self.circ.append("RX", [q])
-        else:
-            self.circ.append("R", [q])
+    def init_ancilla(self, q):
+        # self.circ.append("R", [q])
+        pass
 
-    def post_select(self, q, basis):
+    def post_select(self, q):
         """Performs MR and returns the absolute index of this measurement."""
-        if basis == "X":
-            self.circ.append("MX", [q])
-        else:
-            self.circ.append("M", [q])
+        self.circ.append("M", [q])
         idx = self.meas_count
         self.meas_count += 1
         return idx
@@ -123,28 +107,12 @@ class StimBuilder(CircuitBuilder):
     def get_circuit(self):
         return self.circ
 
-    def permute_qubits(self, qubit_to_qubit_mapping: dict[int, int]) -> stim.Circuit:
-        new_circ = stim.Circuit()
-        for op in self.circ:
-            new_targets = []
-            for t in op.targets_copy():
-                if t.is_qubit_target:
-                    new_targets.append(qubit_to_qubit_mapping.get(t.value, t.value))
-                else:
-                    new_targets.append(t)
-            new_circ.append(op.name, new_targets, op.gate_args_copy())
-        self.circ = new_circ
-
-    def tick(self):
-        self.circ.append("TICK", [])
-
 
 def expand_graph_and_forest(
         graph: nx.Graph,
         forest: nx.Graph,
         markings: dict[tuple[int, int], int],
-        matchings: dict[int, list[tuple[int, int]]],
-        expand_flags: bool = True
+        matchings: dict[int, list[tuple[int, int]]]
 ) -> tuple[nx.Graph, nx.Graph]:
 
     G_new = graph.copy()
@@ -160,11 +128,7 @@ def expand_graph_and_forest(
     edge_diff = graph_edges - forest_edges
 
     marked_edges = {tuple(sorted(e)): c for e, c in markings.items() if c > 0}
-    if expand_flags:
-        flagged_edges = {edge: 1 for edge in edge_diff if edge not in marked_edges}
-    else:
-        flagged_edges = {}
-
+    flagged_edges = {edge: 1 for edge in edge_diff if edge not in marked_edges}
 
     def expand_edge(edge, count, is_mark):
         u, v = edge
@@ -189,105 +153,24 @@ def expand_graph_and_forest(
         edges_to_add = [(path[i], path[i+1]) for i in range(len(path)-1)]
         G_new.add_edges_from(edges_to_add)
 
-        if is_mark:
-            u_count = edge_to_matches.get(tuple(sorted(edge)), []).count(u)
-            v_count = edge_to_matches.get(tuple(sorted(edge)), []).count(v)
-            if is_forest_edge:
-                F_new.add_edges_from(edges_to_add)
-            elif not matchings:
-                pass
-            else:
-                u_edges = edges_to_add[:u_count]
-                v_edges = edges_to_add[len(edges_to_add) - v_count:] if v_count > 0 else []
-                F_new.add_edges_from(u_edges + v_edges)
+        if is_forest_edge:
+            F_new.add_edges_from(edges_to_add)
         else:
-            if is_forest_edge:
-                F_new.add_edges_from(edges_to_add)
-            else:
-                # CROSS-LINK LOGIC: Drop exactly one edge to form the gap
-                u_count = edge_to_matches.get(tuple(sorted(edge)), []).count(u)
-                gap_idx = min(u_count, count)
-                for i, step_edge in enumerate(edges_to_add):
-                    if i != gap_idx:
-                        F_new.add_edge(*step_edge)
+            # CROSS-LINK LOGIC: Drop exactly one edge to form the gap
+            u_count = edge_to_matches.get(tuple(sorted(edge)), []).count(u)
+
+            # The gap is placed immediately after u's claimed domain.
+            # (If u_count > count, cap it to prevent out-of-bounds)
+            gap_idx = min(u_count, count)
+
+            for i, step_edge in enumerate(edges_to_add):
+                if i != gap_idx:
+                    F_new.add_edge(*step_edge)
 
     for edge, count in marked_edges.items(): expand_edge(edge, count, is_mark=True)
     for edge, count in flagged_edges.items(): expand_edge(edge, count, is_mark=False)
 
     return G_new, F_new
-
-
-def resolve_dag_by_removing_missing_link(di_graph: nx.DiGraph) -> tuple[bool, list[tuple], nx.DiGraph | None]:
-    """
-    Tests if a directed graph can be made acyclic by removing exactly one 'missing_link'.
-
-    Returns:
-        is_possible (bool): True if at least one solution exists.
-        valid_edges (list): A list of all specific (u, v) missing_link edges that work.
-        resolved_dag (nx.DiGraph): A copy of the graph with the FIRST valid edge removed.
-    """
-    # Base Case: Is it already a DAG?
-    if nx.is_directed_acyclic_graph(di_graph):
-        return True, [], di_graph.copy()
-
-    valid_edges_to_remove = []
-    resolved_dag = None
-
-    # Filter for ONLY the cycle-closure edges
-    missing_links = [(u, v, data) for u, v, data in di_graph.edges(data=True)
-                     if data.get('edge_type') == 'missing_link']
-
-    for u, v, data in missing_links:
-        # Temporarily drop the syndrome extraction link
-        di_graph.remove_edge(u, v)
-
-        if nx.is_directed_acyclic_graph(di_graph):
-            valid_edges_to_remove.append((u, v))
-
-            # Capture the state of the graph on the very first success
-            if resolved_dag is None:
-                resolved_dag = di_graph.copy()
-
-        # Put the edge back to test the next candidate cleanly
-        di_graph.add_edge(u, v, **data)
-
-    return len(valid_edges_to_remove) > 0, valid_edges_to_remove, resolved_dag
-
-
-def build_traversal_digraph(G: nx.Graph, F: nx.Graph, root) -> nx.DiGraph:
-    """
-    Builds a directed graph representing the tree hierarchy,
-    adding directed edges (l -> t) for missing cycle-closure edges.
-    """
-    di_graph = nx.DiGraph()
-    for node, data in G.nodes(data=True):
-        di_graph.add_node(node, **data)
-
-    queue = [root]
-    visited = {root}
-
-    while queue:
-        current = queue.pop(0)
-
-        # 1. Standard Tree Traversal (Parent -> Child)
-        for neighbor in F.neighbors(current):
-            if neighbor not in visited:
-                visited.add(neighbor)
-                queue.append(neighbor)
-                # Label the edge type for visualization
-                di_graph.add_edge(current, neighbor, edge_type='tree')
-
-        # 2. Cycle Closure Jumps (Leaf -> Target)
-        # A leaf in the forest has degree 1. We ignore the root if it happens to be degree 1.
-        if F.degree(current) == 1 and current != root:
-            # Find all neighbors in the base graph G that are NOT connected in F
-            missing_neighbors = [n for n in G.neighbors(current) if not F.has_edge(current, n)]
-
-            # This safely handles cases where missing_neighbors is 0 (marked edges) or >1
-            for t in missing_neighbors:
-                di_graph.add_edge(current, t, edge_type='missing_link')
-
-    return di_graph
 
 
 # --- 2. The Main Extractor Class ---
@@ -297,22 +180,11 @@ class CatStateExtractor:
         self.verbose = verbose
 
         self.node_to_qubit = {}
-        # Maps an edge to the flag qubit that it corresponds to
-        self.edge_to_flag_qubit: dict[tuple[int, int], int] = {}
-        self.flag_spider_types: dict[int, str] = {}
+        self.edge_to_flag = {}
         self.tree_to_qubits = defaultdict(set)
-        self.node_to_tree = {}
+        self.tree_of_node = {}
         self.link_measurements = {}
-        self.flag_measurements = []
         self.depths = {}
-        self.branch_mark_values = {}
-        self.flag_distances = {}
-        self.data_flags = []
-
-        self.queue = []
-        self.processed = set()
-        self.processed_cnots = set()
-        self.primary_paths = {}
 
     def _get_new_data_qubit(self):
         q = self.next_data_idx; self.next_data_idx += 1; return q
@@ -337,282 +209,126 @@ class CatStateExtractor:
         self.depths[node] = min_d
         return min_d
 
-    def _compute_branch_marking_values(self, node, parent, G_new, F_new):
-        children = [neighbor for neighbor in F_new.neighbors(node) if neighbor != parent]
-
-        # Base case: If the node has no children, it is a leaf. Distance is 0.
-        children_mark_value = sum(self._compute_branch_marking_values(child, node, G_new, F_new) for child in children)
-        mark_value = int(G_new.nodes[node].get("is_mark", False))
-        self.branch_mark_values[node] = children_mark_value + mark_value
-        return children_mark_value + mark_value
-
-    def extract(self, G, F, roots, dependency_graph: nx.DiGraph | None = None, primary_paths: dict[int, list[int]] | None = None) -> stim.Circuit:
+    def extract(self, G_new, F_new, roots):
         if self.verbose: print("=== Starting Elegant Extraction (BFS) ===")
-        roots = roots if isinstance(roots, dict) else {i: r for i, r in enumerate(roots)}
-
-        N = len([v for v in G.nodes if G.nodes[v].get("is_mark", False)])
-        # num_data_flags = len([v for v in G.nodes if G.nodes[v].get("is_flag", False)])
-        num_data_flags = 0
 
         self.next_data_idx = 0
-        self.next_flag_idx = N + num_data_flags
-
-        self.node_order = dependency_graph and flatten([gen + ["TICK"] for gen in nx.topological_generations(dependency_graph)]) or []
+        self.next_flag_idx = len([v for v in G_new.nodes if G_new.nodes[v].get("is_mark", False)])
 
         for root in roots.values():
-            self._compute_depth(root, None, F)
-            self._compute_branch_marking_values(root, None, G, F)
-        self.primary_paths = {tree_id: ls[1:] for tree_id, ls in primary_paths.items()} if primary_paths is not None else {}
+            self._compute_depth(root, None, F_new)
 
         # PASS 1: Grow Trees Level-by-Level
-        self._grow_tree_bfs(roots, G, F)
+        for tree_id, root in roots.items():
+            self._grow_tree_bfs(root, tree_id, G_new, F_new)
 
         self._generate_detectors()
         self._generate_feedback()
         # PASS 2: Close Gaps
+        # self._close_gaps(G_new, F_new)
         return self.builder.get_circuit()
 
 
-    def _grow_tree_bfs(self, roots, G_new, F_new):
+    def _grow_tree_bfs(self, root_node, tree_id, G_new, F_new):
         # 1. INITIALIZE ROOT
-        self.init_roots(G_new, roots)
-        self.builder.tick()
+        is_flag = G_new.nodes[root_node].get("is_flag", False)
+        root_qubit = self._get_new_flag_qubit() if is_flag else self._get_new_data_qubit()
+        self.builder.init_ancilla(root_qubit)
+        self.builder.add_h(root_qubit)
 
-        while self.queue:
-            current_qubit, node, tree_id = self.pop_next_from_queue()
-            self.node_to_tree[node] = tree_id
+        self.node_to_qubit[root_node] = root_qubit
+        self.tree_to_qubits[tree_id].add(root_qubit)
+        self.tree_of_node[root_node] = tree_id
 
-            tree_children = [n for n in F_new.neighbors(node) if n not in self.node_to_qubit]
-            non_tree_children = [n for n in G_new.neighbors(node) if n not in F_new.neighbors(node)]
+        if self.verbose:
+            print(f"Init Root {root_node} (Tree {tree_id}) -> Q{root_qubit}")
+
+        # Queue stores: (node, current_qubit)
+        queue = [root_node]
+
+        while queue:
+            node = queue.pop(0)
+            current_qubit = self.node_to_qubit[node]
+            self.tree_of_node[node] = tree_id
+
+            children = [n for n in F_new.neighbors(node) if n not in self.node_to_qubit]
             is_mark = G_new.nodes[node].get("is_mark", False)
-            is_flag_node = G_new.nodes[node].get("is_flag", False)
+            is_flag = G_new.nodes[node].get("is_flag", False)
 
-            for child in non_tree_children:
-                edge = ed(node, child)
-                is_cnot_edge = G_new.edges[edge].get("edge_type", "") == "cnot"
-
-                if is_cnot_edge:
-                    self.process_cnot_edge(G_new, node, child, edge)
-                elif edge in self.edge_to_flag_qubit:
-                    self.close_flag(G_new, node, child, edge)
-                elif is_flag_node:
-                    self.take_role_of_flag(G_new, node, edge)
+            flag_children = [n for n in G_new.neighbors(node) if n not in F_new.neighbors(node)]
+            for child in flag_children:
+                edge = tuple(sorted((node, child)))
+                if edge in self.edge_to_flag:
+                    flag_qubit = self.edge_to_flag[edge]
+                    self.builder.add_cnot(current_qubit, flag_qubit)
+                    m_idx = self.builder.post_select(flag_qubit)
+                    t_u, t_v = self.tree_of_node[node], self.tree_of_node[child]
+                    self._record_meas(t_u, t_v, m_idx)
+                    if self.verbose:
+                        print(f"  Flag ({node}, {child}) finalised: CNOT Q{current_qubit} -> Q{flag_qubit}")
                 else:
-                    self.initialize_flag(G_new, F_new, node, child, edge)
+                    flag_qubit = self._get_new_flag_qubit()
+                    self.builder.add_cnot(current_qubit, flag_qubit)
+                    self.edge_to_flag[edge] = flag_qubit
+                    if self.verbose:
+                        print(f"  New flag initialised ({node}, {child}): CNOT Q{current_qubit} -> Q{flag_qubit}")
 
-            if is_flag_node:
-                assert not tree_children
-                continue
-
-            if not tree_children:
-                # assert is_mark
-                if self.verbose:
+            if not children:
+                if self.verbose and is_mark:
                     print(f"  Node {node} serves as a sink point for Q{current_qubit}")
                 continue
 
             if is_mark:
-                self.spawn_mark_cnot(G_new, node)
+                new_q = self._get_new_flag_qubit() if is_flag else self._get_new_data_qubit()
+                self.builder.init_ancilla(new_q)
+                self.builder.add_cnot(current_qubit, new_q)
+                self.tree_to_qubits[tree_id].add(new_q)
+                if self.verbose:
+                    print(f"  Mark on {node}: Spawned CNOT Q{current_qubit} -> Q{new_q}")
+                self.node_to_qubit[node] = new_q
+                current_qubit = new_q
 
-            primary, secondaries = self.split_primary_secondaries(tree_children)
+
+            # Sort children by depth to identify the primary branch
+            children.sort(key=lambda c: self.depths.get(c, 0), reverse=True)
+            primary = children[-1]
+            secondaries = children[:-1]
 
             # 3. SECONDARY CHILDREN (Spawn new qubits)
             for child in secondaries:
-                self.process_branching(G_new, node, child)
+                is_flag_child = G_new.nodes[child].get("is_flag", False)
 
-            # Gather all newly discovered nodes and their assigned qubits
-            new_nodes = [(tree_id, child, new_q) for child, new_q in
-                         zip(secondaries, [self.node_to_qubit[c] for c in secondaries])]
-            new_nodes.append((tree_id, primary, current_qubit))
-            self.queue += new_nodes
+                new_q = self._get_new_data_qubit()
+                self.builder.init_ancilla(new_q)
+                self.builder.add_cnot(current_qubit, new_q)
+
+                self.node_to_qubit[child] = new_q
+                self.tree_to_qubits[tree_id].add(new_q)
+                self.tree_of_node[child] = tree_id
+
+                if self.verbose:
+                    print(f"  Node {node} -> Branch {child}: Spawned CNOT Q{current_qubit} -> Q{new_q}")
+
+                queue.append(child)
 
             # 4. PRIMARY CHILD (Inherit current qubit)
-            self.node_to_tree[primary] = tree_id
             self.node_to_qubit[primary] = current_qubit
             self.tree_to_qubits[tree_id].add(current_qubit)
+            self.tree_of_node[primary] = tree_id
 
             if self.verbose:
                 print(f"  Node {node} -> Primary {primary} (Inherits Q{current_qubit})")
 
-            if (tree_id, primary, current_qubit) not in self.queue:
-                self.queue.append((tree_id, primary, current_qubit))
+            queue.append(primary)
 
-    def initialize_flag(self, G, F, node: int, child: int, edge: tuple[int, int]):
-        current_qubit = self.node_to_qubit[node]
-        spider_type = G.nodes[node].get("spider_type", "Z")
-        tree_id = self.node_to_tree[node]
-
-        flag_qubit = self._get_new_flag_qubit()
-        c, n = (current_qubit, flag_qubit) if spider_type == "Z" else (flag_qubit, current_qubit)
-        self.builder.init_ancilla(flag_qubit, spider_type)
-        self.builder.add_cnot(c, n)
-        self.flag_spider_types[flag_qubit] = spider_type
-
-        current = child
-        previous = node
-
-        while current is not None and F.degree(current) == 0:
-            assert G.nodes[current].get("is_mark")
-            new_q = self._get_new_data_qubit()
-            mark_spider_type = G.nodes[current].get("spider_type", "Z")
-
-            self.builder.init_ancilla(new_q, mark_spider_type)
-            c_mark, n_mark = (flag_qubit, new_q) if spider_type == "Z" else (new_q, flag_qubit)
-            self.builder.add_cnot(c_mark, n_mark)
-
-            self.tree_to_qubits[tree_id].add(new_q)
-            self.node_to_tree[current] = tree_id
-
-            if self.verbose:
-                print(f"  Uncovered Mark on {current}: Spawned CNOT Q{flag_qubit} -> Q{new_q}")
-
-            neighbors = [n for n in G.neighbors(current) if n != previous]
-            if not neighbors:
-                break
-            previous = current
-            current = neighbors[0]
-
-        final_edge = ed(previous, current)
-        self.edge_to_flag_qubit[final_edge] = flag_qubit
-        self.tree_to_qubits[tree_id].add(flag_qubit)
-
-        if self.verbose:
-            print(f"  New flag initialised {edge} -> ends at {final_edge}: CNOT Q{c} -> Q{n}")
-
-    def process_branching(self, G, node: int, child: int):
-        current_qubit = self.node_to_qubit[node]
-        spider_type = G.nodes[node].get("spider_type", "Z")
-        tree_id = self.node_to_tree[node]
-
-        if self.branch_mark_values[child] > 0:
-            new_q = self._get_new_data_qubit()
+    def _record_meas(self, t1, t2, m_idx):
+        if t1 == t2: self.builder.add_detector(m_idx)
         else:
-            new_q = self._get_new_flag_qubit()
-
-        self.builder.init_ancilla(new_q, spider_type)
-        c, n = (current_qubit, new_q) if spider_type == "Z" else (new_q, current_qubit)
-        self.builder.add_cnot(c, n)
-
-        self.node_to_qubit[child] = new_q
-        self.tree_to_qubits[tree_id].add(new_q)
-        self.node_to_tree[child] = tree_id
-
-        if self.verbose:
-            print(f"  Node {node} -> Branch {child}: Spawned CNOT Q{current_qubit} -> Q{new_q}")
-
-    def spawn_mark_cnot(self, G, node: int):
-        # new_q = self._get_new_flag_qubit() if is_flag_node else self._get_new_data_qubit()
-        current_qubit = self.node_to_qubit[node]
-        spider_type = G.nodes[node].get("spider_type", "Z")
-        tree_id = self.node_to_tree[node]
-
-        new_q = self._get_new_data_qubit()
-        self.builder.init_ancilla(new_q, spider_type)
-        c, n = (current_qubit, new_q) if spider_type == "Z" else (new_q, current_qubit)
-        self.builder.add_cnot(c, n)
-        self.tree_to_qubits[tree_id].add(new_q)
-        if self.verbose:
-            print(f"  Mark on {node}: Spawned CNOT Q{current_qubit} -> Q{new_q}")
-
-    def process_cnot_edge(self, G, current_node: int, other_node: int, edge: tuple[int, int]):
-        current_qubit = self.node_to_qubit[current_node]
-        other_qubit = self.node_to_qubit[other_node]
-        current_spider_type = G.nodes[current_node].get("spider_type", "Z")
-        other_spider_type = G.nodes[other_node].get("spider_type", "Z")
-        assert current_spider_type != other_spider_type
-
-        if edge in self.processed_cnots:
-            if self.verbose: print(f"  Skipping CNOT edge at {edge}")
-            return
-
-        c, n = (current_qubit, other_qubit) if current_spider_type == "Z" else (other_qubit, current_qubit)
-        self.builder.add_cnot(c, n)
-        self.processed_cnots.add(edge)
-        if self.verbose:
-            print(f"  Adding CNOT at {edge}: CNOT Q{c} -> Q{n}")
-
-    def take_role_of_flag(self, G, node: int, edge: tuple[int, int]):
-        current_qubit = self.node_to_qubit[node]
-        spider_type = G.nodes[node].get("spider_type", "Z")
-        self.edge_to_flag_qubit[edge] = current_qubit
-        self.flag_spider_types[current_qubit] = spider_type
-        self.data_flags.append(current_qubit)
-        if self.verbose:
-            print(f"  Node {node} assumes the role of a flag qubit for edge {edge} on Q{current_qubit}.")
-
-    def close_flag(self, G, current_node: int, other_node: int, edge: tuple[int, int]) -> None:
-        current_qubit = self.node_to_qubit[current_node]
-        flag_qubit = self.edge_to_flag_qubit[edge]
-        flag_spider_type = self.flag_spider_types[flag_qubit]
-
-        c, n = (current_qubit, flag_qubit) if flag_spider_type == "Z" else (flag_qubit, current_qubit)
-        self.builder.add_cnot(c, n)
-        m_idx = self.builder.post_select(flag_qubit, flag_spider_type)
-        self.flag_measurements.append((current_node, other_node, m_idx))
-        if self.verbose:
-            print(f"  Flag {edge} finalised: CNOT Q{c} -> Q{n}; PostSelect_{flag_spider_type} {flag_qubit}")
-
-    def pop_next_from_queue(self) -> tuple[int, int, int]:
-        if len(self.node_order) > 0:
-            node_to_process = self.node_order.pop(0)
-            if node_to_process == "TICK":
-                self.builder.tick()
-                node_to_process = self.node_order.pop(0)
-            pop_index = [i for i, (parent, n, _) in enumerate(self.queue) if n == node_to_process][0]
-        else:
-            pop_index = 0
-        tree_id, node, current_qubit = self.queue.pop(pop_index)
-        return current_qubit, node, tree_id
-
-    def init_roots(self, G_new, roots):
-        for tree_id, root_node in roots.items():
-            root_qubit = self._get_new_data_qubit()
-            spider_type = G_new.nodes[root_node].get("spider_type", "Z")
-            self.builder.init_ancilla(root_qubit, "X" if spider_type == "Z" else "Z")
-
-            self.node_to_qubit[root_node] = root_qubit
-            self.tree_to_qubits[tree_id].add(root_qubit)
-            self.node_to_tree[root_node] = tree_id
-
-            if self.verbose:
-                print(f"Init Root {root_node} (Tree {tree_id}) -> Q{root_qubit}")
-
-            self.queue.append((tree_id, root_node, root_qubit))
-            self.processed.add((tree_id, root_node, root_qubit))
-
-    def split_primary_secondaries(self, children: list[int]) -> tuple[int, list[int]]:
-        # Sort children by depth to identify the primary branch
-        if self.primary_paths:
-            for path in self.primary_paths.values():
-                if path and path[0] in children:
-                    primary = path.pop(0)
-                    secondaries = [c for c in children if c != primary]
-                    return primary, secondaries
-
-        children.sort(key=lambda c: self.depths.get(c, 0), reverse=False)
-        primary = children[-1]
-        secondaries = children[:-1]
-        return primary, secondaries
-
-    # def _record_meas(self, t1, t2, m_idx):
-    #     if t1 == t2: self.builder.add_detector(m_idx)
-    #     else:
-    #         k = tuple(sorted((t1, t2)))
-    #         self.link_measurements.setdefault(k, []).append(m_idx)
+            k = tuple(sorted((t1, t2)))
+            self.link_measurements.setdefault(k, []).append(m_idx)
 
     def _generate_detectors(self):
         if self.verbose: print("Generating Detectors...")
-
-        # 1. Process all stored flag measurements first
-        for current_node, other_node, m_idx in self.flag_measurements:
-            t1 = self.node_to_tree[current_node]
-            t2 = self.node_to_tree[other_node]
-            if t1 == t2:
-                self.builder.add_detector(m_idx)
-            else:
-                k = tuple(sorted((t1, t2)))
-                self.link_measurements.setdefault(k, []).append(m_idx)
-
-        # 2. Process cross-tree link measurements
         for indices in self.link_measurements.values():
             for i in range(len(indices)-1): self.builder.add_detector(indices[i], indices[i+1])
         meta = nx.Graph()
@@ -644,9 +360,54 @@ def extract_circuit_rooted(G, forest, roots, markings, matches, verbose=False) -
     return extractor.extract(G_exp, F_exp, roots)
 
 
-def extract_from_expanded_graph(G_exp, F_exp, roots, dependency_graph=None, verbose=False) -> stim.Circuit:
-    extractor = CatStateExtractor(StimBuilder(), verbose)
-    return extractor.extract(G_exp, F_exp, roots, dependency_graph)
+def implement_CNOT_circuit(cnots, num_qubits, p_2, p_mem):
+    circ = stim.Circuit()
+    all_qubits = range(num_qubits + 1)
+    for c, n in cnots:
+        circ.append("CNOT", [c, n])
+        if p_2 > 0 and not c.is_measurement_record_target:
+            circ.append("DEPOLARIZE2", [c, n], p_2)
+        if p_mem > 0:
+            circ.append("DEPOLARIZE1", all_qubits, p_mem)
+    return circ
+
+
+def make_stim_circ_noisy(circ: stim.Circuit, p_1=0., p_2=0., p_mem=0., p_meas=0., p_init=0.) -> stim.Circuit:
+    noisy_circ = stim.Circuit()
+    num_qubits = circ.num_qubits
+
+    if p_init > 0:
+        noisy_circ.append("DEPOLARIZE1", range(num_qubits), p_init)
+
+    for instruction in circ:
+        gate_name = instruction.name
+        targets = instruction.targets_copy()
+
+        if gate_name in ("CNOT", "CX", "CZ", "SWAP"):
+            split_targets = [
+                (targets[i], targets[i+1])
+                for i in range(0, len(targets), 2)
+            ]
+            noisy_circ += implement_CNOT_circuit(split_targets, num_qubits, p_2, p_mem)
+
+        elif gate_name in ("H", "X", "Y", "Z", "I"):
+            noisy_circ.append(gate_name, targets)
+            if p_1 > 0:
+                noisy_circ.append("DEPOLARIZE1", targets, p_1)
+
+        elif gate_name in ("M", "MZ", "MR", "R", "RX", "RY"):
+            if gate_name in ("M", "MZ", "MR") and p_meas > 0:
+                noisy_circ.append("DEPOLARIZE1", targets, p_meas)
+
+            noisy_circ.append(gate_name, targets)
+
+            if gate_name in ("R", "RX", "RY", "MR") and p_init > 0:
+                noisy_circ.append("DEPOLARIZE1", targets, p_init)
+
+        else:
+            noisy_circ.append(gate_name, targets)
+
+    return noisy_circ
 
 
 def unflagged_cat(n):
@@ -674,30 +435,17 @@ def one_flagged_cat(n):
 
 def cat_state_6():
     return stim.Circuit("""
-        H 0
-        CX 0 7 7 1 7 2 0 6 0 3 0 4 0 7 0 5 0 6
-        M 6
-        DETECTOR rec[-1]
-        M 7
-        DETECTOR rec[-1]
+        H 2
+        CNOT 2 3 2 1 2 4 2 0 2 5 2 6 2 1 2 7 2 0
+        M 0 1 
     """)
 
 
 if __name__ == "__main__":
     from spidercat.utils import load_solution_triplet
-    from spidercat.spanning_tree import match_forest_leaves_to_marked_edges, find_min_height_roots, \
-    find_min_height_degree_3_roots
-    from spidercat.mdsf import constrained_mdsf_generation
+    from spidercat.spanning_tree import find_min_height_roots, match_forest_leaves_to_marked_edges
 
-    N, t = 12, 4
-    grf, tree, M, matchings = load_solution_triplet(N, t, 1)
-    G_alt, _ = expand_graph_and_forest(grf, tree, M, matchings, expand_flags=False)
-    F_alt = constrained_mdsf_generation(G_alt, 1)
-    roots = find_min_height_degree_3_roots(tree)
-    draw_forest_on_graph(G_alt, F_alt)
-
-    D = build_traversal_digraph(G_alt, F_alt, roots[0])
-    _, _, dependency_graph = resolve_dag_by_removing_missing_link(D)
-
-    circ = extract_from_expanded_graph(G_alt, F_alt, roots, dependency_graph, verbose=True)
-    circ.diagram('timeline-svg')
+    grf, forest, M, matchings = load_solution_triplet(12, 2, 1)
+    roots = find_min_height_roots(forest)
+    draw_spanning_forest_solution(grf, forest, M, matchings, roots)
+    extract_circuit_rooted(grf, forest, roots, M, matchings, verbose=False)

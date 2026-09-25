@@ -8,10 +8,14 @@ import random
 import networkx as nx
 from typing import Dict, Tuple, Optional
 
-import pyzx as zx
-from fault_equivalent_rewrites import *
-from pyzx_rewrites import *
-from pyzx import VertexType
+try:
+    import pyzx as zx
+    from pyzx import VertexType
+    from pyzx.rewrite_rules import recursive_unfuse_FE
+except ModuleNotFoundError:
+    zx = None
+    VertexType = None
+    recursive_unfuse_FE = None
 
 
 def is_hidden(node) -> bool:
@@ -88,8 +92,67 @@ def split_directed_edges(
     return new_G, new_pos
 
 
+def generate_demo_graph(
+    N: int,
+    seed: Optional[int] = None,
+) -> Tuple[nx.Graph, Dict[int, Tuple[float, float]], Dict[int, str]]:
+    """
+    Generate an unrooted binary tree with N leaves.
+
+    Every internal node has degree 3, which matches the assumptions made by
+    the extraction logic below. This keeps the script runnable without the
+    previously imported rewrite helpers.
+    """
+    if N < 3:
+        raise ValueError("N must be at least 3")
+
+    rng = random.Random(seed)
+    G = nx.Graph()
+
+    next_id = 0
+
+    def new_node(**attrs):
+        nonlocal next_id
+        node = next_id
+        next_id += 1
+        G.add_node(node, **attrs)
+        return node
+
+    center = new_node(basis="Z" if rng.random() < 0.5 else "X")
+    leaves = [new_node(), new_node(), new_node()]
+    for leaf in leaves:
+        G.add_edge(center, leaf)
+
+    while len(leaves) < N:
+        leaf = rng.choice(leaves)
+        neighbor = next(G.neighbors(leaf))
+        G.remove_edge(leaf, neighbor)
+
+        internal = new_node(basis="Z" if rng.random() < 0.5 else "X")
+        fresh_leaf = new_node()
+        G.add_edge(neighbor, internal)
+        G.add_edge(internal, leaf)
+        G.add_edge(internal, fresh_leaf)
+
+        leaves.remove(leaf)
+        leaves.extend([leaf, fresh_leaf])
+
+    pos = nx.spring_layout(G, seed=seed)
+    pos = {node: tuple(coords) for node, coords in pos.items()}
+    node_types = {
+        node: ("boundary" if G.degree(node) == 1 else "spider")
+        for node in G.nodes()
+    }
+    return G, pos, node_types
+
+
 def generate_zx_graph(N: int, W: int):
     """Generates a ZX-diagram graph for the given N and W parameters."""
+    if zx is None or VertexType is None or recursive_unfuse_FE is None:
+        raise ImportError(
+            "pyzx is not installed. Install it with `python3 -m pip install pyzx` "
+            "to build a pyzx graph."
+        )
     g = zx.Graph()
     v = g.add_vertex(VertexType.Z, (N - 1) / 2, 0)
     for i in range(N):
@@ -239,6 +302,11 @@ class CircuitBuilder:
 
     def to_pyzx(self):
         """Convert the CircuitBuilder to a pyzx Circuit."""
+        if zx is None:
+            raise ImportError(
+                "pyzx is not installed. Install it with `python3 -m pip install pyzx` "
+                "to convert the extracted circuit to a pyzx Circuit."
+            )
         circ = zx.Circuit(self.n_inputs)
         for i in range(self.n_inputs, len(self.qubit_alive)):
             circ.add_gate("InitAncilla", label=i)

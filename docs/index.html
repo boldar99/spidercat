@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SpiderCat CAT State Demo</title>
+    <link rel="stylesheet" href="./styles.css?v=15">
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">SpiderCat &middot; Optimal Fault-Tolerant Cat State Preparation</p>
+          <h1>Fault-tolerant preparation of an n-qubit CAT state</h1>
+          <p class="hero-text">
+            This webpage visualises different circuit constructions for a CAT state. It compares constructions with
+            different resource trade-offs, and benchmarks them against external baselines &mdash; flag at origin and MQT.
+          </p>
+        </div>
+        <div class="hero-figure">
+          <div class="hero-logo-glow">
+            <img src="./spidercat.png" alt="SpiderCat logo" class="hero-logo">
+          </div>
+          <div class="hero-links">
+            <a class="hero-link" href="https://arxiv.org/abs/2603.05391" target="_blank" rel="noreferrer">arXiv Paper &rarr;</a>
+            <a class="hero-link ghost" href="https://arxiv.org/pdf/2603.05391" target="_blank" rel="noreferrer">PDF</a>
+            <a class="hero-link ghost" href="https://github.com/boldar99/spidercat" target="_blank" rel="noreferrer">GitHub</a>
+          </div>
+        </div>
+      </header>
+
+      <section class="pipeline" aria-label="SpiderCat pipeline">
+        <span class="pipeline-label">SpiderCat Pipeline</span>
+        <div class="pipeline-flow">
+          <span class="pipe-step step-blue">CAT State Specification</span>
+          <span class="pipe-arrow">&rarr;</span>
+          <span class="pipe-step step-purple">Fault-Equivalent ZX Graph</span>
+          <span class="pipe-arrow">&rarr;</span>
+          <span class="pipe-step step-teal">t-robust Marked 3-regular Graph</span>
+          <span class="pipe-arrow">&rarr;</span>
+          <span class="pipe-step step-orange">CNOT-optimal CAT circuit</span>
+        </div>
+      </section>
+
+      <main>
+        <section class="controls-panel">
+          <div class="control-block">
+            <label for="nRange">Target size</label>
+            <div class="control-row">
+              <input id="nRange" type="range" min="8" max="100" step="1" value="20">
+              <strong id="nValue">n = 20</strong>
+            </div>
+          </div>
+          <div class="control-block">
+            <label for="tRange">Fault weight</label>
+            <div class="control-row">
+              <input id="tRange" type="range" min="2" max="20" step="1" value="4">
+              <strong id="tValue">t = 4</strong>
+            </div>
+          </div>
+          <div class="control-note">
+            <p id="stateSummary"></p>
+          </div>
+        </section>
+
+        <aside class="param-callout">
+          <span class="param-callout-badge">t</span>
+          <p>
+            <strong>t</strong> is the <strong>target fault weight</strong> &mdash; the circuit is fault-tolerant against any fault pattern involving at most
+            <strong>t</strong> fault locations.
+          </p>
+        </aside>
+
+        <section class="cards-section">
+          <div class="section-heading">
+            <h2>Method comparison</h2>
+            <p>Click a card to inspect the construction in more detail.</p>
+          </div>
+          <div id="methodCards" class="method-grid"></div>
+        </section>
+
+        <section class="detail-section">
+          <div class="section-heading">
+            <h2 id="detailTitle">Construction detail</h2>
+            <p id="detailSubtitle"></p>
+          </div>
+          <div class="detail-layout">
+            <div class="visual-panel">
+              <div id="visualLegend" class="visual-legend"></div>
+              <div id="visualHost" class="visual-host"></div>
+              <p id="visualCaption" class="visual-caption"></p>
+            </div>
+            <aside id="detailInfo" class="detail-info"></aside>
+          </div>
+        </section>
+
+        <section class="comparison-section">
+          <div class="section-heading">
+            <h2>Compare Different Methods</h2>
+            <p>How every construction scales with the target size n at the current fault weight t, side by side in CNOT count, CNOT depth, and ancilla count.</p>
+          </div>
+          <div class="comparison-panel visual-panel">
+            <div id="comparisonLegend" class="visual-legend"></div>
+            <div id="comparisonHost" class="visual-host"></div>
+            <p id="comparisonCaption" class="visual-caption"></p>
+          </div>
+        </section>
+
+        <section class="notes-section">
+          <div class="section-heading">
+            <h2>How SpiderCat Improves on Existing Methods?</h2>
+          </div>
+          <div class="notes-grid">
+            <article class="note-card">
+              <h3>Recursive</h3>
+              <p>
+                Theorem 3.1 gives a scalable recursive construction with
+                <code>n(1 + log2(t + 1)) - 2(t + 1)</code> CNOTs, <code>n/2</code> ancillae,
+                and depth <code>2 log2(t) + 2</code>.
+              </p>
+            </article>
+            <article class="note-card">
+              <h3>Optimal graph-based</h3>
+              <p>
+                Proposition 5.4 and Theorem 5.5 turn the CAT-state problem into finding
+                marked 3-regular graphs with the best vertex ratio <code>r_t</code>.
+              </p>
+            </article>
+            <article class="note-card">
+              <h3>Optimal shallow</h3>
+              <p>
+                Theorem 5.6 trades more ancilla for constant CNOT depth 3 while staying
+                linear in <code>n</code>.
+              </p>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <p>
+          Sources:
+          <a href="https://arxiv.org/abs/2603.05391" target="_blank" rel="noreferrer">paper abstract</a>,
+          <a href="https://arxiv.org/pdf/2603.05391" target="_blank" rel="noreferrer">paper PDF</a>,
+          repo circuits in
+          <a href="https://github.com/boldar99/spidercat/tree/main/spidercat" target="_blank" rel="noreferrer"><code>spidercat/</code></a>,
+          and the benchmark summaries in
+          <a href="https://github.com/boldar99/spidercat/tree/main/spidercat/simulation_data" target="_blank" rel="noreferrer"><code>spidercat/simulation_data/</code></a>.
+        </p>
+      </footer>
+    </div>
+
+    <script src="./data.js?v=15"></script>
+    <script src="./app.js?v=15"></script>
+  </body>
+</html>

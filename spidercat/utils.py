@@ -142,5 +142,32 @@ def make_stim_circ_noisy(circ: stim.Circuit, p_1=0., p_2=0., p_mem=0., p_meas=0.
     return noisy_circ
 
 
+def offset_circuit_by(circ: stim.Circuit, offset: int) -> stim.Circuit:
+    new_circ = stim.Circuit()
+    for op in circ:
+        new_targets = []
+        for t in op.targets_copy():
+            if t.is_qubit_target:
+                new_targets.append(stim.GateTarget(t.value + offset))
+            elif t.is_x_target:
+                new_targets.append(stim.target_x(t.value + offset))
+            elif t.is_y_target:
+                new_targets.append(stim.target_y(t.value + offset))
+            elif t.is_z_target:
+                new_targets.append(stim.target_z(t.value + offset))
+            else:
+                new_targets.append(t)
+        new_circ.append(stim.CircuitInstruction(op.name, new_targets, op.gate_args_copy()))
+    return new_circ
+
+
+def load_stim_circuit(n: int, t: int):
+    my_file = get_project_root().joinpath("circuits", f"cat_state_t{t}_n{n}_p1.stim")
+    if not my_file.is_file():
+        return None
+
+    return stim.Circuit(my_file.read_text())
+
+
 if __name__ == "__main__":
     print(load_solution_triplet(33, 3, 1))
