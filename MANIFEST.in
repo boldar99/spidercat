@@ -1,0 +1,5 @@
+recursive-include spidercat/flag_at_origin_circuits *
+recursive-include spidercat/MQT_circuits *
+recursive-include spidercat/circuits *
+recursive-include spidercat/circuits_data *
+recursive-include spidercat/simulation_data *
