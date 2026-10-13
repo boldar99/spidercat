@@ -53,7 +53,7 @@ def visualise_flagnum_heatmap(df):
     ax.tick_params(left=True, bottom=True, length=5)
 
     plt.tight_layout()
-    plt.savefig(fcwd / "simulation_data/AR_heatmap.png")
+    plt.savefig(f"simulation_data/AR_heatmap.png")
     # plt.show()
     plt.close()
 
@@ -260,7 +260,7 @@ def visualise_pk_per_n(df, t):
     )
 
     plt.tight_layout()
-    plt.savefig(fcwd / "simulation_data/Pk_per_n_at_t{t}.png", dpi=1200)
+    plt.savefig(f"simulation_data/Pk_per_n_at_t{t}.png", dpi=1200)
     # plt.show()
     plt.close()
 
@@ -324,7 +324,7 @@ def visualise_pk_per_t_1(df, n):
     ax2.yaxis.set_major_formatter(PercentFormatter(xmax=1, decimals=0))
 
     plt.tight_layout()
-    plt.savefig(fcwd / "simulation_data/EPk_per_p_at_n{n}.pdf", dpi=1200)
+    plt.savefig(f"simulation_data/EPk_per_p_at_n{n}.pdf", dpi=1200)
     # plt.show()
     plt.close()
 
@@ -389,7 +389,7 @@ def visualise_pk_per_t_2(df, n):
     ax2.yaxis.set_major_formatter(PercentFormatter(xmax=1, decimals=0))
 
     plt.tight_layout()
-    plt.savefig(fcwd / "simulation_data/k_less_4_per_p_at_n{n}.png")
+    plt.savefig(f"simulation_data/k_less_4_per_p_at_n{n}.png")
     # plt.show()
     plt.close()
 
@@ -484,8 +484,8 @@ def visualise_flag_and_ar(methods_data_dict, t):
 
     plt.title(f"Method Comparison: Number of Flags & Acceptance Rate vs CAT state size (t={t})", fontsize=14)
     plt.tight_layout()
-    plt.savefig(fcwd / "simulation_data/flags_and_AR_per_n_at_t{t}.png", dpi=600)
-    # plt.savefig(fcwd / "simulation_data/flags_and_AR_per_n_at_t{t}.png")
+    plt.savefig(f"simulation_data/flags_and_AR_per_n_at_t{t}.png", dpi=600)
+    # plt.savefig(f"simulation_data/flags_and_AR_per_n_at_t{t}.png")
     plt.close()
 
 
@@ -539,7 +539,7 @@ def visualise_expected_faults(methods_data_dict, t):
     plot_df = pd.DataFrame(results)
 
     # 2. Setup Plot
-    fig, ax1 = plt.subplots(figsize=(10, 7), dpi=120)
+    fig, ax1 = plt.subplots(figsize=(7, 5), dpi=120)
     ax2 = ax1.twinx()  # Create secondary Y-axis
     ax2.invert_yaxis()
 
@@ -575,8 +575,18 @@ def visualise_expected_faults(methods_data_dict, t):
     ax2.set_yscale('log')
     ax2.invert_yaxis()
 
+    loc, cta = {
+        3: ('center left', (0.4, 1.)),
+        4: ('upper center', (0.675, 1.0)),
+        5: ('center left', (0.00, 0.)),
+        6: ('center left', (0.5, 1.)),
+    }[t]
+
+    # style_labels = ['Expected Number of Faults', f"Probability of $>{t}$ Faults"]
+    # ax1.legend(style_lines, style_labels, loc=loc, bbox_to_anchor=cta)
+
     handles, labels = ax1.get_legend_handles_labels()
-    legend1 = ax1.legend(handles, labels, title="Method", loc='center left')
+    legend1 = ax1.legend(handles, labels, title="Method", loc=loc, bbox_to_anchor=cta)
     ax1.add_artist(legend1) 
 
     style_lines = [
@@ -587,10 +597,10 @@ def visualise_expected_faults(methods_data_dict, t):
     style_labels = ['Expected Number of Faults', "Acceptance Rate"]
     ax1.legend(style_lines, style_labels, loc='lower center')
 
-    plt.title(f"Method Comparison: Expected Number of Faults & Acceptance Rate vs CAT state size (t={t})", fontsize=14)
+    # plt.title(f"Expected Number of Faults & Acceptance Rate vs CAT state size (t={t})", fontsize=14)
     plt.tight_layout()
-    plt.savefig(fcwd / "simulation_data/expected_faults_per_n_at_t{t}.pdf")
-    plt.savefig(fcwd / "simulation_data/expected_faults_per_n_at_t{t}.png")
+    plt.savefig(f"simulation_data/expected_faults_per_n_at_t{t}.pdf")
+    plt.savefig(f"simulation_data/expected_faults_per_n_at_t{t}.png")
     plt.close()
 
 
@@ -732,7 +742,7 @@ def visualise_method_comparison(methods_data_dict, t, second_y_axis="acceptance_
 
     plt.title(f"Method Comparison: Error Probability vs CAT state size (t={t})", fontsize=14)
     plt.tight_layout()
-    plt.savefig(fcwd / "simulation_data/k_less_t_per_n_at_t{t}.png")
+    plt.savefig(f"simulation_data/k_less_t_per_n_at_t{t}.png")
     # plt.show()
     plt.close()
 
@@ -885,29 +895,29 @@ def visualise_two_panel_hybrid(methods_data_dict, t):
     # Bring panels closer together
     plt.subplots_adjust(hspace=0.08)
 
-    plt.savefig(fcwd / "simulation_data/two_panel_hybrid_t{t}.pdf", dpi=1200, bbox_inches='tight')
-    plt.savefig(fcwd / "simulation_data/two_panel_hybrid_t{t}.png", bbox_inches='tight')
+    plt.savefig(f"simulation_data/two_panel_hybrid_t{t}.pdf", dpi=1200, bbox_inches='tight')
+    plt.savefig(f"simulation_data/two_panel_hybrid_t{t}.png", bbox_inches='tight')
     plt.close()
 
 
 if __name__ == '__main__':
     import json
 
-    with open(fcwd / "simulation_data/simulation_results_t_n_spider-cat_p1.json", "r") as f:
+    with open(f"simulation_data/simulation_results_t_n_spider-cat_p1.json", "r") as f:
         df_sc_tree = pd.DataFrame(json.load(f))
-    with open(fcwd / "simulation_data/simulation_results_t_n_spider-cat-opt_p1.json", "r") as f:
+    with open(f"simulation_data/simulation_results_t_n_spider-cat-opt_p1.json", "r") as f:
         df_sc_tree_opt = pd.DataFrame(json.load(f))
-    with open(fcwd / "simulation_data/simulation_results_t_n_spider-cat-opt_p1_X.json", "r") as f:
+    with open(f"simulation_data/simulation_results_t_n_spider-cat-opt_p1_X.json", "r") as f:
         z_errors = pd.DataFrame(json.load(f))
-    # with open(fcwd / "simulation_data/simulation_results_t_n_spider-cat_p5.json", "r") as f:
+    # with open(f"simulation_data/simulation_results_t_n_spider-cat_p5.json", "r") as f:
     #     df_sc_p5 = pd.DataFrame(json.load(f))
-    # with open(fcwd / "simulation_data/simulation_results_t_n_spider-cat_p10.json", "r") as f:
+    # with open(f"simulation_data/simulation_results_t_n_spider-cat_p10.json", "r") as f:
     #     df_sc_p10 = pd.DataFrame(json.load(f))
-    # with open(fcwd / "simulation_data/simulation_results_t_n_spider-cat_p20.json", "r") as f:
+    # with open(f"simulation_data/simulation_results_t_n_spider-cat_p20.json", "r") as f:
     #     df_sc_p20 = pd.DataFrame(json.load(f))
-    with open(fcwd / "simulation_data/simulation_results_t_n_flag-at-origin_p1.json", "r") as f:
+    with open(f"simulation_data/simulation_results_t_n_flag-at-origin_p1.json", "r") as f:
         df_FAO = pd.DataFrame(json.load(f))
-    with open(fcwd / "simulation_data/simulation_results_t_n_MQT_p1.json", "r") as f:
+    with open(f"simulation_data/simulation_results_t_n_MQT_p1.json", "r") as f:
         df_MQT = pd.DataFrame(json.load(f))
     methods = {
         # "SpiderCat": z_errors,
@@ -939,7 +949,7 @@ if __name__ == '__main__':
     # visualise_pk_per_n(z_errors, 5)
     # visualise_failure_distance(methods, t=2)
     # visualise_expected_faults(methods, t=3)
-    # visualise_expected_faults(methods, t=4)
+    visualise_expected_faults(methods, t=4)
     # visualise_expected_faults(methods, t=5)
     # visualise_expected_faults(methods, t=6)
     # visualise_expected_faults(methods, t=7)
@@ -949,16 +959,16 @@ if __name__ == '__main__':
     # visualise_flag_and_ar(methods, t=6)
     # visualise_flag_and_ar(methods, t=7)
     # visualise_method_comparison(methods, t=4, second_y_axis='num_flags')
-    visualise_two_panel_hybrid(methods, t=3)
-    visualise_two_panel_hybrid(methods, t=4)
-    visualise_two_panel_hybrid(methods, t=5)
-    visualise_two_panel_hybrid(methods, t=6)
+    # visualise_two_panel_hybrid(methods, t=3)
+    # visualise_two_panel_hybrid(methods, t=4)
+    # visualise_two_panel_hybrid(methods, t=5)
+    # visualise_two_panel_hybrid(methods, t=6)
     # visualise_two_panel_hybrid(methods, t=7)
     # visualise_clean_stacked_comparison(methods)
     # visualise_method_comparison(methods, t=6, second_y_axis='num_flags')
     # visualise_method_comparison(methods, t=7, second_y_axis='num_flags')
     #
-    # # with open(fcwd / "simulation_data/simulation_results_t_n.json", "r") as f:
+    # # with open(f"simulation_data/simulation_results_t_n.json", "r") as f:
     # #     collected_data = json.load(f)
     # # df_t_n = pd.DataFrame(collected_data)
     # #
@@ -967,7 +977,7 @@ if __name__ == '__main__':
     #     visualise_pk_per_n(df_sc_tree, t)
     #
     # for n in [24, 50, 80]:
-    #     with open(fcwd / "simulation_data/simulation_results_t_p_n{n}.json", "r") as f:
+    #     with open(f"simulation_data/simulation_results_t_p_n{n}.json", "r") as f:
     #         collected_data = json.load(f)
     #     df_t_p = pd.DataFrame(collected_data)
     #     visualise_pk_per_t_1(df_t_p, n)
