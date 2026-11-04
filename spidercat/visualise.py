@@ -1090,9 +1090,12 @@ if __name__ == '__main__':
         "MQT": df_MQT,
         "Flag at Origin": df_FAO
     }
-    visualise_expected_faults(methods, t=2)
-    visualise_expected_faults(methods, t=3)
-    visualise_expected_faults(methods, t=4)
+    visualise_expected_faults(methods, t=2, p=0.0001)
+    visualise_expected_faults(methods, t=3, p=0.0001)
+    visualise_expected_faults(methods, t=4, p=0.0001)
+    visualise_expected_faults(methods, t=5, p=0.0001)
+    visualise_expected_faults(methods, t=6, p=0.0001)
+    visualise_expected_faults(methods, t=7, p=0.0001)
 
     # visualise_acceptance_heatmap(df_sc_tree)
     # for t in [3, 4, 5, 6, 7]:

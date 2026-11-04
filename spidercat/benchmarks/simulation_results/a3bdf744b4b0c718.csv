@@ -1,0 +1,2 @@
+num_samples,num_accepted,error_counts
+10000000,9925031,"{""0"": 9911177, ""1"": 13846, ""2"": 8}"

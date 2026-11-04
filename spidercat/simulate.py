@@ -213,7 +213,7 @@ if __name__ == "__main__":
     methods = ["spider-cat-old", "spider-cat-optimized", "flag-at-origin", "MQT"]
     ps = [0.0001, 0.001, 0.005, 0.01, 0.05, 0.1]
     ts = range(2, 7)
-    ns = range(8, 51, 2)
+    ns = range(8, 51)
     simulation_info = make_simulation_info_list(
         ps, methods, ts, ns, basis="Z", simulation_results_dir=simulation_results_dir
     )
