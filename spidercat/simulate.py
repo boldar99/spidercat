@@ -173,7 +173,7 @@ def batch_sim_info(_batch_size: int, simulation_info: Iterable[SimulationInfo]) 
     return batched_sim_info
 
 
-def make_simulation_info_list(ps, methods, ts, ns, basis, num_samples=5_000_000, simulation_results_dir: Path | None = None):
+def make_simulation_info_list(ps, methods, ts, ns, basis, num_samples=10_000_000, simulation_results_dir: Path | None = None):
     circuits = []
     reported = set()
     for p, m, t, n in itertools.product(ps, methods, ts, ns):
@@ -211,9 +211,9 @@ if __name__ == "__main__":
     # N = 50
     # T = 7
     methods = ["spider-cat-old", "spider-cat-optimized", "flag-at-origin", "MQT"]
-    ps = [0.05, 0.1]
-    ts = range(2, 5)
-    ns = range(10, 50, 2)
+    ps = [0.0001, 0.001, 0.005, 0.01, 0.05, 0.1]
+    ts = range(2, 7)
+    ns = range(8, 51, 2)
     simulation_info = make_simulation_info_list(
         ps, methods, ts, ns, basis="Z", simulation_results_dir=simulation_results_dir
     )
