@@ -53,7 +53,7 @@ def visualise_flagnum_heatmap(df):
     ax.tick_params(left=True, bottom=True, length=5)
 
     plt.tight_layout()
-    plt.savefig(f"simulation_data/AR_heatmap.png")
+    plt.savefig(f"plots/AR_heatmap.png")
     # plt.show()
     plt.close()
 
@@ -197,7 +197,7 @@ def visualise_clean_stacked_comparison(methods_data_dict):
     cb.set_label('Number of CNOTs', fontsize=15, labelpad=12)
 
     plt.tight_layout()
-    plt.savefig(cwd / "simulation_data/cx_heatmap.pdf", bbox_inches='tight', dpi=1200)
+    plt.savefig(cwd / "plots/cx_heatmap.pdf", bbox_inches='tight', dpi=1200)
     plt.close()
 
 
@@ -260,7 +260,7 @@ def visualise_pk_per_n(df, t):
     )
 
     plt.tight_layout()
-    plt.savefig(f"simulation_data/Pk_per_n_at_t{t}.png", dpi=1200)
+    plt.savefig(f"plots/Pk_per_n_at_t{t}.png", dpi=1200)
     # plt.show()
     plt.close()
 
@@ -324,7 +324,7 @@ def visualise_pk_per_t_1(df, n):
     ax2.yaxis.set_major_formatter(PercentFormatter(xmax=1, decimals=0))
 
     plt.tight_layout()
-    plt.savefig(f"simulation_data/EPk_per_p_at_n{n}.pdf", dpi=1200)
+    plt.savefig(f"plots/EPk_per_p_at_n{n}.pdf", dpi=1200)
     # plt.show()
     plt.close()
 
@@ -389,7 +389,7 @@ def visualise_pk_per_t_2(df, n):
     ax2.yaxis.set_major_formatter(PercentFormatter(xmax=1, decimals=0))
 
     plt.tight_layout()
-    plt.savefig(f"simulation_data/k_less_4_per_p_at_n{n}.png")
+    plt.savefig(f"plots/k_less_4_per_p_at_n{n}.png")
     # plt.show()
     plt.close()
 
@@ -484,8 +484,8 @@ def visualise_flag_and_ar(methods_data_dict, t):
 
     plt.title(f"Method Comparison: Number of Flags & Acceptance Rate vs CAT state size (t={t})", fontsize=14)
     plt.tight_layout()
-    plt.savefig(f"simulation_data/flags_and_AR_per_n_at_t{t}.png", dpi=600)
-    # plt.savefig(f"simulation_data/flags_and_AR_per_n_at_t{t}.png")
+    plt.savefig(f"plots/flags_and_AR_per_n_at_t{t}.png", dpi=600)
+    # plt.savefig(f"plots/flags_and_AR_per_n_at_t{t}.png")
     plt.close()
 
 
@@ -599,8 +599,8 @@ def visualise_expected_faults(methods_data_dict, t):
 
     # plt.title(f"Expected Number of Faults & Acceptance Rate vs CAT state size (t={t})", fontsize=14)
     plt.tight_layout()
-    plt.savefig(f"simulation_data/expected_faults_per_n_at_t{t}.pdf")
-    plt.savefig(f"simulation_data/expected_faults_per_n_at_t{t}.png")
+    plt.savefig(f"plots/expected_faults_per_n_at_t{t}.pdf")
+    plt.savefig(f"plots/expected_faults_per_n_at_t{t}.png")
     plt.close()
 
 
@@ -742,7 +742,7 @@ def visualise_method_comparison(methods_data_dict, t, second_y_axis="acceptance_
 
     plt.title(f"Method Comparison: Error Probability vs CAT state size (t={t})", fontsize=14)
     plt.tight_layout()
-    plt.savefig(f"simulation_data/k_less_t_per_n_at_t{t}.png")
+    plt.savefig(f"plots/k_less_t_per_n_at_t{t}.png")
     # plt.show()
     plt.close()
 
@@ -895,8 +895,8 @@ def visualise_two_panel_hybrid(methods_data_dict, t):
     # Bring panels closer together
     plt.subplots_adjust(hspace=0.08)
 
-    plt.savefig(f"simulation_data/two_panel_hybrid_t{t}.pdf", dpi=1200, bbox_inches='tight')
-    plt.savefig(f"simulation_data/two_panel_hybrid_t{t}.png", bbox_inches='tight')
+    plt.savefig(f"plots/two_panel_hybrid_t{t}.pdf", dpi=1200, bbox_inches='tight')
+    plt.savefig(f"plots/two_panel_hybrid_t{t}.png", bbox_inches='tight')
     plt.close()
 
 
@@ -909,12 +909,6 @@ if __name__ == '__main__':
         df_sc_tree_opt = pd.DataFrame(json.load(f))
     with open(f"simulation_data/simulation_results_t_n_spider-cat-opt_p1_X.json", "r") as f:
         z_errors = pd.DataFrame(json.load(f))
-    # with open(f"simulation_data/simulation_results_t_n_spider-cat_p5.json", "r") as f:
-    #     df_sc_p5 = pd.DataFrame(json.load(f))
-    # with open(f"simulation_data/simulation_results_t_n_spider-cat_p10.json", "r") as f:
-    #     df_sc_p10 = pd.DataFrame(json.load(f))
-    # with open(f"simulation_data/simulation_results_t_n_spider-cat_p20.json", "r") as f:
-    #     df_sc_p20 = pd.DataFrame(json.load(f))
     with open(f"simulation_data/simulation_results_t_n_flag-at-origin_p1.json", "r") as f:
         df_FAO = pd.DataFrame(json.load(f))
     with open(f"simulation_data/simulation_results_t_n_MQT_p1.json", "r") as f:
