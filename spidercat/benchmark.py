@@ -4,7 +4,7 @@ import numpy as np
 import stim
 
 from spidercat.circuit_extraction import extract_circuit_rooted
-from spidercat.simulate import add_measurements, process_samples
+from spidercat.simulate import SimulationInfo, add_measurements, run_simulation
 from spidercat.utils import make_stim_circ_noisy
 
 
@@ -24,30 +24,29 @@ def benchmark_solution(
 
 def benchmark_circuit(circ: stim.Circuit, n, num_samples: int = 100_000, p=0.05, method="spider-cat"):
     num_flags = circ.num_qubits - n
-    noisy_circ = make_stim_circ_noisy(circ, p_2=p, p_init=2 / 3 * p, p_meas=2 / 3 * p, p_mem=0)
-    # noisy_circ = make_stim_circ_noisy(circ, p_2=p, p_init=2 / 3 * p, p_meas=2 / 3 * p, p_mem=2 / 30 * p)
-    # noisy_circ = make_stim_circ_noisy(circ, p_2=p, p_init=0, p_meas=0, p_mem=0)
+    noisy_circ, _ = make_stim_circ_noisy(circ, p_1=p, p_2=p, p_init=2 / 3 * p, p_meas=2 / 3 * p, p_mem=0)
     add_measurements(noisy_circ, n, method)
 
-    # Run the simulation
-    circuit_sampler = noisy_circ.compile_sampler()
-    samples: np.ndarray = circuit_sampler.sample(num_samples)
-
-    # Process metrics
-    stats = process_samples(samples, num_flags, n, -1, p, num_samples, noisy_circ, method)
-
-    # Optional: Print summary of counts for quick debugging
-    counts_summary = {k: v['probability'] for k, v in stats.items()}
+    sim_info = SimulationInfo(
+        circuit=noisy_circ,
+        circuit_hash="",
+        method=method,
+        num_samples=num_samples,
+        num_flags=num_flags,
+        p=p,
+        n=n,
+        t=-1,
+        basis="Z",
+    )
+    _, num_accepted, error_counts = run_simulation(sim_info)
+    counts_summary = {k: count / num_accepted for k, count in error_counts.items()} if num_accepted > 0 else {}
     print(f"Stats for {n}-cat (p={p}): {counts_summary}")
 
     return counts_summary
 
 
 def sample_circuit(circ: stim.Circuit, n, num_samples: int = 100_000, p=0.05):
-    num_flags = circ.num_qubits - n
-    noisy_circ = make_stim_circ_noisy(circ, p_2=p, p_init=2 / 3 * p, p_meas=2 / 3 * p, p_mem=0)
-    # noisy_circ = make_stim_circ_noisy(circ, p_2=p, p_init=2 / 3 * p, p_meas=2 / 3 * p, p_mem=2 / 30 * p)
-    # noisy_circ = make_stim_circ_noisy(circ, p_2=p, p_init=0, p_meas=0, p_mem=0)
+    noisy_circ, _ = make_stim_circ_noisy(circ, p_1=p, p_2=p, p_init=2 / 3 * p, p_meas=2 / 3 * p, p_mem=0)
     add_measurements(noisy_circ, n, "spider-cat")
 
     # Run the simulation

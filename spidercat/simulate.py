@@ -4,8 +4,10 @@ import math
 import os
 import sys
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
+from typing import Iterable, Any
+import json
 
 import numpy as np
 import pandas as pd
@@ -18,12 +20,11 @@ from spidercat.utils import qasm_to_stim, make_stim_circ_noisy, get_project_root
 
 cwd = Path(__file__).parent
 
-from typing import Iterable, Any
-
 
 @dataclass(frozen=True)
 class SimulationInfo:
     circuit: stim.Circuit
+    circuit_hash: str
     method: str
     num_samples: int
     num_flags: int
@@ -33,15 +34,25 @@ class SimulationInfo:
     basis: str
 
     @classmethod
-    def init(cls, method, n, t, p, num_samples, basis):
+    def init(cls, method, n, t, p, num_samples, basis, simulation_results_dir: Path | None = None):
         circ = load_stim_circuit(t, n, method)
         if circ is None:
             return None
         noisy_circ, _ = make_stim_circ_noisy(circ, p_1=p, p_2=p, p_init=2 / 3 * p, p_meas=2 / 3 * p, p_mem=0)
         add_measurements(noisy_circ, n, method, basis)
+        circ_hash = hashlib.sha256(str(noisy_circ).encode()).hexdigest()[:16]
+
+        if simulation_results_dir is None:
+            simulation_results_dir = get_project_root().joinpath("benchmarks", "simulation_results")
+        csv_file = simulation_results_dir.joinpath(f"{circ_hash}.csv")
+        if csv_file.exists():
+            df_existing = pd.read_csv(csv_file)
+            existing_samples = int(df_existing["num_samples"].sum()) if not df_existing.empty else 0
+            num_samples = max(0, num_samples - existing_samples)
 
         return cls(
             circuit=noisy_circ,
+            circuit_hash=circ_hash,
             method=method,
             num_samples=num_samples,
             num_flags=circ.num_qubits - n,
@@ -51,17 +62,8 @@ class SimulationInfo:
             basis=basis,
         )
 
-    def with_samples(self, num_samples: int):
-        return SimulationInfo(
-            circuit=self.circuit,
-            method=self.method,
-            num_samples=num_samples,
-            num_flags=self.num_flags,
-            p=self.p,
-            t=self.t,
-            n=self.n,
-            basis=self.basis,
-        )
+    def with_samples(self, num_samples: int) -> "SimulationInfo":
+        return replace(self, num_samples=num_samples)
 
 
 def load_stim_circuit(t: int, n: int, method: str, p: int = 1):
@@ -170,68 +172,59 @@ def batch_sim_info(_batch_size: int, simulation_info: Iterable[SimulationInfo]) 
     return batched_sim_info
 
 
-def make_simulation_info_list(ps, methods, ts, ns, basis, num_samples=5_000_000):
+def make_simulation_info_list(ps, methods, ts, ns, basis, num_samples=5_000_000, simulation_results_dir: Path | None = None):
     circuits = []
     reported = set()
     for p, m, t, n in itertools.product(ps, methods, ts, ns):
-        si = SimulationInfo.init(m, n, t, p, num_samples=num_samples, basis=basis)
+        si = SimulationInfo.init(m, n, t, p, num_samples=num_samples, basis=basis, simulation_results_dir=simulation_results_dir)
         if si is None:
             if (m, n, t) in reported: continue
             print(f"Circuit not available for method={m}, {n=}, {t=}", file=sys.stderr)
             reported.add((m, n, t))
             continue
-        circuits.append(si)
+        if si.num_samples > 0:
+            circuits.append(si)
     return circuits
 
 
 if __name__ == "__main__":
-    benchmakrs_dir = get_project_root().joinpath("benchmarks")
-    simulation_results_dir = benchmakrs_dir.joinpath("simulation_results")
-    simulated_circuits_dir = benchmakrs_dir.joinpath("simulated_circuits")
+    benchmarks_dir = get_project_root().joinpath("benchmarks")
+    simulation_results_dir = benchmarks_dir.joinpath("simulation_results")
+    simulated_circuits_dir = benchmarks_dir.joinpath("simulated_circuits")
     os.makedirs(simulation_results_dir, exist_ok=True)
     os.makedirs(simulated_circuits_dir, exist_ok=True)
-    key_file = benchmakrs_dir.joinpath("key_file.csv")
+    key_file = benchmarks_dir.joinpath("key_file.csv")
 
-    if not os.path.exists(key_file):
+    if key_file.exists():
+        df_existing_keys = pd.read_csv(key_file).drop_duplicates(subset=["circuit_hash"])
+        df_existing_keys.to_csv(key_file, header=True, index=False)
+        initialized = set(df_existing_keys["circuit_hash"].astype(str))
+    else:
         pd.DataFrame(columns=[
             "method", "t", "n", "basis", "p", "circuit_hash"
         ]).to_csv(key_file, header=True, index=False)
+        initialized = set()
 
     start_time = time.time()
 
-    N = 20
-    T = 2
-    # # simulate_t_n(range(2, T+1), range(8, N + 1), method="spider-cat", num_paths=1)
-    # simulate_t_n(range(3, T+1), range(10, N + 1), method="spider-cat", num_paths=1)
-    # simulate_t_n(range(3, 7), range(8, N + 1), method="spider-cat", num_paths=2)
-    # simulate_t_n(range(3, 7), range(8, N + 1), method="spider-cat", num_paths=3)
-    # simulate_t_n(range(3, 7), range(8, N + 1), method="spider-cat", num_paths=4)
-    # simulate_t_n(range(3, T + 1), range(8, N + 1), method="spider-cat", num_paths=5)
-    # simulate_t_n(range(3, T+1), range(8, N + 1), method="spider-cat", num_paths=10)
-    # simulate_t_n(range(3, T + 1), range(8, N + 1), method="spider-cat", num_paths=20)
-    # simulate_t_n(range(2, T+1), range(8, N + 1), method="flag-at-origin")
-    # simulate_t_n(range(2, T+1), range(8, N + 1), method="MQT")
-    # simulate_t_p(range(3, 8), (10 ** np.linspace(-0.3, -2, 18)).tolist(), n=24)
-    # simulate_t_p(range(3, 8), (10 ** np.linspace(-0.3, -2, 18)).tolist(), n=50)
-    # simulate_t_p(range(3, 8), (10 ** np.linspace(-0.3, -2, 18)).tolist(), n=80)
+    N = 50
+    T = 3
     ps = [0.05]
     methods = ["spider-cat", "flag-at-origin", "MQT"]
     ts = range(2, T + 1)
     ns = range(8, N + 1)
-    simulation_info = make_simulation_info_list(ps, methods, ts, ns, basis="Z")
+    simulation_info = make_simulation_info_list(
+        ps, methods, ts, ns, basis="Z", simulation_results_dir=simulation_results_dir
+    )
     batched_sim_info = batch_sim_info(10_000_000, simulation_info)
-    # results = (run_simulation(si) for si in batched_sim_info)
 
     print("Simulation Information Prepared")
 
     results = Parallel(n_jobs=-2, return_as="generator")(delayed(run_simulation)(si) for si in batched_sim_info)
     # results = (run_simulation(si) for si in batched_sim_info)
-    initialized = set()
 
     for info, num_accepted, error_counts in tqdm.tqdm(results, total=len(batched_sim_info)):
-
-        circ_str = str(info.circuit)
-        circ_hash = hashlib.sha256(circ_str.encode()).hexdigest()[:16]
+        circ_hash = info.circuit_hash
         circuit_file = simulated_circuits_dir.joinpath(f"{circ_hash}.stim")
         if not circuit_file.exists():
             info.circuit.to_file(circuit_file)
@@ -239,7 +232,7 @@ if __name__ == "__main__":
         df_results = pd.DataFrame([{
             "num_samples": info.num_samples,
             "num_accepted": num_accepted,
-            "error_counts": error_counts
+            "error_counts": json.dumps(error_counts)
         }])
         csv_file = str(simulation_results_dir.joinpath(f'{circ_hash}.csv'))
         if os.path.exists(csv_file):
@@ -249,15 +242,15 @@ if __name__ == "__main__":
 
         p, method, t, n, basis = info.p, info.method, info.t, info.n, info.basis
 
-        df_key = pd.DataFrame([{
-            "method": method,
-            "t": t,
-            "n": n,
-            "basis": basis,
-            "p": p,
-            "circuit_hash": circ_hash,
-        }])
         if circ_hash not in initialized:
+            df_key = pd.DataFrame([{
+                "method": method,
+                "t": t,
+                "n": n,
+                "basis": basis,
+                "p": p,
+                "circuit_hash": circ_hash,
+            }])
             df_key.to_csv(key_file, mode='a', header=False, index=False)
             initialized.add(circ_hash)
 

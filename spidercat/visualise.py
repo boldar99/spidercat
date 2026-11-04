@@ -1,4 +1,7 @@
+import ast
+from collections import Counter
 import json
+import math
 from pathlib import Path
 cwd = Path(__file__).parent
 
@@ -6,9 +9,146 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+import stim
 from matplotlib.colors import ListedColormap, BoundaryNorm
 from matplotlib.lines import Line2D
 from matplotlib.ticker import PercentFormatter, MaxNLocator
+
+from spidercat.simulate import calculate_wilson_interval
+from spidercat.utils import get_circuit_depth, get_num_cnots, get_project_root
+
+
+def _parse_error_counts(raw_val) -> dict[int, int]:
+    if isinstance(raw_val, dict):
+        return {int(k): int(v) for k, v in raw_val.items()}
+    parsed = ast.literal_eval(str(raw_val))
+    return {int(k): int(v) for k, v in parsed.items()}
+
+
+def load_raw_simulation_df(
+    benchmarks_dir: Path | None = None,
+    method: str | None = None,
+    basis: str | None = "Z",
+    p: float | None = None,
+) -> pd.DataFrame:
+    """
+    Loads raw benchmark records from key_file.csv and simulation_results/<circuit_hash>.csv,
+    aggregating batch counts per circuit_hash and expanding error_counts into one row per k.
+    """
+    if benchmarks_dir is None:
+        benchmarks_dir = get_project_root().joinpath("benchmarks")
+
+    key_file = benchmarks_dir.joinpath("key_file.csv")
+    if not key_file.exists():
+        return pd.DataFrame()
+
+    keys_df = pd.read_csv(key_file).drop_duplicates(subset=["circuit_hash"])
+    if method is not None:
+        keys_df = keys_df[keys_df["method"] == method]
+    if basis is not None:
+        keys_df = keys_df[keys_df["basis"] == basis]
+    if p is not None:
+        keys_df = keys_df[np.isclose(keys_df["p"], p)]
+
+    results_dir = benchmarks_dir.joinpath("simulation_results")
+    circuits_dir = benchmarks_dir.joinpath("simulated_circuits")
+
+    rows = []
+    for _, key_row in keys_df.iterrows():
+        circ_hash = str(key_row["circuit_hash"])
+        csv_path = results_dir.joinpath(f"{circ_hash}.csv")
+        stim_path = circuits_dir.joinpath(f"{circ_hash}.stim")
+        if not csv_path.exists():
+            continue
+
+        res_df = pd.read_csv(csv_path)
+        if res_df.empty:
+            continue
+
+        total_samples = int(res_df["num_samples"].sum())
+        num_accepted = int(res_df["num_accepted"].sum())
+        if num_accepted == 0:
+            continue
+
+        agg_counts: Counter[int] = Counter()
+        for raw_counts in res_df["error_counts"]:
+            agg_counts.update(_parse_error_counts(raw_counts))
+
+        circ_str = stim_path.read_text() if stim_path.exists() else ""
+
+        for k, count in sorted(agg_counts.items()):
+            rows.append({
+                "method": key_row["method"],
+                "n": int(key_row["n"]),
+                "t": int(key_row["t"]),
+                "p": float(key_row["p"]),
+                "basis": key_row["basis"],
+                "circuit_hash": circ_hash,
+                "k": int(k),
+                "count": int(count),
+                "total_samples": total_samples,
+                "num_accepted": num_accepted,
+                "circuit": circ_str,
+            })
+
+    return pd.DataFrame(rows)
+
+
+def process_simulation_df(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Processes a raw simulation DataFrame, adding statistical and circuit metric columns
+    matching the legacy `process_samples` output schema.
+    """
+    if df.empty:
+        return df.copy()
+
+    df = df.copy()
+    df["probability"] = df["count"] / df["num_accepted"]
+    df["acceptance_rate"] = np.where(df["total_samples"] > 0, df["num_accepted"] / df["total_samples"], 0.0)
+    df["std_error"] = np.sqrt(df["probability"] * (1.0 - df["probability"]) / df["num_accepted"])
+
+    wilson_bounds = [
+        calculate_wilson_interval(int(c), int(acc))
+        for c, acc in zip(df["count"], df["num_accepted"])
+    ]
+    df["ci_wilson_lower"] = [b[0] for b in wilson_bounds]
+    df["ci_wilson_upper"] = [b[1] for b in wilson_bounds]
+
+    z = 1.96
+    df["ci_wald_lower"] = np.maximum(0.0, df["probability"] - z * df["std_error"])
+    df["ci_wald_upper"] = np.minimum(1.0, df["probability"] + z * df["std_error"])
+
+    circuit_metrics: dict[str, tuple[int, int, int]] = {}
+    for circ_hash, group in df.groupby("circuit_hash"):
+        circ_str = group["circuit"].iloc[0]
+        if circ_str:
+            circ = stim.Circuit(circ_str)
+            circuit_metrics[circ_hash] = (
+                get_num_cnots(circ),
+                get_circuit_depth(circ),
+                circ.num_qubits,
+            )
+        else:
+            circuit_metrics[circ_hash] = (0, 0, int(group["n"].iloc[0]))
+
+    df["num_cx"] = df["circuit_hash"].map(lambda h: circuit_metrics[h][0])
+    df["depth"] = df["circuit_hash"].map(lambda h: circuit_metrics[h][1])
+    df["num_qubits"] = df["circuit_hash"].map(lambda h: circuit_metrics[h][2])
+    df["num_flags"] = df["num_qubits"] - df["n"]
+    df["num_paths"] = 1
+
+    return df
+
+
+def load_simulation_df(
+    method: str | None = None,
+    basis: str | None = "Z",
+    p: float | None = None,
+    benchmarks_dir: Path | None = None,
+) -> pd.DataFrame:
+    """Convenience function to load and process simulation results into a plot-ready DataFrame."""
+    raw_df = load_raw_simulation_df(benchmarks_dir=benchmarks_dir, method=method, basis=basis, p=p)
+    return process_simulation_df(raw_df)
 
 
 def visualise_flagnum_heatmap(df):
@@ -580,7 +720,7 @@ def visualise_expected_faults(methods_data_dict, t):
         4: ('upper center', (0.675, 1.0)),
         5: ('center left', (0.00, 0.)),
         6: ('center left', (0.5, 1.)),
-    }[t]
+    }.get(t, ('center left', (0.00, 0.6)))
 
     # style_labels = ['Expected Number of Faults', f"Probability of $>{t}$ Faults"]
     # ax1.legend(style_lines, style_labels, loc=loc, bbox_to_anchor=cta)
@@ -901,18 +1041,12 @@ def visualise_two_panel_hybrid(methods_data_dict, t):
 
 
 if __name__ == '__main__':
-    import json
+    df_all = process_simulation_df(load_raw_simulation_df(basis="Z"))
+    df_sc_tree_opt = df_all[df_all["method"] == "spider-cat"].copy() if not df_all.empty else pd.DataFrame()
+    df_FAO = df_all[df_all["method"] == "flag-at-origin"].copy() if not df_all.empty else pd.DataFrame()
+    df_MQT = df_all[df_all["method"] == "MQT"].copy() if not df_all.empty else pd.DataFrame()
+    z_errors = load_simulation_df(method="spider-cat", basis="X")
 
-    with open(f"simulation_data/simulation_results_t_n_spider-cat_p1.json", "r") as f:
-        df_sc_tree = pd.DataFrame(json.load(f))
-    with open(f"simulation_data/simulation_results_t_n_spider-cat-opt_p1.json", "r") as f:
-        df_sc_tree_opt = pd.DataFrame(json.load(f))
-    with open(f"simulation_data/simulation_results_t_n_spider-cat-opt_p1_X.json", "r") as f:
-        z_errors = pd.DataFrame(json.load(f))
-    with open(f"simulation_data/simulation_results_t_n_flag-at-origin_p1.json", "r") as f:
-        df_FAO = pd.DataFrame(json.load(f))
-    with open(f"simulation_data/simulation_results_t_n_MQT_p1.json", "r") as f:
-        df_MQT = pd.DataFrame(json.load(f))
     methods = {
         # "SpiderCat": z_errors,
         "SpiderCat": df_sc_tree_opt,
@@ -943,7 +1077,8 @@ if __name__ == '__main__':
     # visualise_pk_per_n(z_errors, 5)
     # visualise_failure_distance(methods, t=2)
     # visualise_expected_faults(methods, t=3)
-    visualise_expected_faults(methods, t=4)
+    visualise_expected_faults(methods, t=2)
+    visualise_expected_faults(methods, t=3)
     # visualise_expected_faults(methods, t=5)
     # visualise_expected_faults(methods, t=6)
     # visualise_expected_faults(methods, t=7)
