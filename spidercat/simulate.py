@@ -1,10 +1,10 @@
 import hashlib
 import itertools
-import json
 import math
 import os
 import sys
 import time
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -12,22 +12,17 @@ import pandas as pd
 import stim
 import tqdm
 from joblib import Parallel, delayed
-from mypy.checkexpr import defaultdict
-from numpy import dtype, ndarray
+from numpy import ndarray
 from scipy.stats import norm
-from spidercss.stim_utils import get_circuit_depth, get_num_cnots
-from stim import Circuit
-
 from spidercat.utils import qasm_to_stim, make_stim_circ_noisy, get_project_root
-
-import csv
 
 cwd = Path(__file__).parent
 
-from typing import TypedDict, Iterable, Any
+from typing import Iterable, Any
 
 
-class SimulationInfo(TypedDict):
+@dataclass(frozen=True)
+class SimulationInfo:
     circuit: stim.Circuit
     method: str
     num_samples: int
@@ -37,14 +32,36 @@ class SimulationInfo(TypedDict):
     t: int
     basis: str
 
+    @classmethod
+    def init(cls, method, n, t, p, num_samples, basis):
+        circ = load_stim_circuit(t, n, method)
+        if circ is None:
+            return None
+        noisy_circ, _ = make_stim_circ_noisy(circ, p_1=p, p_2=p, p_init=2 / 3 * p, p_meas=2 / 3 * p, p_mem=0)
+        add_measurements(noisy_circ, n, method, basis)
 
-class SimulationResults(TypedDict):
-    p: float
-    method: str
-    t: int
-    n: int
-    k: int
-    circuit_hash: str
+        return cls(
+            circuit=noisy_circ,
+            method=method,
+            num_samples=num_samples,
+            num_flags=circ.num_qubits - n,
+            p=p,
+            t=t,
+            n=n,
+            basis=basis,
+        )
+
+    def with_samples(self, num_samples: int):
+        return SimulationInfo(
+            circuit=self.circuit,
+            method=self.method,
+            num_samples=num_samples,
+            num_flags=self.num_flags,
+            p=self.p,
+            t=self.t,
+            n=self.n,
+            basis=self.basis,
+        )
 
 
 def load_stim_circuit(t: int, n: int, method: str, p: int = 1):
@@ -64,14 +81,6 @@ def load_stim_circuit(t: int, n: int, method: str, p: int = 1):
         return circuit
 
     return stim.Circuit(my_file.read_text())
-
-
-def save_simulation_data(n, t, samples: np.ndarray):
-    # now = time.strftime("%Y-%m-%d_%H:%M:%S", time.gmtime())
-    file_name = f"simulation_data/samples_{n}_{t}.npz"
-    stim.write_shot_data_file(data=samples, path=file_name, format="b8")
-    # np.savez_compressed(file_name, samples)
-    print(f"Saved samples to {file_name}")
 
 
 def calculate_wilson_interval(k, n, confidence=0.95):
@@ -105,191 +114,23 @@ def error_is_detected(flags: np.ndarray, method: str):
     raise ValueError(f"Unknown error detection method: {method}")
 
 
-def process_samples(samples: np.ndarray, num_flags: int, n: int, t: int, p: float, total_samples_attempted: int,
-                    circuit: stim.Circuit, method: str, num_paths=1, basis="Z"):
-    """
-    Processes raw simulation samples to generate rich statistics.
-    """
-    # 1. Post-selection (Discard runs where flags triggered)
-    if method == 'spider-cat':
-        converter = circuit.compile_m2d_converter()
-        detectors = converter.convert(measurements=samples, append_observables=False)
-        error_detected = np.any(detectors, axis=1)
-    else:
-        error_detected = error_is_detected(samples[:, :num_flags], method)
-    post_selected_samples = samples[~error_detected]
-
-    num_accepted = post_selected_samples.shape[0]
-    acceptance_rate = num_accepted / total_samples_attempted if total_samples_attempted > 0 else 0.0
-
-    # 2. Calculate Data Errors (Distance from nearest codeword)
-    if num_accepted > 0:
-        raw_errors = np.sum(post_selected_samples[:, num_flags:], axis=1)
-        # Fold errors: if > n/2, it means we drifted to the "other" logical state
-        if basis == "Z":
-            num_data_errors = np.where(raw_errors > n // 2, n - raw_errors, raw_errors)
-            unique_errors, counts = np.unique(num_data_errors, return_counts=True)
-            error_counts = dict(zip(unique_errors.tolist(), counts.tolist()))
-        else:
-            num_errors = np.sum(raw_errors % 2).tolist()
-            error_counts = {0: len(raw_errors) - num_errors, 1: num_errors}
-    else:
-        error_counts = {}
-
-    # 3. Generate Statistics Dictionary
-    stats = {}
-
-    # We want entries even for 0 errors if it happened, or if the dict is empty
-    # If no samples accepted, return empty or a default failure record
-    if num_accepted == 0:
-        return {}
-
-    for k, count in error_counts.items():
-        p_hat = count / num_accepted
-
-        # Standard Error (Wald)
-        std_error = math.sqrt(p_hat * (1 - p_hat) / num_accepted)
-
-        # Wilson Interval (Better for low prob)
-        wilson_low, wilson_high = calculate_wilson_interval(count, num_accepted)
-
-        # Wald Interval (Standard, but can be inaccurate near 0)
-        z = 1.96  # 95% confidence
-        wald_low = p_hat - z * std_error
-        wald_high = p_hat + z * std_error
-
-        stats[k] = {
-            "n": n,
-            't': t,
-            'p': p,
-            "k": k,
-            "count": count,
-            "total_samples": total_samples_attempted,
-            "num_accepted": num_accepted,
-            "probability": p_hat,  # P(k | accepted)
-            "acceptance_rate": acceptance_rate,
-            "std_error": std_error,
-            "ci_wilson_lower": wilson_low,
-            "ci_wilson_upper": wilson_high,
-            "ci_wald_lower": max(0.0, wald_low),
-            "ci_wald_upper": min(1.0, wald_high),
-            "circuit": str(circuit),
-            "num_cx": get_num_cnots(circuit),
-            "depth": get_circuit_depth(circuit),
-            "num_flags": num_flags,
-            "num_qubits": circuit.num_qubits,
-            "num_paths": num_paths,
-        }
-
-    return stats
-
-
-def add_measurements(circ: stim.Circuit, n: int, method: str, basis = "Z"):
+def add_measurements(circ: stim.Circuit, n: int, method: str, basis="Z"):
     if method in ("flag-at-origin"):
         circ.append("M" if basis == "Z" else "MX", range(circ.num_qubits - n, circ.num_qubits))
     if method in ("MQT", "spider-cat"):
         circ.append("M" if basis == "Z" else "MX", range(n))
 
 
-# def run_simulation(n: int, t: int, p: float, num_samples: int = 1_000_000, method="spider-cat",
-#                    save_samples: bool = False, num_paths=1, basis="Z"):
-#     circ = load_stim_circuit(t, n, method, num_paths)
-#     if circ is None:
-#         return None
-#
-#     num_flags = circ.num_qubits - n
-#     noisy_circ = make_stim_circ_noisy(circ, p_2=p, p_init=2 / 3 * p, p_meas=2 / 3 * p, p_mem=0)
-#     # noisy_circ = make_stim_circ_noisy(circ, p_2=p, p_init=2 / 3 * p, p_meas=2 / 3 * p, p_mem=p / 100)
-#     # noisy_circ = make_stim_circ_noisy(circ, p_2=p, p_init=0, p_meas=0, p_mem=0)
-#     add_measurements(noisy_circ, n, method, basis)
-#
-#     # Run the simulation
-#     circuit_sampler = noisy_circ.compile_sampler()
-#     samples: np.ndarray = circuit_sampler.sample(num_samples)
-#
-#     if save_samples:
-#         save_simulation_data(n, t, samples)
-#
-#     # Process metrics
-#     stats = process_samples(samples, num_flags, n, t, p, num_samples, noisy_circ, method, num_paths, basis)
-#
-#     # Optional: Print summary of counts for quick debugging
-#     counts_summary = {k: v['count'] for k, v in stats.items()}
-#     print(f"Stats for {t}-FT {n}-cat (p={p}): {counts_summary}")
-#
-#     return stats
-#
-#
-# # 1. Define a helper function that handles a SINGLE 'n'
-# def process_simulation(n, t, p, num_samples, method='spider-cat', num_paths=1, basis="Z"):
-#     stats_dict = run_simulation(n, t, p, num_samples, method, num_paths=num_paths, basis=basis)
-#     if stats_dict is None:
-#         return []
-#     return list(stats_dict.values())
-#
-#
-# def simulate_t_n(ts, ns, method='spider-cat', num_paths=1, basis="Z"):
-#     print("Starting simulation loop, varying values of t and n")
-#     print(f"Method: {method}; Number of paths: {num_paths}")
-#     # parallel_results = (
-#     #     process_simulation(n, t, p=0.01, num_samples=1_000_000, method=method, num_paths=num_paths) for t in ts for n in
-#     #     ns
-#     # )
-#     parallel_results = Parallel(n_jobs=-2)(
-#         delayed(process_simulation)(n, t, p=0.05, num_samples=5_000_000 * min(t, 10), method=method,
-#                                     num_paths=num_paths, basis=basis) for t in ts for n in ns
-#     )
-#     collected_data = [item for sublist in parallel_results for item in sublist]
-#     basis_str = "_X" if basis == "X" else ""
-#     with open(f"simulation_data/simulation_results_t_n_{method}-opt_p{num_paths}{basis_str}.json", "w") as f:
-#         json.dump(collected_data, f, indent=4)
-#     print("Simulation complete")
-#     print()
-
-
-def simulate_t_p(ts, ps, n):
-    print("Starting simulation loop, varying values of t and p")
-    parallel_results = Parallel(n_jobs=-3)(
-        delayed(process_simulation)(n=n, t=t, p=p, num_samples=5_000_000) for t in ts for p in ps
-    )
-    collected_data = [item for sublist in parallel_results for item in sublist]
-    with open(f"simulation_data/simulation_results_t_p_n{n}.json", "w") as f:
-        json.dump(collected_data, f, indent=4)
-    print("Simulation complete")
-    print()
-
-
-def get_simulation_info(method, n, t, p, num_samples, basis) -> SimulationInfo | None:
-    circ = load_stim_circuit(t, n, method)
-    if circ is None:
-        return None
-    noisy_circ, _ = make_stim_circ_noisy(circ, p_1=p, p_2=p, p_init=2 / 3 * p, p_meas=2 / 3 * p, p_mem=0)
-    add_measurements(noisy_circ, n, method, basis)
-
-    return SimulationInfo(
-        circuit=noisy_circ,
-        method=method,
-        p=p,
-        t=t,
-        n=n,
-        num_samples=num_samples,
-        num_flags=circ.num_qubits - n,
-        basis=basis,
-    )
-
-
-
-
 def run_simulation(simulation_info: SimulationInfo):
-    sampler = simulation_info["circuit"].compile_sampler()
-    samples = sampler.sample(simulation_info["num_samples"])
+    sampler = simulation_info.circuit.compile_sampler()
+    samples = sampler.sample(simulation_info.num_samples)
     # 1. Post-selection (Discard runs where flags triggered)
-    if simulation_info["method"] == 'spider-cat':
-        converter = simulation_info["circuit"].compile_m2d_converter()
+    if simulation_info.method == 'spider-cat':
+        converter = simulation_info.circuit.compile_m2d_converter()
         detectors = converter.convert(measurements=samples, append_observables=False)
         error_detected = np.any(detectors, axis=1)
     else:
-        error_detected = error_is_detected(samples[:, :simulation_info["num_flags"]], simulation_info["method"])
+        error_detected = error_is_detected(samples[:, :simulation_info.num_flags], simulation_info.method)
     post_selected_samples = samples[~error_detected]
 
     num_accepted = post_selected_samples.shape[0]
@@ -303,13 +144,13 @@ def get_error_counts(post_selected_samples: ndarray[tuple[int, ...], Any],
     if len(post_selected_samples) == 0:
         return {}
 
-    raw_errors = np.sum(post_selected_samples[:, simulation_info["num_flags"]:], axis=1)
+    raw_errors = np.sum(post_selected_samples[:, simulation_info.num_flags:], axis=1)
 
     # Fold errors: if > n/2, it means we drifted to the "other" logical state
-    if simulation_info["basis"] == "Z":
+    if simulation_info.basis == "Z":
         num_data_errors = np.where(
-            raw_errors > simulation_info["n"] // 2,
-            simulation_info["n"] - raw_errors,
+            raw_errors > simulation_info.n // 2,
+            simulation_info.n - raw_errors,
             raw_errors
         )
         unique_errors, counts = np.unique(num_data_errors, return_counts=True)
@@ -322,10 +163,10 @@ def get_error_counts(post_selected_samples: ndarray[tuple[int, ...], Any],
 def batch_sim_info(_batch_size: int, simulation_info: Iterable[SimulationInfo]) -> list[Any]:
     batched_sim_info = []
     for info in simulation_info:
-        d, m = divmod(info["num_samples"], _batch_size)
-        batched_sim_info += [info | {"num_samples": _batch_size}] * d
+        d, m = divmod(info.num_samples, _batch_size)
+        batched_sim_info += [info.with_samples(_batch_size)] * d
         if m:
-            batched_sim_info.append(info | {"num_samples": m})
+            batched_sim_info.append(info.with_samples(m))
     return batched_sim_info
 
 
@@ -333,7 +174,7 @@ def make_simulation_info_list(ps, methods, ts, ns, basis, num_samples=5_000_000)
     circuits = []
     reported = set()
     for p, m, t, n in itertools.product(ps, methods, ts, ns):
-        si = get_simulation_info(m, n, t, p, num_samples=num_samples, basis=basis)
+        si = SimulationInfo.init(m, n, t, p, num_samples=num_samples, basis=basis)
         if si is None:
             if (m, n, t) in reported: continue
             print(f"Circuit not available for method={m}, {n=}, {t=}", file=sys.stderr)
@@ -358,7 +199,7 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    N = 50
+    N = 20
     T = 2
     # # simulate_t_n(range(2, T+1), range(8, N + 1), method="spider-cat", num_paths=1)
     # simulate_t_n(range(3, T+1), range(10, N + 1), method="spider-cat", num_paths=1)
@@ -375,7 +216,7 @@ if __name__ == "__main__":
     # simulate_t_p(range(3, 8), (10 ** np.linspace(-0.3, -2, 18)).tolist(), n=80)
     ps = [0.05]
     methods = ["spider-cat", "flag-at-origin", "MQT"]
-    ts = range(2, T+1)
+    ts = range(2, T + 1)
     ns = range(8, N + 1)
     simulation_info = make_simulation_info_list(ps, methods, ts, ns, basis="Z")
     batched_sim_info = batch_sim_info(10_000_000, simulation_info)
@@ -389,14 +230,14 @@ if __name__ == "__main__":
 
     for info, num_accepted, error_counts in tqdm.tqdm(results, total=len(batched_sim_info)):
 
-        circ_str = str(info["circuit"])
+        circ_str = str(info.circuit)
         circ_hash = hashlib.sha256(circ_str.encode()).hexdigest()[:16]
         circuit_file = simulated_circuits_dir.joinpath(f"{circ_hash}.stim")
         if not circuit_file.exists():
-            info["circuit"].to_file(circuit_file)
+            info.circuit.to_file(circuit_file)
 
         df_results = pd.DataFrame([{
-            "num_samples": info["num_samples"],
+            "num_samples": info.num_samples,
             "num_accepted": num_accepted,
             "error_counts": error_counts
         }])
@@ -406,7 +247,7 @@ if __name__ == "__main__":
         else:
             df_results.to_csv(csv_file, index=False)
 
-        p, method, t, n, basis = info["p"], info["method"], info["t"], info["n"], info["basis"]
+        p, method, t, n, basis = info.p, info.method, info.t, info.n, info.basis
 
         df_key = pd.DataFrame([{
             "method": method,
