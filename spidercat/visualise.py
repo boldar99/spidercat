@@ -534,7 +534,7 @@ def visualise_pk_per_t_2(df, n):
     plt.close()
 
 
-def visualise_flag_and_ar(methods_data_dict, t):
+def visualise_flag_and_ar(methods_data_dict, t, p: float | None = None):
     """
     Compares how different methods scale with n, using the metric 'Expected distance from error':
     sum all w P(fault has weight w) * max(t - w, 0)
@@ -548,13 +548,17 @@ def visualise_flag_and_ar(methods_data_dict, t):
             t_extra = raw_data[1]
             raw_data = raw_data[0]
             df = pd.DataFrame(raw_data)
-            scope_df = df[df['n'].between(10, 50) & (df['t'] == (t + t_extra))]
+            scope_df = df[df['n'].between(8, 50) & (df['t'] == (t + t_extra))]
         else:
             df = pd.DataFrame(raw_data)
-            scope_df = df[df['n'].between(10, 50) & (df['t'] == t)]
+            scope_df = df[df['n'].between(8, 50) & (df['t'] == t)]
+
+        if p is not None and 'p' in scope_df.columns:
+            scope_df = scope_df[np.isclose(scope_df['p'], p)]
 
         if scope_df.empty:
-            print(f"Warning: No data for method '{method_name}' at t={t}")
+            p_msg = f" at p={p}" if p is not None else ""
+            print(f"Warning: No data for method '{method_name}' at t={t}{p_msg}")
             continue
 
         for n, group in scope_df.groupby('n'):
@@ -623,13 +627,17 @@ def visualise_flag_and_ar(methods_data_dict, t):
     ax1.legend(style_lines, style_labels, loc='lower center')
 
     plt.title(f"Method Comparison: Number of Flags & Acceptance Rate vs CAT state size (t={t})", fontsize=14)
+    plots_dir = cwd / "plots"
+    plots_dir.mkdir(parents=True, exist_ok=True)
+    p_str = f"_p{p}" if p is not None else ""
     plt.tight_layout()
-    plt.savefig(f"plots/flags_and_AR_per_n_at_t{t}.png", dpi=600)
-    # plt.savefig(f"plots/flags_and_AR_per_n_at_t{t}.png")
+    plt.savefig(plots_dir / f"flags_and_AR_per_n_at_t{t}{p_str}.png", dpi=600)
+    if p_str:
+        plt.savefig(plots_dir / f"flags_and_AR_per_n_at_t{t}.png", dpi=600)
     plt.close()
 
 
-def visualise_expected_faults(methods_data_dict, t):
+def visualise_expected_faults(methods_data_dict, t, p: float = 0.05):
     """
     Compares how different methods scale with n, using the metric 'Expected distance from error':
     sum all w P(fault has weight w) * max(t - w, 0)
@@ -643,13 +651,17 @@ def visualise_expected_faults(methods_data_dict, t):
             t_extra = raw_data[1]
             raw_data = raw_data[0]
             df = pd.DataFrame(raw_data)
-            scope_df = df[df['n'].between(10, 50) & (df['t'] == (t + t_extra))]
+            scope_df = df[df['n'].between(8, 50) & (df['t'] == (t + t_extra))]
         else:
             df = pd.DataFrame(raw_data)
-            scope_df = df[df['n'].between(10, 50) & (df['t'] == t)]
+            scope_df = df[df['n'].between(8, 50) & (df['t'] == t)]
+
+        if p is not None and 'p' in scope_df.columns:
+            scope_df = scope_df[np.isclose(scope_df['p'], p)]
 
         if scope_df.empty:
-            print(f"Warning: No data for method '{method_name}' at t={t}")
+            p_msg = f" at p={p}" if p is not None else ""
+            print(f"Warning: No data for method '{method_name}' at t={t}{p_msg}")
             continue
 
         for n, group in scope_df.groupby('n'):
@@ -738,13 +750,19 @@ def visualise_expected_faults(methods_data_dict, t):
     ax1.legend(style_lines, style_labels, loc='lower center')
 
     # plt.title(f"Expected Number of Faults & Acceptance Rate vs CAT state size (t={t})", fontsize=14)
+    plots_dir = cwd / "plots"
+    plots_dir.mkdir(parents=True, exist_ok=True)
+    p_str = f"_p{p}" if p is not None else ""
     plt.tight_layout()
-    plt.savefig(f"plots/expected_faults_per_n_at_t{t}.pdf")
-    plt.savefig(f"plots/expected_faults_per_n_at_t{t}.png")
+    plt.savefig(plots_dir / f"expected_faults_per_n_at_t{t}{p_str}.pdf")
+    plt.savefig(plots_dir / f"expected_faults_per_n_at_t{t}{p_str}.png")
+    if p_str:
+        plt.savefig(plots_dir / f"expected_faults_per_n_at_t{t}.pdf")
+        plt.savefig(plots_dir / f"expected_faults_per_n_at_t{t}.png")
     plt.close()
 
 
-def visualise_method_comparison(methods_data_dict, t, second_y_axis="acceptance_rate"):
+def visualise_method_comparison(methods_data_dict, t, second_y_axis="acceptance_rate", p: float | None = None):
     """
     Compares multiple methods for a fixed fault distance t with Dual Axis.
 
@@ -752,6 +770,7 @@ def visualise_method_comparison(methods_data_dict, t, second_y_axis="acceptance_
         methods_data_dict (dict): Keys represent method names, Values are data lists.
         t (int): The fault distance to filter by.
         plot_as_failure_rate (bool): If True, plots failure rate (Log Scale).
+        p (float, optional): Physical error rate to filter on.
     """
     results = []
 
@@ -764,13 +783,17 @@ def visualise_method_comparison(methods_data_dict, t, second_y_axis="acceptance_
             t_extra = raw_data[1]
             raw_data = raw_data[0]
             df = pd.DataFrame(raw_data)
-            scope_df = df[df['n'].between(10, 50) & (df['t'] == (t + t_extra))]
+            scope_df = df[df['n'].between(8, 50) & (df['t'] == (t + t_extra))]
         else:
             df = pd.DataFrame(raw_data)
-            scope_df = df[df['n'].between(10, 50) & (df['t'] == t)]
+            scope_df = df[df['n'].between(8, 50) & (df['t'] == t)]
+
+        if p is not None and 'p' in scope_df.columns:
+            scope_df = scope_df[np.isclose(scope_df['p'], p)]
 
         if scope_df.empty:
-            print(f"Warning: No data for method '{method_name}' at t={t}")
+            p_msg = f" at p={p}" if p is not None else ""
+            print(f"Warning: No data for method '{method_name}' at t={t}{p_msg}")
             continue
 
         # Group by 'n' to calculate metrics per cat state size
@@ -881,13 +904,17 @@ def visualise_method_comparison(methods_data_dict, t, second_y_axis="acceptance_
     ax1.legend(style_lines, style_labels, loc='lower center')
 
     plt.title(f"Method Comparison: Error Probability vs CAT state size (t={t})", fontsize=14)
+    plots_dir = cwd / "plots"
+    plots_dir.mkdir(parents=True, exist_ok=True)
+    p_str = f"_p{p}" if p is not None else ""
     plt.tight_layout()
-    plt.savefig(f"plots/k_less_t_per_n_at_t{t}.png")
-    # plt.show()
+    plt.savefig(plots_dir / f"k_less_t_per_n_at_t{t}{p_str}.png")
+    if p_str:
+        plt.savefig(plots_dir / f"k_less_t_per_n_at_t{t}.png")
     plt.close()
 
 
-def visualise_two_panel_hybrid(methods_data_dict, t):
+def visualise_two_panel_hybrid(methods_data_dict, t, p: float | None = None):
     """
     Compares multiple methods using a 2-panel plot (3:2 ratio).
     Top panel: Error Probability.
@@ -900,10 +927,13 @@ def visualise_two_panel_hybrid(methods_data_dict, t):
         if isinstance(raw_data, tuple):
             t_extra = raw_data[1]
             df = pd.DataFrame(raw_data[0])
-            scope_df = df[df['n'].between(10, 50) & (df['t'] == (t + t_extra))]
+            scope_df = df[df['n'].between(8, 50) & (df['t'] == (t + t_extra))]
         else:
             df = pd.DataFrame(raw_data)
-            scope_df = df[df['n'].between(10, 50) & (df['t'] == t)]
+            scope_df = df[df['n'].between(8, 50) & (df['t'] == t)]
+
+        if p is not None and 'p' in scope_df.columns:
+            scope_df = scope_df[np.isclose(scope_df['p'], p)]
 
         if scope_df.empty:
             continue
@@ -1035,72 +1065,35 @@ def visualise_two_panel_hybrid(methods_data_dict, t):
     # Bring panels closer together
     plt.subplots_adjust(hspace=0.08)
 
-    plt.savefig(f"plots/two_panel_hybrid_t{t}.pdf", dpi=1200, bbox_inches='tight')
-    plt.savefig(f"plots/two_panel_hybrid_t{t}.png", bbox_inches='tight')
+    plots_dir = cwd / "plots"
+    plots_dir.mkdir(parents=True, exist_ok=True)
+    p_str = f"_p{p}" if p is not None else ""
+    plt.savefig(plots_dir / f"two_panel_hybrid_t{t}{p_str}.pdf", dpi=1200, bbox_inches='tight')
+    plt.savefig(plots_dir / f"two_panel_hybrid_t{t}{p_str}.png", bbox_inches='tight')
+    if p_str:
+        plt.savefig(plots_dir / f"two_panel_hybrid_t{t}.pdf", dpi=1200, bbox_inches='tight')
+        plt.savefig(plots_dir / f"two_panel_hybrid_t{t}.png", bbox_inches='tight')
     plt.close()
 
 
 if __name__ == '__main__':
     df_all = process_simulation_df(load_raw_simulation_df(basis="Z"))
-    df_sc_tree_opt = df_all[df_all["method"] == "spider-cat"].copy() if not df_all.empty else pd.DataFrame()
+    df_sc_tree_old = df_all[df_all["method"] == "spider-cat-old"].copy() if not df_all.empty else pd.DataFrame()
+    df_sc_tree_opt = df_all[df_all["method"] == "spider-cat-optimized"].copy() if not df_all.empty else pd.DataFrame()
     df_FAO = df_all[df_all["method"] == "flag-at-origin"].copy() if not df_all.empty else pd.DataFrame()
     df_MQT = df_all[df_all["method"] == "MQT"].copy() if not df_all.empty else pd.DataFrame()
     z_errors = load_simulation_df(method="spider-cat", basis="X")
 
     methods = {
-        # "SpiderCat": z_errors,
-        "SpiderCat": df_sc_tree_opt,
-        # "SpiderCat": df_sc_tree,
+        "SpiderCat (Old)": df_sc_tree_old,
+        "SpiderCat+": df_sc_tree_opt,
         "MQT": df_MQT,
-        "Flag at Origin": df_FAO,
-        # "SpiderCat (H-Path)": df_sc_ham,
-        # "SpiderCat (T≈13)": (df_sc_inf, math.inf),
-        # "SpiderCat (Prime Inv.)": (df_sc_inf_prime, math.inf),
-        # "SpiderCat (Tree T-1)": (df_sc_tree, -1),
-        # "SpiderCat (Tree T+1)": (df_sc_tree, 1),
-        # "SpiderCat (Tree T+2)": (df_sc_tree, 2),
-        # "SpiderCat (Tree T+3)": (df_sc_tree, 3),
-        # "SpiderCat (3-Forest)": df_sc_p3,
-        # "SpiderCat (5-Forest)": df_sc_p5,
-        # "SpiderCat (5-Forest T+1)": (df_sc_p5, 1),
-        # "SpiderCat (5-Forest T+2)": (df_sc_p5, 2),
-        # "SpiderCat (5-Forest T+3)": (df_sc_p5, 3),
-        # "SpiderCat (5-Forest)": df_sc_p5,
-        # "SpiderCat (2-Path)": df_sc_p2,
-        # "SpiderCat (3-Path)": df_sc_p3,
-        # "SpiderCat (4 forest)": df_sc_p4,
-        # "SpiderCat (5 forest)": df_sc_p5,
-        # "SpiderCat (10 forest)": df_sc_p10,
-        # "SpiderCat (20 forest)": df_sc_p20,
+        "Flag at Origin": df_FAO
     }
-    # visualise_pk_per_n(df_sc_tree_opt, 5)
-    # visualise_pk_per_n(z_errors, 5)
-    # visualise_failure_distance(methods, t=2)
-    # visualise_expected_faults(methods, t=3)
     visualise_expected_faults(methods, t=2)
     visualise_expected_faults(methods, t=3)
-    # visualise_expected_faults(methods, t=5)
-    # visualise_expected_faults(methods, t=6)
-    # visualise_expected_faults(methods, t=7)
-    # visualise_flag_and_ar(methods, t=3)
-    # visualise_flag_and_ar(methods, t=4)
-    # visualise_flag_and_ar(methods, t=5)
-    # visualise_flag_and_ar(methods, t=6)
-    # visualise_flag_and_ar(methods, t=7)
-    # visualise_method_comparison(methods, t=4, second_y_axis='num_flags')
-    # visualise_two_panel_hybrid(methods, t=3)
-    # visualise_two_panel_hybrid(methods, t=4)
-    # visualise_two_panel_hybrid(methods, t=5)
-    # visualise_two_panel_hybrid(methods, t=6)
-    # visualise_two_panel_hybrid(methods, t=7)
-    # visualise_clean_stacked_comparison(methods)
-    # visualise_method_comparison(methods, t=6, second_y_axis='num_flags')
-    # visualise_method_comparison(methods, t=7, second_y_axis='num_flags')
-    #
-    # # with open(f"simulation_data/simulation_results_t_n.json", "r") as f:
-    # #     collected_data = json.load(f)
-    # # df_t_n = pd.DataFrame(collected_data)
-    # #
+    visualise_expected_faults(methods, t=4)
+
     # visualise_acceptance_heatmap(df_sc_tree)
     # for t in [3, 4, 5, 6, 7]:
     #     visualise_pk_per_n(df_sc_tree, t)

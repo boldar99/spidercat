@@ -68,7 +68,8 @@ class SimulationInfo:
 
 def load_stim_circuit(t: int, n: int, method: str, p: int = 1):
     method_to_file = {
-        "spider-cat": Path(f"{cwd}/circuits/cat_state_t{t}_n{n}_p{p}.stim"),
+        "spider-cat-optimized": Path(f"{cwd}/circuits/cat_state_t{t}_n{n}_p{p}.stim"),
+        "spider-cat-old": Path(f"{cwd}/circuits_old/cat_state_t{t}_n{n}_p{p}.stim"),
         "flag-at-origin": Path(f"{cwd}/flag_at_origin_circuits/d{t * 2 + 1}-q{n}-GHZ.qasm"),
         "MQT": Path(f"{cwd}/MQT_circuits/ft_ghz_{n}_{t}.stim"),
     }
@@ -109,7 +110,7 @@ def calculate_wilson_interval(k, n, confidence=0.95):
 
 
 def error_is_detected(flags: np.ndarray, method: str):
-    if method in ("spider-cat", "flag-at-origin"):
+    if method in ("spider-cat", "spider-cat-old", "spider-cat-optimized", "flag-at-origin"):
         return np.any(flags, axis=1)
     if method == "MQT":
         return ~np.logical_or(np.all(flags == 0, axis=1), np.all(flags == 1, axis=1))
@@ -117,9 +118,9 @@ def error_is_detected(flags: np.ndarray, method: str):
 
 
 def add_measurements(circ: stim.Circuit, n: int, method: str, basis="Z"):
-    if method in ("flag-at-origin"):
+    if method in ("flag-at-origin", ):
         circ.append("M" if basis == "Z" else "MX", range(circ.num_qubits - n, circ.num_qubits))
-    if method in ("MQT", "spider-cat"):
+    if method in ("MQT", "spider-cat", "spider-cat-old", "spider-cat-optimized"):
         circ.append("M" if basis == "Z" else "MX", range(n))
 
 
@@ -127,7 +128,7 @@ def run_simulation(simulation_info: SimulationInfo):
     sampler = simulation_info.circuit.compile_sampler()
     samples = sampler.sample(simulation_info.num_samples)
     # 1. Post-selection (Discard runs where flags triggered)
-    if simulation_info.method == 'spider-cat':
+    if simulation_info.method in ("spider-cat", "spider-cat-old", "spider-cat-optimized"):
         converter = simulation_info.circuit.compile_m2d_converter()
         detectors = converter.convert(measurements=samples, append_observables=False)
         error_detected = np.any(detectors, axis=1)
@@ -209,10 +210,10 @@ if __name__ == "__main__":
 
     # N = 50
     # T = 7
-    methods = ["spider-cat", "flag-at-origin", "MQT"]
-    ps = [0.0001, 0.001, 0.005, 0.01, 0.05, 0.1]
-    ts = range(2, 7)
-    ns = range(10, 51, 5)
+    methods = ["spider-cat-old", "spider-cat-optimized", "flag-at-origin", "MQT"]
+    ps = [0.05, 0.1]
+    ts = range(2, 5)
+    ns = range(10, 50, 2)
     simulation_info = make_simulation_info_list(
         ps, methods, ts, ns, basis="Z", simulation_results_dir=simulation_results_dir
     )

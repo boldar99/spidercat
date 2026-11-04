@@ -1,0 +1,10 @@
+H 0
+CX 0 1 1 7 0 2 2 3 2 8 2 9 0 4 0 5 5 8
+M 8
+DETECTOR rec[-1]
+CX 0 6 0 7
+M 7
+DETECTOR rec[-1]
+CX 0 9
+M 9
+DETECTOR rec[-1]
