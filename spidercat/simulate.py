@@ -207,12 +207,12 @@ if __name__ == "__main__":
 
     start_time = time.time()
 
-    N = 50
-    T = 3
-    ps = [0.05]
+    # N = 50
+    # T = 7
     methods = ["spider-cat", "flag-at-origin", "MQT"]
-    ts = range(2, T + 1)
-    ns = range(8, N + 1)
+    ps = [0.0001, 0.001, 0.005, 0.01, 0.05, 0.1]
+    ts = range(2, 7)
+    ns = range(10, 51, 5)
     simulation_info = make_simulation_info_list(
         ps, methods, ts, ns, basis="Z", simulation_results_dir=simulation_results_dir
     )
