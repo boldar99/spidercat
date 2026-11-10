@@ -4,6 +4,7 @@ import math
 import os
 import sys
 import time
+from collections import defaultdict
 from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Iterable, Any
@@ -16,9 +17,46 @@ import tqdm
 from joblib import Parallel, delayed
 from numpy import ndarray
 from scipy.stats import norm
-from spidercat.utils import qasm_to_stim, make_stim_circ_noisy, get_project_root
+from spidercat.utils import qasm_to_stim, make_stim_circ_noisy, get_project_root, NOISE_GATES, SPECIAL_GATES
 
 cwd = Path(__file__).parent
+
+
+def remove_ideal_output_noise(noisy_circ: stim.Circuit) -> stim.Circuit:
+    qubit_ops: dict[int, list[str]] = defaultdict(list)
+    for inst in noisy_circ.flattened():
+        if inst.name in NOISE_GATES or inst.name in SPECIAL_GATES:
+            continue
+        for t in inst.targets_copy():
+            if t.is_qubit_target:
+                qubit_ops[t.value].append(inst.name)
+
+    ideal_qubits = {
+        q
+        for q, ops in qubit_ops.items()
+        if len(ops) == 2 and ops[0] in {"R", "RX"} and ops[1] in {"CX", "CNOT"}
+    }
+    if not ideal_qubits:
+        return noisy_circ
+
+    cleaned_circ = stim.Circuit()
+    for inst in noisy_circ:
+        if inst.name in NOISE_GATES:
+            targets = inst.targets_copy()
+            if inst.name == "DEPOLARIZE2":
+                kept_targets = [
+                    t
+                    for i in range(0, len(targets), 2)
+                    if targets[i].value not in ideal_qubits and targets[i + 1].value not in ideal_qubits
+                    for t in (targets[i], targets[i + 1])
+                ]
+            else:
+                kept_targets = [t for t in targets if t.value not in ideal_qubits]
+            if kept_targets:
+                cleaned_circ.append(inst.name, kept_targets, inst.gate_args_copy())
+        else:
+            cleaned_circ.append(inst)
+    return cleaned_circ
 
 
 @dataclass(frozen=True)
@@ -39,11 +77,12 @@ class SimulationInfo:
         if circ is None:
             return None
         noisy_circ, _ = make_stim_circ_noisy(circ, p_1=p, p_2=p, p_init=2 / 3 * p, p_meas=2 / 3 * p, p_mem=0)
+        noisy_circ = remove_ideal_output_noise(noisy_circ)
         add_measurements(noisy_circ, n, method, basis)
         circ_hash = hashlib.sha256(str(noisy_circ).encode()).hexdigest()[:16]
 
         if simulation_results_dir is None:
-            simulation_results_dir = get_project_root().joinpath("benchmarks", "simulation_results")
+            simulation_results_dir = get_project_root().joinpath("benchmark-ideal-output", "simulation_results")
         csv_file = simulation_results_dir.joinpath(f"{circ_hash}.csv")
         if csv_file.exists():
             df_existing = pd.read_csv(csv_file)
@@ -189,7 +228,7 @@ def make_simulation_info_list(ps, methods, ts, ns, basis, num_samples=10_000_000
 
 
 if __name__ == "__main__":
-    benchmarks_dir = get_project_root().joinpath("benchmarks")
+    benchmarks_dir = get_project_root().joinpath("benchmark-ideal-output")
     simulation_results_dir = benchmarks_dir.joinpath("simulation_results")
     simulated_circuits_dir = benchmarks_dir.joinpath("simulated_circuits")
     os.makedirs(simulation_results_dir, exist_ok=True)
@@ -211,7 +250,8 @@ if __name__ == "__main__":
     # N = 50
     # T = 7
     methods = ["spider-cat-old", "spider-cat-optimized", "flag-at-origin", "MQT"]
-    ps = [0.0001, 0.001, 0.005, 0.01, 0.05, 0.1]
+    # ps = [0.0001, 0.001, 0.005, 0.01, 0.05, 0.1]
+    ps = [0.01]
     ts = range(2, 7)
     ns = range(8, 51)
     simulation_info = make_simulation_info_list(
