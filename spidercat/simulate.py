@@ -62,8 +62,6 @@ def remove_ideal_output_noise(noisy_circ: stim.Circuit) -> tuple[stim.Circuit, i
                     prep_idx = o_ops[pos - 1][0]
                     if prep_idx + 1 < len(insts) and insts[prep_idx + 1].name in NOISE_GATES:
                         remove_noise_indices.add(prep_idx + 1)
-                    if last_idx + 1 < len(insts) and insts[last_idx + 1].name in NOISE_GATES:
-                        remove_noise_indices.add(last_idx + 1)
                     excluded_cnots.add(last_idx)
 
     if not remove_noise_indices:
@@ -241,8 +239,7 @@ def make_simulation_info_list(ps, methods, ts, ns, basis, num_samples=10_000_000
             print(f"Circuit not available for method={m}, {n=}, {t=}", file=sys.stderr)
             reported.add((m, n, t))
             continue
-        if si.num_samples > 0:
-            circuits.append(si)
+        circuits.append(si)
     return circuits
 
 
