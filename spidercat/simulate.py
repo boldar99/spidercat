@@ -17,46 +17,63 @@ import tqdm
 from joblib import Parallel, delayed
 from numpy import ndarray
 from scipy.stats import norm
-from spidercat.utils import qasm_to_stim, make_stim_circ_noisy, get_project_root, NOISE_GATES, SPECIAL_GATES
+from spidercat.utils import (
+    qasm_to_stim,
+    make_stim_circ_noisy,
+    get_project_root,
+    NOISE_GATES,
+    SPECIAL_GATES,
+    Z_MEASUREMENTS,
+    X_MEASUREMENTS,
+)
 
 cwd = Path(__file__).parent
 
 
-def remove_ideal_output_noise(noisy_circ: stim.Circuit) -> stim.Circuit:
-    qubit_ops: dict[int, list[str]] = defaultdict(list)
-    for inst in noisy_circ.flattened():
+def remove_ideal_output_noise(noisy_circ: stim.Circuit) -> tuple[stim.Circuit, int]:
+    insts = list(noisy_circ.flattened())
+    qubit_ops: dict[int, list[tuple[int, str, list[int]]]] = defaultdict(list)
+    for idx, inst in enumerate(insts):
         if inst.name in NOISE_GATES or inst.name in SPECIAL_GATES:
             continue
-        for t in inst.targets_copy():
-            if t.is_qubit_target:
-                qubit_ops[t.value].append(inst.name)
+        q_targets = [t.value for t in inst.targets_copy() if t.is_qubit_target]
+        for q in q_targets:
+            qubit_ops[q].append((idx, inst.name, q_targets))
 
-    ideal_qubits = {
+    measured_qubits = {
         q
         for q, ops in qubit_ops.items()
-        if len(ops) == 2 and ops[0] in {"R", "RX"} and ops[1] in {"CX", "CNOT"}
+        if any(name in (Z_MEASUREMENTS | X_MEASUREMENTS) for _, name, _ in ops)
     }
-    if not ideal_qubits:
-        return noisy_circ
+
+    remove_noise_indices: set[int] = set()
+    excluded_cnots: set[int] = set()
+    for q, ops in qubit_ops.items():
+        if not ops or q in measured_qubits:
+            continue
+        last_idx, last_name, last_targets = ops[-1]
+        if last_name in {"CX", "CNOT"} and len(last_targets) == 2:
+            for o in last_targets:
+                if o in measured_qubits:
+                    continue
+                o_ops = qubit_ops[o]
+                pos = next(i for i, (oid, _, _) in enumerate(o_ops) if oid == last_idx)
+                if pos > 0 and o_ops[pos - 1][1] in {"R", "RX"}:
+                    prep_idx = o_ops[pos - 1][0]
+                    if prep_idx + 1 < len(insts) and insts[prep_idx + 1].name in NOISE_GATES:
+                        remove_noise_indices.add(prep_idx + 1)
+                    if last_idx + 1 < len(insts) and insts[last_idx + 1].name in NOISE_GATES:
+                        remove_noise_indices.add(last_idx + 1)
+                    excluded_cnots.add(last_idx)
+
+    if not remove_noise_indices:
+        return noisy_circ, 0
 
     cleaned_circ = stim.Circuit()
-    for inst in noisy_circ:
-        if inst.name in NOISE_GATES:
-            targets = inst.targets_copy()
-            if inst.name == "DEPOLARIZE2":
-                kept_targets = [
-                    t
-                    for i in range(0, len(targets), 2)
-                    if targets[i].value not in ideal_qubits and targets[i + 1].value not in ideal_qubits
-                    for t in (targets[i], targets[i + 1])
-                ]
-            else:
-                kept_targets = [t for t in targets if t.value not in ideal_qubits]
-            if kept_targets:
-                cleaned_circ.append(inst.name, kept_targets, inst.gate_args_copy())
-        else:
+    for idx, inst in enumerate(insts):
+        if idx not in remove_noise_indices:
             cleaned_circ.append(inst)
-    return cleaned_circ
+    return cleaned_circ, len(excluded_cnots)
 
 
 @dataclass(frozen=True)
@@ -70,6 +87,7 @@ class SimulationInfo:
     n: int
     t: int
     basis: str
+    num_exclusions: int = 0
 
     @classmethod
     def init(cls, method, n, t, p, num_samples, basis, simulation_results_dir: Path | None = None):
@@ -77,7 +95,7 @@ class SimulationInfo:
         if circ is None:
             return None
         noisy_circ, _ = make_stim_circ_noisy(circ, p_1=p, p_2=p, p_init=2 / 3 * p, p_meas=2 / 3 * p, p_mem=0)
-        noisy_circ = remove_ideal_output_noise(noisy_circ)
+        noisy_circ, num_exclusions = remove_ideal_output_noise(noisy_circ)
         add_measurements(noisy_circ, n, method, basis)
         circ_hash = hashlib.sha256(str(noisy_circ).encode()).hexdigest()[:16]
 
@@ -99,6 +117,7 @@ class SimulationInfo:
             t=t,
             n=n,
             basis=basis,
+            num_exclusions=num_exclusions,
         )
 
     def with_samples(self, num_samples: int) -> "SimulationInfo":
@@ -260,6 +279,11 @@ if __name__ == "__main__":
     batched_sim_info = batch_sim_info(10_000_000, simulation_info)
 
     print("Simulation Information Prepared")
+    exclusion_counts = defaultdict(dict)
+    for si in simulation_info:
+        if si.method in ("spider-cat-old", "spider-cat-optimized"):
+            exclusion_counts[(si.t, si.n)][si.method] = si.num_exclusions
+    print(dict(exclusion_counts))
 
     results = Parallel(n_jobs=-2, return_as="generator")(delayed(run_simulation)(si) for si in batched_sim_info)
     # results = (run_simulation(si) for si in batched_sim_info)
