@@ -444,6 +444,32 @@ def cat_state_6():
     """)
 
 
+def build_traversal_digraph(G: nx.Graph, F: nx.Graph, root) -> nx.DiGraph:
+    """
+    Builds a directed graph representing the tree hierarchy,
+    adding directed edges (l -> t) for missing cycle-closure edges.
+    """
+    di_graph = nx.DiGraph()
+    for node, data in G.nodes(data=True):
+        di_graph.add_node(node, **data)
+
+    queue = [root]
+    visited = {root}
+
+    while queue:
+        current = queue.pop(0)
+
+        # 1. Standard Tree Traversal (Parent -> Child)
+        for neighbor in F.neighbors(current):
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append(neighbor)
+                # Label the edge type for visualization
+                di_graph.add_edge(current, neighbor, edge_type='tree')
+
+    return di_graph
+
+
 if __name__ == "__main__":
     from spidercat.utils import load_solution_triplet
     from spidercat.spanning_tree import find_min_height_roots, match_forest_leaves_to_marked_edges

@@ -470,7 +470,7 @@ def display_digraph(di_graph: nx.DiGraph, figsize=(12, 12), pos=None):
     black_nodes = set()
     node_colors = []
     for node, data in di_graph.nodes(data=True):
-        if not data.get("is_flag") and di_graph.degree(node) == 2:
+        if not data.get("is_mark") and di_graph.degree(node) == 2:
             node_colors.append("black")
             black_nodes.add(node)
         elif data.get("is_flag"):
@@ -510,4 +510,99 @@ def display_digraph(di_graph: nx.DiGraph, figsize=(12, 12), pos=None):
     plt.tight_layout()
     plt.axis('off')
     # plt.show()
+
+
+def display_digraph_on_graph(
+        di_graph: nx.DiGraph,
+        G: nx.Graph,
+        figsize=(12, 12),
+        pos=None
+) -> None:
+    """
+    Displays the directed graph like display_digraph, and additionally draws
+    non-directed dashed gray edges for the remaining edges of G not covered
+    by the digraph (like in draw_forest_on_graph).
+    """
+    if isinstance(di_graph, nx.Graph) and not isinstance(di_graph, nx.DiGraph) and isinstance(G, nx.DiGraph):
+        di_graph, G = G, di_graph
+
+    if nx.is_directed_acyclic_graph(di_graph):
+        plt.figure(figsize=figsize)
+        # 1. Calculate the hierarchical layers mathematically
+        for layer, nodes in enumerate(nx.topological_generations(di_graph)):
+            for node in nodes:
+                # 2. Explicitly assign the layer attribute to each node
+                di_graph.nodes[node]["layer"] = layer
+
+        # 3. Use the newly created "layer" attribute for the layout
+        # align="horizontal" makes it a top-down tree.
+        pos = pos or nx.multipartite_layout(di_graph, subset_key="layer", align="vertical")
+    else:
+        plt.figure(figsize=figsize)
+        # Kamada-Kawai handles graphs with cycles by treating edges like springs
+        pos = pos or nx.kamada_kawai_layout(di_graph)
+
+    # 4. Draw non-directed dashed edges for the remaining edges of G not covered by the digraph
+    covered_edges = {tuple(sorted((u, v))) for u, v in di_graph.edges()}
+    remaining_edges = [
+        (u, v) for u, v in G.edges()
+        if tuple(sorted((u, v))) not in covered_edges
+    ]
+    if remaining_edges:
+        nx.draw_networkx_edges(
+            G, pos,
+            edgelist=remaining_edges,
+            edge_color="gray",
+            width=1.5,
+            alpha=0.8,
+            style="dashed",
+            arrows=False
+        )
+
+    cmap = plt.cm.tab10
+    colors = cmap.colors
+    colors = ((216 / 256, 248 / 256, 216 / 256, 1.),) * 3 + colors
+    black_nodes = set()
+    node_colors = []
+    for node, data in di_graph.nodes(data=True):
+        if not data.get("is_mark") and G.degree(node) == 2:
+            node_colors.append("black")
+            black_nodes.add(node)
+        elif data.get("is_flag"):
+            node_colors.append(colors[1])    # Implicit Flags (edge_diff)
+        elif data.get("is_mark"):
+            node_colors.append(colors[2])       # Explicit Marks
+        else:
+            node_colors.append(colors[0]) # Original Forest/Graph Nodes
+
+    nx.draw_networkx_nodes(
+        di_graph, pos,
+        node_color=node_colors,
+        node_size=400,
+        edgecolors="black" # Gives nodes a clean border
+    )
+    black_labels = {n: n for n in di_graph.nodes() if n not in black_nodes}
+    white_labels = {n: n for n in di_graph.nodes() if n in black_nodes}
+    if black_labels:
+        nx.draw_networkx_labels(di_graph, pos, labels=black_labels, font_color='black', font_size=10, font_weight='bold')
+    if white_labels:
+        nx.draw_networkx_labels(di_graph, pos, labels=white_labels, font_color='white', font_size=10, font_weight='bold')
+    colors = cmap.colors
+
+    # Filter edges by type
+    tree_edges = [(u, v) for u, v, d in di_graph.edges(data=True) if d.get('edge_type') == 'tree' or 'edge_type' not in d]
+    missing_edges = [(u, v) for u, v, d in di_graph.edges(data=True) if d.get('edge_type') == 'missing_link']
+    cnot_edges = [(u, v) for u, v, d in di_graph.edges(data=True) if d.get('edge_type') == 'cnot']
+
+    # Draw tree edges (Solid Black)
+    nx.draw_networkx_edges(di_graph, pos, edgelist=tree_edges, edge_color='black', arrows=True, arrowsize=15)
+
+    # Draw cycle closure edges (Dashed Red, l -> t)
+    nx.draw_networkx_edges(di_graph, pos, edgelist=missing_edges, edge_color='red', style='dashed', arrows=True, arrowsize=15)
+    nx.draw_networkx_edges(di_graph, pos, edgelist=cnot_edges, edge_color='orange', style='dashed', arrows=True, arrowsize=15)
+
+    plt.tight_layout()
+    plt.axis('off')
+    # plt.show()
+
 
