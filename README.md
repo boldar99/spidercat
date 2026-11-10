@@ -48,4 +48,3 @@ Some demos and experimental ideas can be found in the `notebooks` folder:
  - `random.ipynb`: Experiments with random graph constructions.
  - `shor_syndrome_measurement.ipynb`: Explores Shor-style syndrome measurement.
  - `syndrome_measurement.ipynb`: Demonstrates syndrome measurement techniques.
- - `test_split_cat.ipynb`: Tests for splitting cat states.

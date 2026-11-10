@@ -16,7 +16,7 @@ import tqdm
 from joblib import Parallel, delayed
 from numpy import ndarray
 from scipy.stats import norm
-from spidercat.utils import qasm_to_stim, make_stim_circ_noisy, get_project_root
+from spidercat.utils import qasm_to_stim, make_stim_circ_noisy, get_project_root, get_assets_dir, get_repo_root
 
 cwd = Path(__file__).parent
 
@@ -43,7 +43,7 @@ class SimulationInfo:
         circ_hash = hashlib.sha256(str(noisy_circ).encode()).hexdigest()[:16]
 
         if simulation_results_dir is None:
-            simulation_results_dir = get_project_root().joinpath("benchmarks", "simulation_results")
+            simulation_results_dir = get_repo_root().joinpath("benchmarks", "simulation_results")
         csv_file = simulation_results_dir.joinpath(f"{circ_hash}.csv")
         if csv_file.exists():
             df_existing = pd.read_csv(csv_file)
@@ -67,11 +67,13 @@ class SimulationInfo:
 
 
 def load_stim_circuit(t: int, n: int, method: str, p: int = 1):
+    assets = get_assets_dir()
     method_to_file = {
-        "spider-cat-optimized": Path(f"{cwd}/circuits/cat_state_t{t}_n{n}_p{p}.stim"),
-        "spider-cat-old": Path(f"{cwd}/circuits_old/cat_state_t{t}_n{n}_p{p}.stim"),
-        "flag-at-origin": Path(f"{cwd}/flag_at_origin_circuits/d{t * 2 + 1}-q{n}-GHZ.qasm"),
-        "MQT": Path(f"{cwd}/MQT_circuits/ft_ghz_{n}_{t}.stim"),
+        "spider-cat": assets / f"circuits/cat_state_t{t}_n{n}_p{p}.stim",
+        "spider-cat-optimized": assets / f"circuits/cat_state_t{t}_n{n}_p{p}.stim",
+        "spider-cat-old": assets / f"circuits_old/cat_state_t{t}_n{n}_p{p}.stim",
+        "flag-at-origin": assets / f"flag_at_origin_circuits/d{t * 2 + 1}-q{n}-GHZ.qasm",
+        "MQT": assets / f"MQT_circuits/ft_ghz_{n}_{t}.stim",
     }
     my_file = method_to_file[method]
     if not my_file.is_file():
@@ -189,7 +191,7 @@ def make_simulation_info_list(ps, methods, ts, ns, basis, num_samples=10_000_000
 
 
 if __name__ == "__main__":
-    benchmarks_dir = get_project_root().joinpath("benchmarks")
+    benchmarks_dir = get_repo_root().joinpath("benchmarks")
     simulation_results_dir = benchmarks_dir.joinpath("simulation_results")
     simulated_circuits_dir = benchmarks_dir.joinpath("simulated_circuits")
     os.makedirs(simulation_results_dir, exist_ok=True)

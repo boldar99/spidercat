@@ -65,8 +65,7 @@ def ed(v1: int, v2: int) -> tuple[int, int]:
     return (v1, v2) if v1 < v2 else (v2, v1)
 
 def load_solution_triplet(n, t, p):
-    root = get_project_root()
-    file = root.joinpath( "circuits_data", f"cat_state_t{t}_n{n}_p{p}.json")
+    file = get_assets_dir().joinpath("circuits_data", f"cat_state_t{t}_n{n}_p{p}.json")
     if not file.exists():
         return None
     json_object = json.loads(file.read_text())
@@ -84,8 +83,21 @@ def load_solution_triplet(n, t, p):
     return G, forest, dict(M), matching
 
 
+def get_repo_root() -> Path:
+    return Path(__file__).resolve().parent.parent
+
+
+def get_package_root() -> Path:
+    return Path(__file__).resolve().parent
+
+
+def get_assets_dir() -> Path:
+    return get_package_root() / "assets"
+
+
 def get_project_root() -> Path:
-    return Path(__file__).parent
+    """Returns the repository root path."""
+    return get_repo_root()
 
 
 def flatten(ls: list) -> list:
@@ -364,7 +376,7 @@ def offset_circuit_by(circ: stim.Circuit, offset: int) -> stim.Circuit:
 
 
 def load_stim_circuit(n: int, t: int):
-    my_file = get_project_root().joinpath("circuits", f"cat_state_t{t}_n{n}_p1.stim")
+    my_file = get_assets_dir().joinpath("circuits", f"cat_state_t{t}_n{n}_p1.stim")
     if not my_file.is_file():
         return None
 

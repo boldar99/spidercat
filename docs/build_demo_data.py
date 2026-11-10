@@ -16,11 +16,11 @@ COMPARISON_N_MAX = 100
 COMPARISON_T_MIN = 2
 COMPARISON_T_MAX = 7
 
-SPIDERCAT_CIRCUITS = ROOT / "spidercat" / "circuits"
-SPIDERCAT_GRAPHS = ROOT / "spidercat" / "circuits_data"
-FLAG_CIRCUITS = ROOT / "spidercat" / "flag_at_origin_circuits"
-MQT_CIRCUITS = ROOT / "spidercat" / "MQT_circuits"
-SIM_DATA = ROOT / "spidercat" / "simulation_data"
+SPIDERCAT_CIRCUITS = ROOT / "spidercat" / "assets" / "circuits"
+SPIDERCAT_GRAPHS = ROOT / "spidercat" / "assets" / "circuits_data"
+FLAG_CIRCUITS = ROOT / "spidercat" / "assets" / "flag_at_origin_circuits"
+MQT_CIRCUITS = ROOT / "spidercat" / "assets" / "MQT_circuits"
+SIM_DATA = ROOT / "spidercat" / "assets" / "simulation_data"
 
 RT_VALUES = {
     "1": 0.0,
@@ -254,24 +254,31 @@ def parse_mqt_metrics() -> dict[str, dict[str, object]]:
 
 def parse_noise_snapshots() -> dict[str, dict[str, object]]:
     mapping = {
-        "spidercat": SIM_DATA / "simulation_results_t_n_spider-cat_p1.json",
-        "mqt": SIM_DATA / "simulation_results_t_n_MQT_p1.json",
-        "flagAtOrigin": SIM_DATA / "simulation_results_t_n_flag-at-origin_p1.json",
+        "spidercat": ["spider-cat-optimized", "spider-cat"],
+        "mqt": ["MQT"],
+        "flagAtOrigin": ["flag-at-origin"],
     }
     snapshots: dict[str, dict[str, object]] = {name: {} for name in mapping}
-    for method_name, path in mapping.items():
-        rows = json.loads(path.read_text())
-        for row in rows:
-            if row["k"] != 0:
-                continue
-            key = f"t{row['t']}-n{row['n']}"
+    try:
+        from spidercat.visualise import load_simulation_df
+        df = load_simulation_df()
+    except Exception:
+        return snapshots
+
+    df_k0 = df[(df["k"] == 0) & (df["p"] == 0.0001)]
+    for method_name, aliases in mapping.items():
+        m_df = df_k0[df_k0["method"].isin(aliases)]
+        for _, row in m_df.iterrows():
+            key = f"t{int(row['t'])}-n{int(row['n'])}"
+            acc = float(row["acceptance_rate"])
+            prob = float(row["probability"])
             snapshots[method_name][key] = {
-                "p2": row["p"],
-                "acceptanceRate": round(row["acceptance_rate"], 6),
-                "cleanGivenAccepted": round(row["probability"], 6),
-                "overallCleanRate": round(row["acceptance_rate"] * row["probability"], 6),
-                "numAccepted": row["num_accepted"],
-                "totalSamples": row["total_samples"],
+                "p2": float(row["p"]),
+                "acceptanceRate": round(acc, 6),
+                "cleanGivenAccepted": round(prob, 6),
+                "overallCleanRate": round(acc * prob, 6),
+                "numAccepted": int(row["num_accepted"]),
+                "totalSamples": int(row["total_samples"]),
             }
     return snapshots
 
@@ -420,11 +427,11 @@ def build_dataset() -> dict[str, object]:
                 "paperAbs": "https://arxiv.org/abs/2603.05391",
                 "paperPdf": "https://arxiv.org/pdf/2603.05391",
                 "readmePath": "README.md",
-                "spidercatCircuitsPath": "spidercat/circuits",
-                "spidercatGraphsPath": "spidercat/circuits_data",
-                "flagCircuitsPath": "spidercat/flag_at_origin_circuits",
-                "mqtCircuitsPath": "spidercat/MQT_circuits",
-                "simulationPath": "spidercat/simulation_data",
+                "spidercatCircuitsPath": "spidercat/assets/circuits",
+                "spidercatGraphsPath": "spidercat/assets/circuits_data",
+                "flagCircuitsPath": "spidercat/assets/flag_at_origin_circuits",
+                "mqtCircuitsPath": "spidercat/assets/MQT_circuits",
+                "simulationPath": "benchmarks",
             },
         },
         "paper": {

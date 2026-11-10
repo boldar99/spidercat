@@ -22,7 +22,7 @@ from spidercat.markings import GraphMarker
 from spidercat.markings import find_marking_property_violation
 from spidercat.spanning_tree import build_trivial_spanning_forest, build_min_diameter_spanning_tree, \
     match_forest_leaves_to_marked_edges, find_min_height_roots
-from spidercat.utils import load_solution_triplet
+from spidercat.utils import load_solution_triplet, get_assets_dir
 
 if typing.TYPE_CHECKING:
     import stim
@@ -31,19 +31,19 @@ cwd = Path(__file__).parent
 
 
 def init_circuits_folder():
-    Path(f"{cwd}/circuits").mkdir(parents=True, exist_ok=True)
-    Path(f"{cwd}/circuits_data").mkdir(parents=True, exist_ok=True)
+    (get_assets_dir() / "circuits").mkdir(parents=True, exist_ok=True)
+    (get_assets_dir() / "circuits_data").mkdir(parents=True, exist_ok=True)
 
 
 def save_stim_circuit(circuit: stim.Circuit, t: int, n: int, p: int):
-    file_name = f"{cwd}/circuits/cat_state_t{t}_n{n}_p{p}.stim"
+    file_name = get_assets_dir() / "circuits" / f"cat_state_t{t}_n{n}_p{p}.stim"
     with open(file_name, "w") as f:
         circuit.to_file(f)
 
 
 def save_stim_circuit_data(G: nx.Graph, H: nx.Graph, M: dict[tuple[int, int], int], matching, t: int, n: int,
                            p: int):
-    file_name = f"{cwd}/circuits_data/cat_state_t{t}_n{n}_p{p}.json"
+    file_name = get_assets_dir() / "circuits_data" / f"cat_state_t{t}_n{n}_p{p}.json"
     with open(file_name, "w") as f:
         M_inv = defaultdict(list)
         for k, v in M.items():
@@ -179,7 +179,7 @@ def cat_state_FT(
 
     E, N = minimum_E_and_V(n, T)
 
-    if not replace and Path(f"{cwd}/circuits_data/cat_state_t{t}_n{n}_p1.json").is_file():
+    if not replace and (get_assets_dir() / "circuits_data" / f"cat_state_t{t}_n{n}_p1.json").is_file():
         G, _, M, _ = load_solution_triplet(n, t, 1)
         forest = build_trivial_spanning_forest(G, M)
         spacing_trees = {p: build_min_diameter_spanning_tree(G, forest, M, p) for p in ps}
@@ -219,12 +219,12 @@ def cat_state_FT(
     return circs
 
 
-def process_cell(n, t, ps, cwd, replace=False):
+def process_cell(n, t, ps, replace=False):
     # Check if file exists
     all_exists = True
     for p in ps:
-        all_exists = all_exists and Path(
-            f"{cwd}/circuits/cat_state_t{t}_n{n}_p{p}.stim"
+        all_exists = all_exists and (
+            get_assets_dir() / "circuits" / f"cat_state_t{t}_n{n}_p{p}.stim"
         ).is_file()
     if not replace and all_exists:
         return " X "
@@ -285,13 +285,13 @@ if __name__ == "__main__":
     for t in TS:
         print(f"t={t} |", end=' ', flush=True)
 
-        results_generator = (process_cell(n, t, PS, cwd, replace=False) for n in ns)
+        results_generator = (process_cell(n, t, PS, replace=False) for n in ns)
 
-        # results_generator = Parallel(n_jobs=-3, return_as="generator")(delayed(process_cell)(n, t, PS, cwd, replace=False) for n in ns)
+        # results_generator = Parallel(n_jobs=-3, return_as="generator")(delayed(process_cell)(n, t, PS, replace=False) for n in ns)
         for cell_str in results_generator:
             print(cell_str, end='', flush=True)
         print()
     print()
-    print(f"Files saved to: {cwd}/circuits")
+    print(f"Files saved to: {get_assets_dir()}/circuits")
     print()
     print("--- %s seconds ---" % (time.time() - start_time))

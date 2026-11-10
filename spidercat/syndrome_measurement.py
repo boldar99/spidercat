@@ -8,7 +8,7 @@ from spidercat.draw import draw_forest_on_graph
 from spidercat.generate import minimum_number_of_flags
 from spidercat.path_cover import find_all_path_covers
 from spidercat.spanning_tree import match_forest_leaves_to_marked_edges
-from spidercat.utils import load_solution_triplet, get_project_root, qasm_to_stim
+from spidercat.utils import load_solution_triplet, get_project_root, qasm_to_stim, get_assets_dir
 
 
 def G_F_alt_for_t_0(N) -> tuple[nx.Graph, nx.Graph, int]:
@@ -148,7 +148,7 @@ def permute_circ(circ: stim.Circuit, q_to_mapped: dict[int, int], qubits: Sequen
 def fao_se_circuit(qubits: Sequence[int], ancilla_start: int, t: int, basis: Literal["X"] | Literal["Z"] = "Z") -> stim.Circuit:
     n = len(qubits)
 
-    file = get_project_root().joinpath("flag_at_origin_circuits", f"d{2 * t + 1}-q{n + 1}-GHZ.qasm")
+    file = get_assets_dir().joinpath("flag_at_origin_circuits", f"d{2 * t + 1}-q{n + 1}-GHZ.qasm")
     qasm_str = file.read_text()
 
     fao_circ = qasm_to_stim(qasm_str)

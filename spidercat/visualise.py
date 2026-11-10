@@ -15,7 +15,13 @@ from matplotlib.lines import Line2D
 from matplotlib.ticker import PercentFormatter, MaxNLocator
 
 from spidercat.simulate import calculate_wilson_interval
-from spidercat.utils import get_circuit_depth, get_num_cnots, get_project_root
+from spidercat.utils import get_circuit_depth, get_num_cnots, get_project_root, get_repo_root
+
+
+def get_plots_dir() -> Path:
+    plots_dir = get_repo_root() / "plots"
+    plots_dir.mkdir(parents=True, exist_ok=True)
+    return plots_dir
 
 
 def _parse_error_counts(raw_val) -> dict[int, int]:
@@ -193,7 +199,7 @@ def visualise_flagnum_heatmap(df):
     ax.tick_params(left=True, bottom=True, length=5)
 
     plt.tight_layout()
-    plt.savefig(f"plots/AR_heatmap.png")
+    plt.savefig(get_plots_dir() / "AR_heatmap.png")
     # plt.show()
     plt.close()
 
@@ -337,7 +343,7 @@ def visualise_clean_stacked_comparison(methods_data_dict):
     cb.set_label('Number of CNOTs', fontsize=15, labelpad=12)
 
     plt.tight_layout()
-    plt.savefig(cwd / "plots/cx_heatmap.pdf", bbox_inches='tight', dpi=1200)
+    plt.savefig(get_plots_dir() / "cx_heatmap.pdf", bbox_inches='tight', dpi=1200)
     plt.close()
 
 
@@ -400,7 +406,7 @@ def visualise_pk_per_n(df, t):
     )
 
     plt.tight_layout()
-    plt.savefig(f"plots/Pk_per_n_at_t{t}.png", dpi=1200)
+    plt.savefig(get_plots_dir() / f"Pk_per_n_at_t{t}.png", dpi=1200)
     # plt.show()
     plt.close()
 
@@ -464,7 +470,7 @@ def visualise_pk_per_t_1(df, n):
     ax2.yaxis.set_major_formatter(PercentFormatter(xmax=1, decimals=0))
 
     plt.tight_layout()
-    plt.savefig(f"plots/EPk_per_p_at_n{n}.pdf", dpi=1200)
+    plt.savefig(get_plots_dir() / f"EPk_per_p_at_n{n}.pdf", dpi=1200)
     # plt.show()
     plt.close()
 
@@ -529,7 +535,7 @@ def visualise_pk_per_t_2(df, n):
     ax2.yaxis.set_major_formatter(PercentFormatter(xmax=1, decimals=0))
 
     plt.tight_layout()
-    plt.savefig(f"plots/k_less_4_per_p_at_n{n}.png")
+    plt.savefig(get_plots_dir() / f"k_less_4_per_p_at_n{n}.png")
     # plt.show()
     plt.close()
 
@@ -627,8 +633,7 @@ def visualise_flag_and_ar(methods_data_dict, t, p: float | None = None):
     ax1.legend(style_lines, style_labels, loc='lower center')
 
     plt.title(f"Method Comparison: Number of Flags & Acceptance Rate vs CAT state size (t={t})", fontsize=14)
-    plots_dir = cwd / "plots"
-    plots_dir.mkdir(parents=True, exist_ok=True)
+    plots_dir = get_plots_dir()
     p_str = f"_p{p}" if p is not None else ""
     plt.tight_layout()
     plt.savefig(plots_dir / f"flags_and_AR_per_n_at_t{t}{p_str}.png", dpi=600)
@@ -750,8 +755,7 @@ def visualise_expected_faults(methods_data_dict, t, p: float = 0.05):
     ax1.legend(style_lines, style_labels, loc='lower center')
 
     # plt.title(f"Expected Number of Faults & Acceptance Rate vs CAT state size (t={t})", fontsize=14)
-    plots_dir = cwd / "plots"
-    plots_dir.mkdir(parents=True, exist_ok=True)
+    plots_dir = get_plots_dir()
     p_str = f"_p{p}" if p is not None else ""
     plt.tight_layout()
     plt.savefig(plots_dir / f"expected_faults_per_n_at_t{t}{p_str}.pdf")
@@ -904,8 +908,7 @@ def visualise_method_comparison(methods_data_dict, t, second_y_axis="acceptance_
     ax1.legend(style_lines, style_labels, loc='lower center')
 
     plt.title(f"Method Comparison: Error Probability vs CAT state size (t={t})", fontsize=14)
-    plots_dir = cwd / "plots"
-    plots_dir.mkdir(parents=True, exist_ok=True)
+    plots_dir = get_plots_dir()
     p_str = f"_p{p}" if p is not None else ""
     plt.tight_layout()
     plt.savefig(plots_dir / f"k_less_t_per_n_at_t{t}{p_str}.png")
@@ -1065,8 +1068,7 @@ def visualise_two_panel_hybrid(methods_data_dict, t, p: float | None = None):
     # Bring panels closer together
     plt.subplots_adjust(hspace=0.08)
 
-    plots_dir = cwd / "plots"
-    plots_dir.mkdir(parents=True, exist_ok=True)
+    plots_dir = get_plots_dir()
     p_str = f"_p{p}" if p is not None else ""
     plt.savefig(plots_dir / f"two_panel_hybrid_t{t}{p_str}.pdf", dpi=1200, bbox_inches='tight')
     plt.savefig(plots_dir / f"two_panel_hybrid_t{t}{p_str}.png", bbox_inches='tight')
