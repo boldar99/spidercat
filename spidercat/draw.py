@@ -302,12 +302,14 @@ def draw_spanning_forest_solution(
 def draw_forest_on_graph(
         G: nx.Graph,
         F: nx.Graph,
+        roots: dict[int, int] | list[int] | None = None,
         figsize: tuple[int, int] = (10, 8),
         pos = None
 ) -> None:
     """
     Draws the spanning forest F over the graph G.
     Differentiates original nodes, marked nodes, and flagged nodes by color.
+    Optionally highlights tree roots circled with the color corresponding to their tree.
     """
     plt.figure(figsize=figsize)
 
@@ -368,12 +370,45 @@ def draw_forest_on_graph(
 
     # 4. Draw the Foreground: Forest F
     # Draw F's edges thickly and prominently
-    nx.draw_networkx_edges(
-        F, pos,
-        edge_color=(colors[0], ),
-        width=3.0,
-        alpha=0.8
-    )
+    node_color_map = {}
+    F_undirected = F.to_undirected() if F.is_directed() else F
+    for i, component in enumerate(nx.connected_components(F_undirected)):
+        color = colors[i % len(colors)]
+        tree = F.subgraph(component)
+        nx.draw_networkx_edges(
+            F, pos,
+            edgelist=tree.edges(),
+            edge_color=[color],
+            width=3.0,
+            alpha=0.8
+        )
+        for node in component:
+            node_color_map[node] = color
+
+    # Draw Root Highlights (Color Matched)
+    if roots:
+        if isinstance(roots, (int, np.integer)):
+            roots_l = [roots]
+        elif isinstance(roots, dict):
+            roots_l = roots.values()
+        else:
+            roots_l = roots
+
+        for root_node in roots_l:
+            if root_node not in pos:
+                continue
+            # Lookup the color of this specific root
+            root_color = node_color_map.get(root_node, 'black')
+
+            # Draw distinct circle for this root
+            nx.draw_networkx_nodes(
+                G, pos,
+                nodelist=[root_node],
+                node_size=1200,
+                node_color='none',  # Transparent inside
+                edgecolors=[root_color],  # Border matches tree color
+                linewidths=3
+            )
 
     # 5. Add Labels
     # For a cleaner look, you might only want to label original nodes,
