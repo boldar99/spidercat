@@ -7,6 +7,7 @@ import pyzx as zx
 import stim
 
 from spidercat.draw import draw_spanning_forest_solution
+from spidercat.spanning_tree import inject_root_nodes
 from spidercat.utils import ed
 
 
@@ -357,6 +358,8 @@ class CatStateExtractor:
 def extract_circuit_rooted(G, forest, roots, markings, matches, verbose=False) -> stim.Circuit:
     extractor = CatStateExtractor(StimBuilder(), verbose)
     G_exp, F_exp = expand_graph_and_forest(G, forest, markings, matches)
+    if roots is None:
+        roots = inject_root_nodes(G_exp, F_exp)
     return extractor.extract(G_exp, F_exp, roots)
 
 

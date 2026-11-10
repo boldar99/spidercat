@@ -322,9 +322,13 @@ def draw_forest_on_graph(
     pos = pos or nx.spring_layout(G)
 
     # 2. Map node colors based on the metadata we injected earlier
+    black_nodes = set()
     node_colors = []
     for node, data in G.nodes(data=True):
-        if data.get("is_flag"):
+        if not data.get("is_mark") and G.degree(node) == 2:
+            node_colors.append("black")
+            black_nodes.add(node)
+        elif data.get("is_flag"):
             node_colors.append(colors[1])    # Implicit Flags (edge_diff)
         elif data.get("is_mark"):
             node_colors.append(colors[2])       # Explicit Marks
@@ -413,11 +417,24 @@ def draw_forest_on_graph(
     # 5. Add Labels
     # For a cleaner look, you might only want to label original nodes,
     # but here we label everything to help you debug.
-    nx.draw_networkx_labels(
-        G, pos,
-        font_size=8,
-        font_weight="bold"
-    )
+    black_labels = {n: n for n in G.nodes() if n not in black_nodes}
+    white_labels = {n: n for n in G.nodes() if n in black_nodes}
+    if black_labels:
+        nx.draw_networkx_labels(
+            G, pos,
+            labels=black_labels,
+            font_color="black",
+            font_size=8,
+            font_weight="bold"
+        )
+    if white_labels:
+        nx.draw_networkx_labels(
+            G, pos,
+            labels=white_labels,
+            font_color="white",
+            font_size=8,
+            font_weight="bold"
+        )
 
     # plt.title("Spanning Forest F (Solid/Black) on Graph G (Dashed/Gray)")
     plt.axis("off") # Hide the bounding box
@@ -450,9 +467,13 @@ def display_digraph(di_graph: nx.DiGraph, figsize=(12, 12), pos=None):
     cmap = plt.cm.tab10
     colors = cmap.colors
     colors = ((216 / 256, 248 / 256, 216 / 256, 1.),) * 3 + colors
+    black_nodes = set()
     node_colors = []
     for node, data in di_graph.nodes(data=True):
-        if data.get("is_flag"):
+        if not data.get("is_flag") and di_graph.degree(node) == 2:
+            node_colors.append("black")
+            black_nodes.add(node)
+        elif data.get("is_flag"):
             node_colors.append(colors[1])    # Implicit Flags (edge_diff)
         elif data.get("is_mark"):
             node_colors.append(colors[2])       # Explicit Marks
@@ -465,7 +486,12 @@ def display_digraph(di_graph: nx.DiGraph, figsize=(12, 12), pos=None):
         node_size=400,
         edgecolors="black" # Gives nodes a clean border
     )
-    nx.draw_networkx_labels(di_graph, pos, font_size=10, font_weight='bold')
+    black_labels = {n: n for n in di_graph.nodes() if n not in black_nodes}
+    white_labels = {n: n for n in di_graph.nodes() if n in black_nodes}
+    if black_labels:
+        nx.draw_networkx_labels(di_graph, pos, labels=black_labels, font_color='black', font_size=10, font_weight='bold')
+    if white_labels:
+        nx.draw_networkx_labels(di_graph, pos, labels=white_labels, font_color='white', font_size=10, font_weight='bold')
     colors = cmap.colors
 
     # Filter edges by type

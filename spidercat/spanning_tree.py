@@ -274,6 +274,7 @@ def find_min_height_roots(forest: nx.Graph) -> dict[int, int]:
 def find_min_height_root_edges(forest: nx.Graph) -> dict[int, tuple[int, int]]:
     """
     Identifies the ideal edge to insert a root into for each component to minimize height.
+    Ignores edges incident to nodes marked with `is_flag=True`.
 
     Args:
         forest: The forest graph containing one or more trees.
@@ -289,9 +290,12 @@ def find_min_height_root_edges(forest: nx.Graph) -> dict[int, tuple[int, int]]:
             continue
 
         best_edge = None
-        min_ecc = float('inf')
+        min_score = (float('inf'), float('inf'), (float('inf'), float('inf')))
 
         for u, v in tree.edges():
+            if forest.nodes[u].get("is_flag", False) or forest.nodes[v].get("is_flag", False):
+                continue
+
             tree_without_edge = tree.copy()
             tree_without_edge.remove_edge(u, v)
             comp_u = nx.node_connected_component(tree_without_edge, u)
@@ -301,14 +305,59 @@ def find_min_height_root_edges(forest: nx.Graph) -> dict[int, tuple[int, int]]:
             ecc_v = nx.eccentricity(tree_without_edge.subgraph(comp_v), v) if len(comp_v) > 1 else 0
 
             ecc = max(ecc_u, ecc_v) + 1
-            if ecc < min_ecc:
-                min_ecc = ecc
+            score = (ecc, abs(ecc_u - ecc_v), tuple(sorted((u, v))))
+            if score < min_score:
+                min_score = score
                 best_edge = (u, v)
 
         tree_id = min(component)
-        ideal_edges[tree_id] = best_edge
+        if best_edge is not None:
+            ideal_edges[tree_id] = best_edge
 
     return ideal_edges
+
+
+def inject_root_nodes(
+        G_exp: nx.Graph,
+        F_exp: nx.Graph,
+        root_edges: dict[int, tuple[int, int]] | None = None,
+) -> dict[int, int]:
+    """
+    Finds the edge center of each tree in `F_exp` (ignoring `is_flag` edges),
+    injects a new degree-2 node (with `is_mark=False, is_flag=False`) onto that edge
+    in both `G_exp` and `F_exp`, and returns the new nodes as `{tree_id: root_node}`.
+    """
+    if root_edges is None:
+        root_edges = find_min_height_root_edges(F_exp)
+
+    roots = {}
+    next_id = max(G_exp.nodes(), default=-1) + 1
+
+    for component in list(nx.connected_components(F_exp)):
+        tree_id = min(component)
+        edge = root_edges.get(tree_id)
+        if edge is None:
+            roots[tree_id] = tree_id
+            continue
+
+        u, v = edge
+        node_id = next_id
+        next_id += 1
+
+        if G_exp.has_edge(u, v):
+            G_exp.remove_edge(u, v)
+        if F_exp.has_edge(u, v):
+            F_exp.remove_edge(u, v)
+
+        G_exp.add_node(node_id, is_mark=False, is_flag=False)
+        F_exp.add_node(node_id, is_mark=False, is_flag=False)
+
+        G_exp.add_edges_from([(u, node_id), (node_id, v)])
+        F_exp.add_edges_from([(u, node_id), (node_id, v)])
+
+        roots[tree_id] = node_id
+
+    return roots
 
 import networkx as nx
 from collections import deque
