@@ -515,6 +515,7 @@ def display_digraph(di_graph: nx.DiGraph, figsize=(12, 12), pos=None):
 def display_digraph_on_graph(
         di_graph: nx.DiGraph,
         G: nx.Graph,
+        weights=None,
         figsize=(12, 12),
         pos=None
 ) -> None:
@@ -522,9 +523,21 @@ def display_digraph_on_graph(
     Displays the directed graph like display_digraph, and additionally draws
     non-directed dashed gray edges for the remaining edges of G not covered
     by the digraph (like in draw_forest_on_graph).
+
+    Args:
+        di_graph: Directed traversal graph.
+        G: Underlying expanded graph `G_exp`.
+        weights: Optional edge weights mapping `{(u, v): weight}` or a `WeightCandidate`
+            object (from which `.edge_weights` is used). Draws weight labels on internal
+            edges (both tree edges and dashed non-tree flag edges).
+        figsize: Figure size tuple.
+        pos: Optional node position dictionary.
     """
     if isinstance(di_graph, nx.Graph) and not isinstance(di_graph, nx.DiGraph) and isinstance(G, nx.DiGraph):
         di_graph, G = G, di_graph
+
+    if weights is not None and hasattr(weights, "edge_weights"):
+        weights = weights.edge_weights
 
     if nx.is_directed_acyclic_graph(di_graph):
         plt.figure(figsize=figsize)
@@ -600,6 +613,57 @@ def display_digraph_on_graph(
     # Draw cycle closure edges (Dashed Red, l -> t)
     nx.draw_networkx_edges(di_graph, pos, edgelist=missing_edges, edge_color='red', style='dashed', arrows=True, arrowsize=15)
     nx.draw_networkx_edges(di_graph, pos, edgelist=cnot_edges, edge_color='orange', style='dashed', arrows=True, arrowsize=15)
+
+    # 5. Draw Edge Weight Labels (if provided)
+    if isinstance(weights, dict):
+        def _lookup_edge_weight(u: int, v: int):
+            if (u, v) in weights:
+                return weights[(u, v)]
+            if (v, u) in weights:
+                return weights[(v, u)]
+            norm = tuple(sorted((u, v)))
+            return weights.get(norm)
+
+        def _format_weight_label(w) -> str:
+            if isinstance(w, (tuple, list, np.ndarray)):
+                return f"{tuple(int(x) for x in w)}"
+            return str(w)
+
+        di_edge_labels = {}
+        for u, v in di_graph.edges():
+            w = _lookup_edge_weight(u, v)
+            if w is not None:
+                di_edge_labels[(u, v)] = _format_weight_label(w)
+
+        rem_edge_labels = {}
+        for u, v in remaining_edges:
+            w = _lookup_edge_weight(u, v)
+            if w is not None:
+                rem_edge_labels[(u, v)] = _format_weight_label(w)
+
+        label_bbox = dict(boxstyle="round,pad=0.15", facecolor="white", edgecolor="none", alpha=0.8)
+        if di_edge_labels:
+            nx.draw_networkx_edge_labels(
+                di_graph,
+                pos,
+                edge_labels=di_edge_labels,
+                font_color="black",
+                font_size=9,
+                font_weight="bold",
+                rotate=False,
+                bbox=label_bbox,
+            )
+        if rem_edge_labels:
+            nx.draw_networkx_edge_labels(
+                G,
+                pos,
+                edge_labels=rem_edge_labels,
+                font_color="dimgray",
+                font_size=9,
+                font_weight="bold",
+                rotate=False,
+                bbox=label_bbox,
+            )
 
     plt.tight_layout()
     plt.axis('off')

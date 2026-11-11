@@ -168,13 +168,17 @@ class GraphDEM:
             p_list = []
             for e in self.edges:
                 if e in probabilities:
-                    p_list.append(float(probabilities[e]))
+                    raw_p = probabilities[e]
                 elif e[1] != "boundary" and (e[1], e[0]) in probabilities:
-                    p_list.append(float(probabilities[(e[1], e[0])]))
+                    raw_p = probabilities[(e[1], e[0])]
                 elif e[1] == "boundary" and e[0] in probabilities:
-                    p_list.append(float(probabilities[e[0]]))
+                    raw_p = probabilities[e[0]]
                 else:
                     raise KeyError(f"Missing probability for edge {e!r}")
+                if isinstance(raw_p, (tuple, list, np.ndarray)):
+                    p_list.append(float(sum(raw_p)))
+                else:
+                    p_list.append(float(raw_p))
         else:
             p_list = [float(p) for p in probabilities]
             if len(p_list) != self.num_edges:
@@ -463,8 +467,9 @@ class PrecomputedFaultTable:
         """
         num_edges = self.dem.num_edges
         if isinstance(edge_weights, dict):
-            arr = np.zeros(num_edges, dtype=np.int64)
-            for idx, e in enumerate(self.dem.edges):
+            vals = []
+            has_float = False
+            for e in self.dem.edges:
                 if e in edge_weights:
                     val = edge_weights[e]
                 elif e[1] != "boundary" and (e[1], e[0]) in edge_weights:
@@ -473,7 +478,13 @@ class PrecomputedFaultTable:
                     val = edge_weights[e[0]]
                 else:
                     raise KeyError(f"Missing weight for edge {e!r}")
-                arr[idx] = val
+                if isinstance(val, (tuple, list, np.ndarray)):
+                    val = sum(val)
+                if isinstance(val, (float, np.floating)) and not float(val).is_integer():
+                    has_float = True
+                vals.append(val)
+            dtype = np.float64 if has_float else np.int64
+            arr = np.asarray(vals, dtype=dtype)
             return arr[np.newaxis, :], True
 
         arr = np.asarray(edge_weights)
