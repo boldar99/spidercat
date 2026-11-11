@@ -1,3 +1,14 @@
+from spidercat.circuit_extraction import (
+    CatStateExtractor,
+    PyZXBuilder,
+    StimBuilder,
+    build_traversal_digraph,
+    build_weighted_dependency_digraph,
+    expand_graph_and_forest,
+    extract_circuit_rooted,
+    extract_from_expanded_graph,
+    normalize_node_weights,
+)
 from spidercat.fault_analysis import (
     BoundaryEdge,
     GraphDEM,
@@ -26,6 +37,7 @@ from spidercat.weight_optimization import (
 
 __all__ = [
     "BoundaryEdge",
+    "CatStateExtractor",
     "EdgeWeightValue",
     "FlagEdgeConstraint",
     "GraphDEM",
@@ -34,16 +46,24 @@ __all__ = [
     "InternalEdge",
     "NodeDecision",
     "PrecomputedFaultTable",
+    "PyZXBuilder",
     "SimulatedAnnealingResult",
+    "StimBuilder",
     "WeightCandidate",
     "WeightSpace",
     "build_graph_dem",
+    "build_traversal_digraph",
     "build_weight_space",
+    "build_weighted_dependency_digraph",
     "compute_boundary_fault_table",
     "compute_polynomial_score",
     "exhaustive_weight_search",
+    "expand_graph_and_forest",
+    "extract_circuit_rooted",
+    "extract_from_expanded_graph",
     "greedy_weight_search",
     "make_boundary_edge",
     "normalize_edge",
+    "normalize_node_weights",
     "simulated_annealing_weight_search",
 ]

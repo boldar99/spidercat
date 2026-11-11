@@ -539,6 +539,20 @@ def display_digraph_on_graph(
     if weights is not None and hasattr(weights, "edge_weights"):
         weights = weights.edge_weights
 
+    di_graph = di_graph.copy()
+    if isinstance(weights, dict):
+        for u, v in G.edges():
+            if di_graph.has_edge(u, v) or di_graph.has_edge(v, u):
+                continue
+            a, b = int(min(u, v)), int(max(u, v))
+            w = weights.get((a, b), weights.get((b, a)))
+            if isinstance(w, (tuple, list, np.ndarray)) and len(w) == 2:
+                wa, wb = int(w[0]), int(w[1])
+                if wa == 1 and wb == 2:
+                    di_graph.add_edge(a, b, edge_type='missing_link')
+                elif wb == 1 and wa == 2:
+                    di_graph.add_edge(b, a, edge_type='missing_link')
+
     if nx.is_directed_acyclic_graph(di_graph):
         plt.figure(figsize=figsize)
         # 1. Calculate the hierarchical layers mathematically

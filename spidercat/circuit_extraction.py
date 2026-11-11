@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from collections import defaultdict
+from collections import defaultdict, deque
+from collections.abc import Iterable, Mapping
 
 import networkx as nx
 import numpy as np
@@ -7,8 +8,10 @@ import pyzx as zx
 import stim
 
 from spidercat.draw import draw_spanning_forest_solution
+from spidercat.fault_analysis import GraphEdge, make_boundary_edge
 from spidercat.spanning_tree import inject_root_nodes
 from spidercat.utils import ed
+from spidercat.weight_optimization import EdgeWeightValue, WeightCandidate
 
 
 class CircuitBuilder(ABC):
@@ -174,26 +177,167 @@ def expand_graph_and_forest(
     return G_new, F_new
 
 
+WeightsInput = (
+    WeightCandidate
+    | Mapping[GraphEdge, EdgeWeightValue]
+    | Mapping[int, Mapping[GraphEdge, int]]
+    | None
+)
+
+
+def _normalize_roots_dict(
+    roots: int | np.integer | Mapping[int, int] | Iterable[int],
+) -> dict[int, int]:
+    """Normalizes `roots` into a `{tree_id: root_node}` dictionary."""
+    if isinstance(roots, (int, np.integer)):
+        return {0: int(roots)}
+    if isinstance(roots, Mapping):
+        return {int(k): int(v) for k, v in roots.items()}
+    return {idx: int(r) for idx, r in enumerate(roots)}
+
+
+def normalize_node_weights(
+    G_new: nx.Graph,
+    F_new: nx.Graph,
+    roots: int | np.integer | Mapping[int, int] | Iterable[int],
+    weights: WeightsInput,
+) -> dict[int, dict[GraphEdge, int]] | None:
+    """
+    Normalizes a `WeightCandidate`, an `edge_weights` dict, or a `node_choices` dict
+    into a per-node outgoing-leg weight mapping `node_choices[node][out_edge] -> int`.
+
+    For each node `v`:
+    - If `v` is a root node: maps its two outgoing tree edges `e0, e1` to their integer
+      weights `(w0, w1)` (e.g., `(2, 1)`, `(1, 2)`, `(3, 0)`, or `(0, 3)`).
+    - If `v` is a non-root node: maps its outgoing legs in the open graph
+      (outgoing tree edges, incident non-tree flag edges, and `(v, "boundary")` if
+      `is_mark=True`) to their local weights `1` or `2` at `v`.
+    """
+    if weights is None:
+        return None
+
+    roots_dict = _normalize_roots_dict(roots)
+    root_set = set(roots_dict.values())
+
+    parent_of: dict[int, int | None] = {}
+    for r in roots_dict.values():
+        parent_of[r] = None
+        for u, v in nx.bfs_edges(F_new, r):
+            parent_of[v] = u
+
+    raw_node_choices: Mapping[int, Mapping[GraphEdge, int]] | None = None
+    raw_edge_weights: Mapping[GraphEdge, EdgeWeightValue] | None = None
+
+    if isinstance(weights, WeightCandidate):
+        raw_node_choices = weights.node_choices
+        raw_edge_weights = weights.edge_weights
+    elif isinstance(weights, Mapping):
+        first_key = next(iter(weights.keys()), None)
+        if isinstance(first_key, (int, np.integer)):
+            raw_node_choices = weights  # type: ignore[assignment]
+        else:
+            raw_edge_weights = weights  # type: ignore[assignment]
+    else:
+        raise TypeError(f"Unsupported weights type: {type(weights)!r}")
+
+    def _lookup_edge_local_weight(node: int, edge: GraphEdge) -> int | None:
+        if raw_node_choices is not None and node in raw_node_choices:
+            nc = raw_node_choices[node]
+            if edge in nc:
+                return int(nc[edge])
+            if edge[1] != "boundary":
+                rev = (edge[1], edge[0])
+                if rev in nc:
+                    return int(nc[rev])
+
+        if raw_edge_weights is not None:
+            val = raw_edge_weights.get(edge)
+            if val is None and edge[1] != "boundary":
+                val = raw_edge_weights.get((edge[1], edge[0]))
+            if val is not None:
+                if isinstance(val, (tuple, list, np.ndarray)):
+                    if len(val) != 2:
+                        raise ValueError(
+                            f"Expected 2-tuple weight for flag edge {edge}, got {val!r}"
+                        )
+                    u, v = ed(int(edge[0]), int(edge[1]))
+                    return int(val[0]) if node == u else int(val[1])
+                return int(val)
+        return None
+
+    normalized: dict[int, dict[GraphEdge, int]] = {}
+    for node in G_new.nodes():
+        node_int = int(node)
+        is_mark = bool(G_new.nodes[node].get("is_mark", False))
+        parent = parent_of.get(node_int)
+
+        if node_int in root_set:
+            out_edges: list[GraphEdge] = [
+                ed(node_int, int(nbr)) for nbr in sorted(F_new.neighbors(node_int))
+            ]
+        else:
+            out_edges = [
+                ed(node_int, int(nbr))
+                for nbr in sorted(G_new.neighbors(node_int))
+                if int(nbr) != parent
+            ]
+            if is_mark:
+                out_edges.append(make_boundary_edge(node_int))
+
+        leg_weights: dict[GraphEdge, int] = {}
+        for e in out_edges:
+            w = _lookup_edge_local_weight(node_int, e)
+            if w is not None:
+                leg_weights[e] = w
+
+        # If one of two legs on a non-root node (such as an implicit boundary leg) was omitted,
+        # infer it from the other leg since non-root spider legs are {1, 2}.
+        if node_int not in root_set and len(out_edges) == 2 and len(leg_weights) == 1:
+            e0, e1 = out_edges
+            if e0 in leg_weights:
+                leg_weights[e1] = 1 if leg_weights[e0] == 2 else 2
+            else:
+                leg_weights[e0] = 1 if leg_weights[e1] == 2 else 2
+
+        if len(leg_weights) != len(out_edges):
+            missing = [e for e in out_edges if e not in leg_weights]
+            raise KeyError(
+                f"Missing outgoing weight(s) {missing} at node {node_int}."
+            )
+
+        normalized[node_int] = leg_weights
+
+    return normalized
+
+
 # --- 2. The Main Extractor Class ---
 class CatStateExtractor:
-    def __init__(self, builder: CircuitBuilder, verbose=False):
+    def __init__(self, builder: CircuitBuilder, verbose: bool = False):
         self.builder = builder
         self.verbose = verbose
 
-        self.node_to_qubit = {}
-        self.edge_to_flag = {}
-        self.tree_to_qubits = defaultdict(set)
-        self.tree_of_node = {}
-        self.link_measurements = {}
-        self.depths = {}
+        self.node_to_qubit: dict[int, int] = {}
+        self.edge_to_flag: dict[tuple[int, int], int] = {}
+        self.tree_to_qubits: dict[int, set[int]] = defaultdict(set)
+        self.tree_of_node: dict[int, int] = {}
+        self.link_measurements: dict[tuple[int, int], list[int]] = {}
+        self.depths: dict[int, float] = {}
+        self.boundary_node_to_qubit: dict[int, int] = {}
+        self.node_order: list[set[int]] | None = None
+        self.node_weights: dict[int, dict[GraphEdge, int]] | None = None
+        self.queue: deque[int] = deque()
 
-    def _get_new_data_qubit(self):
-        q = self.next_data_idx; self.next_data_idx += 1; return q
+    def _get_new_data_qubit(self) -> int:
+        q = self.next_data_idx
+        self.next_data_idx += 1
+        return q
 
-    def _get_new_flag_qubit(self):
-        q = self.next_flag_idx; self.next_flag_idx += 1; return q
+    def _get_new_flag_qubit(self) -> int:
+        q = self.next_flag_idx
+        self.next_flag_idx += 1
+        return q
 
-    def _compute_depth(self, node, parent, F_new):
+    def _compute_depth(self, node: int, parent: int | None, F_new: nx.Graph) -> float:
         children = [neighbor for neighbor in F_new.neighbors(node) if neighbor != parent]
 
         # Base case: If the node has no children, it is a leaf. Distance is 0.
@@ -210,30 +354,165 @@ class CatStateExtractor:
         self.depths[node] = min_d
         return min_d
 
-    def extract(self, G_new, F_new, roots):
-        if self.verbose: print("=== Starting Elegant Extraction (BFS) ===")
+    def _precompute_wire_fates(
+        self,
+        G_new: nx.Graph,
+        F_new: nx.Graph,
+        roots_dict: dict[int, int],
+    ) -> dict[int, bool]:
+        """
+        Determines for each node `v` whether the qubit wire arriving at (or initialized at) `v`
+        and following the chain of weight-1 (continuing) legs terminates at a non-tree flag edge
+        (`True` -> allocate from `_get_new_flag_qubit`) or at a boundary edge `(m, "boundary")`
+        (`False` -> allocate from `_get_new_data_qubit`).
+        """
+        assert self.node_weights is not None
+        root_set = set(roots_dict.values())
+        memo: dict[int, bool] = {}
+
+        def _ends_at_flag(node: int) -> bool:
+            if node in memo:
+                return memo[node]
+
+            choices = self.node_weights[node]
+            if not choices:
+                memo[node] = False
+                return False
+
+            # The continuing wire follows the outgoing leg with the minimum weight
+            # (weight 1 on green nodes, or weight 1 / 0 at the root).
+            w1_edge = min(choices.keys(), key=lambda e: (choices[e], str(e)))
+            if w1_edge[1] == "boundary":
+                memo[node] = False
+                return False
+
+            u, v = int(w1_edge[0]), int(w1_edge[1])
+            nbr = v if u == node else u
+            if F_new.has_edge(node, nbr) and node in root_set or (
+                F_new.has_edge(node, nbr)
+            ):
+                memo[node] = _ends_at_flag(nbr)
+            else:
+                # Non-tree edge in G_new \ F_new: wire continues onto the flag edge and is measured
+                memo[node] = True
+            return memo[node]
+
+        for n in G_new.nodes():
+            _ends_at_flag(int(n))
+        return memo
+
+    def _allocate_wire_for_node(self, node: int, G_new: nx.Graph) -> int:
+        """Allocates a data or flag qubit index depending on where `node`'s weight-1 path ends."""
+        if self.node_weights is not None and hasattr(self, "_wire_becomes_flag"):
+            if self._wire_becomes_flag.get(int(node), False):
+                return self._get_new_flag_qubit()
+            return self._get_new_data_qubit()
+        is_flag = G_new.nodes[node].get("is_flag", False)
+        return self._get_new_flag_qubit() if is_flag else self._get_new_data_qubit()
+
+    def pop_next_from_queue(self) -> int:
+        """
+        Pops the next ready node from `self.queue` respecting the topological generations
+        of `dependency_graph` when provided.
+        """
+        if not self.node_order:
+            return self.queue.popleft()
+
+        while self.node_order and not self.node_order[0]:
+            self.node_order.pop(0)
+
+        for q_node in list(self.queue):
+            if q_node in self.node_order[0]:
+                self.queue.remove(q_node)
+                self.node_order[0].remove(q_node)
+                if not self.node_order[0]:
+                    self.node_order.pop(0)
+                return q_node
+
+        # If no node in the earliest non-empty generation is currently in `self.queue`
+        # (e.g., if `dependency_graph` has multiple roots or layers), find the earliest
+        # generation that intersects `self.queue`.
+        for gen in self.node_order:
+            for q_node in list(self.queue):
+                if q_node in gen:
+                    self.queue.remove(q_node)
+                    gen.remove(q_node)
+                    return q_node
+
+        return self.queue.popleft()
+
+    def extract(
+        self,
+        G_new: nx.Graph,
+        F_new: nx.Graph,
+        roots: int | np.integer | Mapping[int, int] | Iterable[int],
+        dependency_graph: nx.DiGraph | None = None,
+        weights: WeightsInput = None,
+    ):
+        if self.verbose:
+            print("=== Starting Elegant Extraction (BFS) ===")
+
+        self.node_to_qubit.clear()
+        self.edge_to_flag.clear()
+        self.tree_to_qubits.clear()
+        self.tree_of_node.clear()
+        self.link_measurements.clear()
+        self.depths.clear()
+        self.boundary_node_to_qubit.clear()
+        self.queue.clear()
+
+        roots_dict = _normalize_roots_dict(roots)
 
         self.next_data_idx = 0
-        self.next_flag_idx = len([v for v in G_new.nodes if G_new.nodes[v].get("is_mark", False)])
+        self.next_flag_idx = len(
+            [v for v in G_new.nodes if G_new.nodes[v].get("is_mark", False)]
+        )
 
-        for root in roots.values():
+        self.node_weights = normalize_node_weights(G_new, F_new, roots_dict, weights)
+
+        if self.node_weights is not None:
+            if dependency_graph is None:
+                dependency_graph = build_traversal_digraph(
+                    G_new, F_new, roots_dict, weights=self.node_weights
+                )
+            else:
+                dependency_graph = _inject_weight_dependencies(
+                    dependency_graph, G_new, F_new, self.node_weights
+                )
+
+        if dependency_graph is not None:
+            if not nx.is_directed_acyclic_graph(dependency_graph):
+                raise ValueError("dependency_graph must be a directed acyclic graph (DAG).")
+            self.node_order = [
+                set(gen) for gen in nx.topological_generations(dependency_graph)
+            ]
+        else:
+            self.node_order = None
+
+        for tree_id, root in roots_dict.items():
             self._compute_depth(root, None, F_new)
+            for u in nx.dfs_preorder_nodes(F_new, root):
+                self.tree_of_node[int(u)] = tree_id
 
-        # PASS 1: Grow Trees Level-by-Level
-        for tree_id, root in roots.items():
-            self._grow_tree_bfs(root, tree_id, G_new, F_new)
+        if self.node_weights is not None:
+            self._wire_becomes_flag = self._precompute_wire_fates(
+                G_new, F_new, roots_dict
+            )
+            self._grow_trees_weighted(roots_dict, G_new, F_new)
+        elif dependency_graph is not None:
+            self._grow_trees_unweighted_dag(roots_dict, G_new, F_new)
+        else:
+            # PASS 1: Grow Trees Level-by-Level (legacy per-tree BFS)
+            for tree_id, root in roots_dict.items():
+                self._grow_tree_bfs(root, tree_id, G_new, F_new)
 
         self._generate_detectors()
         self._generate_feedback()
-        # PASS 2: Close Gaps
-        # self._close_gaps(G_new, F_new)
+
         return self.builder.get_circuit()
 
-
-    def _grow_tree_bfs(self, root_node, tree_id, G_new, F_new):
-        # 1. INITIALIZE ROOT
-        is_flag = G_new.nodes[root_node].get("is_flag", False)
-        root_qubit = self._get_new_flag_qubit() if is_flag else self._get_new_data_qubit()
+    def _init_root_node(self, root_node: int, tree_id: int, G_new: nx.Graph) -> int:
+        root_qubit = self._allocate_wire_for_node(root_node, G_new)
         self.builder.init_ancilla(root_qubit)
         self.builder.add_h(root_qubit)
 
@@ -243,84 +522,293 @@ class CatStateExtractor:
 
         if self.verbose:
             print(f"Init Root {root_node} (Tree {tree_id}) -> Q{root_qubit}")
+        return root_qubit
 
-        # Queue stores: (node, current_qubit)
-        queue = [root_node]
+    def _handle_flag_edge_weight_2(
+        self,
+        node: int,
+        flag_neighbor: int,
+        current_qubit: int,
+    ) -> None:
+        """
+        Executes a weight-2 operation on a non-tree flag edge `(node, flag_neighbor)`:
+        - If the flag edge has not been initialized yet (first visited endpoint of a `(2, 2)`
+          flag edge), initializes a new flag ancilla and applies `CNOT(current_qubit, flag_qubit)`.
+        - If the flag edge is already present in `self.edge_to_flag` (either initialized as weight 2
+          by the other endpoint or continued as weight 1 by the other endpoint), applies
+          `CNOT(current_qubit, flag_qubit)` and measures (`post_select`) `flag_qubit`.
+        """
+        edge = ed(node, flag_neighbor)
+        if edge in self.edge_to_flag:
+            flag_qubit = self.edge_to_flag[edge]
+            self.builder.add_cnot(current_qubit, flag_qubit)
+            m_idx = self.builder.post_select(flag_qubit)
+            t_u = self.tree_of_node[node]
+            t_v = self.tree_of_node[flag_neighbor]
+            self._record_meas(t_u, t_v, m_idx)
+            if self.verbose:
+                print(
+                    f"  Flag ({node}, {flag_neighbor}) finalised (w=2): "
+                    f"CNOT Q{current_qubit} -> Q{flag_qubit} + M"
+                )
+        else:
+            flag_qubit = self._get_new_flag_qubit()
+            self.builder.init_ancilla(flag_qubit)
+            self.builder.add_cnot(current_qubit, flag_qubit)
+            self.edge_to_flag[edge] = flag_qubit
+            if self.verbose:
+                print(
+                    f"  New flag initialised ({node}, {flag_neighbor}) (w=2): "
+                    f"CNOT Q{current_qubit} -> Q{flag_qubit}"
+                )
 
-        while queue:
-            node = queue.pop(0)
+    def _handle_flag_edge_weight_1(
+        self,
+        node: int,
+        flag_neighbor: int,
+        current_qubit: int,
+    ) -> None:
+        """
+        Executes a weight-1 operation on a non-tree flag edge `(node, flag_neighbor)`:
+        The incoming wire `current_qubit` continues directly onto the flag edge without
+        initializing a new qubit or applying a CNOT at `node`. The other endpoint
+        `flag_neighbor` (which has weight 2 and is ordered after `node` in `dependency_graph`)
+        will apply its CNOT and measure `current_qubit`.
+        """
+        edge = ed(node, flag_neighbor)
+        if edge in self.edge_to_flag:
+            raise RuntimeError(
+                f"Flag edge {edge} already in edge_to_flag when processing weight-1 endpoint "
+                f"{node}. Ensure dependency_graph orders weight-1 endpoint before weight-2 endpoint."
+            )
+        self.edge_to_flag[edge] = current_qubit
+        if self.verbose:
+            print(
+                f"  Flag ({node}, {flag_neighbor}) takes role of flag (w=1): "
+                f"Q{current_qubit} continues onto flag edge"
+            )
+
+    def _grow_trees_weighted(
+        self,
+        roots_dict: dict[int, int],
+        G_new: nx.Graph,
+        F_new: nx.Graph,
+    ) -> None:
+        """
+        Extracts the circuit by realizing the explicit outgoing leg weights in `self.node_weights`
+        and respecting the topological node ordering in `self.node_order`.
+        """
+        assert self.node_weights is not None
+        root_set = set(roots_dict.values())
+
+        for tree_id, root_node in roots_dict.items():
+            self._init_root_node(root_node, tree_id, G_new)
+            self.queue.append(root_node)
+
+        while self.queue:
+            node = self.pop_next_from_queue()
             current_qubit = self.node_to_qubit[node]
-            self.tree_of_node[node] = tree_id
+            tree_id = self.tree_of_node[node]
+            choices = self.node_weights[node]
 
-            children = [n for n in F_new.neighbors(node) if n not in self.node_to_qubit]
-            is_mark = G_new.nodes[node].get("is_mark", False)
-            is_flag = G_new.nodes[node].get("is_flag", False)
+            if node in root_set:
+                # Root node has 2 outgoing tree edges with weights in {(2, 1), (1, 2), (3, 0), (0, 3)}.
+                # Sort outgoing edges in descending order of weight so the larger-weight leg
+                # (weight 2 or 3) spawns a CNOT first and the smaller-weight leg (weight 1 or 0)
+                # inherits `current_qubit`.
+                sorted_legs = sorted(
+                    choices.items(), key=lambda kv: (-kv[1], str(kv[0]))
+                )
+                w2_edge, _ = sorted_legs[0]
+                w1_edge, _ = sorted_legs[1]
 
-            flag_children = [n for n in G_new.neighbors(node) if n not in F_new.neighbors(node)]
-            for child in flag_children:
-                edge = tuple(sorted((node, child)))
-                if edge in self.edge_to_flag:
-                    flag_qubit = self.edge_to_flag[edge]
-                    self.builder.add_cnot(current_qubit, flag_qubit)
-                    m_idx = self.builder.post_select(flag_qubit)
-                    t_u, t_v = self.tree_of_node[node], self.tree_of_node[child]
-                    self._record_meas(t_u, t_v, m_idx)
-                    if self.verbose:
-                        print(f"  Flag ({node}, {child}) finalised: CNOT Q{current_qubit} -> Q{flag_qubit}")
-                else:
-                    flag_qubit = self._get_new_flag_qubit()
-                    self.builder.add_cnot(current_qubit, flag_qubit)
-                    self.edge_to_flag[edge] = flag_qubit
-                    if self.verbose:
-                        print(f"  New flag initialised ({node}, {child}): CNOT Q{current_qubit} -> Q{flag_qubit}")
+                sec_child = int(w2_edge[1] if int(w2_edge[0]) == node else w2_edge[0])
+                pri_child = int(w1_edge[1] if int(w1_edge[0]) == node else w1_edge[0])
 
-            if not children:
-                if self.verbose and is_mark:
-                    print(f"  Node {node} serves as a sink point for Q{current_qubit}")
+                new_q = self._allocate_wire_for_node(sec_child, G_new)
+                self.builder.init_ancilla(new_q)
+                self.builder.add_cnot(current_qubit, new_q)
+                self.node_to_qubit[sec_child] = new_q
+                self.tree_to_qubits[tree_id].add(new_q)
+                self.tree_of_node[sec_child] = tree_id
+                if self.verbose:
+                    print(
+                        f"  Root {node} -> Secondary {sec_child} (w=2): "
+                        f"Spawned CNOT Q{current_qubit} -> Q{new_q}"
+                    )
+                self.queue.append(sec_child)
+
+                self.node_to_qubit[pri_child] = current_qubit
+                self.tree_to_qubits[tree_id].add(current_qubit)
+                self.tree_of_node[pri_child] = tree_id
+                if self.verbose:
+                    print(
+                        f"  Root {node} -> Primary {pri_child} (w=1): "
+                        f"Inherits Q{current_qubit}"
+                    )
+                self.queue.append(pri_child)
                 continue
 
+            # Non-root green node: process weight-2 leg(s) BEFORE weight-1 leg
+            # so `current_qubit` acts as control before continuing onto the weight-1 leg.
+            sorted_legs = sorted(
+                choices.items(), key=lambda kv: (-kv[1], str(kv[0]))
+            )
+            for leg_edge, weight in sorted_legs:
+                if weight >= 2:
+                    if leg_edge[1] == "boundary":
+                        # Boundary leg with weight 2 (when fix_boundary_weight_one=False):
+                        # spawn a new data qubit that stays at the boundary for `node`.
+                        b_q = self._get_new_data_qubit()
+                        self.builder.init_ancilla(b_q)
+                        self.builder.add_cnot(current_qubit, b_q)
+                        self.tree_to_qubits[tree_id].add(b_q)
+                        self.boundary_node_to_qubit[node] = b_q
+                        if self.verbose:
+                            print(
+                                f"  Mark on {node} boundary (w=2): "
+                                f"Spawned CNOT Q{current_qubit} -> Q{b_q}"
+                            )
+                    else:
+                        u, v = int(leg_edge[0]), int(leg_edge[1])
+                        nbr = v if u == node else u
+                        if F_new.has_edge(node, nbr):
+                            # Tree child with weight 2: spawn a new qubit and CNOT
+                            new_q = self._allocate_wire_for_node(nbr, G_new)
+                            self.builder.init_ancilla(new_q)
+                            self.builder.add_cnot(current_qubit, new_q)
+                            self.node_to_qubit[nbr] = new_q
+                            self.tree_to_qubits[tree_id].add(new_q)
+                            self.tree_of_node[nbr] = tree_id
+                            if self.verbose:
+                                print(
+                                    f"  Node {node} -> Tree child {nbr} (w=2): "
+                                    f"Spawned CNOT Q{current_qubit} -> Q{new_q}"
+                                )
+                            self.queue.append(nbr)
+                        else:
+                            # Non-tree flag edge with weight 2
+                            self._handle_flag_edge_weight_2(node, nbr, current_qubit)
+                else:
+                    # Weight-1 leg: `current_qubit` continues along this leg
+                    if leg_edge[1] == "boundary":
+                        self.boundary_node_to_qubit[node] = current_qubit
+                        if self.verbose:
+                            print(
+                                f"  Mark on {node} boundary (w=1): "
+                                f"Q{current_qubit} continues to boundary"
+                            )
+                    else:
+                        u, v = int(leg_edge[0]), int(leg_edge[1])
+                        nbr = v if u == node else u
+                        if F_new.has_edge(node, nbr):
+                            self.node_to_qubit[nbr] = current_qubit
+                            self.tree_to_qubits[tree_id].add(current_qubit)
+                            self.tree_of_node[nbr] = tree_id
+                            if self.verbose:
+                                print(
+                                    f"  Node {node} -> Primary {nbr} (w=1): "
+                                    f"Inherits Q{current_qubit}"
+                                )
+                            self.queue.append(nbr)
+                        else:
+                            self._handle_flag_edge_weight_1(node, nbr, current_qubit)
+
+    def _grow_trees_unweighted_dag(
+        self,
+        roots_dict: dict[int, int],
+        G_new: nx.Graph,
+        F_new: nx.Graph,
+    ) -> None:
+        for tree_id, root_node in roots_dict.items():
+            self._init_root_node(root_node, tree_id, G_new)
+            self.queue.append(root_node)
+
+        while self.queue:
+            node = self.pop_next_from_queue()
+            self._process_unweighted_node(node, self.tree_of_node[node], G_new, F_new, self.queue)
+
+    def _process_unweighted_node(self, node, tree_id, G_new, F_new, queue):
+        current_qubit = self.node_to_qubit[node]
+        self.tree_of_node[node] = tree_id
+
+        children = [n for n in F_new.neighbors(node) if n not in self.node_to_qubit]
+        is_mark = G_new.nodes[node].get("is_mark", False)
+        is_flag = G_new.nodes[node].get("is_flag", False)
+
+        flag_children = [n for n in G_new.neighbors(node) if n not in F_new.neighbors(node)]
+        for child in flag_children:
+            edge = tuple(sorted((node, child)))
+            if edge in self.edge_to_flag:
+                flag_qubit = self.edge_to_flag[edge]
+                self.builder.add_cnot(current_qubit, flag_qubit)
+                m_idx = self.builder.post_select(flag_qubit)
+                t_u, t_v = self.tree_of_node[node], self.tree_of_node[child]
+                self._record_meas(t_u, t_v, m_idx)
+                if self.verbose:
+                    print(f"  Flag ({node}, {child}) finalised: CNOT Q{current_qubit} -> Q{flag_qubit}")
+            else:
+                flag_qubit = self._get_new_flag_qubit()
+                self.builder.add_cnot(current_qubit, flag_qubit)
+                self.edge_to_flag[edge] = flag_qubit
+                if self.verbose:
+                    print(f"  New flag initialised ({node}, {child}): CNOT Q{current_qubit} -> Q{flag_qubit}")
+
+        if not children:
             if is_mark:
-                new_q = self._get_new_flag_qubit() if is_flag else self._get_new_data_qubit()
-                self.builder.init_ancilla(new_q)
-                self.builder.add_cnot(current_qubit, new_q)
-                self.tree_to_qubits[tree_id].add(new_q)
-                if self.verbose:
-                    print(f"  Mark on {node}: Spawned CNOT Q{current_qubit} -> Q{new_q}")
-                self.node_to_qubit[node] = new_q
-                current_qubit = new_q
+                self.boundary_node_to_qubit[node] = current_qubit
+            if self.verbose and is_mark:
+                print(f"  Node {node} serves as a sink point for Q{current_qubit}")
+            return
 
+        if is_mark:
+            self.boundary_node_to_qubit[node] = current_qubit
+            new_q = self._get_new_flag_qubit() if is_flag else self._get_new_data_qubit()
+            self.builder.init_ancilla(new_q)
+            self.builder.add_cnot(current_qubit, new_q)
+            self.tree_to_qubits[tree_id].add(new_q)
+            if self.verbose:
+                print(f"  Mark on {node}: Spawned CNOT Q{current_qubit} -> Q{new_q}")
+            self.node_to_qubit[node] = new_q
+            current_qubit = new_q
 
-            # Sort children by depth to identify the primary branch
-            children.sort(key=lambda c: self.depths.get(c, 0), reverse=True)
-            primary = children[-1]
-            secondaries = children[:-1]
+        # Sort children by depth to identify the primary branch
+        children.sort(key=lambda c: self.depths.get(c, 0), reverse=True)
+        primary = children[-1]
+        secondaries = children[:-1]
 
-            # 3. SECONDARY CHILDREN (Spawn new qubits)
-            for child in secondaries:
-                is_flag_child = G_new.nodes[child].get("is_flag", False)
+        # 3. SECONDARY CHILDREN (Spawn new qubits)
+        for child in secondaries:
+            new_q = self._get_new_data_qubit()
+            self.builder.init_ancilla(new_q)
+            self.builder.add_cnot(current_qubit, new_q)
 
-                new_q = self._get_new_data_qubit()
-                self.builder.init_ancilla(new_q)
-                self.builder.add_cnot(current_qubit, new_q)
-
-                self.node_to_qubit[child] = new_q
-                self.tree_to_qubits[tree_id].add(new_q)
-                self.tree_of_node[child] = tree_id
-
-                if self.verbose:
-                    print(f"  Node {node} -> Branch {child}: Spawned CNOT Q{current_qubit} -> Q{new_q}")
-
-                queue.append(child)
-
-            # 4. PRIMARY CHILD (Inherit current qubit)
-            self.node_to_qubit[primary] = current_qubit
-            self.tree_to_qubits[tree_id].add(current_qubit)
-            self.tree_of_node[primary] = tree_id
+            self.node_to_qubit[child] = new_q
+            self.tree_to_qubits[tree_id].add(new_q)
+            self.tree_of_node[child] = tree_id
 
             if self.verbose:
-                print(f"  Node {node} -> Primary {primary} (Inherits Q{current_qubit})")
+                print(f"  Node {node} -> Branch {child}: Spawned CNOT Q{current_qubit} -> Q{new_q}")
 
-            queue.append(primary)
+            queue.append(child)
+
+        # 4. PRIMARY CHILD (Inherit current qubit)
+        self.node_to_qubit[primary] = current_qubit
+        self.tree_to_qubits[tree_id].add(current_qubit)
+        self.tree_of_node[primary] = tree_id
+
+        if self.verbose:
+            print(f"  Node {node} -> Primary {primary} (Inherits Q{current_qubit})")
+
+        queue.append(primary)
+
+    def _grow_tree_bfs(self, root_node, tree_id, G_new, F_new):
+        # 1. INITIALIZE ROOT
+        self._init_root_node(root_node, tree_id, G_new)
+        queue = deque([root_node])
+        while queue:
+            node = queue.popleft()
+            self._process_unweighted_node(node, tree_id, G_new, F_new, queue)
 
     def _record_meas(self, t1, t2, m_idx):
         if t1 == t2: self.builder.add_detector(m_idx)
@@ -355,12 +843,44 @@ class CatStateExtractor:
                 for q in self.tree_to_qubits[t]: self.builder.add_feedback_x(m, q)
 
 
-def extract_circuit_rooted(G, forest, roots, markings, matches, verbose=False) -> stim.Circuit:
+def extract_from_expanded_graph(
+    G_exp: nx.Graph,
+    F_exp: nx.Graph,
+    roots: int | np.integer | Mapping[int, int] | Iterable[int] | None = None,
+    weights: WeightsInput = None,
+    dependency_graph: nx.DiGraph | None = None,
+    builder: CircuitBuilder | None = None,
+    verbose: bool = False,
+):
+    """
+    Extracts a quantum circuit directly from an expanded graph `G_exp` and spanning
+    forest/tree `F_exp`, optionally realizing `weights` and `dependency_graph`.
+    """
+    if roots is None:
+        roots = inject_root_nodes(G_exp, F_exp)
+    extractor = CatStateExtractor(builder if builder is not None else StimBuilder(), verbose)
+    return extractor.extract(
+        G_exp, F_exp, roots, dependency_graph=dependency_graph, weights=weights
+    )
+
+
+def extract_circuit_rooted(
+    G,
+    forest,
+    roots,
+    markings,
+    matches,
+    weights: WeightsInput = None,
+    dependency_graph: nx.DiGraph | None = None,
+    verbose: bool = False,
+) -> stim.Circuit:
     extractor = CatStateExtractor(StimBuilder(), verbose)
     G_exp, F_exp = expand_graph_and_forest(G, forest, markings, matches)
     if roots is None:
         roots = inject_root_nodes(G_exp, F_exp)
-    return extractor.extract(G_exp, F_exp, roots)
+    return extractor.extract(
+        G_exp, F_exp, roots, dependency_graph=dependency_graph, weights=weights
+    )
 
 
 def implement_CNOT_circuit(cnots, num_qubits, p_2, p_mem):
@@ -444,20 +964,55 @@ def cat_state_6():
     """)
 
 
-def build_traversal_digraph(G: nx.Graph, F: nx.Graph, root) -> nx.DiGraph:
+def _inject_weight_dependencies(
+    di_graph: nx.DiGraph,
+    G: nx.Graph,
+    F: nx.Graph,
+    node_choices: Mapping[int, Mapping[GraphEdge, int]],
+) -> nx.DiGraph:
     """
-    Builds a directed graph representing the tree hierarchy,
-    adding directed edges (l -> t) for missing cycle-closure edges.
+    Returns a copy of `di_graph` with directed edges `u_w1 -> v_w2`
+    (`edge_type='missing_link'`) added for every non-tree flag edge in `G \\ F`
+    whose local weights are `(1, 2)` or `(2, 1)`.
+    """
+    augmented = di_graph.copy()
+    for u, v in G.edges():
+        if F.has_edge(u, v):
+            continue
+        a, b = ed(int(u), int(v))
+        wa = node_choices.get(a, {}).get((a, b))
+        wb = node_choices.get(b, {}).get((a, b))
+        if wa == 1 and wb == 2 and not augmented.has_edge(a, b):
+            augmented.add_edge(a, b, edge_type="missing_link")
+        elif wb == 1 and wa == 2 and not augmented.has_edge(b, a):
+            augmented.add_edge(b, a, edge_type="missing_link")
+    return augmented
+
+
+def build_traversal_digraph(
+    G: nx.Graph,
+    F: nx.Graph,
+    root: int | np.integer | Mapping[int, int] | Iterable[int],
+    weights: WeightsInput = None,
+) -> nx.DiGraph:
+    """
+    Builds a directed graph representing the tree hierarchy from `root`,
+    and when `weights` is provided, injects directed dependency edges
+    `u_w1 -> v_w2` (with `edge_type='missing_link'`) for every non-tree flag edge
+    with weights `(1, 2)` or `(2, 1)` so the weight-1 endpoint is processed
+    before the weight-2 endpoint.
     """
     di_graph = nx.DiGraph()
     for node, data in G.nodes(data=True):
         di_graph.add_node(node, **data)
 
-    queue = [root]
-    visited = {root}
+    roots_dict = _normalize_roots_dict(root)
+    root_list = list(roots_dict.values())
+    queue = deque(root_list)
+    visited = set(root_list)
 
     while queue:
-        current = queue.pop(0)
+        current = queue.popleft()
 
         # 1. Standard Tree Traversal (Parent -> Child)
         for neighbor in F.neighbors(current):
@@ -467,7 +1022,16 @@ def build_traversal_digraph(G: nx.Graph, F: nx.Graph, root) -> nx.DiGraph:
                 # Label the edge type for visualization
                 di_graph.add_edge(current, neighbor, edge_type='tree')
 
+    # 2. Inject artificial dependencies (w=1 -> w=2) for flag edges in G \ F
+    if weights is not None:
+        node_choices = normalize_node_weights(G, F, roots_dict, weights)
+        assert node_choices is not None
+        di_graph = _inject_weight_dependencies(di_graph, G, F, node_choices)
+
     return di_graph
+
+
+build_weighted_dependency_digraph = build_traversal_digraph
 
 
 if __name__ == "__main__":
